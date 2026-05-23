@@ -1819,6 +1819,225 @@ window.$docsify = {
         });
       };
 
+      const setupCollapsibleConferenceSidebar = () => {
+        const nav = document.querySelector('.sidebar-nav');
+        if (!nav) return;
+
+        const STORAGE_KEY = 'dpr_sidebar_conference_state_v1';
+        const ANIM_MS = 220;
+
+        const readState = () => {
+          try {
+            const raw = window.localStorage
+              ? window.localStorage.getItem(STORAGE_KEY)
+              : null;
+            return raw ? JSON.parse(raw) || {} : {};
+          } catch {
+            return {};
+          }
+        };
+
+        const state = readState();
+        const saveState = () => {
+          try {
+            if (window.localStorage) {
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            }
+          } catch {
+            // ignore
+          }
+        };
+
+        const getDirectTextNode = (li) => {
+          if (!li || typeof Node === 'undefined') return null;
+          return (
+            Array.from(li.childNodes || []).find((node) => {
+              return node && node.nodeType === Node.TEXT_NODE && String(node.textContent || '').trim();
+            }) || null
+          );
+        };
+
+        const getToggleLabel = (li) => {
+          if (!li) return '';
+          const label = li.querySelector(
+            ':scope > .sidebar-conference-toggle .sidebar-conference-toggle-label',
+          );
+          if (label) return String(label.textContent || '').trim();
+          const textNode = getDirectTextNode(li);
+          return String((textNode && textNode.textContent) || '').trim();
+        };
+
+        const normalizeKeyPart = (value) => {
+          return String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
+        };
+
+        const updateOpenAncestorHeights = (li) => {
+          let parent = li ? li.parentElement : null;
+          while (parent) {
+            const parentLi = parent.closest('li.sidebar-conference-node');
+            if (!parentLi) break;
+            if (!parentLi.classList.contains('sidebar-conference-collapsed')) {
+              const ul = parentLi.querySelector(':scope > ul.sidebar-conference-content');
+              if (ul) ul.style.maxHeight = `${ul.scrollHeight}px`;
+            }
+            parent = parentLi.parentElement;
+          }
+        };
+
+        const setConferenceCollapsed = (li, collapsed, options = {}) => {
+          const { animate = true } = options || {};
+          const ul = li.querySelector(':scope > ul');
+          if (!ul) return;
+          ul.classList.add('sidebar-conference-content');
+          const doAnimate = animate && !prefersReducedMotion();
+
+          if (!doAnimate) {
+            ul.style.transition = 'none';
+            ul.style.maxHeight = collapsed ? '0px' : `${ul.scrollHeight}px`;
+            ul.style.opacity = collapsed ? '0' : '1';
+            requestAnimationFrame(() => {
+              ul.style.transition = '';
+              updateOpenAncestorHeights(li);
+            });
+            return;
+          }
+
+          if (collapsed) {
+            ul.style.maxHeight = `${ul.scrollHeight}px`;
+            ul.style.opacity = '0';
+            requestAnimationFrame(() => {
+              ul.style.maxHeight = '0px';
+            });
+          } else {
+            ul.style.opacity = '1';
+            ul.style.maxHeight = '0px';
+            requestAnimationFrame(() => {
+              ul.style.maxHeight = `${ul.scrollHeight}px`;
+            });
+          }
+
+          setTimeout(() => {
+            try {
+              if (!li.classList.contains('sidebar-conference-collapsed')) {
+                ul.style.maxHeight = `${ul.scrollHeight}px`;
+              }
+              updateOpenAncestorHeights(li);
+              syncSidebarActiveIndicator({ animate: false });
+            } catch {
+              // ignore
+            }
+          }, ANIM_MS + 30);
+        };
+
+        const ensureToggle = (li, label, storageKey) => {
+          if (!li || !label || !storageKey) return;
+          const childUl = li.querySelector(':scope > ul');
+          if (!childUl) return;
+
+          li.classList.add('sidebar-conference-node');
+          childUl.classList.add('sidebar-conference-content');
+
+          let wrapper = li.querySelector(':scope > .sidebar-conference-toggle');
+          if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'sidebar-conference-toggle';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'sidebar-conference-toggle-label';
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'sidebar-conference-toggle-arrow';
+            arrowSpan.setAttribute('aria-hidden', 'true');
+
+            wrapper.appendChild(labelSpan);
+            wrapper.appendChild(arrowSpan);
+
+            const textNode = getDirectTextNode(li);
+            if (textNode && textNode.parentNode === li) {
+              li.replaceChild(wrapper, textNode);
+            } else {
+              li.insertBefore(wrapper, li.firstChild);
+            }
+          }
+
+          const labelSpan = wrapper.querySelector('.sidebar-conference-toggle-label');
+          const arrowSpan = wrapper.querySelector('.sidebar-conference-toggle-arrow');
+          if (labelSpan) labelSpan.textContent = label;
+
+          const collapsed = state[storageKey] === 'closed';
+          li.dataset.sidebarConferenceKey = storageKey;
+          li.classList.toggle('sidebar-conference-collapsed', collapsed);
+          if (arrowSpan) arrowSpan.textContent = collapsed ? '▸' : '▾';
+          wrapper.setAttribute('role', 'button');
+          wrapper.setAttribute('tabindex', '0');
+          wrapper.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          setConferenceCollapsed(li, collapsed, { animate: false });
+
+          if (!wrapper.dataset.dprConferenceToggleBound) {
+            wrapper.dataset.dprConferenceToggleBound = '1';
+            const toggle = (event) => {
+              if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+              }
+              const nowCollapsed = li.classList.toggle('sidebar-conference-collapsed');
+              const currentArrow = wrapper.querySelector('.sidebar-conference-toggle-arrow');
+              if (currentArrow) currentArrow.textContent = nowCollapsed ? '▸' : '▾';
+              wrapper.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+              state[storageKey] = nowCollapsed ? 'closed' : 'open';
+              saveState();
+              setConferenceCollapsed(li, nowCollapsed, { animate: true });
+              requestAnimationFrame(() => {
+                syncSidebarActiveIndicator({ animate: false });
+              });
+            };
+            wrapper.addEventListener('click', toggle, true);
+            wrapper.addEventListener('keydown', (event) => {
+              const keyName = event && event.key ? event.key : '';
+              if (keyName !== 'Enter' && keyName !== ' ') return;
+              toggle(event);
+            });
+          }
+        };
+
+        const rootItems = Array.from(nav.querySelectorAll('li')).filter((li) => {
+          if (!li.querySelector(':scope > ul')) return false;
+          return getToggleLabel(li) === 'Conference Papers';
+        });
+
+        rootItems.forEach((rootLi) => {
+          ensureToggle(rootLi, 'Conference Papers', 'root:conference-papers');
+          const childLis = Array.from(rootLi.querySelectorAll(':scope > ul > li'));
+          childLis.forEach((li) => {
+            if (!li.querySelector(':scope > ul')) return;
+            const label = getToggleLabel(li);
+            if (!label) return;
+            ensureToggle(li, label, `conference:${normalizeKeyPart(label)}`);
+          });
+        });
+
+        requestAnimationFrame(() => {
+          try {
+            nav
+              .querySelectorAll(
+                'li.sidebar-conference-node:not(.sidebar-conference-collapsed) > ul.sidebar-conference-content',
+              )
+              .forEach((ul) => {
+                const prevTransition = ul.style.transition;
+                ul.style.transition = 'none';
+                ul.style.maxHeight = `${ul.scrollHeight}px`;
+                ul.style.opacity = '1';
+                requestAnimationFrame(() => {
+                  ul.style.transition = prevTransition || '';
+                });
+              });
+          } catch {
+            // ignore
+          }
+        });
+      };
+
       // 4. 论文“已阅读”状态管理（存储在 localStorage）
       const READ_STORAGE_KEY = 'dpr_read_papers_v1';
 
@@ -2770,9 +2989,13 @@ window.$docsify = {
 
         // 只对论文条目启用（避免日期分组标题等）
         if (!li.classList || !li.classList.contains('sidebar-paper-item')) return;
-        // 若该条目在“折叠的日期”之下：隐藏高亮层，避免折叠后仍残留选中背景
+        // 若该条目在折叠分组之下：隐藏高亮层，避免折叠后仍残留选中背景
         try {
-          if (li.closest && li.closest('li.sidebar-day-collapsed')) {
+          if (
+            li.closest &&
+            (li.closest('li.sidebar-day-collapsed') ||
+              li.closest('li.sidebar-conference-collapsed'))
+          ) {
             hideSidebarActiveIndicator();
             return;
           }
@@ -3923,6 +4146,7 @@ window.$docsify = {
         // F. 侧边栏按日期折叠
         // ----------------------------------------------------
         setupCollapsibleSidebarByDay();
+        setupCollapsibleConferenceSidebar();
         hydrateStructuredSidebarItems();
         bindSidebarVirtualHashLinks();
         neutralizeSidebarNoactiveLinks();

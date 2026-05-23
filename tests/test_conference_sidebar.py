@@ -58,8 +58,8 @@ class ConferenceSidebarTest(unittest.TestCase):
 
             self.assertIn("* Conference Papers", text)
             self.assertIn("  * ICML 2025 <!--dpr-conference:icml-2025-->", text)
-            self.assertIn("    * 推荐论文", text)
-            self.assertIn("      * <a class=\"dpr-sidebar-item-link dpr-sidebar-item-structured\"", text)
+            self.assertNotIn("推荐论文", text)
+            self.assertIn("    * <a class=\"dpr-sidebar-item-link dpr-sidebar-item-structured\"", text)
             self.assertIn("href=\"#/conference/icml-2025/openreview-icml-2025-abc123-a-conference-paper\"", text)
             self.assertIn("A Conference Paper", text)
             self.assertIn("https://openreview.net/forum?id=abc123", text)

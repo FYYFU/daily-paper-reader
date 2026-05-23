@@ -2250,6 +2250,38 @@ article.markdown-section {
   opacity: 0;
 }
 
+/* 会议分组折叠：Conference Papers / ICML 2025 等可独立展开收起 */
+.sidebar-conference-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-conference-toggle-label {
+  font-weight: 500;
+}
+
+.sidebar-conference-toggle-arrow {
+  flex: 0 0 auto;
+  font-size: 12px;
+  margin-left: 6px;
+  opacity: 0.7;
+}
+
+.sidebar-conference-content {
+  overflow: hidden;
+  max-height: none;
+  opacity: 1;
+  transition: max-height 220ms ease, opacity 150ms ease;
+  will-change: max-height, opacity;
+}
+
+.sidebar-conference-collapsed > .sidebar-conference-content {
+  opacity: 0;
+}
+
 /* 评价为“好”的论文（浅绿色文字，保持白底，仅文字变色） */
 .sidebar-nav li.sidebar-paper-good {
   background-color: transparent;

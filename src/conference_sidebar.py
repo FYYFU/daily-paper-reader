@@ -366,7 +366,7 @@ def build_conference_block(result_path: Path, docs_dir: Path, limit: int = 80) -
     ranked = collect_ranked_ids(data, limit)
     route_by_id = write_conference_docs(docs_dir, papers, ranked, conference, years)
 
-    lines = [f"  * {label} {marker}\n", "    * 推荐论文\n"]
+    lines = [f"  * {label} {marker}\n"]
     for item in ranked:
         paper_id = norm_text(item.get("paper_id"))
         paper = papers.get(paper_id)
@@ -377,7 +377,7 @@ def build_conference_block(result_path: Path, docs_dir: Path, limit: int = 80) -
         href = f"#/{route}"
         payload = build_sidebar_payload(paper, item, conference, years)
         lines.append(
-            "      * "
+            "    * "
             f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{html.escape(href, quote=True)}" '
             f'data-sidebar-item="{payload}">{html.escape(title)}</a>\n'
         )
