@@ -2172,20 +2172,6 @@ window.SubscriptionsSmartQuery = (function () {
         </div>
         <button class="arxiv-tool-btn" data-action="close">关闭</button>
       </div>
-      <div class="dpr-chat-meta-bar">
-        <label class="dpr-chat-label dpr-chat-inline-tag">
-          <span class="dpr-chat-label-text">标签</span>
-          <input id="dpr-chat-tag-input" type="text" placeholder="例如：symbolic-regression" value="${escapeHtml(modalState.inputTag || '')}" />
-        </label>
-        <label class="dpr-chat-label dpr-chat-inline-profile-desc">
-          <span class="dpr-chat-label-text">中文描述</span>
-          <input id="dpr-chat-required-desc" type="text" placeholder="用于日报展示，可由模型自动补全" value="${escapeHtml(modalState.inputDesc || '')}" />
-        </label>
-        <div class="dpr-chat-label dpr-chat-inline-sources">
-          <span class="dpr-chat-label-text">论文源</span>
-          <div class="dpr-paper-source-row">${sourceChoices}</div>
-        </div>
-      </div>
       <div class="dpr-modal-actions dpr-chat-action-area">
         <div class="dpr-chat-row dpr-chat-main-row">
           <label class="dpr-chat-label dpr-chat-inline-desc">
@@ -2208,8 +2194,22 @@ window.SubscriptionsSmartQuery = (function () {
       <div class="dpr-chat-result-module">
         <div class="dpr-chat-result-content">${mixedHtml || emptyBlock}</div>
       </div>
-      <div class="dpr-modal-actions dpr-modal-add-footer">
-        <button class="arxiv-tool-btn" data-action="apply-chat" style="background:#2e7d32;color:#fff;" ${hasCandidates ? '' : 'disabled'}>
+      <div class="dpr-chat-bottom-bar">
+        <div class="dpr-chat-meta-bar">
+          <label class="dpr-chat-label dpr-chat-inline-tag">
+            <span class="dpr-chat-label-text">标签</span>
+            <input id="dpr-chat-tag-input" type="text" placeholder="例如：symbolic-regression" value="${escapeHtml(modalState.inputTag || '')}" />
+          </label>
+          <label class="dpr-chat-label dpr-chat-inline-profile-desc">
+            <span class="dpr-chat-label-text">中文描述</span>
+            <input id="dpr-chat-required-desc" type="text" placeholder="用于日报展示，可由模型自动补全" value="${escapeHtml(modalState.inputDesc || '')}" />
+          </label>
+          <div class="dpr-chat-label dpr-chat-inline-sources">
+            <span class="dpr-chat-label-text">论文源</span>
+            <div class="dpr-paper-source-row">${sourceChoices}</div>
+          </div>
+        </div>
+        <button class="arxiv-tool-btn dpr-chat-save-btn" data-action="apply-chat" ${hasCandidates ? '' : 'disabled'}>
           保存查询
         </button>
       </div>
