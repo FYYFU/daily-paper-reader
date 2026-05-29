@@ -25,3 +25,57 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: opd
+      description: 帮我找一下最近的on-policy distillation的论文
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: on policy distillation
+          keyword_cn: 在线策略蒸馏
+          query: on policy distillation reinforcement learning
+        - keyword: policy distillation
+          keyword_cn: 策略蒸馏
+          query: policy distillation in reinforcement learning
+        - keyword: teacher student reinforcement learning
+          keyword_cn: 师生框架强化学习蒸馏
+          query: teacher student framework reinforcement learning distillation
+        - keyword: on policy learning distillation
+          keyword_cn: 在线学习蒸馏
+          query: on policy learning knowledge distillation
+        - keyword: distillation in reinforcement learning
+          keyword_cn: 强化学习中的蒸馏技术
+          query: distillation techniques reinforcement learning
+      intent_queries:
+        - query: recent advances in on policy distillation
+          query_cn: 在线策略蒸馏的最新进展
+          enabled: true
+          source: manual
+          note: ''
+        - query: latest papers on policy distillation
+          query_cn: 策略蒸馏的最新论文
+          enabled: true
+          source: manual
+          note: ''
+        - query: on policy knowledge distillation methods
+          query_cn: 在线策略知识蒸馏方法
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-05-29T03:31:31.899Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
