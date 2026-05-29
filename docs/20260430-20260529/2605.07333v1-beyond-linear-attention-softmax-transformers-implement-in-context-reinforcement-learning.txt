@@ -1,0 +1,2949 @@
+Title: Beyond Linear Attention: Softmax Transformers Implement In-Context Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2605.07333v1
+
+Published Time: Mon, 11 May 2026 00:46:34 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# Beyond Linear Attention: Softmax Transformers Implement In-Context Reinforcement Learning 
+
+Zixuan Xie 
+
+University of Virginia 
+
+xie.zixuan@email.virginia.edu 
+
+Xinyu Liu 
+
+University of Virginia 
+
+xinyuliu@virginia.edu 
+
+Claire Chen 
+
+California Institute of Technology 
+
+clairechen@caltech.edu 
+
+Shuze Daniel Liu 
+
+Purdue University 
+
+liu4869@purdue.edu 
+
+Rohan Chandra 
+
+University of Virginia 
+
+rohanchandra@virginia.edu 
+
+Shangtong Zhang 
+
+University of Virginia 
+
+shangtong@virginia.edu 
+
+## Abstract 
+
+In-context reinforcement learning (ICRL) studies agents that, after pretraining, adapt to new tasks by conditioning on additional context without parameter up-dates. Existing theoretical analyses of ICRL largely rely on linear attention, which replaces the softmax function in the standard attention with an identity mapping. This paper provides the first theoretical understanding of ICRL without making the unrealistic linear attention simplification. In particular, we consider the standard softmax attention used in practice. We show that, with certain parameters, the layerwise forward pass of a Transformer with such softmax attention is equivalent to iterative updates of a weighted softmax temporal difference (TD) learning al-gorithm. Here, weighted softmax TD is a new RL algorithm that performs policy evaluation in kernel space and adopts both linear TD and tabular TD as special cases. We also prove that under a certain contraction condition, the policy evaluation error decays as the number of layers grows, with the identified parameters above. Finally, we prove that those parameters are a global minimizer of a pretraining loss, explaining their emergence in our numerical experiments. 
+
+## 1 Introduction 
+
+Recent works on in-context reinforcement learning (ICRL, Moeini et al. [2025]) suggest that an RL agent can adapt to a new task at inference time without updating its parameters. In this framework, an agent network is pretrained on a distribution of tasks and then deployed with fixed pretrained parameters. At test time, the agent conditions on additional context generated within the new task, such as an interaction history τt
+
+.
+
+= ( S0, A 0, R 1, . . . , S t−1, A t−1, R t), and outputs actions or value estimates [Wang et al., 2016, Duan et al., 2016, Laskin et al., 2023]. Such fixed-parameter adaptation has been observed in algorithm distillation [Laskin et al., 2023], human-timescale adaptation [Bauer et al., 2023], long-context embodied agents [Elawady et al., 2024], Transformer-based adaptive agents [Raparthy et al., 2024, Grigsby et al., 2024a,b, Song et al., 2026], and continuous-control or locomotion agents [Liu et al., 2025, Beaussant and Mounsif, 2025]. Since the pretrained parameters do not change at test time, any adjustment in actions or value estimates must be produced by the forward pass using the new context. This motivates the question we study: what RL process is implemented by the fixed agent network when it uses the context for adaptation?     
+
+> Preprint.
+> arXiv:2605.07333v1 [cs.LG] 8 May 2026 010 20 30 40
+> Context Length (n)
+> 0.0
+> 4.0
+> 8.0
+> 12.0
+> 16.0
+> MSVE
+
+Figure 1: In-context policy evaluation with a 15-layer dual-head Transformer using softmax attention. The model takes the context τt and a query state s and outputs TF θ∗ (τt, s ) as the estimation of the state value vπ (s). The y-axis is the mean square value error (MSVE) P 
+
+> s
+
+dπ (s)( TF θ∗ (τt, s ) − vπ (s)) 2,with dπ (s) being the stationary state distribution. The curves are averaged over 300 randomly generated policy evaluation tasks, with shaded regions indicating standard errors. Across tasks, the state space, transition dynamics, reward function, and policy vary, while a single parameterization θ∗
+
+is shared. We study this question in the reinforcement-pretraining regime. This regime differs from supervised pretraining, where the desired update rule is already present in the training targets [Laskin et al., 2023, Shi et al., 2023, Zisman et al., 2024, Dai et al., 2024, Kirsch et al., 2023, Lee et al., 2023, Lin et al., 2024]. In reinforcement pretraining, the agent is instead optimized through task-level RL objectives, such as producing good actions in control or accurate value estimates in policy evaluation [Duan et al., 2016, Wang et al., 2016, Grigsby et al., 2024a]. Thus, any context-dependent update implemented in the forward pass should be understood as an emergent computation induced by the pretraining objective, rather than as a imitated update rule. To make this question concrete, we follow Wang et al. [2025a,b] and consider in-context policy evaluation. In each task, a fixed policy π induces a value function vπ . The agent receives a query state s and a context τt of transitions collected under π, and outputs an estimate of vπ (s) using its fixed pretrained parameters. The same agent network must handle a family of evaluation tasks whose transition dynamics, reward functions, and policies may differ. Temporal difference learning (TD, Sutton [1988]) is a standard algorithm for policy evaluation, making it a natural candidate for the RL process implemented in the forward pass. Wang et al. [2025a] prove that, under a carefully designed parameterization, the layer-by-layer forward pass of linear Transformers is equivalent to step-by-step TD updates. Wang et al. [2025b] further prove that those parameters can attain global optimality for a reinforcement-pretraining objective. However, these results largely rely on linear self-attention where the softmax function in attention is replaced by an identity mapping to simplify analysis. In this work, we remove this simplification by studying the standard softmax attention [Vaswani et al., 2017] used in practice. We ask whether comparable in-context policy evaluation behavior can still arise under this setting. Figure 1 gives the motivating construction. Let TF θ∗ denote the dual-head Transformer with a manually constructed parameterization θ∗ used in Figure 1 . Given a context τt and a query state s, the model outputs TF θ∗ (τt, s ) as an estimate of vπ (s). We report the value approximation error averaged over many tasks and policies with distinct value functions, using a single fixed θ∗ throughout. Notably, this error decreases as the context length t grows. Since the target value functions vary widely across tasks, this improvement is unlikely to be explained by hard-coding θ∗ to any particular true value function. Instead, the model appears to leverage the context to refine its prediction by performing a policy-evaluation update in its forward pass. This observation leads to three central questions. (Q1) What specific policy-evaluation algorithm is being implemented by TF θ∗ ?(Q2) What convergence guarantees hold as the number of layers grows? (Q3) What kind of pretraining could give rise to these parameters? In this paper, we address the above questions by providing the first theoretical analysis of in-context policy evaluation under standard softmax attention. We show that the empirical pattern in Figure 1 can be explained by a novel algorithm, which we term weighted softmax TD . We provide a constructive design of a dual-head Transformer layer whose forward pass implements a batch analogue of the 2nonparametric TD update [Berthier et al., 2022] with softmax weighting. Moreover, we show that this dual-head layer admits an equivalent reparameterization as single-head attention composed with a variant of the Temporal Shift Module (TSM, Lin et al. [2019]), which is parameter-free. This reparameterization reduces computation and further simplifies our inference-time convergence analysis. Taken together, our contributions answer (Q1)-(Q3) in turn. For (Q1), we construct a dual-head Transformer layer that implements a weighted softmax TD update step in its forward pass. For (Q2), we prove an inference-time convergence guarantee as depth grows, under a suitable contraction condition. For (Q3), we show that the desired parameters are global minimizers of a pretraining loss, explaining their emergence in our experiments. 
+
+## 2 Background 
+
+We begin by establishing the technical foundations for our work. All vectors are treated as column vectors. We denote the identity matrix in Rn×n by In. We use 0m×n and 1m×n to denote zero matrix and all-ones matrix. Let ei be the standard basis vector for the i-th row. The transpose of a matrix Z
+
+is denoted by Z⊤. The inner product of two vectors x and y is denoted by either ⟨x, y ⟩ or x⊤y.
+
+2.1 Transformers and Softmax Self-Attention 
+
+A Transformer’s core innovation is the self-attention mechanism [Vaswani et al., 2017]. Given a prompt Z ∈ R(d+3) ×(n+1) , a standard single-head self-attention layer processes the prompt via Attn Wv ,W q ,W k (Z) .
+
+= Wv Z softmax  Z⊤W ⊤ 
+
+> k
+
+Wq Z + M ,
+
+where Wv ∈ R(d+3) ×(d+3) , Wk ∈ Rm×(d+3) , and Wq ∈ Rm×(d+3) are the value, key, and query weight matrices, and softmax is applied column-wise. The mask M ∈ R(n+1) ×(n+1) isolates the query column from the context columns 
+
+M [i, j ] = 
+
+0, i ≤ n, 
+
+−∞ , i = n + 1 , (1) so that the query column does not contribute as a source token. For analytical convenience, we follow Cheng et al. [2024] by reparameterizing Wv as Vl and denoting the query-key score matrix W ⊤ 
+
+> k
+
+Wq
+
+by Al. An L-layer Transformer with parameters {(Vl, A l)}l=0 ,...,L −1 updates the representation at layer l + 1 recursively from an initial prompt Z0 ∈ R(d+3) ×(n+1) as 
+
+Zl+1 
+
+.
+
+= Zl + VlZl softmax  Z⊤ 
+
+> l
+
+AlZl + M . (2) We define the attention matrix at layer l by 
+
+eKl
+
+.
+
+= softmax  Z⊤ 
+
+> l
+
+AlZl + M  ∈ R(n+1) ×(n+1) . (3) Its entry eKl[i, j ] specifies the attention weight assigned to source token i when aggregating into token 
+
+j. By construction of M , eKl[n + 1 , j ] = 0 for all j. For notational simplicity, we suppress M in the remainder of the paper, with the understanding that the mask in (1) is applied throughout. Since policy evaluation requires a scalar prediction, we extract a single entry from the final representation matrix. Following prior work [Ahn et al., 2023, Wang et al., 2025a], we define TF L
+
+ Z0; {Vl, A l}L−1
+
+> l=0
+
+ .
+
+= ZL[d + 3 , n + 1] , (4) to denote the output of the L-layer Transformer given an input Z0.For comparison, the existing ICRL theory of Wang et al. [2025a,b] uses linear attention, replacing the masked softmax in (2) with the identity map: 
+
+Zlin  
+
+> l+1
+
+= Zl + VlZl (Z⊤ 
+
+> l
+
+AlZl).
+
+In the broader in-context learning literature, Cheng et al. [2024] further replace the softmax with a general activation h, giving Zl + VlZl h(Z⊤ 
+
+> l
+
+AlZl). We instead retain the standard softmax [Vaswani et al., 2017], bringing our analysis closer to the architecture used in practice. 32.2 Reinforcement Learning and Policy Evaluation 
+
+Since we focus on the policy evaluation problem with a fixed policy, we work directly with the induced Markov Reward Process (MRP, Bellman [1957]). An MRP is a tuple (S, p, r, γ, p 0) consisting of a finite state space S, a transition kernel p : S × S → [0 , 1] , a reward function r : S → R,a discount factor γ ∈ [0 , 1) , and an initial distribution p0. Equivalently, an MRP arises from a Markov Decision Process (S, A, p MDP , r MDP , γ, p 0) under a fixed policy π : S × A → [0 , 1] by marginalizing over actions: p(s′|s) = P 
+
+> a
+
+π(a|s)pMDP (s′|s, a ) and r(s) = P 
+
+> a
+
+π(a|s)rMDP (s, a ). A trajectory (S0, R 1, S 1, R 2, . . . ) is sampled by drawing S0 ∼ p0 and, at each step, St+1 ∼ p(·| St)
+
+with Rt+1 
+
+.
+
+= r(St). Define the state transition matrix Pπ ∈ R|S|×|S| by Pπ [s, s ′] = p(s′|s),and assume the Markov chain induced by Pπ is ergodic on S with unique stationary distribution 
+
+μπ : S → [0 , 1] . We aim to estimate the value function vπ (s) .
+
+= EP ∞ 
+
+> k=0
+
+γkRt+k+1 | St = s.One fundamental task in RL is policy evaluation, where the goal is estimating the value function vπ . It is well-known that vπ is the unique fixed point of the Bellman expectation operator T π : R|S| → R|S| 
+
+defined as 
+
+(T π v)( s) .
+
+= Eπ [Rt+1 + γv (St+1 )|St = s].
+
+Temporal-Difference learning (TD, Sutton [1988]) is among the most influential and widely used algorithms for policy evaluation. For large or continuous state spaces where tabular representations are impractical, a long line of work has combined RL with kernel methods to obtain non-parametric value function approximation [Ormoneit and Sen, 2002, Farahmand et al., 2016, Koppel et al., 2021, Berthier et al., 2022]. We follow the formulation of Berthier et al. [2022]. Let X be a measurable state space and κ : X × X → R a positive-definite kernel with associated reproducing kernel Hilbert space H. Define the TD error at a transition (x, x ′) by 
+
+δ(x, x ′) .
+
+= r(x) + γv (x′) − v(x). (5) Given a sampled transition (Xt, X t+1 ), non-parametric TD updates the value estimate vt ∈ H at every query state y ∈ X via 
+
+vt+1 (y) = vt(y) + αt δ(Xt, X t+1 ) κ(Xt, y ), (6) where {αt} is a sequence of learning rates. In this paper we work with the finite state space S.Restricting (6) to X = S and to a query state Sn ∈ S yields the update 
+
+vt+1 (Sn) = vt(Sn) + αt δ(St, S t+1 ) κ(St, S n), (7) which is the form we build on in the rest of the paper. 
+
+## 3 Transformers Can Implement In-Context Weighted Softmax TD 
+
+We now answer (Q1) by introducing a new RL algorithm, weighted softmax TD , and constructing a dual-head Transformer that implements its update in the forward pass. Notably, this construction reveals the parameters we use to generate the results in Figure 1. 
+
+Weighted softmax TD. Given a trajectory τn = ( S0, R 1, . . . , S n) sampled from an MRP, weighted softmax TD forms TD errors using (5) with the sampled reward instantiated by Rk:
+
+δ(t)
+
+> k
+
+.
+
+= Rk + γv t(Sk) − vt(Sk−1), (8) where k indexes transitions within τn and t indexes the iteration. Non-parametric TD in (7) updates value estimates using a single transition. We introduce weighted softmax TD as a batch variant that aggregates δ(t) 
+
+> k
+
+over τn through softmax weights. Specifically, for the trajectory states {Sj }nj=0 ,define the softmax weight assigned to the k-th transition by 
+
+K(Sk−1, S j ) .
+
+= exp( g(Sj ,S k−1)) Pnm=1 exp( g(Sj ,S m−1)) , k = 1 , . . . , n, (9) where g : S × S → R is a score function. Thus, the value estimates {vt(Sj )}nj=0 are updated by 
+
+vt+1 (Sj ) = vt(Sj ) + αt
+
+Pnk=1 δ(t) 
+
+> k
+
+K(Sk−1, S j ). (weighted softmax TD) 4In particular, if g(Sj , S k−1) = log κ(Sj , S k−1) for some positive similarity function κ, then the weights reduce to K(Sk−1, S j ) = κ(Sj ,S k−1)P   
+
+> mκ(Sj,S m−1)
+
+, recovering a normalized form of (7). We next show that the dual-head Transformer used in generating Figure 1 implements the (weighted softmax TD) in a single forward pass. We begin by specifying the prompt construction and the layerwise update rule. We encode the trajectory τn into a prompt matrix Z0 ∈ R(d+3) ×(n+1) ,where the last column corresponds to the query state Sn. Using shorthands xk
+
+.
+
+= x(Sk), we set 
+
+Z0
+
+.
+
+=
+
+
+
+x0 x1 · · · xn−1 xn
+
+R1 R2 · · · Rn 00 0 · · · 0 00 0 · · · 0 0
+
+ =
+
+
+
+XR
+
+00
+
+ . (10) Following Wang et al. [2025a], the last two rows serve as memory that the network writes and reuses across layers. We consider an L-layer Transformer indexed by l = 0 , 1, . . . , L − 1. Each layer consists of two attention heads, both taking Zl as input. To state the layer update clearly, we define ∆Zl =0(d+3) ×(n+1) , and then construct two heads as follows. 
+
+Current-value head. Let {(Vl, A l)}l=0 ,1,...,L −1 be the parameters of the current-value head in the 
+
+L-layer Transformer. It writes an additive update to row d + 3 of ∆Zl:
+
+∆Zl[d + 3 , :] =  VlZl softmax( Z⊤ 
+
+> l
+
+AlZl)[d + 3 , :] . (11) We choose (Vl, A l) as 
+
+Vl
+
+.
+
+=
+
+0(d+2) ×d 0(d+2) ×3
+
+01×d [1 1 −1] 
+
+
+
+, A l
+
+.
+
+=
+
+ Id 0d×3
+
+03×d 03×3
+
+
+
+. (12) By construction, the only non-zero row of Vl is its last row, and hence (11) modifies only the last row of ∆Zl. With the choice of Al in (12) , the score matrix Z⊤ 
+
+> l
+
+AlZl depends only on the first d rows of Zl,which by (10) store the fixed trajectory features {xk}nk=0 throughout all layers. Hence the attention matrix eKl in (3) is layer-invariant, and we drop the layer index, writing eK for wK l. Moreover, eK
+
+realizes the softmax weight K in (9) with the score function g(Sj , S k−1) = ⟨x(Sj ), x (Sk−1)⟩.
+
+Target-value head. The target-value head reuses the same parameters (Vl, A l) in (12) and first forms the same kernel aggregation as in (11) . It then routes the aggregated quantities to the predecessor columns via a shift matrix 
+
+Π .
+
+=
+
+
+
+0 0 0 · · · 01 0 0 · · · 0
+
+... . . . . . . ...
+
+0 · · · 1 0 00 · · · 0 1 0
+
+ . (13) This head writes an additive update to row d + 2 of ∆Zl as 
+
+∆Zl[d + 2 , :] = γ  VlZl softmax( Z⊤ 
+
+> l
+
+AlZl)Π [d + 3 , :] . (14) The resulting layerwise recursion sums the contributions of the two heads as 
+
+Zl+1 
+
+.
+
+= Zl + ∆ Zl. (15) Recall (4), we define the scalar output at layer l as 
+
+vl(Sn) .
+
+= Zl[d + 3 , n + 1] . (16) The following theorem shows that vl(Sn) evolves according to the weighted softmax TD update. 
+
+Theorem 1. Consider the L-layer dual-head Transformer with recursion (15) and parameters 
+
+{(Vl, A l)}L−1 
+
+> l=0
+
+given by (12) , initialized at Z0 in (10) . Then the forward pass updates vl(Sn) in (16) 
+
+as 
+
+vl+1 (Sn) = vl(Sn) + Pnk=1 δ(l) 
+
+> k
+
+K(Sk−1, S n). (17) 5The proof is in Section B. Since (17) matches the (weighted softmax TD) update with l as the iteration index, Theorem 1 shows that the Transformer forward pass can implement iterations of the (weighted softmax TD) update at inference time. We refer to this implementation paradigm as softmax in-context TD (softmax ICTD). For simplicity, we set αl = 1 throughout. The general case follows by replacing Vl with αlVl in (2) , which rescales the update magnitude but does not alter the structure of the construction in (12). 
+
+## 4 Dual-Head Attention = Single-Head Attention + Temporal Shift Module 
+
+The dual-head block in Section 3 is redundant and inconvenient for analysis. Each layer computes two heads that share the same term VlZlsoftmax( Z⊤ 
+
+> l
+
+AlZl). Specifically, (14) applies Π to the same aggregated quantities in (11) and scales them by γ before writing. Motivated by this observation, we reparameterize the block as a single-head attention followed by a parameter-free temporal shift module (TSM; Lin et al. [2019]). Using (Vl, A l) from (12), define 
+
+Zl+ 12
+
+.
+
+= Zl + VlZlsoftmax  Z⊤ 
+
+> l
+
+AlZl
+
+, (18) which matches the update in (11) on the current-memory row. In the spirit of TSM, we introduce two fixed shift matrices 
+
+U .
+
+= I − ed+2 e⊤
+
+> d+2
+
+, W .
+
+= γ e d+2 e⊤
+
+> d+3
+
+.
+
+Recall from (13) that Π ∈ R(n+1) ×(n+1) is the one-step predecessor shift matrix. Therefore, U
+
+clears the target-memory row, and W (·)Π routes the γ-scaled current-memory row to the predecessor columns of the target-memory row; see Figure 2 for an illustration. The resulting single-head+TSM update is 
+
+Zl+1 = U Z l+ 12 + W Z l+ 12 Π. (19) We next show that (19) is exactly equivalent to the original dual-head attention. 
+
+Lemma 1. Fix Z0 defined in (10) . Under the parameter correspondence in (12) , for all l =0, . . . , L − 1 the dual-head block (15) and the single-head+TSM block (19) map the same input Zl
+
+to the same output Zl+1 .
+
+The proof is in Section C.1 . In the rest of the paper, we analyze inference-time behavior using the single-head+TSM form.       
+
+> (a) Zl+12
+> .(b) Zl+1 (left-shift with ×γ,right pad 0).
+
+Figure 2: Original vs. shifted memory rows. 
+
+## 5 Inference-Time Convergence 
+
+We now address (Q2) by establishing the convergence of softmax ICTD to the true value function vπ
+
+as the number of layers L → ∞ and the context length n → ∞ . Throughout the rest of the paper, we assume the trajectory τn = ( S0, R 1, . . . , S n) visits every state, i.e., {S0, S 1, . . . , S n−1} = S.To analyze the recursion (17) on S, for a given context trajectory τn, we define 
+
+cMn(s, s ′) .
+
+= Pnk=1 K(Sk−1, s ) 1{Sk−1 = s′}, bPn(s, s ′) .
+
+= Pnk=1 K(Sk−1, s ) 1{Sk = s′}.
+
+(20) Here cMn aggregates the softmax weights according to the predecessor state Sk−1, and bPn aggregates the same weights according to the successor state Sk. Then (17) can be written compactly as 
+
+bT eK (v) = ( I − cMn + γ bPn)v + cMnr, (21) 6and stacking layers corresponds to repeated application of bT eK :
+
+vl+1 = bT eK (vl).
+
+The empirical operator bT eK contracts whenever cMn has sufficiently large diagonal entries. To formalize this, we introduce the population counterpart of cMn, obtained by replacing the empirical state frequencies in K with the stationary distribution μπ :
+
+Mπ (s, s ′) .
+
+= μπ (s′) exp (⟨x(s),x (s′)⟩)P   
+
+> u∈S μπ(u) exp( ⟨x(s),x (u)⟩)
+
+, (22) where μπ is the stationary distribution of Pπ . We impose the following contraction assumption. 
+
+Assumption 5.1. There exists a constant C5.1 ∈  0, 1−γ
+
+> 2
+
+ such that 
+
+min s∈S Mπ (s, s ) ≥ 1+ γ 
+
+> 2
+
++ C5.1.
+
+Assumption 5.1 is a kernel diagonality condition on Mπ , requiring Mπ (s, s ) to dominate the off-diagonal mass at every state s. It is expected to hold when the score function g(s, s ′) = ⟨x(s), x (s′)⟩
+
+separates self-pairs from cross-pairs, i.e., g(s, s ) − g(s, s ′) is sufficiently positive for s′̸ = s, which sharpens the softmax in (9) toward the diagonal. We will see in Section 8 that this self-concentration emerges empirically over pretraining. When n is large enough, cMn inherits the diagonal margin of Mπ , which together with a high-probability bound on the bias ∥ bT eK (vπ ) − vπ ∥∞ yields our main convergence result. 
+
+Theorem 2. Under Assumption 5.1, for any δ ∈ (0 , 1) , there exist constants 
+
+CThm 2,1, C Thm 2,2, C Thm 2,3 > 0 such that if n ≥ CThm 2,1 log(1 /δ ), then with probability at least 
+
+1 − δ, for all L ≥ 0,
+
+∥vL − vπ ∥∞ ≤ (1 − C5.1)L∥v0 − vπ ∥∞ + CThm 2,2
+
+q log( CThm 2,3/δ ) 
+
+> n
+
+. (23) The proof is in Section D.4, which combines an ℓ∞-contraction of bT eK around vπ (Lemma 5) with a high-probability bound on the bias ∥ bT eK (vπ ) − vπ ∥∞ (Lemma 6), both deferred to Appendix D.2 and D.3 respectively. The first term of (23) decays geometrically with the number of layers L, while the second term is a statistical floor that vanishes as n → ∞ . That is, the softmax ICTD recursion converges to vπ in the double limit where both depth and context length grow. 
+
+## 6 Emergence of Softmax ICTD under Reinforcement Pretraining 
+
+We now answer (Q3) by showing that, as the depth L → ∞ and the context length n → ∞ , the parameters {(Vl, A l)}L−1 
+
+> l=0
+
+constructed in (12) are one of the global minimizers of the reinforcement pretraining loss. To avoid specializing to a single task, we pretrain on a distribution of MRPs drawn from a joint distribution ∆ over transition probabilities and reward functions, i.e., (p, r ) ∼ ∆. For each sampled MRP, we draw a trajectory τn+1 = ( S0, R 1, S 1, . . . , R n+1 , S n+1 ) from the stationary Markov chain induced by π (i.e., S0 ∼ μπ ). We construct the prompt Z0 from the first n transitions 
+
+(S0, R 1, . . . , R n, S n) as in (10) , and denote the scalar output of the L-layer Transformer by vL(Sn; θ).Similarly, vL(Sn+1 ; θ) denotes the output on the shifted prompt built from (S1, R 2, . . . , R n+1 , S n+1 )
+
+with query Sn+1 . The TD error at the query state is 
+
+δL(θ) .
+
+= Rn+1 + γv L(Sn+1 ; θ) − vL(Sn; θ). (24) The norm of the expected update (NEU) is a fundamental objective in TD methods [Sutton et al., 2008, 2009]. Its zeros characterize TD fixed points, making it a natural pretraining loss for studying whether the constructed parameters θ∗ attain global optimality. Following Wang et al. [2025b], we adopt its extension to arbitrary function approximation, defined as the ℓ1-norm of the expected TD update direction: 
+
+JL,n (θ) .
+
+= E(p,r ), τ n+1 [δL(θ)∇θ vL(Sn; θ)] 1. (25) 7Following common practice in the in-context learning theory literature [von Oswald et al., 2023, Ahn et al., 2023, Mahankali et al., 2024, Zhang et al., 2024, Cheng et al., 2024, Gatmiry et al., 2024, Huang et al., 2025, Wang et al., 2025b], we analyze NEU on a looped Transformer and restrict the parameters to a structured sparse space. Concretely, we tie the parameters across layers by sharing the same pair (V, A ), i.e., (Vl, A l) = ( V, A ) for all l ∈ { 0, . . . , L − 1}, and search over the following parameter space: 
+
+ΘLooped .
+
+=
+
+
+
+θ = ( V, A )L V =
+
+0(d+2) ×d 0(d+2) ×3
+
+01×d u
+
+
+
+, A =
+
+ B 0d×3
+
+03×d 03×3
+
+  
+
+, (26) where u ∈ R1×3 and B ∈ Rd×d. Note that the parameter choice constructed in (12) lies in ΘLooped ;for convenience, we denote it by θ∗. We now state the main emergence result. 
+
+Theorem 3. Under Assumption 5.1 holding uniformly over ∆, there exist a constant n0 > 0 and constants CThm3 ,2, C Thm3 ,3 > 0 such that for every L ≥ 1 and n ≥ n0,
+
+JL,n (θ∗) ≤ CThm3 ,2
+
+
+
+(1 − C5.1)L +
+
+q log nn
+
+
+
++ CThm3 ,3 L(2+ γ)2L 
+
+> n
+
+. (27) 
+
+In particular, 
+
+lim L→∞ lim sup n→∞ JL,n (θ∗) = 0 .
+
+The proof is in Section E.4. The argument relies on a uniform bound on ∇θ vL(Sn; θ∗) across all depths (Lemma 10 in Appendix E.3), which in turn uses Assumption 5.1 together with the layer-invariance of eK(θ) for θ ∈ ΘLooped . Since JL,n (θ) ≥ 0 for all θ, Theorem 3 implies that θ∗ is a global minimizer of the NEU loss in the iterated regime where the context length grows first and the depth grows afterward. 
+
+## 7 Related Works 
+
+The theoretical study of ICRL has largely relied on the linear-attention abstraction, which replaces the softmax with the identity map to make the forward pass tractable [Wang et al., 2025a,b]. This simplification is also pervasive in the broader in-context learning (ICL) literature, where it has been used to show that Transformers can implement gradient-based algorithms in their forward pass [Ahn et al., 2023, Zhang et al., 2024, Gatmiry et al., 2024]. A smaller line of work keeps a nonlinearity explicit, either through general activation operators V Z h (Z⊤AZ ) [Cheng et al., 2024] or by relating softmax attention to kernel-based learning rules [Ren and Liu, 2024, Dragutinovi ´c et al., 2025]. While these results inform supervised in-context computation, they do not address reinforcement-pretrained policy evaluation, and the standard softmax used in practical Transformers remains largely unanalyzed in the ICRL setting. Our work closes this gap, complementing Wang et al. [2025b] by removing the linear-attention simplification. A concurrent submission [Xie et al., 2026] similarly builds on Wang et al. [2025a,b], but takes a fundamentally different route: it analyzes linear attention with autoregressive chain-of-thought generation and linear function approximation, where each generated token implements one batch TD update on the context, whereas we analyze softmax attention with depth-based computation for finite-state policy evaluation. As a result, the two works draw on largely disjoint technical tools. For convergence, our analysis is driven by a kernel diagonality condition (Assumption 5.1) and is then lifted to finite contexts via concentration, whereas Xie et al. [2026] provide a finite-sample analysis on a single Markovian trajectory. For emergence, we control how the value prediction depends on the parameters, whereas Xie et al. [2026] control how the algorithmic iterates depend on the parameters. The two works share the Boyan’s chain task setup of Wang et al. [2025a]. ICRL has been studied under both supervised and reinforcement pretraining [Moeini et al., 2025]. Supervised pretraining trains a sequence model to imitate trajectories from existing RL algorithms [Laskin et al., 2023, Liu and Abbeel, 2023, Shi et al., 2023, Kirsch et al., 2023, Zisman et al., 2024, Huang et al., 2024a,b, Dai et al., 2024, Zisman et al., 2025, Polubarov et al., 2025], with theoretical accounts of the resulting in-context behavior [Lin et al., 2024, Lee et al., 2023]. Reinforcement pretraining instead trains the model with an RL objective and observes that test-time adaptation still emerges [Duan et al., 2016, Wang et al., 2016, Mishra et al., 2018, Ritter et al., 2018, Stadie et al., 2018, Zintgraf et al., 2020, Melo, 2022], with empirical demonstrations across diverse tasks [Bauer 80 1 2 3 4 5 6      
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> V0
+> 0123456
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> A0
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> rescaled weight
+
+(a) Learned V0 and A0.0.2 0.4 0.6 0.8  
+
+> Kernel diagonal mean
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Emergence rate
+> Value (V)
+> Attention (A)
+
+(b) Vem and Aem versus kernel diagonal mean dt.
+
+Figure 3: Emergence of the learned TD block. (a) Learned V0 and A0 at the checkpoint maximizing 
+
+min( Vem , A em ), averaged over 5 seeds. Each matrix is rescaled by its maximum absolute entry for visualization. (b) Evolution of Vem and Aem with the kernel diagonal mean dt. We record 
+
+(dt, V em , A em ) across 3000 sampled MRPs and aggregate over 5 seeds; shaded regions indicate variability across seeds. et al., 2023, Lu et al., 2023, Grigsby et al., 2024a,b, Elawady et al., 2024, Xu et al., 2024, Cook et al., 2024, Liu et al., 2025]. Theoretical results under reinforcement pretraining remain limited: Park et al. [2025] analyze a regret-minimization objective, and Wang et al. [2025b] establish convergence and emergence under linear attention. Our paper falls in this regime, with softmax attention. 
+
+## 8 Experiments 
+
+Setup. Following Wang et al. [2025a], we study multi-task policy evaluation on randomized instances of Boyan’s chain [Boyan, 1999]. At the beginning of each epoch, we sample a Boyan-chain MRP together with a feature map (Algorithm 2 ). We construct the prompt Z0 as in (10) and apply the Transformer block in Section 4, using a column-normalized softmax attention kernel as in (2) . As in Wang et al. [2025a], the block unrolls autoregressively for L = 3 layers with shared parameters 
+
+(Vl, A l) = ( V0, A 0) across layers. All entries of (V0, A 0) are trainable except for a minimal sparse parameterization that prevents overwriting features or rewards; see Section F.2. Hyperparameter and task-generation details are deferred to Section F.3. 
+
+TD emergence. We quantify emergence using two scores Vem , A em ∈ [0 , 1] that measure the similarity between the learned first-layer parameters (V0, A 0) and the ideal TD block in (12) ; see Sec-tion F.4 for definitions. Figure 3(a) visualizes (V0, A 0) at the checkpoint maximizing min( Vem , A em )
+
+over 3000 sampled MRPs. The bottom-right entries of V0 exhibit the (+ , +, −) sign pattern on 
+
+(r, γv ′, v ), closely matching (12) . Meanwhile, the upper left d × d blocks of A0 becomes sharply diagonal, providing a second signature of emergence. 
+
+Kernel diagonality. Next, we relate emergence to Assumption 5.1. At training step t, let L(t) .
+
+=
+
+Z⊤ 
+
+> 0
+
+A(t)0 Z0 ∈ Rn×n. Define eK(t) ∈ Rn×n as the attention matrix in (3) with A = A(t)0 . We summarize its kernel diagonality by the kernel diagonal mean 
+
+dt
+
+.
+
+= 1 
+
+> n
+
+tr 
+
+ eK(t)
+
+
+
+. (28) Figure 3(b) plots Vem and Aem against dt. We find that Aem remains high across a wide range of dt,whereas Vem starts to rise only after dt reaches an intermediate level. This suggests that learning the TD update direction in the bottom-right entries of V requires a sufficient kernel diagonality. 
+
+## 9 Conclusion 
+
+We provide the first theoretical analysis of in-context policy evaluation beyond the linear-attention simplification, under softmax attention. We show by construction that a Transformer layer can be configured to implement a weighted softmax TD update step in its forward pass. We prove an inference-time convergence guarantee as the number of layers increases under a suitable contraction condition, and show that the desired parameters are one of the global minimizers of a pretraining loss, 9explaining their emergence with increasingly diagonal attention in our experiments. Future work includes relaxing the contraction requirement and extending the theory and experiments to sampled trajectories and control settings. 
+
+## Acknowledgments 
+
+This work is supported in part by the US National Science Foundation under the awards III-2128019, SLES-2331904, and CAREER-2442098, the Commonwealth Cyber Initiative’s Central Virginia Node under the award VV-1Q26-001, and a Cisco Faculty Research Award. 
+
+## References 
+
+Kwangjun Ahn, Xiang Cheng, Hadi Daneshmand, and Suvrit Sra. Transformers learn to implement pre-conditioned gradient descent for in-context learning. Advances in Neural Information Processing Systems, 2023. Jakob Bauer, Kate Baumli, Feryal Behbahani, Avishkar Bhoopchand, Nathalie Bradley-Schmieg, Michael Chang, Natalie Clay, Adrian Collister, Vibhavari Dasagi, Lucy Gonzalez, Karol Gregor, Edward Hughes, Sheleem Kashem, Maria Loks-Thompson, Hannah Openshaw, Jack Parker-Holder, Shreya Pathak, Nicolas Perez-Nieves, Nemanja Rakicevic, Tim Rockt ¨aschel, Yannick Schroecker, Satinder Singh, Jakub Sygnowski, Karl Tuyls, Sarah York, Alexander Zacherl, and Lei M. Zhang. Human-timescale adaptation in an open-ended task space. In Proceedings of the International Conference on Machine Learning, 2023. Samuel Beaussant and Mehdi Mounsif. Scaling algorithm distillation for continuous control with mamba. ArXiv preprint, 2025. Richard Bellman. A Markovian decision process. Journal of mathematics and mechanics, 1957. Elo ¨ıse Berthier, Ziad Kobeissi, and Francis Bach. A non-asymptotic analysis of non-parametric temporal-difference learning. In Advances in Neural Information Processing Systems, 2022. Justin A. Boyan. Least-squares temporal difference learning. In Proceedings of the International Conference on Machine Learning, 1999. Xiang Cheng, Yuxin Chen, and Suvrit Sra. Transformers implement functional gradient descent to learn non-linear functions in context. In Proceedings of the International Conference on Machine Learning, 2024. Jonathan Cook, Chris Lu, Edward Hughes, Joel Z. Leibo, and Jakob Foerster. Artificial generational intelligence: Cultural accumulation in reinforcement learning. In Advances in Neural Information Processing Systems, 2024. Zhenwen Dai, Federico Tomasi, and Sina Ghiassian. In-context exploration-exploitation for reinforcement learning. In Proceedings of the International Conference on Learning Representations, 2024. Sara Dragutinovi ´c, Andrew M. Saxe, and Aaditya K. Singh. Softmax ≥ linear: Transformers may learn to classify in-context by kernel gradient descent. arXiv, 2025. Yan Duan, John Schulman, Xi Chen, Peter L Bartlett, Ilya Sutskever, and Pieter Abbeel. RL 2: Fast reinforcement learning via slow reinforcement learning. arXiv, 2016. Ahmad Elawady, Gunjan Chhablani, Ram Ramrakhya, Karmesh Yadav, Dhruv Batra, Zsolt Kira, and Andrew Szot. ReLIC: A recipe for 64k steps of in-context reinforcement learning for embodied AI. ArXiv preprint, 2024. Jianqing Fan, Bai Jiang, and Qiang Sun. Hoeffding’s inequality for general Markov chains and its applications to statistical learning. Journal of Machine Learning Research, 2021. Amir-Massoud Farahmand, Mohammad Ghavamzadeh, Csaba Szepesv ´ari, and Shie Mannor. Regularized policy iteration with nonparametric function spaces. Journal of Machine Learning Research, 2016. Khashayar Gatmiry, Nikunj Saunshi, Sashank J. Reddi, Stefanie Jegelka, and Sanjiv Kumar. Can looped transformers learn to implement multi-step gradient descent for in-context learning? In Proceedings of the International Conference on Machine Learning, 2024. Jake Grigsby, Linxi Fan, and Yuke Zhu. Amago: Scalable in-context reinforcement learning for adaptive agents. In In Proceedings of the International Conference on Learning Representations, 2024a. Jake Grigsby, Justin Sasek, Samyak Parajuli, Daniel Adebi, Amy Zhang, and Yuke Zhu. Amago-2: Breaking the multi-task barrier in meta-reinforcement learning with transformers. In Advances in Neural Information Processing Systems, 2024b. Jianhao Huang, Zixuan Wang, and Jason D. Lee. Transformers learn to implement multi-step gradient descent with chain of thought. In Proceedings of the International Conference on Learning Representations, 2025. 
+
+10 Sili Huang, Jifeng Hu, Hechang Chen, Lichao Sun, and Bo Yang. In-context decision transformer: reinforcement learning via hierarchical chain-of-thought. In Proceedings of the International Conference on Machine Learning, 2024a. Sili Huang, Jifeng Hu, Zhejian Yang, Liwei Yang, Tao Luo, Hechang Chen, Lichao Sun, and Bo Yang. Decision mamba: Reinforcement learning via hybrid selective sequence modeling. In Advances in Neural Information Processing Systems, 2024b. Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization. In Proceedings of the International Conference on Learning Representations, 2015. Louis Kirsch, James Harrison, C. Freeman, Jascha Sohl-Dickstein, and J ¨urgen Schmidhuber. Towards general-purpose in-context learning agents. In NeurIPS Foundation Models for Decision Making Workshop, 2023. Alec Koppel, Garrett Warnell, Ethan Stump, Peter Stone, and Alejandro Ribeiro. Policy evaluation in continuous MDPs with efficient kernelized gradient temporal difference. IEEE Transactions on Automatic Control, 2021. Michael Laskin, Luyu Wang, Junhyuk Oh, Emilio Parisotto, Stephen Spencer, Richie Steigerwald, DJ Strouse, Steven Stenberg Hansen, Angelos Filos, Ethan Brooks, et al. In-context reinforcement learning with algorithm distillation. In Proceedings of the International Conference on Learning Representations, 2023. Jonathan Lee, Annie Xie, Aldo Pacchiano, Yash Chandak, Chelsea Finn, Ofir Nachum, and Emma Brunskill. Su-pervised pretraining can learn in-context reinforcement learning. Advances in Neural Information Processing Systems, 2023. Ji Lin, Chuang Gan, and Song Han. Tsm: Temporal shift module for efficient video understanding. In Proceedings of the IEEE International Conference on Computer Vision, 2019. Licong Lin, Yu Bai, and Song Mei. Transformers as decision makers: Provable in-context reinforcement learning via supervised pretraining. In Proceedings of the International Conference on Learning Representations, 2024. Hao Liu and Pieter Abbeel. Emergent agentic transformer from chain of hindsight experience. In Proceedings of the International Conference on Machine Learning, 2023. Min Liu, Deepak Pathak, and Ananye Agarwal. Locoformer: Generalist locomotion via long-context adaptation. In Proceedings of the Conference on Robot Learning, 2025. Chris Lu, Yannick Schroecker, Albert Gu, Emilio Parisotto, Jakob Foerster, Satinder Singh, and Feryal Behbahani. Structured state space models for in-context reinforcement learning. In Advances in Neural Information Processing Systems, 2023. Arvind Mahankali, Tatsunori B Hashimoto, and Tengyu Ma. One step of gradient descent is provably the optimal in-context learner with one layer of linear self-attention. In Proceedings of the International Conference on Learning Representations, 2024. Luckeciano C. Melo. Transformers are meta-reinforcement learners. In International Conference on Machine Learning, 2022. Nikhil Mishra, Mostafa Rohaninejad, Xi Chen, and Pieter Abbeel. A simple neural attentive meta-learner. In Proceedings of the International Conference on Learning Representations, 2018. Amir Moeini, Jiuqi Wang, Jacob Beck, Ethan Blaser, Shimon Whiteson, Rohan Chandra, and Shangtong Zhang. A survey of in-context reinforcement learning. ArXiv Preprint, 2025. Dirk Ormoneit and ´ Saunak Sen. Kernel-based reinforcement learning. Machine Learning, 2002. James M. Ortega and Werner C. Rheinboldt. Iterative Solution of Nonlinear Equations in Several Variables. Classics in Applied Mathematics. SIAM, 2000. Reprint of the 1970 Academic Press edition. Chanwoo Park, Xiangyu Liu, Asuman E. Ozdaglar, and Kaiqing Zhang. Do LLM agents have regret? a case study in online learning and games. In Proceedings of the International Conference on Learning Representations, 2025. Andrei Polubarov, Lyubaykin Nikita, Alexander Derevyagin, Ilya Zisman, Denis Tarasov, Alexander Nikulin, and Vladislav Kurenkov. Vintix: Action model via in-context reinforcement learning. In Proceedings of the International Conference on Machine Learning, 2025. Sharath Chandra Raparthy, Eric Hambro, Robert Kirk, Mikael Henaff, and Roberta Raileanu. Generalization to new sequential decision making tasks with in-context learning. In Proceedings of the International Conference on Machine Learning, 2024. Ruifeng Ren and Yong Liu. Towards understanding how transformers learn in-context through a representation learning lens. In Advances in Neural Information Processing Systems, 2024. Samuel Ritter, Jane X. Wang, Zeb Kurth-Nelson, Siddhant M. Jayakumar, Charles Blundell, Razvan Pascanu, and Matthew M. Botvinick. Been there, done that: Meta-learning with episodic recall. In International Conference on Machine Learning, 2018. 
+
+11 Lucy Xiaoyang Shi, Yunfan Jiang, Jake Grigsby, Linxi Jim Fan, and Yuke Zhu. Cross-episodic curriculum for transformer agents. In Advances in Neural Information Processing Systems, 2023. Kefan Song, Amir Moeini, Peng Wang, Lei Gong, Rohan Chandra, Shangtong Zhang, and Yanjun Qi. Reward is enough: Llms are in-context reinforcement learners. In Proceedings of the International Conference on Learning Representations, 2026. Bradly C. Stadie, Ge Yang, Rein Houthooft, Xi Chen, Yan Duan, Yuhuai Wu, Pieter Abbeel, and Ilya Sutskever. Some considerations on learning to explore via meta-reinforcement learning. ArXiv Preprint, 2018. Richard S. Sutton. Learning to predict by the methods of temporal differences. Machine Learning, 1988. Richard S. Sutton, Hamid R. Maei, and Csaba Szepesv ´ari. A convergent O(n) temporal-difference algorithm for off-policy learning with linear function approximation. In Advances in Neural Information Processing Systems, 2008. Richard S. Sutton, Hamid Reza Maei, Doina Precup, Shalabh Bhatnagar, David Silver, Csaba Szepesv ´ari, and Eric Wiewiora. Fast gradient-descent methods for temporal-difference learning with linear function approximation. In Proceedings of the International Conference on Machine Learning, 2009. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Ł ukasz Kaiser, and Illia Polosukhin. Attention is all you need. In I. Guyon, U. Von Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett, editors, Advances in Neural Information Processing Systems, 2017. Johannes von Oswald, Eyvind Niklasson, Ettore Randazzo, Jo˜ao Sacramento, Alexander Mordvintsev, Andrey Zhmoginov, and Max Vladymyrov. Transformers learn in-context by gradient descent. In Proceedings of the International Conference on Machine Learning, 2023. Jane X Wang, Zeb Kurth-Nelson, Dhruva Tirumala, Hubert Soyer, Joel Z Leibo, Remi Munos, Charles Blundell, Dharshan Kumaran, and Matt Botvinick. Learning to reinforcement learn. arXiv preprint arXiv:1611.05763, 2016. Jiuqi Wang, Ethan Blaser, Hadi Daneshmand, and Shangtong Zhang. Transformers can learn temporal difference methods for in-context reinforcement learning. In International Conference on Learning Representations, 2025a. Jiuqi Wang, Rohan Chandra, and Shangtong Zhang. Towards provable emergence of in-context reinforcement learning. In Advances in Neural Information Processing Systems, 2025b. Zixuan Xie, Xinyu Liu, Rohan Chandra, and Shangtong Zhang. Convergence and emergence of in-context reinforcement learning with chain of thought. ArXiv Preprint, 2026. Tengye Xu, Zihao Li, and Qinyuan Ren. Meta-reinforcement learning robust to distributional shift via performing lifelong in-context learning. In Proceedings of the International Conference on Machine Learning, 2024. Ruiqi Zhang, Spencer Frei, and Peter L Bartlett. Trained transformers learn linear models in-context. Journal of Machine Learning Research, 2024. Luisa Zintgraf, Kyriacos Shiarlis, Maximilian Igl, Sebastian Schulze, Yarin Gal, Katja Hofmann, and Shimon Whiteson. Varibad: A very good method for bayes-adaptive deep rl via meta-learning. In Proceedings of the International Conference on Learning Representations, 2020. Ilya Zisman, Vladislav Kurenkov, Alexander Nikulin, Viacheslav Sinii, and Sergey Kolesnikov. Emergence of in-context reinforcement learning from noise distillation. In Proceedings of the International Conference on Machine Learning, 2024. Ilya Zisman, Alexander Nikulin, Viacheslav Sinii, Denis Tarasov, Nikita Lyubaykin, Andrei Polubarov, Igor Kiselev, and Vladislav Kurenkov. N-gram induction heads for in-context RL: Improving stability and reducing data needs. In SCOPE Workshop at the International Conference on Learning Representations, 2025. 
+
+12 A Auxiliary Lemmas 
+
+Lemma 2 (Theorem 12 of Fan et al. [2021]) . Let {Sk} be a Markov chain on the finite state space 
+
+S with transition matrix Pπ and initial distribution S0 ∼ p0. Assume the Markov chain induced by Pπ is ergodic with stationary distribution μπ . Let P ∗ 
+
+> π
+
+= diag( μπ )−1P ⊤ 
+
+> π
+
+diag( μπ ) denote the time reversal of Pπ , and define the additive reversiblization Rπ
+
+.
+
+= ( Pπ + P ∗ 
+
+> π
+
+)/2. Let λr denote the second-largest eigenvalue of Rπ , so that 1 − λr is the right spectral gap. Then for any function 
+
+f : S → [a, b ] and any ϵ > 0,
+
+Pr 
+
+ 1
+
+n
+
+> n−1
+
+X
+
+> k=0
+
+f (Sk) − μπ (f ) > ϵ 
+
+
+
+≤ 2
+
+μmin 
+
+exp 
+
+
+
+− 1 − max {λr , 0}
+
+1 + max {λr , 0} · 2nϵ 2
+
+(b − a)2
+
+
+
+,
+
+where μmin 
+
+.
+
+= min s∈S μπ (s) > 0. For any finite irreducible aperiodic chain, Rπ is a finite reversible irreducible chain, so λr < 1 and the bound is nontrivial. 
+
+Remark 1. This is a special case of Theorem 12 in Fan et al. [2021] with burn-in length n0 = 0 and integrability exponent p = ∞, so that the prefactor becomes C(ν, 0, ∞) = ∥p0/μ π ∥∞ ≤ 1/μ min .
+
+Lemma 3 (Proposition A.2 of Ortega and Rheinboldt [2000]) . Let f : Rn → Rm be continuously differentiable. Then for any w, w ′ ∈ Rn,
+
+∥f (w) − f (w′)∥∞ ≤ sup 
+
+> t∈[0 ,1]
+
+∥Df (w + t(w′ − w)) ∥∞ ∥w − w′∥∞,
+
+where Df (z) ∈ Rm×n denotes the Jacobian of f at z.
+
+## B Proof of Theorem 1 
+
+Proof. We prove by induction that, for every layer l ≥ 0, the prompt admits the form 
+
+Zl
+
+.
+
+=
+
+
+
+x0 x1 · · · xn−1 xn
+
+R1 R2 · · · Rn 0
+
+γv l(S1) γv l(S2) · · · γv l(Sn) 0
+
+vl(S0) vl(S1) · · · vl(Sn−1) vl(Sn)
+
+ . (29) This holds at l = 0 by the definition of Z0 in (10). Now fix any l ≥ 0 and assume that Zl satisfies (29) . We derive the layer update induced by (Vl, A l)
+
+in (12) . Since Al = diag( Id, 0) , the score matrix depends only on the first d rows of Zl. Under (29) ,the first d entries of the (j + 1) -th column of Zl equal xj for every j = 0 , . . . , n . Hence 
+
+(Z⊤ 
+
+> l
+
+AlZl)[ i, j ] = ⟨xi−1, x j−1⟩, i, j = 1 , . . . , n + 1 .
+
+Therefore the attention matrix eKl is layer-invariant (denoted as eK). By softmax weights K in (9) , for every j = 0 , . . . , n we have 
+
+eK[k, j + 1] = 
+
+K(Sk−1, S j ), k = 1 , . . . , n, 
+
+0, k = n + 1 
+
+Next, consider the current-value head. For each context column k = 1 , . . . , n ,
+
+(VlZl)[ d + 3 , k ] = [0 1×d 1 1 −1] 
+
+
+
+xk−1
+
+Rk
+
+γv l(Sk)
+
+vl(Sk−1)
+
+ (30) 
+
+= Rk + γv l(Sk) − vl(Sk−1)= δ(l) 
+
+> k
+
+(By (8)) .
+
+For the last column, 
+
+(VlZl)[ d + 3 , n + 1] = [0 1×d 1 1 −1] 
+
+
+
+xn
+
+00
+
+vl(Sn)
+
+ = −vl(Sn).
+
+13 Define bδ(l) .
+
+= [ δ(l)1 , . . . , δ (l) 
+
+> n
+
+, −vl(Sn)] , δ(l) .
+
+= [ δ(l)1 , . . . , δ (l) 
+
+> n
+
+, 0] .
+
+Since the last row of eK is zero, we have 
+
+bδ(l) eK = δ(l) eK. 
+
+Therefore, 
+
+∆Zl[d + 3 , :] =  VlZl softmax( Z⊤ 
+
+> l
+
+AlZl)[d + 3 , :] = δ(l) eK. (31) For the target-value head, (14) gives 
+
+∆Zl[d + 2 , :] = γ  VlZl softmax( Z⊤ 
+
+> l
+
+AlZl)Π [d + 3 , :] = γ δ(l) eKΠ. (32) We now read out the last column. Using (16) and (31), 
+
+vl+1 (Sn) = Zl+1 [d + 3 , n + 1] = Zl[d + 3 , n + 1] + ∆ Zl[d + 3 , n + 1] = vl(Sn) + 
+
+> n
+
+X
+
+> k=1
+
+δ(l) 
+
+> k
+
+eK[k, n + 1] = vl(Sn) + 
+
+> n
+
+X
+
+> k=1
+
+δ(l) 
+
+> k
+
+K(Sk−1, S n),
+
+which is exactly (17). It remains to verify that Zl+1 preserves the form in (29) . By construction, only rows d + 2 and d + 3 
+
+are modified, so the first d + 1 rows remain unchanged. Moreover, for every j = 0 , . . . , n , using (31) ,
+
+Zl+1 [d + 3 , j + 1] = vl(Sj ) + 
+
+> n
+
+X
+
+> k=1
+
+δ(l) 
+
+> k
+
+K(Sk−1, S j ) = vl+1 (Sj ).
+
+Thus the last row stores the synchronous weighted softmax TD updates for all trajectory states. Finally, right multiplication by Π shifts columns to the left. Hence for every j = 1 , . . . , n , using (32) ,
+
+Zl+1 [d + 2 , j ] = Zl[d + 2 , j ] + γ(δ(l) eK)j+1 
+
+= γv l(Sj ) + γ vl+1 (Sj ) − vl(Sj )
+
+= γv l+1 (Sj ).
+
+Also, Zl+1 [d + 2 , n + 1] = 0 because the last column of Π is zero. Therefore Zl+1 again satisfies (29), completing the induction. 
+
+## C Proofs in Section 4 
+
+C.1 Proof of Lemma 1 
+
+Proof. From (29) , Zl satisfies that Zl[d + 2 , :] = γZ l[d + 3 , :]Π . Using this invariant, by (18) , we have 
+
+Zl+ 12 = Zl + ∆ Z(d+3)  
+
+> l
+
+,
+
+where ∆Z(d+3)  
+
+> l
+
+is defined in (11) . By (19) , the TSM step leaves the first (d + 1) rows unchanged and, for every column k,
+
+(Zl+1 )d+3 ,k = ( Zl+ 12 )d+3 ,k , (Zl+1 )d+2 ,: = γ(Zl+ 12 )d+3 ,:Π,
+
+with Π defined in (13) . Therefore Zl+1 = Zl+ 12 + ∆ Z(d+2)  
+
+> l
+
+, where ∆Z(d+2)  
+
+> l
+
+coincides with (14) .Thus, 
+
+Zl+1 = Zl + ∆ Z(d+3)  
+
+> l
+
++ ∆ Z(d+2)  
+
+> l
+
+,
+
+which is exactly (15). Hence the dual-head update equals the single-head+TSM update in (19). 14 D Proofs of Section 5 
+
+D.1 Proof of Lemma 4 Lemma 4. Recall cM in (20) and Mπ in (22) . For any δ ∈ (0 , 1) , there exist constants C4,1, C 4,2 > 0
+
+such that with probability at least 1 − δ,
+
+∥ cMn − Mπ ∥∞ ≤ C4,1
+
+r log( C4,2/δ )
+
+n .
+
+Proof. Define the empirical state frequency 
+
+ˆμn(s) .
+
+= 1
+
+n
+
+> n
+
+X
+
+> k=1
+
+1{Sk−1 = s}. (33) Applying Lemma 2 with f = 1{· = s} ∈ [0 , 1] and a union bound over s ∈ S gives 
+
+Pr 
+
+
+
+∥ˆμn − μπ ∥∞ > ϵ 
+
+
+
+≤ 2|S| 
+
+μmin 
+
+exp 
+
+
+
+− 1 − max {λr , 0}
+
+1 + max {λr , 0} · 2nϵ 2
+
+
+
+.
+
+Setting the right-hand side equal to δ and solving for ϵ yields that with probability at least 1 − δ,
+
+∥ˆμn − μπ ∥∞ ≤
+
+s
+
+1 + max {λr , 0}
+
+2(1 − max {λr , 0})
+
+r log(2 |S| /(μmin δ)) 
+
+n.
+
+= C4,3
+
+r log( C4,4/δ )
+
+n , (34) where C4,3
+
+.
+
+=
+
+q 1+max {λr ,0}  
+
+> 2(1 −max {λr,0})
+
+and C4,4
+
+.
+
+= 2|S|  
+
+> μmin
+
+.It remains to transfer (34) to cMn. By expanding (20) with (33), we obtain 
+
+cMn(s, s ′) = ˆμn(s′) exp( ⟨x(s), x (s′)⟩)
+
+P 
+
+> u∈S
+
+ˆμn(u) exp( ⟨x(s), x (u)⟩) .
+
+Let Cx
+
+.
+
+= max s∈S ∥x(s)∥2. A direct calculation then gives 
+
+cMn(s, s ′) − Mπ (s, s ′)
+
+= exp( ⟨x(s), x (s′)⟩) ˆμn(s′) P 
+
+> u
+
+μπ (u) exp( ⟨x(s), x (u)⟩) − μπ (s′) P 
+
+> u
+
+ˆμn(u) exp( ⟨x(s), x (u)⟩)
+
+P 
+
+> u
+
+ˆμn(u) exp( ⟨x(s), x (u)⟩) · P 
+
+> u
+
+μπ (u) exp( ⟨x(s), x (u)⟩)
+
+≤ C4,5 ∥ˆμn − μπ ∥∞,
+
+where C4,5
+
+.
+
+= 2 exp  4C2
+
+> x
+
+. Summing over s′ ∈ S and taking the maximum over s ∈ S gives 
+
+∥ cMn − Mπ ∥∞ ≤ |S| C4,5 C4,3
+
+r log( C4,4/δ )
+
+n .
+
+Setting C4,1
+
+.
+
+= |S| C4,3 C4,5 and C4,2
+
+.
+
+= C4,4 completes the proof. 
+
+D.2 Proof of Lemma 5 Lemma 5. Under Assumption 5.1, for any δ ∈ (0 , 1) , there exist a constant C5 > 0 such that if 
+
+n ≥ C5 log(1 /δ ), then with probability at least 1 − δ/ 2,
+
+∥ bT eK (v) − bT eK (u)∥∞ ≤ (1 − C5.1)∥v − u∥∞ ∀ u, v ∈ R|S| .
+
+Proof. By (21), for any u, v ∈ R|S| ,
+
+bT eK (v) − bT eK (u) = ( I − cMn + γ bPn)( v − u).
+
+Since cMn(s, s ′) ≥ 0 with P 
+
+> s′
+
+cMn(s, s ′) = 1 , and bPn(s, s ′) ≥ 0 with P 
+
+> s′
+
+bPn(s, s ′) = 1 , the 
+
+ℓ1-norm of row s satisfies 
+
+X
+
+> s′
+
+(I − cMn + γ bPn)( s, s ′) ≤  1 − cMn(s, s ) + X 
+
+> s′̸=s
+
+cMn(s, s ′) + γ X
+
+> s′
+
+bPn(s, s ′)
+
+15 = 2  1 − cMn(s, s ) + γ. 
+
+Choosing C5
+
+.
+
+= (2 C4/C 5.1)2, then by Lemma 4, with probability at least 1 − δ/ 2,
+
+∥ cMn − Mπ ∥∞ ≤ C4,1
+
+r log(2 C4,2/δ )
+
+n ≤ C5.1
+
+2 ,
+
+On this event, Assumption 5.1 gives 
+
+cMn(s, s ) ≥ Mπ (s, s ) − C5.1
+
+2 ≥ 1 + γ
+
+2 + C5.1 − C5.1
+
+2 = 1 + γ
+
+2 + C5.1
+
+2 .
+
+Therefore, 
+
+∥I − cMn +γ bPn∥∞ = max 
+
+> s∈S
+
+X
+
+> s′
+
+(I − cMn +γ bPn)( s, s ′) ≤ 2
+
+
+
+1− 1 + γ
+
+2 − C5.1
+
+2
+
+
+
++γ = 1 −C5.1,
+
+which completes the proof. 
+
+D.3 Proof of Lemma 6 Lemma 6. For any δ ∈ (0 , 1) , there exists a constant C6,1, C 6,2 > 0 such that with probability at least 1 − δ/ 2,
+
+T2 ≤ C6,1
+
+r log( C6,2/δ )
+
+n .
+
+Proof. For each s ∈ S , expanding bPn and cMn in (20) gives 
+
+[( bPn − cMnPπ ) vπ ]( s) =
+
+> n
+
+X
+
+> k=1
+
+K(Sk−1, s )vπ (Sk) − (Pπ vπ )( Sk−1)
+
+≤
+
+P 
+
+> s′∈S
+
+exp( ⟨x(s), x (s′)⟩) Pnk=1 1{Sk−1 = s′}vπ (Sk) − (Pπ vπ )( s′)Pnm=1 exp( ⟨x(s), x (Sm−1)⟩)
+
+≤ C6,3
+
+n max 
+
+> s′∈S
+> n
+
+X
+
+> k=1
+
+1{Sk−1 = s′}vπ (Sk) − (Pπ vπ )( s′) , (35) where C6,3
+
+.
+
+= |S| exp  2C2
+
+> x
+
+. For each s′ ∈ S , define gs′ : S × S → R by 
+
+gs′ (a, b ) .
+
+= 1{a = s′}vπ (b) − (Pπ vπ )( s′),
+
+so that gs′ ∈ [−2∥vπ ∥∞, 2∥vπ ∥∞] and the inner sum in (35) equals Pnk=1 gs′ (Sk−1, S k). The pair process (Sk−1, S k)k≥1 is a Markov chain on the support E .
+
+= {(a, b ) ∈ S × S : Pπ (a, b ) > 0}.Since Pπ is ergodic on S, the pair chain is ergodic on E with stationary distribution eπ(a, b ) = 
+
+μπ (a) Pπ (a, b ), under which 
+
+eπ(gs′ ) = X
+
+> a,b
+
+μπ (a) Pπ (a, b ) 1{a = s′}vπ (b) − (Pπ vπ )( s′)
+
+= μπ (s′)(Pπ vπ )( s′) − (Pπ vπ )( s′) = 0 .
+
+Let eλr denote the right spectral gap parameter of the pair chain as defined in Lemma 2 and eμmin 
+
+.
+
+=min (a,b )∈E μπ (a) Pπ (a, b ) > 0. Applying Lemma 2 to the pair chain with function gs′ and a union bound over s′ ∈ S , with probability at least 1 − δ/ 2,
+
+max 
+
+> s′∈S
+
+1
+
+n
+
+> n
+
+X
+
+> k=1
+
+gs′ (Sk−1, S k) ≤ 2∥vπ ∥∞
+
+s
+
+2(1 + max {eλr , 0})1 − max {eλr , 0}
+
+r log(4 |S| /(eμmin δ)) 
+
+n . (36) Substituting (36) into (35) and taking the max over s ∈ S gives 
+
+T2 = γ max  
+
+> s∈S
+
+[( bPn − cMnPπ ) vπ ]( s)
+
+16 ≤ γC 6,3
+
+n max 
+
+> s′∈S
+> n
+
+X
+
+> k=1
+
+gs′ (Sk−1, S k)
+
+≤ C6,1
+
+r log( C6,2/δ )
+
+n ,
+
+where 
+
+C6,1
+
+.
+
+= 2 γ∥vπ ∥∞
+
+s
+
+2(1 + max {eλr , 0})1 − max {eλr , 0} C6,3, C6,2
+
+.
+
+= 4|S| 
+
+eμmin 
+
+.
+
+This completes the proof. 
+
+D.4 Proof of Theorem 2 
+
+Proof. We decompose the error at each layer as 
+
+∥vl+1 − vπ ∥∞ = ∥ bT eK (vl) − vπ ∥∞
+
+≤ ∥ bT eK (vl) − bT eK (vπ )∥∞
+
+| {z }
+
+> T1
+
++ ∥ bT eK (vπ ) − vπ ∥∞
+
+| {z }
+
+> T2
+
+≤ ∥ (I − cMn + γ bPn)( vl − vπ )∥∞
+
+| {z }
+
+> T1
+
++ ∥γ( bPn − cMnPπ ) vπ ∥∞
+
+| {z }
+
+> T2
+
+,
+
+where the second inequality uses (21) for T1 and the Bellman equation r + γP π vπ = vπ for T2. with probability at least 1 − δ/ 2, if n ≥ C5 log(1 /δ ), then for all vl,
+
+T1 ≤ (1 − C5.1)∥vl − vπ ∥∞. (37) By Lemma 6, with probability at least 1 − δ/ 2,
+
+T2 ≤ C6,1
+
+r log( C6,2/δ )
+
+n . (38) A union bound ensures that (37) and (38) hold simultaneously with probability at least 1 − δ. On this event, iterating over L layers gives 
+
+∥vL − vπ ∥∞ ≤ (1 − C5.1)L∥v0 − vπ ∥∞ +
+
+> L−1
+
+X
+
+> l=0
+
+(1 − C5.1)l · C6,1
+
+r log( C6,2/δ )
+
+n
+
+= (1 − C5.1)L∥v0 − vπ ∥∞ + 1 − (1 − C5.1)L
+
+C5.1
+
+· C6,1
+
+r log( C6,2/δ )
+
+n
+
+≤ (1 − C5.1)L∥v0 − vπ ∥∞ + C6,1
+
+C5.1
+
+r log( C6,2/δ )
+
+n .
+
+Choosing CThm 2,1
+
+.
+
+= C5, CThm 2,2
+
+.
+
+= C6,1/C 5.1, and CThm 2,3
+
+.
+
+= C6,2 completes the proof. 
+
+## E Proofs of Section 6 
+
+E.1 Proof of Lemma 7 Lemma 7. Under Assumption 5.1, for any δ ∈ (0 , 1) , there exist constants C7,1, C 7,2, C 7,3 > 0
+
+such that if n ≥ C7,1 log(1 /δ ), then with probability at least 1 − δ, for any (p, r ) and query state Sn,
+
+ESn+1 ∼p(·| Sn)
+
+δL(θ∗) ≤ (1 + γ)
+
+"
+
+(1 − C5.1)L∥vπ ∥∞ + C7,2
+
+r log( C7,3/δ )
+
+n
+
+#
+
+.
+
+Proof. By (24) and the linearity of expectation we have 
+
+ESn+1 ∼p(·| Sn)
+
+h
+
+r(Sn) + γv L(Sn+1 ; θ∗) − vL(Sn; θ∗)
+
+i
+
+17 =  r + γP π vL − vL
+
+(Sn)
+
+=  (I − γP π )( vπ − vL)(Sn) (using r = ( I − γP π )vπ )
+
+≤ ∥ e⊤ 
+
+> q
+
+(I − γP π )∥1∥vL − vπ ∥∞
+
+≤ (1 + γ)∥vL − vπ ∥∞.
+
+By (23), on the event of probability at least 1 − δ with n ≥ CThm2 ,1 log(1 /δ ), we have 
+
+ESn+1 ∼p(·| Sn)
+
+δL(θ∗) ≤ (1 + γ)
+
+"
+
+(1 − C5.1)L∥vπ ∥∞ + CThm2 ,2
+
+r log( CThm2 ,3/δ )
+
+n
+
+#
+
+,
+
+where we use v0 = 0 . Setting C7,1
+
+.
+
+= CThm2 ,1, C7,2
+
+.
+
+= CThm2 ,2, and C7,3
+
+.
+
+= CThm2 ,3 completes the proof. 
+
+Lemma 8. For any G, G ′ ∈ R(n+1) ×(n+1) ,
+
+max 
+
+> j∈[n+1]
+
+softmax( G) − softmax( G′)[: , j ] 1 ≤ 2 max  
+
+> i,j
+
+|G[i, j ] − G′[i, j ]|. (39) 
+
+Proof. Fix a column j ∈ [n + 1] . By (3) , the masked softmax acts on the first n entries of column j
+
+via the standard softmax map σ : Rn → Rn defined by σi(w) = exp( wi)Pnk=1 exp( wk ) , while the (n + 1) -th entry is fixed at zero. The Jacobian J(w) ∈ Rn×n of σ has entries 
+
+Jik (w) = ∂σ i(w)
+
+∂w k
+
+=
+
+σi(w)(1 − σi(w)) , k = i, 
+
+−σi(w) σk(w), k̸ = i. 
+
+For any direction h ∈ Rn, the directional derivative of σ at w along h is 
+
+[J(w) h]i = σi(w) hi − σi(w)
+
+> n
+
+X
+
+> k=1
+
+σk(w) hk = σi(w)
+
+
+
+hi −
+
+> n
+
+X
+
+> k=1
+
+σk(w) hk
+
+
+
+.
+
+Taking the ℓ1-norm and using σi(w) ≥ 0, P 
+
+> i
+
+σi(w) = 1 ,
+
+∥J(w) h∥1 =
+
+> n
+
+X
+
+> i=1
+
+σi(w) hi −
+
+> n
+
+X
+
+> k=1
+
+σk(w) hk
+
+≤
+
+> n
+
+X
+
+> i=1
+
+σi(w)
+
+
+
+|hi| +
+
+> n
+
+X
+
+> k=1
+
+σk(w) hk
+
+
+
+≤ ∥ h∥∞ + ∥h∥∞
+
+= 2 ∥h∥∞, (40) where the second inequality is obtained since P 
+
+> k
+
+σk(w) hk ≤ ∥h∥∞. Hence 
+
+sup ∥h∥∞=1 ∥J(w) h∥1 ≤ 2 for all w ∈ Rn.Let wj , w ′ 
+
+> j
+
+denote the first n entries of the j-th columns of G and G′ respectively. By the fundamental theorem of calculus, 
+
+σ(wj ) − σ(w′ 
+
+> j
+
+) = 
+
+Z 10
+
+J w′ 
+
+> j
+
++ t(wj − w′ 
+
+> j
+
+) (wj − w′ 
+
+> j
+
+) dt. 
+
+Taking the ℓ1-norm and applying (40), 
+
+∥σ(wj ) − σ(w′ 
+
+> j
+
+)∥1 ≤
+
+Z 10
+
+J w′ 
+
+> j
+
++ t(wj − w′ 
+
+> j
+
+) (wj − w′ 
+
+> j
+
+) 1 dt ≤ 2 ∥wj − w′ 
+
+> j
+
+∥∞.
+
+Since ∥wj − w′ 
+
+> j
+
+∥∞ ≤ max i,j |G[i, j ] − G′[i, j ]| and the (n + 1) -th entry contributes zero to the ℓ1
+
+difference, taking the maximum over j completes the proof. 18 E.2 Proof of Lemma 9 Lemma 9. Let Dθ
+
+.
+
+= d2 + 3 denote the number of free parameters in (26) . There exists a constant 
+
+C9 > 0 such that for any θ ∈ ΘLooped ,
+
+max  
+
+> j∈[n+1]
+
+(∇θm
+
+eK(θ))[: , j ] 1 ≤ C9, ∀ m = 1 , . . . , D θ .
+
+Proof. Recall Cx = max s∈S ∥x(s)∥2 and define CR
+
+.
+
+= max s |r(s)|. Constructing Z0 as in (10) ,each column of Z0 has at most d + 3 entries, so for all i
+
+> d+3
+
+X
+
+> k=1
+
+|Z0[k, i ]| ≤ (d + 3) max( Cx, C R) .
+
+= C9,1
+
+Define the intermediate matrix 
+
+G(θ) .
+
+= Z⊤ 
+
+> 0
+
+A(θ)Z0, eK(θ) = softmax  G(θ).
+
+For any perturbation dA , expanding dG = Z⊤ 
+
+> 0
+
+(dA )Z0 entrywise gives 
+
+|dG [i, j ]| = X
+
+> k,l
+
+Z0[k, i ] dA [k, l ] Z0[l, j ]
+
+≤
+
+X 
+
+> k
+
+|Z0[k, i ]|
+
+X 
+
+> l
+
+|Z0[l, j ]|
+
+
+
+max  
+
+> k,l
+
+|dA [k, l ]|≤ C2 
+
+> 9,1
+
+max  
+
+> k,l
+
+|dA [k, l ]|.
+
+By (39), 
+
+max  
+
+> j
+
+∥d eK[: , j ]∥1 ≤ 2 max  
+
+> i,j
+
+|dG [i, j ]| ≤ 2C2 
+
+> 9,1
+
+max  
+
+> k,l
+
+|dA [k, l ]|.
+
+Finally, since B is a sub-block of A(θ) by (26) , max k,l |(∇θm A)[ k, l ]| ≤ 1 for all m = 1 , . . . , D θ .Setting C9
+
+.
+
+= 2 C2 
+
+> 9,1
+
+completes the proof. 
+
+E.3 Proof of Lemma 10 Lemma 10. Under Assumption 5.1, for any δ ∈ (0 , 1) , there exist constants 
+
+C10 ,1, C10 ,2, C10 ,3, C10 ,4 > 0 such that if n ≥ C10 ,1 log(1 /δ ), then with probability at least 
+
+1 − δ,
+
+∥∇ θ vL(Sn; θ∗)∥∞ ≤ C10 ,2 + C10 ,3
+
+r log( C10 ,4/δ )
+
+n .
+
+Proof. By (17) , the induced attention matrix eK(θ) in (3) depends on θ through B. Moreover, for all θ ∈ ΘLooped , eK is invariant to layer l. We first derive the one-step forward map for a general 
+
+θ ∈ ΘLooped . Recall from (26) that the free parameters are u ∈ R1×3 and B ∈ Rd×d. Replacing 
+
+[1 , 1, −1] with u in (30), the layerwise update generalizes to 
+
+Fθ (v)( s) = v(s) + 
+
+> n
+
+X
+
+> k=1
+
+u1Rk + u2γv (Sk) + u3v(Sk−1) eK(θ)( Sk−1, s ), (41) where eK(θ) is the attention matrix in (3). At θ∗ with u∗ = [1 , 1, −1] , Fθ∗ (v) = bT eK (v) as in (21). The Jacobian of Fθ∗ with respect to v is 
+
+J .
+
+= ∇v Fθ∗ (v) = I − cMn + γ bPn,
+
+which is constant across layers. By the chain rule, 
+
+∇θ vl+1 = J ∇θ vl + g(B) 
+
+> l
+
++ g(u) 
+
+> l
+
+, (42) where g(B) 
+
+> l
+
+and g(u) 
+
+> l
+
+are the partial derivatives of Fθ (vl) with respect to B and u at θ∗, holding vl
+
+fixed. 19 By Lemma 5, choosing C10 ,1
+
+.
+
+= C5, then on the event of probability at least 1 − δ,
+
+∥J∥∞ = ∥I − cMn + γ bPn∥∞ ≤ 1 − C5.1 < 1.
+
+Unrolling (42) with ∇θ v0 = 0 gives 
+
+∥∇ θ vL∥∞ =
+
+> L−1
+
+X
+
+> k=0
+
+JL−1−kgk
+
+> ∞
+
+≤
+
+> L−1
+
+X
+
+> k=0
+
+(1 − C5.1)L−1−k∥gk∥∞. (43) It remains to bound ∥gk∥∞ = max( ∥g(B) 
+
+> k
+
+∥∞, ∥g(u) 
+
+> k
+
+∥∞).
+
+Bounding g(B) 
+
+> k
+
+. By (41) , at θ∗ the B-channel acts only through eK(θ). Applying H ¨older’s inequality and Lemma 9, 
+
+∥g(B) 
+
+> k
+
+∥∞ ≤ C9 max  
+
+> 1≤i≤n
+
+|δ(vk ) 
+
+> i
+
+| ≤ C9
+
+ CR + (1 + γ)∥vk∥∞
+
+, (44) where δ(vk ) 
+
+> i
+
+= Ri + γv k(Si) − vk(Si−1) is the TD error at transition i.
+
+Bounding g(u) 
+
+> k
+
+. By (41) , differentiating with respect to u1, u 2, u 3 at θ∗ gives coefficients Ri,
+
+γv k(Si), and vk(Si−1) respectively. Since Pni=1 eK[i, s ] = 1 for each s,
+
+∥g(u) 
+
+> k
+
+∥∞ ≤ max  CR, γ ∥vk∥∞, ∥vk∥∞
+
+ ≤ CR + (1 + γ)∥vk∥∞. (45) 
+
+Combining. By (44) and (45), 
+
+∥gk∥∞ = max  ∥g(B) 
+
+> k
+
+∥∞, ∥g(u) 
+
+> k
+
+∥∞
+
+
+
+≤ max(1 , C 9) CR + (1 + γ)∥vk∥∞
+
+
+
+≤ C10 ,5(∥vk − vπ ∥∞ + ∥vπ ∥∞)
+
+≤ C10 ,6 + C10 ,7
+
+r log( CThm2 ,3/δ )
+
+n ,
+
+where the last step applies Theorem 2 with θ = θ∗ on the event of probability at least 1 − δ with 
+
+n ≥ CThm2 ,1 log(1 /δ ). Crucially, the right-hand side is independent of the layer index k. Substituting into (43) gives 
+
+∥∇ θ vL∥∞ ≤ 1
+
+C5.1
+
+C10 ,6 + C10 ,7
+
+r log( CThm2 ,3/δ )
+
+n
+
+!
+
+.
+
+Setting C10 ,1
+
+.
+
+= CThm 2,1, C10 ,2
+
+.
+
+= C10 ,6/C 5.1, C10 ,3
+
+.
+
+= C10 ,7/C 5.1, C10 ,4
+
+.
+
+= CThm2 ,3 completes the proof. 
+
+E.4 Proof of Theorem 3 
+
+Proof. Let 
+
+CR
+
+.
+
+= ess sup 
+
+> (p,r )∼∆
+
+∥r∥∞, Cv
+
+.
+
+= ess sup 
+
+> (p,r )∼∆
+
+∥vπ ∥∞ ≤ CR
+
+1 − γ , Dθ
+
+.
+
+= d2 + 3 .
+
+For η ∈ (0 , 1/2] , let Eη be the event on which Lemma 7 and Lemma 10 both hold with confidence parameter η/ 2. Define 
+
+CThm3 ,4
+
+.
+
+= 2 max {C7,1, C 10 ,1}, CThm3 ,5
+
+.
+
+= 2 max {e, C 7,3, C 10 ,4}.
+
+By a union bound, Pr( Eη ) ≥ 1 − η whenever n ≥ CThm3 ,4 log(1 /η ), and with this choice of CThm3 ,5,the logarithmic terms in both lemmas are bounded by log( CThm3 ,5/η ).Since δL(θ∗) in (24) depends on Sn+1 , define 
+
+¯δL(θ∗) .
+
+= ESn+1 ∼p(·| Sn)[δL(θ∗)] = r(Sn) + γ(Pπ vL)( Sn) − vL(Sn).
+
+20 By the tower property, 
+
+E(p,r ),τ n+1 [δL(θ∗)∇θ vL(Sn; θ∗)] = E(p,r ),τ n
+
+¯δL(θ∗)∇θ vL(Sn; θ∗).
+
+Let XL
+
+.
+
+= ¯δL(θ∗)∇θ vL(Sn; θ∗). Decomposing the expectation over Eη and Ecη ,
+
+JL(θ∗) = ∥E[XL]∥1 ≤ E∥XL∥11Eη
+
+ + E
+
+h
+
+∥XL∥11Ecη
+
+i
+
+. (46) On Eη , Lemma 7 and Lemma 10 give, respectively, 
+
+¯δL(θ∗) ≤ (1 + γ)
+
+"
+
+Cv (1 − C5.1)L + C7,2
+
+r log( CThm3 ,5/η )
+
+n
+
+#
+
+≤ CThm3 ,6
+
+"
+
+(1 − C5.1)L +
+
+r log( CThm3 ,5/η )
+
+n
+
+#
+
+,
+
+∥∇ θ vL(Sn; θ∗)∥∞ ≤ C10 ,2 + C10 ,3
+
+r log( CThm3 ,5/η )
+
+n
+
+≤ CThm3 ,7
+
+"
+
+1 + 
+
+r log( CThm3 ,5/η )
+
+n
+
+#
+
+,
+
+where 
+
+CThm3 ,6
+
+.
+
+= (1 + γ) max {Cv , C 7,2}, CThm3 ,7
+
+.
+
+= max {C10 ,2, C 10 ,3}.
+
+on Eη , by H¨ older’s inequality, with CThm3 ,8
+
+.
+
+= Dθ CThm3 ,6 CThm3 ,7,
+
+∥XL∥1 ≤ CThm3 ,8
+
+"
+
+(1 − C5.1)L +
+
+r log( CThm3 ,5/η )
+
+n
+
+#" 
+
+1 + 
+
+r log( CThm3 ,5/η )
+
+n
+
+#
+
+. (47) It remains to control ∥XL∥1 deterministically. Let Gn
+
+.
+
+= I − M cn + γ bPn. Since M cn and bPn are nonnegative row-stochastic, ∥Gn∥∞ ≤ 2 + γ. Applying this to the recursion (21) with v0 = 0 ,
+
+∥vl+1 ∥∞ ≤ (2 + γ)∥vl∥∞ + CR =⇒ ∥vL∥∞ ≤ CR
+
+ (2 + γ)L − 1
+
+1 + γ ,
+
+¯δL(θ∗) ≤ CR + (1 + γ)∥vL∥∞ ≤ CR(2 + γ)L. (48) For the gradient, from the proof of Lemma 10 there exists a constant CThm3 ,9 > 0 such that 
+
+∥gl∥∞ ≤ CThm3 ,9(CR + (1 + γ)∥vl∥∞) ≤ CThm3 ,9CR(2 + γ)l.
+
+Unrolling ∇θ vl+1 = Gn∇θ vl + gl with ∇θ v0 = 0 ,
+
+∥∇ θ vL∥∞ ≤
+
+> L−1
+
+X
+
+> l=0
+
+(2 + γ)L−1−l∥gl∥∞ ≤ CThm3 ,9CR L(2 + γ)L−1. (49) Combining (48) and (49), and defining CThm3 ,10 
+
+.
+
+= Dθ CThm3 ,9 C2
+
+> R
+
+,
+
+∥XL∥1 ≤ CThm3 ,10 L(2 + γ)2L for every trajectory. (50) Substituting (47) and (50) into (46) and setting η = 1 /n ,
+
+JL(θ∗) ≤ CThm3 ,8
+
+"
+
+(1 − C5.1)L +
+
+r log( CThm3 ,5n)
+
+n
+
+#" 
+
+1 + 
+
+r log( CThm3 ,5n)
+
+n
+
+#
+
++ CThm3 ,10 
+
+L(2 + γ)2L
+
+n .
+
+Define CThm3 ,11 
+
+.
+
+= 1 + log CThm3 ,5/ log 2 . Since CThm3 ,5 ≥ e, for every n ≥ 2, log( CThm3 ,5n) ≤
+
+CThm3 ,11 log n. Choose n0 so that for every n ≥ n0,
+
+n ≥ CThm3 ,4 log n and 
+
+r log( CThm3 ,5n)
+
+n ≤ 1.
+
+21 Algorithm 1 Multi-Task Temporal Difference Learning with softmax Softmax Transformer  
+
+> 1:
+
+Input: context length n, MRP number of states m, MRP sample length H, number of training tasks k, learning rate η, discount factor γ, diagonal mixing ρt, softmax temperature τ , transformer parameters θ .
+
+= ( V, A ) 
+
+> 2:
+
+for i ← 1 to k do  
+
+> 3:
+
+Sample (p0, p, r, x ) from dtask  
+
+> 4:
+
+Sample (S0, R 1, S 1, R 2, . . . , S H , R H+1 , S H+1 ) from the MRP (p0, p, r ) 
+
+> 5:
+
+for t = 0 , . . . , H − n − 1 do  
+
+> 6:
+
+// Build two consecutive prompt windows  
+
+> 7:
+
+// Query uses the state after the last context transition: xq
+
+.
+
+= xt+n, x′
+
+> q
+
+.
+
+= xt+n+1  
+
+> 8:
+
+Z0 ←
+
+
+
+xt · · · xt+n−1 xq
+
+Rt+1 · · · Rt+n 00 · · · 0 00 · · · 0 0
+
+ 
+
+> 9:
+
+Z′ 
+
+> 0
+
+←
+
+
+
+xt+1 · · · xt+n x′
+
+> q
+
+Rt+2 · · · Rt+n+1 00 · · · 0 00 · · · 0 0
+
+ 
+
+> 10:
+
+// semi-gradient TD  
+
+> 11:
+
+δt ← Rt+n+1 + γ TF L(Z′
+
+> 0
+
+; θ) − TF L(Z0; θ) 
+
+> 12:
+
+θ ← θ + ηδ t∇θ TF L(Z0; θ) 
+
+> 13:
+
+end for  
+
+> 14:
+
+end for 
+
+Using (a + b)(1 + b) ≤ a + 3 b for a, b ∈ [0 , 1] ,
+
+"
+
+(1 − C5.1)L +
+
+r log( CThm3 ,5n)
+
+n
+
+#" 
+
+1 + 
+
+r log( CThm3 ,5n)
+
+n
+
+#
+
+≤ (1 − C5.1)L + 3 pCThm3 ,11 
+
+r log nn .
+
+Therefore, with 
+
+CThm3 ,2
+
+.
+
+= CThm3 ,8 max 
+
+
+
+1, 3pCThm3 ,11 
+
+
+
+, CThm3 ,3
+
+.
+
+= CThm3 ,10 ,
+
+we obtain (27): for all n ≥ n0,
+
+JL(θ∗) ≤ CThm3 ,2
+
+"
+
+(1 − C5.1)L +
+
+r log nn
+
+#
+
++ CThm3 ,3
+
+L(2 + γ)2L
+
+n .
+
+Finally, for every fixed L, lim sup n→∞ JL(θ∗) ≤ CThm3 ,2(1 − C5.1)L, and taking L → ∞ gives 
+
+lim L→∞ lim sup n→∞ JL(θ∗) = 0 .
+
+## F Additional Experimental Details 
+
+F.1 Multi-task TD 
+
+The pseudocode of multi-task TD is provided in Algorithm 1. Notably, TF L is obtained by (4). The training update is semi-gradient TD, where the bootstrap target TF L(Z′
+
+> 0
+
+; θ) is held fixed, so the single-sample update direction is δt∇θ TF L(Z0; θ), which is a stochastic estimate of the expected update field in the NEU objective (25). To accelerate training in some settings, we introduce a scalar diagonal mixing coefficient ρt ∈ [0 , 1] 
+
+at the attention level. Let Ll
+
+.
+
+= Z⊤ 
+
+> l
+
+AlZl ∈ Rn×n and fix a softmax temperature τ > 0. At training step t the kernel is 
+
+eK[i, j ]( ρt) .
+
+= (1 − ρt) · exp( Ll,ij /τ )
+
+Pn−1 
+
+> m=0
+
+exp( Ll,mj /τ ) + ρt · 1{i = j}. (51) Importantly, all results in Section 8 are trained with ρt ≡ 0.22 Table 1: Hyperparameters for Boyan’s chain experiments in Section 8. MRP (Boyan chain) states m 64 
+
+feature dimension d 4
+
+discount factor γ 0.9
+
+context length n 10 
+
+rollout segment length H n + 1 = 11 
+
+query feature xq = xt+n
+
+softmax temperature τ 1.2
+
+diagonal mixing ρ 0
+
+optimizer Adam [Kingma and Ba, 2015] learning rate 10 −3
+
+weight decay 0
+
+batch size (contexts) 64 
+
+mini-batches per epoch 5
+
+epochs 3000 
+
+number of layers L 3
+
+number of random seeds 51 2 3 m-1 m
+
+Figure 4: Boyan’s chain topology with nonzero transitions. Adapted from Wang et al. [2025a]. 
+
+F.2 Minimal Sparse Parameterization 
+
+We use a minimal sparse parameterization that prevents the block from overwriting features or rewards, while leaving the structured computation to be learned from data. Notably, this sparsification is strictly lighter than the sparse parameter space used in Section 6. The masks below are fixed throughout training, and all trainable entries are initialized by Xavier normal initialization with gain 
+
+0.1.
+
+Mask on V . Recall that Zl ∈ R(d+3) ×(n+1) defined in (29) . We enforce a fixed sparsity pattern via an elementwise mask Vmask ∈ { 0, 1}(d+3) ×(d+3) and parameterize 
+
+V0 = eV ⊙ Vmask , eV ∈ R(d+3) ×(d+3) . (52) The mask is fixed throughout training and only allows the last two rows to be nonzero: 
+
+Vmask =
+
+0(d+1) ×(d+3) 
+
+12×(d+3) 
+
+
+
+.
+
+As a result, the additive update V0Zl modifies only the two value slots of Zl.
+
+Mask on A. Let A0 ∈ R(d+3) ×(d+3) be the logits mixing matrix used to form the pre-softmax logits Z⊤ 
+
+> l
+
+A0Zl. We impose the block sparsity via an elementwise mask Amask ∈ { 0, 1}(d+3) ×(d+3) 
+
+and parameterize 
+
+A0 = eA ⊙ Amask , eA ∈ R(d+3) ×(d+3) . (53) We split rows and columns into the first d feature channels and the last 3 scalar channels, and set the scalar-to-scalar block to zero by 
+
+Amask =
+
+1d×d 0d×3
+
+03×d 03×3
+
+
+
+. (54) 
+
+F.3 Boyan’s chain tasks and experiment setup Task distribution. Following Wang et al. [2025a], we use a randomized variant of Boyan’s chain [Boyan, 1999] as an evaluation-task distribution. Each call to the generator samples an ergodic 23 Algorithm 2 Boyan Chain MRP and Feature Generation (Adapted from Algorithm 3 of Wang et al. [2025a])  
+
+> 1:
+
+Input: state space size m = |S| , feature dimension d, discount factor γ 
+
+> 2:
+
+w∗ ∼ Uniform (−1, 1) d // ground-truth weight  
+
+> 3:
+
+for s ∈ S do  
+
+> 4:
+
+x(s) ∼ Uniform (−1, 1) d // feature  
+
+> 5:
+
+v∗(s) ← ⟨ w∗, x (s)⟩ // ground-truth value function  
+
+> 6:
+
+end for  
+
+> 7:
+
+p0 ∼ Uniform[(0 , 1) m] // initial distribution  
+
+> 8:
+
+p0 ← p0/ P 
+
+> s
+
+p0(s) 
+
+> 9:
+
+p ← 0m×m // transition function  
+
+> 10:
+
+for i ← 1 to m − 2 do  
+
+> 11:
+
+ϵ ∼ Uniform[(0 , 1)]  
+
+> 12:
+
+p(i, i + 1) ← ϵ 
+
+> 13:
+
+p(i, i + 2) ← 1 − ϵ 
+
+> 14:
+
+end for  
+
+> 15:
+
+p(m − 1, m ) ← 1 
+
+> 16:
+
+z ∼ Uniform (0 , 1) m 
+
+> 17:
+
+z ← z/ P 
+
+> s
+
+z(s) 
+
+> 18:
+
+p(m, 1 : m) ← z 
+
+> 19:
+
+r ← (Im − γp )v∗ // reward function  
+
+> 20:
+
+Define rewards by Bellman consistency: r ← (I − γP )v∗. 
+
+> 21:
+
+Output: MRP (p0, p, r ) and feature map x
+
+MRP together with a randomized state representation x : S → Rd and a ground-truth value function 
+
+v∗ that is linear in x(s). The generation procedure is summarized in Algorithm 2. 
+
+Training pipeline. Unless otherwise stated, we set the context length n = 10 , feature dimension 
+
+d = 4 , and discount factor γ = 0 .9. At the beginning of each epoch, we reset the MRP by sampling a fresh task (Algorithm 2), roll out a single on-policy trajectory, and form overlapping length-n
+
+contexts by sliding a window along the trajectory. We train a single-head softmax ICTD block with 
+
+L = 3 layers under the minimal sparse parameterization (Appendix F.2). Unless otherwise stated, we train for 3000 epochs with 5 mini-batches per epoch and a mini-batch size of 64 contexts. Each experiment is repeated with 5 random seeds and we aggregate results across seeds. 
+
+Hyperparameters. Table 1 summarizes the default hyperparameters used in Boyan’s chain experi-ments in Section 8. 
+
+Plotting details for Figures 3 . For each random seed, we generate NMRP = 3000 independent MRPs for evaluation and record diagnostics on them. Each evaluated point includes dt in (28) and related quantities computed from the same evaluation rollouts. Emergence scores Vem and Aem are computed once per training step from the learned (V0, A 0).
+
+Figure 3 (a). We select the best checkpoint as the training step that maximizes min( Vem , A em ),i.e., where both V and A emergence are simultaneously high. At this checkpoint, we save the learned matrices V0 and A0 as in (52) and (53) . For visualization, each heatmap is normalized by its maximum absolute value and rendered with a colormap over the range [−1, 1] .
+
+Figure 3(b). We bin evaluated points by dt using 20 equal-width bins. Within each bin, we plot the mean emergence scores Vem and Aem separately. Shaded regions correspond to the interquartile range (25th-75th percentile) across random seeds. 
+
+Emergence vs. training step. For each seed, we smooth the per-step traces of Vem , Aem , and dt
+
+with a trailing average of window 50 . We then truncate the curves at the seed-wise early-stop step that maximizes min( Vem , A em ). Finally, we plot the mean ± one s.e.m. across seeds (top: Vem and 
+
+Aem ; bottom: dt). Figure 5 shows that under the default hyperparameters in Table 1, the model automatically learns increasingly diagonal kernels (high dt) over training. 24 0.0       
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Emergence rate
+> Value (V)
+> Attention (A)
+> 05000 10000 15000 20000 25000 30000
+> Iteration
+> 0.2
+> 0.4
+> 0.6
+> Kernel diagonal mean
+
+Figure 5: Emergence vs. training steps under the default mask and ρt ≡ 0.
+
+Compute resources. All experiments were run on a single NVIDIA H100 GPU. The main experi-ments reported in Figure 3 take approximately one hour of wall-clock time in total. The appendix ablations, including the mask-relaxation experiments in Figure 6, use the same single-H100 setup and account for the majority of the remaining compute. The numerical verification experiments in Figure 7are lightweight. Across all reported experiments in the paper, the total compute is below 10 H100 GPU-hours. Preliminary and debugging runs used comparable compute and did not substantially exceed this reported experimental budget. The experiments use only synthetic Boyan-chain data, and the storage requirement is negligible. 
+
+F.4 Emergence metrics 
+
+We quantify how closely the first softmax ICTD layer matches the ideal TD update using two scalar scores Vem ,t and Aem ,t in [0 , 1] . A score of 1 corresponds to the ideal TD block. 
+
+F.4.1 V-emergence score. 
+
+At training step t, let (pr,t , p γv ′,t , p v,t ) .
+
+= ( V0,t )d+3 ,d :d+3 denote the three coefficients that the first layer applies to the reward U , bootstrap value γv ′, and current value v in its value update. 
+
+Sign check. We enforce the TD sign pattern via 
+
+IV,t 
+
+.
+
+= Ipr,t > 0, p γv ′,t > 0, p v,t < 0 .
+
+Comparability. We encourage comparable magnitudes. Let 
+
+mV,t 
+
+.
+
+= |pr,t | + |pγv ′,t | + |pv,t |
+
+3 .
+
+We define the magnitude-ratio score 
+
+CV,t 
+
+.
+
+= max 
+
+(
+
+0, 1 − |pr,t | − mV,t + |pγv ′,t | − mV,t + |pv,t | − mV,t 
+
+3 max {mV,t , ε }
+
+)
+
+∈ [0 , 1] ,
+
+where ε > 0 is a small constant. This score is maximized when the three coefficients have the same magnitude. When mV,t = 0 the definition yields CV,t = 0 .The V-emergence score at step t is 
+
+Vem ,t 
+
+.
+
+= IV,t CV,t ∈ [0 , 1] .
+
+25 F.4.2 A-emergence score. 
+
+Let Afeat 0,t 
+
+.
+
+= ( A0,t )0: d, 0: d ∈ Rd×d at training step t. For diagnostics we work with a column-normalized nonnegative version. For j ∈ [d], define 
+
+( bAt)[: , j ] .
+
+=
+
+   
+
+> (Afeat 0,t )[: ,j ]
+> ∥(Afeat 0,t )[: ,j ]∥2
+
+∥(Afeat 0,t )[: , j ]∥2 > 0,
+
+0 otherwise ,
+
+that is, we divide each column by its l2-norm and take absolute values. 
+
+Diagonality. From bAt we measure how much of the l1 mass lies on the diagonal via 
+
+Adiag ,t 
+
+.
+
+=
+
+Pdi=1 ( bAt)ii 
+
+max 
+
+nPdi,j =1 ( bAt)[ i, j ], ε 
+
+o ∈ [0 , 1] ,
+
+where ε > 0 is a small constant. This quantity is close to 1 when bAt is nearly diagonal. 
+
+Comparability. Let at
+
+.
+
+= diag( Afeat 0,t ) ∈ Rd. We encourage the diagonal entries to be comparable in magnitude. Let 
+
+mA,t 
+
+.
+
+= 1
+
+d
+
+> d
+
+X
+
+> i=1
+
+(at)i, CA,t 
+
+.
+
+= max 
+
+(
+
+0, 1 −
+
+Pdi=1 |(at)i − mA,t |
+
+d max {mA,t , ε }
+
+)
+
+.
+
+By construction, CA,t measures whether the raw diagonal entries are close to a common value, but it does not separately enforce that this common value is positive. The A-emergence score at step t is 
+
+Aem ,t 
+
+.
+
+= Adiag ,t · CA,t ∈ [0 , 1] .
+
+F.5 Mask Relaxation 
+
+We next study how emergence depends on the strength of the structural masking constraint in A0 on the Boyan task distribution. All experiments in this subsection use the same Boyan training setup as in Appendix F.3, except that we apply the linearly annealed diagonal mixing coefficient ρ in (51) ,increasing it from 0.68 to 0.80 over the first 8000 steps and then holding it fixed at 0.80 . It is trained for 9000 gradient steps in total (corresponding to 900 MRPs per seed in our implementation). We introduce the diagonal mixing coefficient ρ purely as a training-speed heuristic for this ablation: under the default setting in Section 8, kernel diagonality emerges without any auxiliary bias given sufficient training, whereas here we use ρ to accelerate convergence so that the mask-relaxation comparison can be run with a smaller training budget without changing the qualitative emergence behavior. Throughout, we keep Vmask fixed. We compare two masking configurations for A0. The full-mask setting uses the default Amask from (54). In the relaxed-mask setting, we change it to 
+
+Amask =
+
+1d×d 1d×3
+
+13×d 03×3
+
+
+
+. (55) Figure 6 summarizes the results and shows relaxing the mask preserves the emergence behavior. 
+
+F.6 Numerical verification on Theorem 1 
+
+We verified Theorem 1 experimentally. For each trial we sample a fresh prompt Z0 ∈ R(d+3) ×(n+1) 
+
+and run the depth-L forward recursion of a single-head block. In parallel, we unroll the reference softmax ICTD recursion from Theorem 1 on the same context, producing {y(n+1)  
+
+> l
+
+}Ll=0 for the query prediction. We report the layer-wise log discrepancy 
+
+El
+
+.
+
+= log vl(Sn) − y(n+1)  
+
+> l
+
+, vl(Sn) = Zl[d + 3 , n + 1] .
+
+We use d = 8 , n = 20 , L = 10 , γ = 0 .9, and αl = 1 , and repeat over 50 trials in double precision. We test masked-softmax, ReLU, ELU +1 , and an RBF kernelization for ˜h. Figure 7 shows that El
+
+stays at numerical precision across depth, confirming that the residual update realizes a one-step nonlinear in-context TD update. 26 0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+> Emergence rate
+
+Value (V) 
+
+Attention (A) 
+
+0 1000 2000 3000 4000 5000 6000 7000 8000 
+
+Iteration 
+
+0.725 
+
+0.750 
+
+0.775 
+
+0.800 
+
+0.825 
+
+> Kernel diagonal mean
+
+(a) Full-mask: training trajectories. 0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+> Emergence rate
+
+Value (V) 
+
+Attention (A) 
+
+0 1000 2000 3000 4000 5000 6000 7000 
+
+Iteration 
+
+0.68 
+
+0.70 
+
+0.72 
+
+0.74 
+
+0.76 
+
+0.78 
+
+0.80  
+
+> Kernel diagonal mean
+
+(b) Relaxed-mask: training trajectories. 0.72 0.74 0.76 0.78 0.80 0.82 0.84 0.86 
+
+Kernel diagonal mean 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+> Emergence rate
+
+Value (V) 
+
+Attention (A) 
+
+(c) Full-mask: emergence vs. dt.0.72 0.74 0.76 0.78 0.80 0.82 0.84 
+
+Kernel diagonal mean 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Emergence rate
+
+Value (V) 
+
+Attention (A) (d) Relaxed-mask: emergence vs. dt.0 1 2 3 4 5 6      
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> V0
+> 0123456
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> A0
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> rescaled weight
+
+(e) Full-mask: mean V0 and A0 at best joint emergence. 0 1 2 3 4 5 6      
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> V0
+> 0123456
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> A0
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> rescaled weight
+
+(f) Relaxed-mask: mean V0 and A0 at best joint emergence. 
+
+Figure 6: Mask relaxation on Boyan’s chain. We compare the full-mask setting in (54) (left column) and the relaxed-mask setting (55) (right column). All plots are averaged and visualized in the same way as in Appendix F.3, using 10 random seeds over 9000 training steps. 0 5 10 15 20 25 30 35 40 
+
+Layers 
+
+> 37
+> 36
+> 35
+> 34
+> 33
+> 32
+
+log | vl(sq) y(n + 1) 
+
+l |
+
+Nonlinear TD (ELU+1) 
+
+Nonlinear TD (RBF-RFF) 
+
+Nonlinear TD (ReLU) 
+
+Nonlinear TD (Softmax) 
+
+Figure 7: Kernel weighted TD verification. Layer-wise log discrepancy El under different kerneliza-tions ˜h.27
