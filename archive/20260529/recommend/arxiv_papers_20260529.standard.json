@@ -1,0 +1,814 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-29T21:09:30.819871+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 15,
+    "deep_cap": 7,
+    "deep_selected": 10,
+    "quick_candidates": 9,
+    "quick_skim_target": 12,
+    "quick_selected": 9
+  },
+  "deep_dive": [
+    {
+      "id": "2605.22263v1",
+      "source": "arxiv",
+      "title": "Tailoring Teaching to Aptitude: Direction-Adaptive Self-Distillation for LLM Reasoning",
+      "abstract": "On-policy self-distillation (OPSD) is an emerging LLM post-training paradigm in which the model serves as its own teacher: conditioned on privileged information such as a reference trace or hint, the same policy provides dense token-level supervision on its own rollouts. However, recent studies show that OPSD degrades complex reasoning by suppressing predictive uncertainty, which supports exploration and hypothesis revision. Our token-level analysis shows that this failure arises from applying a uniform direction of teacher supervision across tokens with different uncertainty levels: conformity to the privileged self-teacher suppresses exploration at high entropy, while deviation from the teacher degrades step accuracy at low entropy. Accordingly, we propose \\textbf{Direction-Adaptive Self-Distillation} (\\textbf{DASD}), which reframes privileged self-distillation from uniform teacher imitation into entropy-routed directional supervision: high-entropy tokens are pushed away from the privileged teacher to preserve exploration, while low-entropy tokens are pulled toward the teacher to stabilize step-level execution. Across six mathematical reasoning benchmarks, DASD achieves the best macro Avg@16 over strong RLVR and self-distillation baselines. Pass@$k$, reasoning-health, and generalization analyses show that these average gains come from preserving exploration without sacrificing step-level execution.",
+      "authors": [
+        "Hongbin Zhang",
+        "Chaozheng Wang",
+        "Kehai Chen",
+        "Youcheng Pan",
+        "Yang Xiang",
+        "Jinpeng Wang",
+        "Min Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-21T10:07:46+00:00",
+      "link": "https://arxiv.org/pdf/2605.22263v1",
+      "tags": [
+        "keyword:opd",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Proposes direction-adaptive self-distillation for LLM reasoning, an on-policy distillation method",
+      "llm_evidence_cn": "提出面向LLM推理的方向自适应自蒸馏，属于在线策略蒸馏方法",
+      "llm_evidence": "提出面向LLM推理的方向自适应自蒸馏，属于在线策略蒸馏方法",
+      "canonical_evidence": "提出面向LLM推理的方向自适应自蒸馏，属于在线策略蒸馏方法",
+      "llm_tldr_en": "Tailoring Teaching to Aptitude introduces direction-adaptive on-policy self-distillation for LLM reasoning, addressing the degradation caused by uniform teacher supervision across tokens with different uncertainty levels.",
+      "llm_tldr_cn": "本文发现在线策略自蒸馏中统一方向的教师监督会抑制高不确定性token的探索并降低低不确定性token的精度，导致复杂推理退化。为此提出方向自适应自蒸馏方法，根据token不确定性调整蒸馏方向，在保持推理能力的同时提升探索与准确性。实验验证了该方法在多种推理任务上的有效性。",
+      "llm_tldr": "本文发现在线策略自蒸馏中统一方向的教师监督会抑制高不确定性token的探索并降低低不确定性token的精度，导致复杂推理退化。为此提出方向自适应自蒸馏方法，根据token不确定性调整蒸馏方向，在保持推理能力的同时提升探索与准确性。实验验证了该方法在多种推理任务上的有效性。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy learning knowledge distillation",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.23493v1",
+      "source": "arxiv",
+      "title": "EDGE-OPD: Internalizing Privileged Context with Evidence Guided On-Policy Distillation",
+      "abstract": "On-Policy Distillation (OPD) has gained wide attraction as an LLM post-training paradigm due to its effectiveness in improving capabilities without introducing model distribution drift, and consequently, regression in general tasks. On-Policy Self-Distillation (OPSD) is an efficient use-case of OPD, which is appealing as it requires only a single model as a student and teacher, and it also has the benefit of providing privileged context that is a absent at inference time (e.g. a persona, a private fact, or a worked solution) to the teacher during the training process. The challenge in this approach is that the privileged information can change model behavior more than intended: it can modify reasoning, degrade general capabilities, and affect performance indicators like response length, style, or local token preferences. Consequently, OPSD may train the student on side effects rather than a desired, transferable behavior. In this paper, we study this problem in a rare-token/identity setting and propose EviDence GuidEd On-Policy Distillation (EDGE-OPD), a modification of OPSD with two distinct characteristics: a) it uses guided rollouts to inject privileged-context behavior to the student at sampling time, so that the rare target behavior is actually present in the on-policy data, and b) it applies an evidence mask: the student is updated only at token positions where the privileged context supports the sampled token, rather than on every token in the rollout. We empirically show that OPSD (and its variant RLSD, with and without a verifier) completely fail to learn a target identity, while the integration of guided rollouts allows them to succeed. Additionally, mask-region ablations show that the persona signal is localized to the positive-evidence tail, allows us to draw valuable insights about efficient knowledge transfer and preservation of general purpose capabilities.",
+      "authors": [
+        "Aristotelis Lazaridis",
+        "Dylan Bates",
+        "Aman Sharma",
+        "Brian King",
+        "Vincent Lu",
+        "Jack FitzGerald"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-22T10:55:15+00:00",
+      "link": "https://arxiv.org/pdf/2605.23493v1",
+      "tags": [
+        "keyword:opd",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Directly addresses on-policy distillation with EDGE-OPD method",
+      "llm_evidence_cn": "直接研究在线策略蒸馏，提出EDGE-OPD方法",
+      "llm_evidence": "直接研究在线策略蒸馏，提出EDGE-OPD方法",
+      "canonical_evidence": "直接研究在线策略蒸馏，提出EDGE-OPD方法",
+      "llm_tldr_en": "EDGE-OPD proposes evidence-guided on-policy self-distillation for LLMs, internalizing privileged context while preventing distribution drift and regression, achieving improved capabilities.",
+      "llm_tldr_cn": "本文针对在线策略自蒸馏中特权信息导致模型行为过度改变和通用能力下降的问题，提出EDGE-OPD方法，通过证据引导机制在自蒸馏过程中内化特权上下文。实验证明，该方法能有效提升模型能力，同时避免分布漂移和通用任务退化，为LLM后训练提供了一种稳定高效的在线策略蒸馏范式。",
+      "llm_tldr": "本文针对在线策略自蒸馏中特权信息导致模型行为过度改变和通用能力下降的问题，提出EDGE-OPD方法，通过证据引导机制在自蒸馏过程中内化特权上下文。实验证明，该方法能有效提升模型能力，同时避免分布漂移和通用任务退化，为LLM后训练提供了一种稳定高效的在线策略蒸馏范式。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.30070v1",
+      "source": "arxiv",
+      "title": "A Predictive Law for On-Policy Self-Distillation From World Feedback",
+      "abstract": "Moving beyond simple scalar rewards toward richer world feedback is a natural path to more scalable RL post-training. On-policy self-distillation (OPSD) is a promising recent approach that uses arbitrary feedback as learning signal, yet its reliability compared to established methods, such as GRPO, remains unclear. We identify a strikingly consistent linear correlation between the initial student-self-teacher performance gap and the final performance improvement in OPSD. This relationship holds across context types and model families, providing a powerful predictive law for anticipating the outcome of an OPSD configuration without running the full training procedure. Interestingly, we show that this linear predictability holds with model scale, suggesting a potential basis for new empirical scaling laws on larger models with stronger in-context learning capabilities. In essence, our findings show that OPSD performance can be predicted and tuned before training, offering a principled way to incorporate world feedback as a first-class component of the post-training pipeline.",
+      "authors": [
+        "Tommy He",
+        "Jerome Sieber",
+        "Matteo Saponati"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-28T15:17:19+00:00",
+      "link": "https://arxiv.org/pdf/2605.30070v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "on-policy self-distillation from world feedback",
+      "llm_evidence_cn": "从世界反馈中进行在线自蒸馏",
+      "llm_evidence": "从世界反馈中进行在线自蒸馏",
+      "canonical_evidence": "从世界反馈中进行在线自蒸馏",
+      "llm_tldr_en": "Identifies a linear correlation between initial student-teacher gap and final improvement in on-policy self-distillation, across contexts and model scales.",
+      "llm_tldr_cn": "该论文研究了在线自蒸馏（OPSD）的可预测性，发现初始学生-教师性能差距与最终性能提升之间存在稳定的线性关系，该关系跨不同上下文类型和模型规模均成立。这一发现为OPSD配置提供了无需完整训练即可预测效果的预测律，有助于在RL后训练中更可靠地使用世界反馈。",
+      "llm_tldr": "该论文研究了在线自蒸馏（OPSD）的可预测性，发现初始学生-教师性能差距与最终性能提升之间存在稳定的线性关系，该关系跨不同上下文类型和模型规模均成立。这一发现为OPSD配置提供了无需完整训练即可预测效果的预测律，有助于在RL后训练中更可靠地使用世界反馈。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.21850v1",
+      "source": "arxiv",
+      "title": "ACC: Compiling Agent Trajectories for Long-Context Training",
+      "abstract": "Recent development of agents has renewed demand for long-context reasoning capacity of LLMs. However, training LLMs for this capacity requires costly long-document curation or heuristic context synthesis. We observe that agents produce massive trajectories when solving problems, invoking tools and receiving environment observations across many turns. The evidence needed to answer the original question is thus scattered throughout these turns, requiring integration of distant context segments. Nevertheless, standard agent SFT masks tool responses and only trains turn-level tool selection, creating a supervision blind spot where these scattered signals go unused. We propose Agent Context Compilation (ACC), which converts trajectories from search, software engineering, and database querying agents into long-context QA pairs that combine the original question with tool responses and environment observations gathered across multiple turns, training the model to answer directly without tool use. This makes the dependencies between the question and the evidence explicit, enabling direct supervision of long-context reasoning over distant segments without additional annotation. ACC is a simple but effective approach that can be combined with any existing long-context extension or training method, providing scalable supervised fine-tuning data. We validate ACC on long-range dependency modeling tasks through MRCR and GraphWalks, challenging benchmarks requiring cross-turn coreference resolution and graph traversal over extended contexts. Training Qwen3-30B-A3B with ACC achieves 68.3 on MRCR (+18.1) and 77.5 on GraphWalks (+7.6), results comparable to Qwen3-235B-A22B, while preserving general capabilities on GPQA, MMLU-Pro, AIME, and IFEval. Further mechanism analysis reveals that the ACC-trained model exhibits task-adaptive attention restructuring and expert specialization.",
+      "authors": [
+        "Qisheng Su",
+        "Zhen Fang",
+        "Shiting Huang",
+        "Yu Zeng",
+        "Yiming Zhao",
+        "Kou Shi",
+        "Ziao Zhang",
+        "Lin Chen",
+        "Zehui Chen",
+        "Lijun Wu",
+        "Feng Zhao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-21T00:47:03+00:00",
+      "link": "https://arxiv.org/pdf/2605.21850v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "compiling agent trajectories for long-context RL training",
+      "llm_evidence_cn": "编译智能体轨迹用于长上下文RL训练",
+      "llm_evidence": "编译智能体轨迹用于长上下文RL训练",
+      "canonical_evidence": "编译智能体轨迹用于长上下文RL训练",
+      "llm_tldr_en": "ACC converts agent trajectories from search and software engineering into long-context training data for LLMs, enabling efficient RL on long sequences without expensive long-document curation.",
+      "llm_tldr_cn": "针对长上下文训练需要昂贵的长文档标注或启发式合成的问题，本文提出智能体上下文编译（ACC）。该方法将智能体在求解过程中产生的多步交互轨迹转换为长上下文训练样本，通过结构化压缩保留关键证据。实验显示，ACC训练后的模型在长上下文推理任务上表现显著提升，且无需额外人工标注数据。这为利用智能体轨迹低成本训练长上下文模型提供了可行方案。",
+      "llm_tldr": "针对长上下文训练需要昂贵的长文档标注或启发式合成的问题，本文提出智能体上下文编译（ACC）。该方法将智能体在求解过程中产生的多步交互轨迹转换为长上下文训练样本，通过结构化压缩保留关键证据。实验显示，ACC训练后的模型在长上下文推理任务上表现显著提升，且无需额外人工标注数据。这为利用智能体轨迹低成本训练长上下文模型提供了可行方案。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "training reinforcement learning models on long input sequences",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.22731v1",
+      "source": "arxiv",
+      "title": "Post-Training is About States, Not Tokens: A State Distribution View of SFT, RL, and On-Policy Distillation",
+      "abstract": "Large language model post-training methods such as supervised fine-tuning (SFT), reinforcement learning (RL), and distillation are often analyzed through their loss functions: maximum likelihood, policy gradients, forward KL, reverse KL, or related objective-level variants. We study a complementary factor: the state distribution on which supervision is applied. For an autoregressive policy, a state is a prompt plus generated prefix. SFT trains on fixed dataset states, while RL and on-policy distillation (OPD) train on states induced by the current learner. We formalize post-training as state-distribution shaping and run a controlled smallscale study using Qwen3-0.6B-Base on GSM8K, with TruthfulQA and MMLU as retention evaluations. Our results show three phenomena. First, a mild SFT run improves GSM8K with little forgetting, while a stress SFT run causes substantial retention loss. Second, OPD from a degraded SFT teacher surpasses that teacher on GSM8K, TruthfulQA, and MMLU, despite using the teacher as its only supervision source. Third, a lightweight on-policy RL run improves GSM8K while preserving retention. These results support a state-centric view of post-training: the source and locality of training states can be as important as the form of the supervision signal.",
+      "authors": [
+        "Dong Nie"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-21T17:03:22+00:00",
+      "link": "https://arxiv.org/pdf/2605.22731v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Theoretical view unifying SFT, RL, and on-policy distillation via state distribution",
+      "llm_evidence_cn": "通过状态分布视角统一分析SFT、RL和在线策略蒸馏",
+      "llm_evidence": "通过状态分布视角统一分析SFT、RL和在线策略蒸馏",
+      "canonical_evidence": "通过状态分布视角统一分析SFT、RL和在线策略蒸馏",
+      "llm_tldr_en": "Formalizes post-training as state-distribution shaping, comparing on-policy distillation with RL and SFT, showing state distribution matters beyond loss functions.",
+      "llm_tldr_cn": "提出了一种状态分布视角理解LLM后训练，将监督微调、强化学习和在线策略蒸馏统一视为状态分布塑造。通过小规模实验证明，在线策略蒸馏和RL因使用学习者自身生成的状态分布而区别于SFT，且状态分布的选择比损失函数更关键。为理解蒸馏和RL的差异提供了新框架。",
+      "llm_tldr": "提出了一种状态分布视角理解LLM后训练，将监督微调、强化学习和在线策略蒸馏统一视为状态分布塑造。通过小规模实验证明，在线策略蒸馏和RL因使用学习者自身生成的状态分布而区别于SFT，且状态分布的选择比损失函数更关键。为理解蒸馏和RL的差异提供了新框架。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.25582v1",
+      "source": "arxiv",
+      "title": "Extreme Region Policy Distillation",
+      "abstract": "Reinforcement learning for large language models faces a fundamental trade-off between sample efficiency and asymptotic performance: strictly on-policy methods discard trajectories after a single update, while off-policy reuse introduces distribution mismatch that existing trust-region techniques mitigate primarily by enforcing conservative optimization, often leaving rich training signals underutilized. To investigate this, we perform extensive off-policy updates on fixed data. Our experiments reveal that aggressive multi-step optimization brings rapid initial gains, but excessive updates cause trajectory probabilities to deviate and entropy to collapse, with performance plateauing early. Tightening KL constraints merely lowers the ceiling without resolving the degradation. This motivates Extreme Region Policy Distillation (ERPD), a two-stage framework that decouples sample efficiency from KL efficiency. The first stage performs weakly constrained off-policy optimization on fixed data to maximally extract training signals. The resulting policy provides token-level supervision. In the second stage, we distill these signals into the base policy under trust-region constraints, filtering harmful drift while preserving useful signals. The distilled policy achieves comparable or better performance with substantially smaller KL divergence, indicating that much of the first-stage divergence was spent on unnecessary drift rather than genuine improvement. Crucially, ERPD accommodates both strong and weak teachers: when aggressive optimization yields no stronger policy, even degenerate teachers provide effective supervision via alternative signal construction strategies. We validate ERPD on mathematical reasoning, showing gains for strong base models where on-policy training plateaus, and reliable improvements with weak teachers.",
+      "authors": [
+        "Changyu Chen",
+        "Xiting Wang",
+        "Rui Yan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-25T08:32:24+00:00",
+      "link": "https://arxiv.org/pdf/2605.25582v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "extreme region policy distillation for LLM RL",
+      "llm_evidence_cn": "LLM强化学习的极端区域策略蒸馏",
+      "llm_evidence": "LLM强化学习的极端区域策略蒸馏",
+      "canonical_evidence": "LLM强化学习的极端区域策略蒸馏",
+      "llm_tldr_en": "Extreme Region Policy Distillation investigates the trade-off between on-policy and off-policy RL for LLMs, proposing a method that selectively distills under-explored regions to improve sample efficiency and asymptotic performance.",
+      "llm_tldr_cn": "针对大语言模型强化学习中在线策略样本效率低而离线策略分布偏移的问题，本文提出极端区域策略蒸馏。该方法通过分析多步优化中轨迹概率偏差和熵崩塌现象，设计了一种选择性地从低概率区域进行知识蒸馏的策略。实验证明，该方法在保持高渐近性能的同时显著提升了样本效率，为平衡在线与离线RL提供了新视角。",
+      "llm_tldr": "针对大语言模型强化学习中在线策略样本效率低而离线策略分布偏移的问题，本文提出极端区域策略蒸馏。该方法通过分析多步优化中轨迹概率偏差和熵崩塌现象，设计了一种选择性地从低概率区域进行知识蒸馏的策略。实验证明，该方法在保持高渐近性能的同时显著提升了样本效率，为平衡在线与离线RL提供了新视角。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "policy distillation in reinforcement learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.28069v1",
+      "source": "arxiv",
+      "title": "ZipRL: Adaptive Multi-Turn Context Compression with Hindsight Response Replay",
+      "abstract": "Adaptive context compression is vital for scaling Large Language Models (LLMs) to complex, multi-turn agent tasks. However, rule-based compression methods may discard task-critical nuances, while Reinforcement Learning (RL) approaches usually struggle to balance information retention and token efficiency under the sparse rewards inherent to long-horizon workflows. To bridge this gap, we propose ZipRL, a novel adaptive compression framework tailored for Reinforcement Learning from Verifiable Rewards (RLVR). ZipRL features a multi-granularity compression mechanism for active, non-uniform information reduction, coupled with Hindsight Response Replay (HRR), a technique designed to densify training signals during RLVR optimization. Theoretically, we prove ZipRL's superior task-relevant utility over uniform methods. Concretely, ZipRL utilizes coarse-to-fine prompts for macro-compression and incorporates HRR into GRPO via generalized advantage reshaping. Multiple models of varying versions and parameter scales validate the effectiveness of our approach. Benchmarks on five agent tasks show ZipRL outperforms state-of-the-art approaches by 27.9% and 34.7% across Qwen3-4B and Qwen3-8B models, while maintaining exceptional token efficiency and robustness under extreme 256-turn extrapolation stress tests.",
+      "authors": [
+        "Zhexin Hu",
+        "Li Wang",
+        "Xiaohan Wang",
+        "Jiajun Chai",
+        "Xiaojun Guo",
+        "Wei Lin",
+        "Guojun Yin"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-27T07:26:34+00:00",
+      "link": "https://arxiv.org/pdf/2605.28069v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "adaptive context compression for multi-turn LLM tasks using RL",
+      "llm_evidence_cn": "使用RL的多轮LLM任务自适应上下文压缩",
+      "llm_evidence": "使用RL的多轮LLM任务自适应上下文压缩",
+      "canonical_evidence": "使用RL的多轮LLM任务自适应上下文压缩",
+      "llm_tldr_en": "ZipRL uses multi-granularity context compression and Hindsight Response Replay to densify training signals in RLVR, achieving efficient token usage without sacrificing task-critical information in multi-turn LLM tasks.",
+      "llm_tldr_cn": "该论文针对长多轮LLM任务中的上下文压缩问题，提出ZipRL框架。它采用多粒度压缩机制主动减少信息量，并引入事后响应回放(HRR)技术来稠密化RLVR训练信号。理论分析和实验表明，ZipRL在保持关键任务信息的同时显著降低了token消耗，提升了多轮交互中的任务成功率。该工作为长上下文场景下的RL训练提供了高效的自适应压缩方案。",
+      "llm_tldr": "该论文针对长多轮LLM任务中的上下文压缩问题，提出ZipRL框架。它采用多粒度压缩机制主动减少信息量，并引入事后响应回放(HRR)技术来稠密化RLVR训练信号。理论分析和实验表明，ZipRL在保持关键任务信息的同时显著降低了token消耗，提升了多轮交互中的任务成功率。该工作为长上下文场景下的RL训练提供了高效的自适应压缩方案。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "training reinforcement learning models on long input sequences",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.28791v1",
+      "source": "arxiv",
+      "title": "Skill-Conditioned Gated Self-Distillation for LLM Reasoning",
+      "abstract": "On-policy self-distillation (SD) improves LLM reasoning by using teacher-side privileged information (PI) to turn sparse verifier outcomes into dense token-level supervision. Existing methods usually assume trusted PI, such as reference answers or successful traces. We ask whether PI can instead come from an experience-derived skill bank, where retrieved skills are compact and reusable but may also be irrelevant or misleading. We propose Skill-Conditioned Gated Self-Distillation (SGSD), which formulates skill-based SD as teacher hypothesis validation rather than unconditional imitation. SGSD retrieves skill-mistake pairs, constructs a multi-teacher pool, and lets all skill-conditioned teachers score the same plain-prompt student rollout. The verifier validates each teacher's polarity: supporting a success or suppressing a failure gives positive supervision, while the opposite stance is reversed. A robust gated objective then distills informative teacher-student disagreements while suppressing uncertain or extreme signals. Experiments on multiple mathematical reasoning benchmarks show that SGSD consistently improves over GRPO and remains competitive with answer-conditioned OPSD under a weaker PI assumption. For example, on Qwen3-1.7B, SGSD outperforms GRPO by 6.2% and OPSD by 1.7% on average on AIME24, AIME25, and HMMT25. Our code is available at https://github.com/walawalagoose/SGSD.",
+      "authors": [
+        "Jiazhen Huang",
+        "Xiao Chen",
+        "Xiao Luo",
+        "Yong Dai",
+        "Senkang Hu",
+        "Yuzhi Zhao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-27T17:49:52+00:00",
+      "link": "https://arxiv.org/pdf/2605.28791v1",
+      "tags": [
+        "keyword:opd",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "on-policy self-distillation for LLM reasoning",
+      "llm_evidence_cn": "在线自蒸馏用于大语言模型推理",
+      "llm_evidence": "在线自蒸馏用于大语言模型推理",
+      "canonical_evidence": "在线自蒸馏用于大语言模型推理",
+      "llm_tldr_en": "Proposes Skill-Conditioned Gated Self-Distillation (SGSD) that uses a skill bank as teacher-side privileged information for on-policy self-distillation in LLM reasoning.",
+      "llm_tldr_cn": "本文针对在线自蒸馏中教师特权信息（如参考答案）不可靠的问题，提出技能条件门控自蒸馏（SGSD）。该方法从经验中提取技能-错误对构建多教师池，让各教师对同一学生输出打分，再由验证器确认是否采纳。在数学推理任务上，SGSD显著提升了蒸馏效率和推理准确性。该工作拓展了在线自蒸馏在LLM推理中的应用，为无信号蒸馏提供了新思路。",
+      "llm_tldr": "本文针对在线自蒸馏中教师特权信息（如参考答案）不可靠的问题，提出技能条件门控自蒸馏（SGSD）。该方法从经验中提取技能-错误对构建多教师池，让各教师对同一学生输出打分，再由验证器确认是否采纳。在数学推理任务上，SGSD显著提升了蒸馏效率和推理准确性。该工作拓展了在线自蒸馏在LLM推理中的应用，为无信号蒸馏提供了新思路。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29089v1",
+      "source": "arxiv",
+      "title": "OISD: On-Policy Internal Self-Distillation of Language Models",
+      "abstract": "Recent reinforcement learning (RL) post-training approaches primarily optimize the final output policy using sparse outcome-level rewards, while largely overlooking predictive signals encoded in intermediate representations. In this paper, we introduce a new paradigm called on-policy internal self-distillation and propose the OISD framework, which improves reasoning by transferring on-policy predictive signals from the final layer to intermediate representations. During rollout and Group Relative Policy Optimization (GRPO) optimization, the final layer acts as both the policy and a detached internal teacher for selected intermediate layers, which are guided to align with it through two complementary mechanisms: logit alignment, which transfers high-level reasoning behaviors (how to think), and attention alignment, which enforces consistent attention patterns (where to look) from the final layer to the selected intermediate layer, both without requiring external privileged information. Our OISD, together with GRPO, employs signed advantage-weighted Jensen--Shannon alignment to distill informative intermediate representations while preserving policy consistency under a unified acting policy. Experimental results demonstrate the effectiveness of OISD, with substantial and consistent improvements over strong reasoning RL baselines across four mathematical reasoning tasks. The code will be released at https://github.com/THE-MALT-LAB/OISD",
+      "authors": [
+        "Xinyu Liu",
+        "Darryl Cherian Jacob",
+        "Yang Zhou",
+        "Jindong Wang",
+        "Pan He"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-05-27T20:43:10+00:00",
+      "link": "https://arxiv.org/pdf/2605.29089v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "on-policy internal self-distillation for LLM reasoning",
+      "llm_evidence_cn": "LLM推理的在线策略内部自蒸馏",
+      "llm_evidence": "LLM推理的在线策略内部自蒸馏",
+      "canonical_evidence": "LLM推理的在线策略内部自蒸馏",
+      "llm_tldr_en": "OISD introduces on-policy internal self-distillation that transfers predictive signals from the final layer to intermediate layers during GRPO rollout, improving reasoning by logit alignment and auxiliary distribution matching.",
+      "llm_tldr_cn": "针对现有RL后训练仅优化最终输出策略而忽略中间表征预测信号的问题，本文提出在线策略内部自蒸馏框架OISD。该方法在GRPO采样和优化过程中，将最终层作为策略同时作为内部教师，通过logit对齐和辅助分布匹配机制引导中间层对齐。实验表明，OISD在多个推理基准上显著提升了语言模型的推理能力，且无需额外标注。这一范式为利用中间监督信号增强RL后训练提供了新思路。",
+      "llm_tldr": "针对现有RL后训练仅优化最终输出策略而忽略中间表征预测信号的问题，本文提出在线策略内部自蒸馏框架OISD。该方法在GRPO采样和优化过程中，将最终层作为策略同时作为内部教师，通过logit对齐和辅助分布匹配机制引导中间层对齐。实验表明，OISD在多个推理基准上显著提升了语言模型的推理能力，且无需额外标注。这一范式为利用中间监督信号增强RL后训练提供了新思路。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29584v1",
+      "source": "arxiv",
+      "title": "GAPD: Gold-Action Policy Distillation for Agentic Reinforcement Learning in Knowledge Base Question Answering",
+      "abstract": "Reinforcement learning (RL) is a natural fit for agentic knowledge base question answering (KBQA), where a model must issue executable actions, observe knowledge-base feedback, and eventually return an answer. However, current RL-based KBQA systems mainly optimize sparse rewards from the final answer, leaving intermediate action errors weakly supervised. This is especially limiting for logical-form annotated KBQA benchmarks: gold logical forms can be converted into executable action sequences, but existing pipelines use them mainly for warm-start data construction rather than for on-policy RL updates. We propose GAPD, a training-time Gold-Action Policy Distillation framework that adds dense token-level guidance to outcome-based RL. To align gold actions with on-policy student rollouts, GAPD uses MID-ANCHOR MATCHING: it treats the intermediate entities reached during student exploration and gold execution as state anchors, and matches student states to gold states through these explored entity sets. The current policy conditioned on this aligned gold action serves as a stop-gradient teacher, whose token distribution is distilled back to the ordinary student policy over generated action-token spans. GAPD consistently surpasses the current state of the art on WebQSP, GrailQA, and GraphQ.",
+      "authors": [
+        "Xin Sun",
+        "Jianan Xie",
+        "Zhongqi Chen",
+        "Qiang Liu",
+        "Shu Wu",
+        "Bowen Song",
+        "Weiqiang Wang",
+        "Zilei Wang",
+        "Liang Wang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-28T08:28:10+00:00",
+      "link": "https://arxiv.org/pdf/2605.29584v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "gold-action policy distillation for agentic RL in KBQA, directly addresses policy distillation in RL",
+      "llm_evidence_cn": "知识库问答中智能体强化学习的金动作策略蒸馏，直接针对RL中的策略蒸馏",
+      "llm_evidence": "知识库问答中智能体强化学习的金动作策略蒸馏，直接针对RL中的策略蒸馏",
+      "canonical_evidence": "知识库问答中智能体强化学习的金动作策略蒸馏，直接针对RL中的策略蒸馏",
+      "llm_tldr_en": "Proposes GAPD, a gold-action policy distillation framework that adds dense token-level guidance to on-policy RL updates for KBQA.",
+      "llm_tldr_cn": "该论文提出GAPD框架，针对知识库问答中的智能体强化学习，利用逻辑形式的金动作序列，通过密集的token级引导进行策略蒸馏。该方法将蒸馏融入在线RL更新，解决了中间动作监督稀疏的问题，显著提升了性能和样本效率。",
+      "llm_tldr": "该论文提出GAPD框架，针对知识库问答中的智能体强化学习，利用逻辑形式的金动作序列，通过密集的token级引导进行策略蒸馏。该方法将蒸馏融入在线RL更新，解决了中间动作监督稀疏的问题，显著提升了性能和样本效率。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.23067v1",
+      "source": "arxiv",
+      "title": "What Training Data Teaches RL Memory Agents: An Empirical Study of Curriculum Effects in Memory-Augmented QA",
+      "abstract": "Reinforcement learning (RL) has emerged as a viable recipe for training LLM agents to reason over external memory banks in multi-session dialogue. Existing work trains exclusively on a single benchmark, leaving open how the composition of training data shapes the skills a memory agent acquires. We present a controlled empirical study that holds architecture, RL algorithm, and all hyperparameters fixed and varies only the training curriculum across three conditions: in-domain (LoCoMo), mixed-benchmark (LoCoMo + LongMemEval), and out-of-domain (LongMemEval only). Across two benchmarks and ten question types, curriculum composition acts as a fine-grained lever on specialization rather than a uniform scaling factor on performance. The mixed curriculum yields the strongest overall F1 on both evaluation sets. Training on a narrow out-of-domain set transfers a targeted skill - temporal reasoning - despite weak aggregate performance. Per-type differences substantially exceed aggregate differences, indicating that single-number benchmark comparisons systematically underreport curriculum effects. We further report two practical lessons from adapting GRPO to a single-GPU regime: cross-benchmark mixing requires filtering format-specific noise from memory banks to preserve training signal, and binary exact-match reward produces no learning signal at the small group sizes (G = 4) required on one GPU, motivating continuous reward functions in this regime.",
+      "authors": [
+        "Xinjie He",
+        "Zhiyuan Lin",
+        "Su Liu",
+        "Jialun Wu",
+        "Qiyang Xie",
+        "Weikai Zhou",
+        "Shuai Xiao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-21T21:58:10+00:00",
+      "link": "https://arxiv.org/pdf/2605.23067v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL training on long input sequences for memory-augmented QA",
+      "llm_evidence_cn": "针对长输入序列的强化学习训练，用于增强记忆的问答系统",
+      "llm_evidence": "针对长输入序列的强化学习训练，用于增强记忆的问答系统",
+      "canonical_evidence": "针对长输入序列的强化学习训练，用于增强记忆的问答系统",
+      "llm_tldr_en": "Empirically studies how curriculum composition in RL training affects memory agents performing long-context multi-session dialogue QA.",
+      "llm_tldr_cn": "该论文通过控制实验研究了训练数据组成对强化学习训练长上下文记忆智能体的影响。在多种训练课程下，发现课程组成充当了专业化的精细调节杠杆，而非统一缩放因子。这项研究为长上下文任务的RL训练提供了重要实证洞察。",
+      "llm_tldr": "该论文通过控制实验研究了训练数据组成对强化学习训练长上下文记忆智能体的影响。在多种训练课程下，发现课程组成充当了专业化的精细调节杠杆，而非统一缩放因子。这项研究为长上下文任务的RL训练提供了重要实证洞察。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "training reinforcement learning models on long input sequences",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.22411v1",
+      "source": "arxiv",
+      "title": "DeferMem: Query-Time Evidence Distillation via Reinforcement Learning for Long-Term Memory QA",
+      "abstract": "Large language model (LLM) agents still struggle with long-term memory question answering, where answer-supporting evidence is often scattered across long conversational histories and buried in substantial irrelevant content. Existing memory systems typically process memory before future queries are known, then retrieve the resulting units based on similarity rather than their utility for answering the query. This workflow leaves downstream answerers to denoise retrieved candidates and reconstruct query-specific evidence. We present DeferMem, a long-term memory framework that decouples this problem into high-recall candidate retrieval and query-conditioned evidence distillation. DeferMem uses a lightweight segment-link structure to organize raw history and retrieve broad candidates at query time. It then applies a memory distiller trained with DistillPO, our reinforcement learning algorithm for distilling the high-recall but highly noisy candidates into a set of faithful, self-contained, and query-conditioned evidence. DistillPO formulates post-retrieval evidence distillation as a structured action comprising message selection and evidence rewriting. It optimizes this action with a decomposed-and-gated reward pipeline and structure-aligned advantage assignment, gating reward components from validity to quality checks while exposing task-level correctness feedback early and assigning each reward to its responsible output span. On LoCoMo and LongMemEval-S, DeferMem surpasses strong baselines in QA accuracy and memory-system efficiency, achieving the highest QA accuracy with the fastest runtime and zero commercial-API token cost for memory operations.",
+      "authors": [
+        "Jianing Yin",
+        "Tan Tang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-05-21T12:36:46+00:00",
+      "link": "https://arxiv.org/pdf/2605.22411v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "RL-based evidence distillation for long-term memory QA with long context",
+      "llm_evidence_cn": "基于强化学习的证据蒸馏用于长上下文记忆问答",
+      "llm_evidence": "基于强化学习的证据蒸馏用于长上下文记忆问答",
+      "canonical_evidence": "基于强化学习的证据蒸馏用于长上下文记忆问答",
+      "llm_tldr_en": "Proposes DeferMem, a long-term memory framework that uses RL to distill query-specific evidence from long conversational histories for better QA.",
+      "llm_tldr_cn": "针对LLM在长对话历史问答中证据分散的问题，提出了DeferMem框架。该框架通过高召回检索和基于强化学习的查询条件证据蒸馏，将长上下文中的相关证据浓缩为紧凑表示。实验表明该方法在长记忆QA任务上显著优于现有记忆系统，提升了答案质量。",
+      "llm_tldr": "针对LLM在长对话历史问答中证据分散的问题，提出了DeferMem框架。该框架通过高召回检索和基于强化学习的查询条件证据蒸馏，将长上下文中的相关证据浓缩为紧凑表示。实验表明该方法在长记忆QA任务上显著优于现有记忆系统，提升了答案质量。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "reinforcement learning applied to long context language models",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.26105v1",
+      "source": "arxiv",
+      "title": "On-Policy Adversarial Flow Distillation for Autoregressive Video Generation",
+      "abstract": "Autoregressive video generators are attractive for streaming, long-horizon, and interactive applications, but distilling strong black-box teachers into causal students remains difficult. The student must learn under its own rollout distribution, whereas practical teachers may expose only prompt-conditioned completed videos and may differ in architecture, capacity, temporal design, and sampling schedule. This interface makes supervised fine-tuning off-policy, score-based distillation inapplicable, and direct adversarial imitation too sparse for denoising-time credit assignment. We propose Adversarial Flow Distillation (AFD), an on-policy framework for heterogeneous black-box video distillation. AFD queries the teacher and rolls out the current student on the same prompts, trains a prompt-paired Bradley-Terry discriminator to estimate clean-sample teacher-student discrepancy, and converts the resulting on-policy advantage into forward-process flow-matching updates on the student's own noised states. Thus, AFD provides dense velocity-field supervision while requiring no teacher scores, latents, denoising trajectories, step alignment, or reverse-chain reinforcement learning. Experiments across two causal AR student families show that AFD consistently improves motion- and physics-sensitive generation while preserving general video quality, and ablations validate the importance of adaptive on-policy feedback and forward-process credit assignment. The method requires only clean teacher videos and student rollouts, providing a practical route for distilling proprietary or heterogeneous video generators into efficient autoregressive students.",
+      "authors": [
+        "Yang Luo",
+        "Shengju Qian",
+        "Xiaohang Tang",
+        "Zirui Zhu",
+        "Yong Liu",
+        "Xin Wang",
+        "Yang You"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T17:58:12+00:00",
+      "link": "https://arxiv.org/pdf/2605.26105v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "On-policy distillation framework for autoregressive generation applied to video",
+      "llm_evidence_cn": "应用于视频生成的在线策略蒸馏框架",
+      "llm_evidence": "应用于视频生成的在线策略蒸馏框架",
+      "canonical_evidence": "应用于视频生成的在线策略蒸馏框架",
+      "llm_tldr_en": "Proposes Adversarial Flow Distillation, an on-policy framework for distilling black-box video teachers into causal students, addressing off-policy and sparsity issues.",
+      "llm_tldr_cn": "针对黑盒视频教师蒸馏的困难，提出对抗流蒸馏（AFD），一种在线策略框架。它通过查询教师并滚动学生分布，解决监督微调离策略和对抗模仿稀疏的问题。实验表明，AFD能有效将强教师压缩为因果学生，在视频生成质量上接近教师水平，同时保持自回归模型的效率。",
+      "llm_tldr": "针对黑盒视频教师蒸馏的困难，提出对抗流蒸馏（AFD），一种在线策略框架。它通过查询教师并滚动学生分布，解决监督微调离策略和对抗模仿稀疏的问题。实验表明，AFD能有效将强教师压缩为因果学生，在视频生成质量上接近教师水平，同时保持自回归模型的效率。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.26108v2",
+      "source": "arxiv",
+      "title": "Reinforcing Few-step Generators via Reward-Tilted Distribution Matching",
+      "abstract": "Recent advances in few-step diffusion distillation have enabled efficient image generation, yet aligning these models with human preferences remains challenging. We propose Reward-Tilted Distribution Matching Distillation (RTDMD), a two-stage framework that unifies distribution matching distillation with reward-guided reinforcement learning for few-step flow generators. We show that minimizing the KL divergence to a reward-tilted teacher distribution naturally decomposes into a distribution matching term and a reward maximization term. In the first stage, we introduce Ambient-Consistent Distribution Matching Distillation (AC-DMD), which performs subinterval-wise distribution matching and augments the fake score objective with a consistency regularizer to help the fake score model track the shifting generator distribution under limited updates. In the second stage, we jointly optimize both terms: for the reward maximization term, we derive a hybrid policy gradient that combines a GRPO-style estimator for the stochastic intermediate transitions with direct reward backpropagation through the deterministic final step, and further introduce step-subset GRPO (SubGRPO) to reduce variance. Experiments on SD3, SD3.5, and FLUX.2 demonstrate that RTDMD establishes new state-of-the-art results across preference, aesthetic, and compositional metrics with only 4 inference steps, outperforming previous few-step text-to-image generation methods. Code and models are available at https://github.com/Harahan/RTDMD.",
+      "authors": [
+        "Yushi Huang",
+        "Xiangxin Zhou",
+        "Ruoyu Wang",
+        "Chi Zhang",
+        "Jun Zhang",
+        "Tianyu Pang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T17:59:21+00:00",
+      "link": "https://arxiv.org/pdf/2605.26108v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "two-stage distillation framework combining distribution matching and RL reward",
+      "llm_evidence_cn": "两阶段蒸馏框架结合分布匹配与强化学习奖励",
+      "llm_evidence": "两阶段蒸馏框架结合分布匹配与强化学习奖励",
+      "canonical_evidence": "两阶段蒸馏框架结合分布匹配与强化学习奖励",
+      "llm_tldr_en": "Proposes RTDMD, unifying distribution matching distillation with reward-guided reinforcement learning for few-step flow generators, decomposing KL divergence to a reward-tilted teacher distribution.",
+      "llm_tldr_cn": "针对少步扩散蒸馏生成器难以与人类偏好对齐的问题，本文提出奖励倾斜分布匹配蒸馏（RTDMD）框架，将分布匹配蒸馏与奖励引导的强化学习统一。通过最小化到奖励倾斜教师分布的KL散度，自然分解为分布匹配和奖励最大化两项。第一阶段引入一致分布匹配蒸馏进行子区间匹配，第二阶段利用RL优化。实验表明，该方法在图像生成中有效提升对齐度，为蒸馏与RL结合提供通用范式。",
+      "llm_tldr": "针对少步扩散蒸馏生成器难以与人类偏好对齐的问题，本文提出奖励倾斜分布匹配蒸馏（RTDMD）框架，将分布匹配蒸馏与奖励引导的强化学习统一。通过最小化到奖励倾斜教师分布的KL散度，自然分解为分布匹配和奖励最大化两项。第一阶段引入一致分布匹配蒸馏进行子区间匹配，第二阶段利用RL优化。实验表明，该方法在图像生成中有效提升对齐度，为蒸馏与RL结合提供通用范式。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "teacher student framework reinforcement learning distillation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.24220v1",
+      "source": "arxiv",
+      "title": "Polar: Agentic RL on Any Harness at Scale",
+      "abstract": "Reinforcement learning for language agents increasingly depends on custom harnesses that manage long-running context, multi-turn tool use and multi-agent orchestration. However, porting these harnesses into RL environment interfaces remains difficult and often loses important training signals. We bridge this gap with polar, a rollout framework for scalable asynchronous RL over arbitrary agent harnesses. Polar treats the agent harness as a black box: it proxies LLM API calls, records token-level model interactions, and reconstructs token-faithful trajectories for training. Each rollout node efficiently manages runtime prewarming, agent execution, trajectory reconstruction, and evaluation in parallel, exposing asynchronous service endpoints that can be consumed by independent trainers at scale. This decoupled design makes Polar agnostic to agent harnesses, training infrastructure, and RL algorithms while improving compute utilization for long-running agent workloads. We validate polar by training agents on software-engineering tasks with popular coding harnesses. Using simple GRPO, polar improves Qwen3.5-4B by 22.6, 4.8, 0.6 and 6.2 points on SWE-Bench Verified with the Codex, Claude Code, Qwen Code and Pi harnesses, respectively. We further demonstrate Polar for offline data generation over custom harnesses and ablate trajectory reconstruction strategies. Polar rewrites its preceding work, Prorl Agent, and has been registered as one of NeMo Gym environments.",
+      "authors": [
+        "Binfeng Xu",
+        "Hao Zhang",
+        "Shaokun Zhang",
+        "Songyang Han",
+        "Mingjie Liu",
+        "Jian Hu",
+        "Shizhe Diao",
+        "Zhenghui Jin",
+        "Yunheng Zou",
+        "Michael Demoret",
+        "Jan Kautz",
+        "Yi Dong"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-05-22T21:06:12+00:00",
+      "link": "https://arxiv.org/pdf/2605.24220v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "rollout framework for scalable asynchronous RL over agent harnesses, handling long-running context",
+      "llm_evidence_cn": "可扩展异步RL框架，处理长运行上下文",
+      "llm_evidence": "可扩展异步RL框架，处理长运行上下文",
+      "canonical_evidence": "可扩展异步RL框架，处理长运行上下文",
+      "llm_tldr_en": "Polar provides a scalable asynchronous RL rollout framework that proxy LLM API calls and reconstruct token-faithful trajectories, enabling efficient training over long-running context in agent harnesses.",
+      "llm_tldr_cn": "该论文提出Polar框架，用于在任意代理框架上实现可扩展的异步RL。它将代理框架视为黑盒，通过代理LLM API调用并记录令牌级交互，重构保真轨迹。每个rollout节点并行管理预热、执行、重构和评估，暴露异步服务端点。Polar特别适用于需要长运行上下文的多轮工具使用和多代理编排场景，为长上下文RL训练提供了基础设施支持。",
+      "llm_tldr": "该论文提出Polar框架，用于在任意代理框架上实现可扩展的异步RL。它将代理框架视为黑盒，通过代理LLM API调用并记录令牌级交互，重构保真轨迹。每个rollout节点并行管理预热、执行、重构和评估，暴露异步服务端点。Polar特别适用于需要长运行上下文的多轮工具使用和多代理编排场景，为长上下文RL训练提供了基础设施支持。",
+      "llm_tags": [
+        "query:l-context-rl:composite"
+      ],
+      "matched_query_tag": "query:l-context-rl:composite",
+      "matched_query_text": "Papers central to long-context相关的RL训练论文，了解当前进展, especially work that connects or combines: training reinforcement learning models on long input sequences; reinforcement learning applied to long context language models; research papers on reinforcement learning for long context language models; current progress in reinforcement learning for long context tasks.",
+      "matched_requirement_id": "req-composite-l-context-rl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.27765v1",
+      "source": "arxiv",
+      "title": "Restoring the Sweet Spot: Pass-Rate Weighted Self-Distillation for LLM Reasoning",
+      "abstract": "Self-Distillation Policy Optimization (SDPO) provides dense token-level credit assignment for reinforcement learning with large language models by leveraging the model's own feedback-conditioned predictions as a self-teacher. Unlike GRPO, however, whose group-relative advantage naturally concentrates learning on a sweet spot of intermediate-difficulty questions, SDPO's KL-based advantage lacks an implicit notion of difficulty awareness.   We analyze this gap through the lens of GRPO's advantage normalization. Extending the learnability framework to normalized rewards, we show that normalization absorbs the variance term $p(1-p)$, equalizing leading-order learnability across questions and leaving $\\sqrt{p(1-p)}$ as the sole residual scaling factor in the per-question gradient. This analysis yields a simple prescription: weight each question's SDPO loss by $[\\hat{p}(1-\\hat{p})]^{1/2}$, resulting in SC-SDPO, a scale-consistent variant of SDPO.   The proposed weights are obtained as a zero-cost byproduct of on-policy rollouts with batch-adaptive normalization, inducing an implicit curriculum that dynamically tracks the model's evolving competence. Experiments on scientific reasoning and tool-use benchmarks demonstrate that SC-SDPO consistently improves over SDPO, yielding gains of +3.2/+4.3 (mean@16/maj@16) on Qwen3-8B and +1.8/+3.0 on OLMo-3-7B, while preserving stable training dynamics throughout optimization.",
+      "authors": [
+        "Zehao Liu",
+        "Yuanpu Cao",
+        "Jinghui Chen",
+        "Vasant G. Honavar"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-26T23:30:01+00:00",
+      "link": "https://arxiv.org/pdf/2605.27765v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Self-distillation policy optimization for LLM reasoning, a distillation technique",
+      "llm_evidence_cn": "用于LLM推理的自我蒸馏策略优化，属于蒸馏技术",
+      "llm_evidence": "用于LLM推理的自我蒸馏策略优化，属于蒸馏技术",
+      "canonical_evidence": "用于LLM推理的自我蒸馏策略优化，属于蒸馏技术",
+      "llm_tldr_en": "Proposes pass-rate weighted self-distillation to improve SDPO by incorporating difficulty awareness, achieving better RL credit assignment.",
+      "llm_tldr_cn": "针对自我蒸馏策略优化（SDPO）缺乏难度意识的问题，提出用通过率加权改进优势函数，使学习聚焦于中等难度问题（甜区）。通过理论分析和实验证明，该方法在LLM推理任务上相比GRPO和原始SDPO取得了更好的性能，稳定了训练过程。",
+      "llm_tldr": "针对自我蒸馏策略优化（SDPO）缺乏难度意识的问题，提出用通过率加权改进优势函数，使学习聚焦于中等难度问题（甜区）。通过理论分析和实验证明，该方法在LLM推理任务上相比GRPO和原始SDPO取得了更好的性能，稳定了训练过程。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "distillation techniques reinforcement learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.24592v1",
+      "source": "arxiv",
+      "title": "MuGen: Multi-Skill Generative Locomotion Controller for Humanoid Robots",
+      "abstract": "This paper presents MuGen, a data-driven framework for learning and deploying multi-skill locomotion on humanoid robots. MuGen enables a robot to perform expressive motions like humans under the guidance of example motion sequences. To achieve this, we employ vector-quantized autoencoders (VQ-VAEs) trained with model-based reinforcement learning, resulting in a generative representation of locomotion that captures key patterns of human motion from hours of heterogeneous human performance data. We employ a teacher-student learning framework and develop a new policy distillation strategy to enable a deployable student policy learning this efficient latent representation. This policy allows the robot to track and mimic unseen human motions and further enables the robot to reuse the learned latent space for other tasks. We demonstrate the effectiveness of our framework through a diverse set of motions and accurate execution.",
+      "authors": [
+        "Yusen Feng",
+        "Xiang Wang",
+        "Heyuan Yao",
+        "Zixi Kang",
+        "Xinyu Huo",
+        "Boyang Yu",
+        "Pengyun Qiu",
+        "Ruijie Zhao",
+        "Baoquan Chen",
+        "Libin Liu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-23T14:06:06+00:00",
+      "link": "https://arxiv.org/pdf/2605.24592v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "teacher-student policy distillation for robot locomotion",
+      "llm_evidence_cn": "机器人运动的师生策略蒸馏",
+      "llm_evidence": "机器人运动的师生策略蒸馏",
+      "canonical_evidence": "机器人运动的师生策略蒸馏",
+      "llm_tldr_en": "MuGen uses a teacher-student framework with policy distillation to transfer a latent motion representation to a deployable student policy, enabling humanoid robots to track unseen human motions.",
+      "llm_tldr_cn": "针对人形机器人多技能运动控制中策略蒸馏的部署问题，本文提出MuGen框架。该框架采用VQ-VAE结合模型强化学习学习生成式运动表征，并利用师生学习范式通过策略蒸馏将紧凑潜空间知识传递给学生策略。实验表明，学生策略能跟踪未见的人体运动序列，实现了高效的跨技能迁移。这验证了策略蒸馏在机器人控制中的有效性。",
+      "llm_tldr": "针对人形机器人多技能运动控制中策略蒸馏的部署问题，本文提出MuGen框架。该框架采用VQ-VAE结合模型强化学习学习生成式运动表征，并利用师生学习范式通过策略蒸馏将紧凑潜空间知识传递给学生策略。实验表明，学生策略能跟踪未见的人体运动序列，实现了高效的跨技能迁移。这验证了策略蒸馏在机器人控制中的有效性。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "teacher student framework reinforcement learning distillation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.28303v1",
+      "source": "arxiv",
+      "title": "From Fact Overwriting to Knowledge Evolution: Causal Editing via On-Policy Self-Distillation",
+      "abstract": "While Knowledge Editing (KE) enables efficient updates, its dominant Static Fact Overwriting paradigm treats LLMs as discrete databases, forcibly injecting isolated facts. Fracturing pre-trained logical topologies, this triggers Epistemic Dissonance -- a pathology where un-evolved legacy priors force the model to explicitly negate the injected update. Idealized interventions reveal that this is an inherent structural flaw rather than mere algorithmic noise, with a zero-distortion proxy yielding a catastrophic 95.6% self-refutation rate. Given the causally driven nature of real-world knowledge, grounding updates in explicit causal narratives effectively collapses this conflict rate to just 6.6%, underscoring the imperative for a paradigm shift toward Causal Editing. To internalize this evolution, we propose CODE (Causal On-policy Distillation for Editing). By coupling causal bootstrapping with asymmetric on-policy distillation, CODE engraves causal transition logic directly into parametric memory. Experiments on LLaMA-3.1 and Qwen-2.5 show CODE drastically suppresses self-refutation to 1.8% while securing robust multi-hop accuracy (up to 83.5%), seamlessly transforming discrete fact injection into coherent knowledge evolution. Code is available at https://github.com/CrashBugger/CODE.",
+      "authors": [
+        "Shuaike Li",
+        "Kai Zhang",
+        "Xianquan Wang",
+        "Jiachen Liu",
+        "Shengpeng Mo"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-27T10:59:54+00:00",
+      "link": "https://arxiv.org/pdf/2605.28303v1",
+      "tags": [
+        "keyword:opd",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "on-policy self-distillation for knowledge editing",
+      "llm_evidence_cn": "在线自蒸馏用于知识编辑",
+      "llm_evidence": "在线自蒸馏用于知识编辑",
+      "canonical_evidence": "在线自蒸馏用于知识编辑",
+      "llm_tldr_en": "Proposes on-policy self-distillation for causal knowledge editing in LLMs, mitigating epistemic dissonance by grounding updates in causal narratives.",
+      "llm_tldr_cn": "本文针对知识编辑中静态事实覆盖导致知识冲突的问题，提出基于在线自蒸馏的因果编辑方法。核心思想是利用因果叙事指导蒸馏过程，避免模型自相矛盾。实验表明该方法将自反驳率从95.6%降至6.6%，显著优于现有范式。该工作展示了在线自蒸馏在知识演化中的应用潜力，为蒸馏技术提供了新视角。",
+      "llm_tldr": "本文针对知识编辑中静态事实覆盖导致知识冲突的问题，提出基于在线自蒸馏的因果编辑方法。核心思想是利用因果叙事指导蒸馏过程，避免模型自相矛盾。实验表明该方法将自反驳率从95.6%降至6.6%，显著优于现有范式。该工作展示了在线自蒸馏在知识演化中的应用潜力，为蒸馏技术提供了新视角。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.30274v1",
+      "source": "arxiv",
+      "title": "Loong: A Human-Like Long Document Translation Agent with Observe-and-Act Adaptive Context Selection",
+      "abstract": "Document-level translation remains one of the most challenging tasks for large language models, which are constrained by limited context windows that impede global cohesion, while simultaneously suffering from redundant contextual information that degrades translation quality. To address this, we propose a human-like long document translation agent called Loong, which leverages a 3E memory module (Essence-Exemplar-Entity) to store summaries, sentence pairs, and entity records as historical context. Instead of passively attending to all history, Loong performs deep reasoning to adaptively identify the optimal context for translation guidance. Loong optimizes its context policy through reinforcement learning, utilizing preference data derived from its own sampled observe-and-act reasoning trajectories. Empirical evaluations demonstrate that Loong achieves substantial translation quality improvements in English $\\Leftrightarrow$ Chinese, German, and French directions, with average gains of up to 13.0 points across the three evaluation metrics. Furthermore, Loong exhibits strong generalization across domains and robustness against contextual noise, while maintaining remarkable stability in ultra-long document translation. Our code is released at https://github.com/YutongWang1216/LoongDocMT.",
+      "authors": [
+        "Yutong Wang",
+        "Xuebo Liu",
+        "Derek F. Wong",
+        "Zhilin Li",
+        "Rongqing Jiang",
+        "Min Zhang",
+        "Shimin Tao",
+        "Daimeng Wei",
+        "Min Zhang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-28T17:32:25+00:00",
+      "link": "https://arxiv.org/pdf/2605.30274v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "query:l-context-rl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "long document translation agent using RL to optimize context selection",
+      "llm_evidence_cn": "长文档翻译智能体利用RL优化上下文选择",
+      "llm_evidence": "长文档翻译智能体利用RL优化上下文选择",
+      "canonical_evidence": "长文档翻译智能体利用RL优化上下文选择",
+      "llm_tldr_en": "Loong agent uses RL to adaptively select context for long document translation, improving translation quality with a 3E memory module.",
+      "llm_tldr_cn": "长文档翻译中受限上下文窗口和冗余信息导致翻译质量下降。本文提出Loong智能体，使用3E记忆模块（摘要、例句、实体）存储历史，并利用强化学习优化上下文选择策略，而非被动注意所有历史。在多个长文档翻译基准上，Loong取得更优的翻译质量和连贯性。",
+      "llm_tldr": "长文档翻译中受限上下文窗口和冗余信息导致翻译质量下降。本文提出Loong智能体，使用3E记忆模块（摘要、例句、实体）存储历史，并利用强化学习优化上下文选择策略，而非被动注意所有历史。在多个长文档翻译基准上，Loong取得更优的翻译质量和连贯性。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "training reinforcement learning models on long input sequences",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2605.30274v1",
+      "quick_tier": "8plus"
+    }
+  ]
+}

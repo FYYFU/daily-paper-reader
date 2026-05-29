@@ -6,82 +6,77 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-30 ~ 2026-05-29
-- 运行时间：2026-05-29 20:27:50 UTC
+- 最新运行日期：2026-05-29
+- 运行时间：2026-05-29 21:18:43 UTC
 - 运行状态：成功
-- 本次总论文数：20
-- 精读区：9
-- 速读区：11
+- 本次总论文数：19
+- 精读区：10
+- 速读区：9
 
 ### 今日简报（AI）
-1) 今日精读9篇论文，重点攻克长上下文强化学习对齐与智能体递归优化两大方向。
-2) 最值得精读的是《GoLongRL》与《Recursive Agent Optimization》两篇，分别聚焦多任务对齐与智能体自我改进。
-3) 建议优先阅读这两篇高分论文，后续可关注速读列表中可验证过程奖励和动作瓶颈等实用技术。
-- 详情：[/20260430-20260529/README](/20260430-20260529/README)
+今日精读10篇、速读9篇，聚焦LLM推理自蒸馏与特权蒸馏方法。最值得看的两篇10分精读《Tailoring Teaching to Aptitude》提出方向自适应自蒸馏，《EDGE-OPD》实现基于证据的策略蒸馏。建议优先精读这两篇，其余速读涉及RL记忆课程效应与奖励分布匹配，可作拓展。
+- 详情：[/202605/29/README](/202605/29/README)
 
 ### 精读区论文标签
-1. [GoLongRL: Capability-Oriented Long Context Reinforcement Learning with Multitask Alignment](/20260430-20260529/2605.19577v1-golongrl-capability-oriented-long-context-reinforcement-learning-with-multitask-alignment)  
-   标签：评分：10.0/10、query:l-context-rl
-   evidence：开源长上下文强化学习，可验证奖励和多任务对齐
-2. [Recursive Agent Optimization](/20260430-20260529/2605.06639v1-recursive-agent-optimization)  
+1. [Tailoring Teaching to Aptitude: Direction-Adaptive Self-Distillation for LLM Reasoning](/202605/29/2605.22263v1-tailoring-teaching-to-aptitude-direction-adaptive-self-distillation-for-llm-reasoning)  
+   标签：评分：10.0/10、query:opd
+   evidence：提出面向LLM推理的方向自适应自蒸馏，属于在线策略蒸馏方法
+2. [EDGE-OPD: Internalizing Privileged Context with Evidence Guided On-Policy Distillation](/202605/29/2605.23493v1-edge-opd-internalizing-privileged-context-with-evidence-guided-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：直接研究在线策略蒸馏，提出EDGE-OPD方法
+3. [A Predictive Law for On-Policy Self-Distillation From World Feedback](/202605/29/2605.30070v1-a-predictive-law-for-on-policy-self-distillation-from-world-feedback)  
+   标签：评分：10.0/10、query:opd
+   evidence：从世界反馈中进行在线自蒸馏
+4. [ACC: Compiling Agent Trajectories for Long-Context Training](/202605/29/2605.21850v1-acc-compiling-agent-trajectories-for-long-context-training)  
    标签：评分：9.0/10、query:l-context-rl
-   evidence：递归智能体训练通过分治策略扩展到更长上下文
-3. [Combining On-Policy Optimization and Distillation for Long-Context Reasoning in Large Language Models](/20260430-20260529/2605.12227v1-combining-on-policy-optimization-and-distillation-for-long-context-reasoning-in-large-language-models)  
+   evidence：编译智能体轨迹用于长上下文RL训练
+5. [Post-Training is About States, Not Tokens: A State Distribution View of SFT, RL, and On-Policy Distillation](/202605/29/2605.22731v1-post-training-is-about-states-not-tokens-a-state-distribution-view-of-sft-rl-and-on-policy-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：将在线策略优化与蒸馏结合用于大语言模型长上下文推理
-4. [Self-Distilled Agentic Reinforcement Learning](/20260430-20260529/2605.15155v1-self-distilled-agentic-reinforcement-learning)  
+   evidence：通过状态分布视角统一分析SFT、RL和在线策略蒸馏
+6. [Extreme Region Policy Distillation](/202605/29/2605.25582v1-extreme-region-policy-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：提出SDAR，将在线自蒸馏（OPSD）作为辅助目标融入LLM智能体的强化学习中
-5. [GROW: Aligning GRPO with State-Action Modeling for Open-World VLM Agents](/20260430-20260529/2605.20246v2-grow-aligning-grpo-with-state-action-modeling-for-open-world-vlm-agents)  
+   evidence：LLM强化学习的极端区域策略蒸馏
+7. [ZipRL: Adaptive Multi-Turn Context Compression with Hindsight Response Replay](/202605/29/2605.28069v1-ziprl-adaptive-multi-turn-context-compression-with-hindsight-response-replay)  
    标签：评分：9.0/10、query:l-context-rl
-   evidence：通过将轨迹分解为状态-动作样本解决GRPO中的长上下文问题
-6. [Memory-R2: Fair Credit Assignment for Long-Horizon Memory-Augmented LLM Agents](/20260430-20260529/2605.21768v1-memory-r2-fair-credit-assignment-for-long-horizon-memory-augmented-llm-agents)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：面向长跨度记忆增强LLM智能体的RL训练，公平信用分配
-7. [Extreme Region Policy Distillation](/20260430-20260529/2605.25582v1-extreme-region-policy-distillation)  
+   evidence：使用RL的多轮LLM任务自适应上下文压缩
+8. [Skill-Conditioned Gated Self-Distillation for LLM Reasoning](/202605/29/2605.28791v1-skill-conditioned-gated-self-distillation-for-llm-reasoning)  
    标签：评分：9.0/10、query:opd
-   evidence：针对LLM RL中on-policy和off-policy权衡的策略蒸馏方法
-8. [ZipRL: Adaptive Multi-Turn Context Compression with Hindsight Response Replay](/20260430-20260529/2605.28069v1-ziprl-adaptive-multi-turn-context-compression-with-hindsight-response-replay)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：针对多轮智能体任务中RL的自适应上下文压缩
-9. [Meta-Cognitive Memory Policy Optimization for Long-Horizon LLM Agents](/20260430-20260529/2605.30159v1-meta-cognitive-memory-policy-optimization-for-long-horizon-llm-agents)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：通过强化学习优化长视野LLM智能体的记忆策略，直接处理长序列训练问题
+   evidence：在线自蒸馏用于大语言模型推理
+9. [OISD: On-Policy Internal Self-Distillation of Language Models](/202605/29/2605.29089v1-oisd-on-policy-internal-self-distillation-of-language-models)  
+   标签：评分：9.0/10、query:opd
+   evidence：LLM推理的在线策略内部自蒸馏
+10. [GAPD: Gold-Action Policy Distillation for Agentic Reinforcement Learning in Knowledge Base Question Answering](/202605/29/2605.29584v1-gapd-gold-action-policy-distillation-for-agentic-reinforcement-learning-in-knowledge-base-question-answering)  
+   标签：评分：9.0/10、query:opd
+   evidence：知识库问答中智能体强化学习的金动作策略蒸馏，直接针对RL中的策略蒸馏
 
 ### 速读区论文标签
-1. [Verifiable Process Rewards for Agentic Reasoning](/20260430-20260529/2605.10325v1-verifiable-process-rewards-for-agentic-reasoning)  
+1. [What Training Data Teaches RL Memory Agents: An Empirical Study of Curriculum Effects in Memory-Augmented QA](/202605/29/2605.23067v1-what-training-data-teaches-rl-memory-agents-an-empirical-study-of-curriculum-effects-in-memory-augmented-qa)  
    标签：评分：8.0/10、query:l-context-rl
-   evidence：用于长时程智能体推理的RLVR过程奖励
-2. [Resolving Action Bottleneck: Agentic Reinforcement Learning Informed by Token-Level Energy](/20260430-20260529/2605.14558v1-resolving-action-bottleneck-agentic-reinforcement-learning-informed-by-token-level-energy)  
+   evidence：针对长输入序列的强化学习训练，用于增强记忆的问答系统
+2. [Reinforcing Few-step Generators via Reward-Tilted Distribution Matching](/202605/29/2605.26108v2-reinforcing-few-step-generators-via-reward-tilted-distribution-matching)  
+   标签：评分：8.0/10、query:opd
+   evidence：两阶段蒸馏框架结合分布匹配与强化学习奖励
+3. [Restoring the Sweet Spot: Pass-Rate Weighted Self-Distillation for LLM Reasoning](/202605/29/2605.27765v1-restoring-the-sweet-spot-pass-rate-weighted-self-distillation-for-llm-reasoning)  
+   标签：评分：8.0/10、query:opd
+   evidence：用于LLM推理的自我蒸馏策略优化，属于蒸馏技术
+4. [From Fact Overwriting to Knowledge Evolution: Causal Editing via On-Policy Self-Distillation](/202605/29/2605.28303v1-from-fact-overwriting-to-knowledge-evolution-causal-editing-via-on-policy-self-distillation)  
+   标签：评分：8.0/10、query:opd
+   evidence：在线自蒸馏用于知识编辑
+5. [Loong: A Human-Like Long Document Translation Agent with Observe-and-Act Adaptive Context Selection](/202605/29/2605.30274v1-loong-a-human-like-long-document-translation-agent-with-observe-and-act-adaptive-context-selection)  
    标签：评分：8.0/10、query:l-context-rl
-   evidence：智能体RL中长推理轨迹的token级别信用分配
-3. [GROW: Aligning GRPO with State-Action Modeling for Open-World VLM Agents](/20260430-20260529/2605.20246v1-grow-aligning-grpo-with-state-action-modeling-for-open-world-vlm-agents)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：通过将轨迹分解为状态-动作样本来解决多轮RL中的长上下文问题
-4. [Hista and Numca: Estimate State Value Effectively for LLM Reinforcement Learning](/20260430-20260529/2605.29782v1-hista-and-numca-estimate-state-value-effectively-for-llm-reinforcement-learning)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：针对LLM强化学习的状态价值估计，提升训练稳定性
-5. [Rethinking Agentic Reinforcement Learning In Large Language Models](/20260430-20260529/2604.27859v1-rethinking-agentic-reinforcement-learning-in-large-language-models)  
+   evidence：长文档翻译智能体利用RL优化上下文选择
+6. [DeferMem: Query-Time Evidence Distillation via Reinforcement Learning for Long-Term Memory QA](/202605/29/2605.22411v1-defermem-query-time-evidence-distillation-via-reinforcement-learning-for-long-term-memory-qa)  
    标签：评分：7.0/10、query:l-context-rl
-   evidence：提出面向LLM的智能体强化学习，强调长期规划
-6. [Segment-Aligned Policy Optimization for Multi-Modal Reasoning](/20260430-20260529/2605.01327v1-segment-aligned-policy-optimization-for-multi-modal-reasoning)  
+   evidence：基于强化学习的证据蒸馏用于长上下文记忆问答
+7. [Polar: Agentic RL on Any Harness at Scale](/202605/29/2605.24220v1-polar-agentic-rl-on-any-harness-at-scale)  
    标签：评分：7.0/10、query:l-context-rl
-   evidence：针对LLM的段对齐策略优化，改进推理任务中的信用分配
-7. [On Training Large Language Models for Long-Horizon Tasks: An Empirical Study of Horizon Length](/20260430-20260529/2605.02572v1-on-training-large-language-models-for-long-horizon-tasks-an-empirical-study-of-horizon-length)  
-   标签：评分：7.0/10、query:l-context-rl
-   evidence：在训练LLM执行长视野任务时的视野长度实证研究
-8. [Data-dependent Exploration for Online Reinforcement Learning from Human Feedback](/20260430-20260529/2605.04477v1-data-dependent-exploration-for-online-reinforcement-learning-from-human-feedback)  
-   标签：评分：7.0/10、query:l-context-rl
-   evidence：面向在线RLHF的数据依赖探索，提升LLM训练样本效率
-9. [A Brief Overview: Agentic Reinforcement Learning In Large Language Models](/20260430-20260529/2604.27859v2-a-brief-overview-agentic-reinforcement-learning-in-large-language-models)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：LLM中智能体RL的综述，涵盖长期规划
-10. [Beyond Linear Attention: Softmax Transformers Implement In-Context Reinforcement Learning](/20260430-20260529/2605.07333v1-beyond-linear-attention-softmax-transformers-implement-in-context-reinforcement-learning)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：标准softmax注意力Transformer实现上下文强化学习，与长上下文语言模型的RL相关
-11. [PiCA: Pivot-Based Credit Assignment for Search Agentic Reinforcement Learning](/20260430-20260529/2605.09287v1-pica-pivot-based-credit-assignment-for-search-agentic-reinforcement-learning)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：为长时域智能体RL进行信用分配，解决长上下文中的奖励稀疏问题
+   evidence：可扩展异步RL框架，处理长运行上下文
+8. [MuGen: Multi-Skill Generative Locomotion Controller for Humanoid Robots](/202605/29/2605.24592v1-mugen-multi-skill-generative-locomotion-controller-for-humanoid-robots)  
+   标签：评分：7.0/10、query:opd
+   evidence：机器人运动的师生策略蒸馏
+9. [On-Policy Adversarial Flow Distillation for Autoregressive Video Generation](/202605/29/2605.26105v1-on-policy-adversarial-flow-distillation-for-autoregressive-video-generation)  
+   标签：评分：6.0/10、query:opd
+   evidence：应用于视频生成的在线策略蒸馏框架
 
 
 <div class="dpr-home-promo-card">
