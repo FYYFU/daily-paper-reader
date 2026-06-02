@@ -6,118 +6,113 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-01
-- 运行时间：2026-06-01 22:16:02 UTC
+- 最新运行日期：2026-06-02
+- 运行时间：2026-06-02 23:22:52 UTC
 - 运行状态：成功
-- 本次总论文数：32
-- 精读区：19
+- 本次总论文数：31
+- 精读区：18
 - 速读区：13
 
 ### 今日简报（AI）
-今日精读两篇满分论文，直击在线策略蒸馏中的监督退化与信任域融合难题。  
-最值得聚焦的是《Your Teacher Can't Help You Here》与《Trust-Region Behavior Blending》，它们从不同角度重塑了师生模型间的知识传递质量。  
-建议普通读者优先啃下这两篇精读论文，再速览多智能体隐私、机器人技能学习及检索安全相关文章。
-- 详情：[/202606/01/README](/202606/01/README)
+今日收录31篇论文，精读18篇、速读13篇，两篇10分论文聚焦于在线策略蒸馏与全展开必要性。最值得关注方向：对抗性双策略蒸馏（精读10分）和RLHF中的在线反馈自监督（速读8分）。建议优先阅读《Are Full Rollouts Necessary for On-Policy Distillation?》，以理解策略蒸馏的效率边界。
+- 详情：[/202606/02/README](/202606/02/README)
 
 ### 精读区论文标签
-1. [Your Teacher Can't Help You Here: Combating Supervision Fidelity Decay in On-Policy Distillation](/202606/01/2605.30833v1-your-teacher-cant-help-you-here-combating-supervision-fidelity-decay-in-on-policy-distillation)  
+1. [Adversarial Dual On-Policy Distillation from Expressive Teacher](/202606/02/2605.27095v2-adversarial-dual-on-policy-distillation-from-expressive-teacher)  
    标签：评分：10.0/10、query:opd
-   evidence：直接研究在线策略蒸馏，提出前瞻组奖励缓解监督保真度衰减
-2. [Trust-Region Behavior Blending for On-Policy Distillation](/202606/01/2605.31159v1-trust-region-behavior-blending-for-on-policy-distillation)  
+   evidence：对抗性双在线策略蒸馏自表现力教师
+2. [Are Full Rollouts Necessary for On-Policy Distillation?](/202606/02/2605.31490v1-are-full-rollouts-necessary-for-on-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：直接处理使用warmup方法改善学生rollout的on-policy蒸馏问题
-3. [Are Full Rollouts Necessary for On-Policy Distillation?](/202606/01/2605.31490v1-are-full-rollouts-necessary-for-on-policy-distillation)  
+   evidence：探讨在策略蒸馏中是否需要完整轨迹
+3. [Are Full Rollouts Necessary for On-Policy Distillation?](/202606/02/2605.31490v2-are-full-rollouts-necessary-for-on-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：在线策略蒸馏，Rollout长度分析
-4. [Reflect-Guard: Enhancing LLM Safeguards against Adversarial Prompts via Logical Self-Reflection](/202606/01/2605.24834v1-reflect-guard-enhancing-llm-safeguards-against-adversarial-prompts-via-logical-self-reflection)  
+   evidence：质疑在线策略蒸馏中完整轨迹的必要性，提出高效替代方案
+4. [Weak Critics Make Strong Learners: On-Policy Critique Distillation for Scalable Oversight](/202606/02/2606.00424v1-weak-critics-make-strong-learners-on-policy-critique-distillation-for-scalable-oversight)  
+   标签：评分：10.0/10、query:opd
+   evidence：基于策略的批评蒸馏，使用弱模型作为批评者
+5. [Internalize the Temperature: On-Policy Self-Distillation as Policy Reheater for Reinforcement Learning](/202606/02/2606.00755v1-internalize-the-temperature-on-policy-self-distillation-as-policy-reheater-for-reinforcement-learning)  
+   标签：评分：10.0/10、query:opd
+   evidence：在线策略自蒸馏作为策略预热器
+6. [OPD+: Rethinking the Advantage Design for On-Policy Distillation](/202606/02/2606.01039v1-opd-rethinking-the-advantage-design-for-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：直接针对在线策略蒸馏中的优势函数设计进行分析与改进
+7. [Trust Region On-Policy Distillation](/202606/02/2606.01249v1-trust-region-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：基于信任区域的在线策略蒸馏
+8. [SafeSteer: Localized On-Policy Distillation for Efficient Safety Alignment](/202606/02/2606.02530v1-safesteer-localized-on-policy-distillation-for-efficient-safety-alignment)  
+   标签：评分：10.0/10、query:opd
+   evidence：面向安全对齐的局部在线策略蒸馏
+9. [Aligned but Fragile: Enhancing LLM Safety Robustness via Zeroth-Order Optimization](/202606/02/2605.29396v1-aligned-but-fragile-enhancing-llm-safety-robustness-via-zeroth-order-optimization)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：通过逻辑自我反思增强LLM安全分类器防御对抗越狱攻击
-5. [Inverting the Shield: Systematically Generating Safety Tests from Policy Specifications](/202606/01/2605.24883v1-inverting-the-shield-systematically-generating-safety-tests-from-policy-specifications)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：通过规范驱动的安全测试生成进行红队测试
-6. [Jailbreak susceptibility prediction and mitigation via the behavioral geometry of models](/202606/01/2605.26409v1-jailbreak-susceptibility-prediction-and-mitigation-via-the-behavioral-geometry-of-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：用于越狱攻击预测与缓解的行为几何框架
-7. [When Context Flips, Safety Breaks: Diagnosing Brittle Safety in Aligned Language Models](/202606/01/2605.27851v1-when-context-flips-safety-breaks-diagnosing-brittle-safety-in-aligned-language-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：通过上下文翻转评估诊断脆性安全，并引入PacifAIst基准
-8. [KSAFE-MM: A Multimodal Safety Benchmark via Localized Contextualization for Korean Cultural Risks](/202606/01/2605.28013v1-ksafe-mm-a-multimodal-safety-benchmark-via-localized-contextualization-for-korean-cultural-risks)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：面向韩国文化风险的多模态安全基准
-9. [Defending LLM-based Multi-Agent Systems Against Cooperative Attacks with Sentence-Level Rectification](/202606/01/2605.28104v1-defending-llm-based-multi-agent-systems-against-cooperative-attacks-with-sentence-level-rectification)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：多智能体系统中的合作攻击防御
-10. [GDSD: Reinforcement Learning as Guided Denoiser Self-Distillation for Diffusion Language Models](/202606/01/2605.29398v1-gdsd-reinforcement-learning-as-guided-denoiser-self-distillation-for-diffusion-language-models)  
+   evidence：通过零阶优化增强LLM安全鲁棒性
+10. [Distilling LLM Feedback for Lean Theorem Proving](/202606/02/2605.30861v1-distilling-llm-feedback-for-lean-theorem-proving)  
    标签：评分：9.0/10、query:opd
-   evidence：针对扩散语言模型的RL引导自蒸馏，属于on-policy蒸馏方法
-11. [VE2VF: Vision-Enabled to Vision-Free Distillation via Real-world Reinforcement Learning for Robust Contact-Rich Manipulation](/202606/01/2605.29564v1-ve2vf-vision-enabled-to-vision-free-distillation-via-real-world-reinforcement-learning-for-robust-contact-rich-manipulation)  
+   evidence：结合强化学习的自蒸馏用于推理
+11. [Robust Shielding for Safe Reinforcement Learning](/202606/02/2606.00270v1-robust-shielding-for-safe-reinforcement-learning)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：针对模型不确定性的安全强化学习鲁棒屏蔽框架
+12. [Bridging Reasoning Trajectories in On-Policy Distillation via Near-Future Guidance](/202606/02/2606.00305v1-bridging-reasoning-trajectories-in-on-policy-distillation-via-near-future-guidance)  
    标签：评分：9.0/10、query:opd
-   evidence：在真实世界强化学习中使用师生蒸馏实现鲁棒操作
-12. [Opir: Efficient Multi-Task Safety Classification for Toxicity, Jailbreaks, Hate Speech, and Harmful Content](/202606/01/2605.29659v1-opir-efficient-multi-task-safety-classification-for-toxicity-jailbreaks-hate-speech-and-harmful-content)  
+   evidence：基于近未来指导的在线策略蒸馏用于大语言模型推理
+13. [When Safe Skills Collide: Measuring Compositional Risk in Agent Skill Ecosystems](/202606/02/2606.00448v1-when-safe-skills-collide-measuring-compositional-risk-in-agent-skill-ecosystems)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：高效多任务安全分类，涵盖越狱、毒性等内容
-13. [AgentDoG 1.5: A Lightweight and Scalable Alignment Framework for AI Agent Safety and Security](/202606/01/2605.29801v1-agentdog-15-a-lightweight-and-scalable-alignment-framework-for-ai-agent-safety-and-security)  
+   evidence：评估LLM智能体技能生态中的组合安全风险
+14. [Decomposed On-Policy Distillation for Vision-Language Reasoning: Steering Gradients for Visual Grounding](/202606/02/2606.00564v1-decomposed-on-policy-distillation-for-vision-language-reasoning-steering-gradients-for-visual-grounding)  
+   标签：评分：9.0/10、query:opd
+   evidence：直接提出用于视觉语言推理的在线策略蒸馏方法
+15. [Same Payload, Different Channel: Measuring Trust Asymmetry in Tool-Using Language Models](/202606/02/2606.00566v1-same-payload-different-channel-measuring-trust-asymmetry-in-tool-using-language-models)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：轻量级代理安全对齐框架
-14. [Configurable Reward Model for Balanced Safety Alignment](/202606/01/2605.30487v1-configurable-reward-model-for-balanced-safety-alignment)  
+   evidence：安全不对称分数，测量不同通道的脆弱性
+16. [TRACE: Trajectory Risk-Aware Compression for Long-Horizon Agent Safety](/202606/02/2606.00611v1-trace-trajectory-risk-aware-compression-for-long-horizon-agent-safety)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：提出用于平衡安全对齐的可配置奖励模型
-15. [Triaging Threats to Specialized Guardrails](/202606/01/2605.30693v1-triaging-threats-to-specialized-guardrails)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：提出GuardZoo基准，包含32460样本和15个不安全类别
-16. [COMPASS: Cognitive MCTS-Guided Process Alignment for Safe Search Agents](/202606/01/2605.30838v1-compass-cognitive-mcts-guided-process-alignment-for-safe-search-agents)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：认知树搜索的安全搜索代理对齐
-17. [Safe Equilibrium Policy Optimization for Strategic Agent Policies](/202606/01/2605.30854v1-safe-equilibrium-policy-optimization-for-strategic-agent-policies)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：提出安全均衡策略优化，在RL训练中惩罚剥削和合谋风险
-18. [LongTraceRL: Learning Long-Context Reasoning from Search Agent Trajectories with Rubric Rewards](/202606/01/2605.31584v1-longtracerl-learning-long-context-reasoning-from-search-agent-trajectories-with-rubric-rewards)  
+   evidence：通过轨迹压缩实现长时域智能体安全
+17. [Schedule-Level Shared-Prefix Reuse for LLM RL Training](/202606/02/2606.01143v1-schedule-level-shared-prefix-reuse-for-llm-rl-training)  
    标签：评分：9.0/10、query:l-context-rl
-   evidence：使用搜索智能体轨迹和规则奖励进行长上下文推理的强化学习
-19. [Stateful Online Monitoring Catches Distributed Agent Attacks](/202606/01/2605.31593v1-stateful-online-monitoring-catches-distributed-agent-attacks)  
+   evidence：面向长上下文RL训练的高效共享前缀复用
+18. [BraveGuard: From Open-World Threats to Safer Computer-Use Agents](/202606/02/2606.01166v1-braveguard-from-open-world-threats-to-safer-computer-use-agents)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：分布式代理攻击与安全监控
+   evidence：智能体安全：面向计算机使用智能体的防御框架，抵御开放世界威胁
 
 ### 速读区论文标签
-1. [Got a Secret? LLM Agents Can't Keep It: Evaluating Privacy in Multi-Agent Systems](/202606/01/2605.27766v1-got-a-secret-llm-agents-cant-keep-it-evaluating-privacy-in-multi-agent-systems)  
+1. [The Flip Side of RLHF: On-Policy Feedback for Reward Model Self-Supervised Improvement](/202606/02/2605.30888v1-the-flip-side-of-rlhf-on-policy-feedback-for-reward-model-self-supervised-improvement)  
+   标签：评分：8.0/10、query:opd
+   evidence：基于on-policy反馈的奖励模型自监督改进，与on-policy蒸馏相关
+2. [Persona Attack: Incremental Memory Injection Jailbreak Attack against Large Language Models](/202606/02/2606.00150v1-persona-attack-incremental-memory-injection-jailbreak-attack-against-large-language-models)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：多智能体安全，隐私评估，社会压力
-2. [ProgVLA: Progress-Aware Robot Manipulation Skill Learning](/202606/01/2605.28231v1-progvla-progress-aware-robot-manipulation-skill-learning)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：在VLA模型中使用离线RL目标处理长多模态序列
-3. [Relevance as a Vulnerability: How Web Retrieval Degrades Safety Alignment in LLM Agents](/202606/01/2605.29224v1-relevance-as-a-vulnerability-how-web-retrieval-degrades-safety-alignment-in-llm-agents)  
+   evidence：针对大语言模型的记忆注入越狱攻击
+3. [Interpretable Policy Distillation for Power Grid Topology Control](/202606/02/2606.00561v1-interpretable-policy-distillation-for-power-grid-topology-control)  
+   标签：评分：8.0/10、query:opd
+   evidence：基于PPO教师的策略蒸馏用于电网控制
+4. [MESA: Improving MoE Safety Alignment via Decentralized Expertise](/202606/02/2606.00651v1-mesa-improving-moe-safety-alignment-via-decentralized-expertise)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：分析网络检索导致的LLM智能体安全性退化
-4. [CSULoRA: Closest Safe Update Low-Rank Adaptation](/202606/01/2605.30640v1-csulora-closest-safe-update-low-rank-adaptation)  
+   evidence：MoE安全对齐解决安全稀疏性问题
+5. [SafeVLA-Bench: A Benchmark for the Success-Safety Gap in Vision-Language-Action Models](/202606/02/2606.00773v1-safevla-bench-a-benchmark-for-the-success-safety-gap-in-vision-language-action-models)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：安全低秩适应，事后修正
-5. [Learning Agent-Compatible Context Management for Long-Horizon Tasks](/202606/01/2605.30785v1-learning-agent-compatible-context-management-for-long-horizon-tasks)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：基于RL的长任务LLM智能体上下文管理
-6. [ConsisGuard: Aligning Safety Deliberation with Policy Enforcement in LLM Guardrails](/202606/01/2605.31073v1-consisguard-aligning-safety-deliberation-with-policy-enforcement-in-llm-guardrails)  
+   evidence：视觉-语言-动作模型的安全基准
+6. [SABER: Benchmarking Operational Safety of LLM Coding Agents in Stateful Project Workspaces](/202606/02/2606.01317v1-saber-benchmarking-operational-safety-of-llm-coding-agents-in-stateful-project-workspaces)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：LLM安全护栏中安全推理与策略执行的对齐
-7. [EvoDefense: Co-Evolving Black-Box Defense with Large Language Models](/202606/01/2605.31140v1-evodefense-co-evolving-black-box-defense-with-large-language-models)  
+   evidence：LLM编码代理的操作安全基准
+7. [CEAR: Certified Ensemble Adversarial Robustness in DNNs](/202606/02/2606.01437v1-cear-certified-ensemble-adversarial-robustness-in-dnns)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：使用守卫LLM和经验记忆的协同进化黑盒防御
-8. [Reinforcing Few-step Generators via Reward-Tilted Distribution Matching](/202606/01/2605.26108v1-reinforcing-few-step-generators-via-reward-tilted-distribution-matching)  
+   evidence：深度神经网络认证集成对抗鲁棒性
+8. [SafeMCP: Proactive Power Regulation for LLM Agent Defense via Environment-Grounded Look-Ahead Reasoning](/202606/02/2606.01991v1-safemcp-proactive-power-regulation-for-llm-agent-defense-via-environment-grounded-look-ahead-reasoning)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：通过环境接地的前瞻推理为LLM智能体提供主动防御
+9. [SKILLC: Learning Autonomous Skill Internalization in LLM Agents via Contrastive Credit Assignment](/202606/02/2605.27899v1-skillc-learning-autonomous-skill-internalization-in-llm-agents-via-contrastive-credit-assignment)  
    标签：评分：7.0/10、query:opd
-   evidence：将分布匹配蒸馏与奖励引导的强化学习统一用于少步生成器
-9. [Transferable Reinforcement Learning via Probabilistic Latent Embeddings and Dynamic Policy Adaptation for Sim-to-Real Deployment](/202606/01/2605.27659v1-transferable-reinforcement-learning-via-probabilistic-latent-embeddings-and-dynamic-policy-adaptation-for-sim-to-real-deployment)  
+   evidence：通过对比信用分配实现技能内化
+10. [Long Live The Balance: Information Bottleneck Driven Tree-based Policy Optimization](/202606/02/2605.28109v1-long-live-the-balance-information-bottleneck-driven-tree-based-policy-optimization)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：面向大语言模型的强化学习，改进探索-利用平衡
+11. [Efficient and Uncertainty-Aware Diffusion Framework for Offline-to-Online Reinforcement Learning](/202606/02/2605.30776v1-efficient-and-uncertainty-aware-diffusion-framework-for-offline-to-online-reinforcement-learning)  
+   标签：评分：7.0/10、query:opd
+   evidence：从离线数据中蒸馏扩散actor策略
+12. [Learning When Not to Act: Mitigating Tool Abuse in Agentic Reinforcement Learning](/202606/02/2606.02132v1-learning-when-not-to-act-mitigating-tool-abuse-in-agentic-reinforcement-learning)  
    标签：评分：7.0/10、query:ai-safety
-   evidence：通过概率嵌入实现RL智能体的安全策略迁移
-10. [CODESKILL: Learning Self-Evolving Skills for Coding Agents](/202606/01/2605.25430v1-codeskill-learning-self-evolving-skills-for-coding-agents)  
+   evidence：处理智能体强化学习中的工具滥用问题，与智能体安全相关
+13. [PRO-CUA: Process-Reward Optimization for Computer Use Agents](/202606/02/2605.29119v1-pro-cua-process-reward-optimization-for-computer-use-agents)  
    标签：评分：6.0/10、query:opd
-   evidence：将编码智能体轨迹蒸馏为可重用过程技能
-11. [Breaking the Epistemic Trap: Active Perception Under Compound Uncertainty](/202606/01/2605.26627v1-breaking-the-epistemic-trap-active-perception-under-compound-uncertainty)  
-   标签：评分：6.0/10、query:ai-safety
-   evidence：针对安全关键强化学习中的复合不确定性故障
-12. [GeneralThinker: Domain-General Reasoning through Likelihood-Guided Answer-Conditioned Optimization](/202606/01/2605.27934v1-generalthinker-domain-general-reasoning-through-likelihood-guided-answer-conditioned-optimization)  
-   标签：评分：6.0/10、query:opd
-   evidence：基于似然引导优化的在线策略推理框架
-13. [Teacher-Student Representational Alignment for Reinforcement Learning-Driven Imitation Learning](/202606/01/2605.28372v1-teacher-student-representational-alignment-for-reinforcement-learning-driven-imitation-learning)  
-   标签：评分：6.0/10、query:opd
-   evidence：教师-学生表示对齐用于强化学习驱动的模仿学习
+   evidence：面向智能体的在线策略学习与蒸馏技术
 
 
 <div class="dpr-home-promo-card">

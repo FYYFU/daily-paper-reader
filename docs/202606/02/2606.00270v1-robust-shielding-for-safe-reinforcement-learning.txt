@@ -1,0 +1,3923 @@
+Title: Robust Shielding for Safe Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2606.00270v1
+
+Published Time: Tue, 02 Jun 2026 00:25:14 GMT
+
+Number of Pages: 48
+
+Markdown Content:
+# Robust Shielding for Safe Reinforcement Learning 
+
+Edwin Hamel-De le Court 1 Thom Badings 2,3 Alessandro Abate 3
+
+Francesco Belardinelli 4 Francesco Fabiano 31 Department of Computer Science, University of Manchester, United Kingdom 
+
+edwin.hamel-delecourt@manchester.ac.uk  
+
+> 2
+
+Faculty of Computer Science & DSME, RWTH Aachen University, Germany  
+
+> 3
+
+Department of Computer Science, University of Oxford, United Kingdom  
+
+> 4
+
+Department of Computing, Imperial College London, United Kingdom 
+
+## Abstract 
+
+Shielding is an effective approach to formally guarantee the safety of reinforcement learning agents in Markov decision processes (MDPs). However, existing shielding techniques typically assume knowledge of the safety-relevant transition dynamics – a requirement that is seldom met in practice. To address this limitation, we introduce a novel shielding framework for robust MDPs (RMDPs), i.e., MDPs with sets of transition probabilities. We define safety as the satisfaction of a linear temporal logic (LTL) formula with a certain threshold probability under the worst-case transition probabilities of the RMDP. We prove that our shielding framework is both sound and optimal for the RMDP: every policy admissible by the shield is safe, and conversely, every safe RMDP policy is admissible by the shield. We combine our approach with existing sampling methods for learning transition probabilities of MDPs with probably approximately correct (PAC) guarantees. This combination enables the construction of shields for MDPs that, with high confidence, guarantee safety while remaining minimally restrictive. Our experiments show that our shields for learned RMDPs guarantee safety in unknown MDPs while recovering strong expected return as the number of samples increases. 
+
+## 1 Introduction 
+
+Reinforcement learning (RL) [ 1] optimizes the behavior of an agent taking actions in an unknown environment, generally modeled as a Markov decision process (MDP). While success stories of RL have reached into key areas, such as robotics [ 2], game playing [ 3], and autonomous driving [ 4], 
+
+safety in RL remains a major concern. In particular, state-of-the-art RL algorithms let agents explore actions unrestrictedly and will thus inevitably select potentially harmful actions [5]. This unsafe exploration problem has triggered research on shielded RL [ 6]. A shield is a mechanism that prevents ( i.e., “shields” ) RL agents from executing unsafe actions. Shields have been developed for MDPs [ 7 , 8 ] as well as partially observable MDPs (POMDPs) [ 9]. To guarantee safety, these approaches require knowing the MDP’s transition dynamics relevant to safety. However, in typical RL problems, these dynamics are unknown. Instead, our starting assumption is to have access to some prior data on the dynamics, whether from previous executions or a simulator. One solution is to use this data to learn point estimates of the dynamics, but doing so introduces statistical errors [ 10 ] that compromise the shield’s safety guarantees. An alternative is to learn an uncertainty set around each unknown transition probability that is probably approximately correct (PAC), i.e., contains the true probability with high confidence [ 11 , 12 ]. Unfortunately, existing shielding approaches are limited to models with exact probabilities and thus incompatible with such uncertainty sets and PAC bounds.  
+
+> Preprint.
+> arXiv:2606.00270v1 [cs.AI] 29 May 2026 Environment (MDP) Learning agent
+> Shield
+> RMDP learning
+> reward
+> state
+> safe action
+> safety LTL formula + threshold probability
+> safe action distributions sampled transitions
+> learned RMDP
+
+Figure 1: Our shielding framework. Offline (shown by dashed arrows), we use sampled transitions on the MDP to learn the safety-relevant transition probabilities in the form of an RMDP with PAC guarantees. We use the learned RMDP to compute a shield that acts on the (unknown) MDP, by constraining the learning agent to the subset of stochastic policies that guarantee safety. 
+
+Contributions: shielding robust MDPs. We address this gap by developing a novel shielding framework for MDPs with sets of transition probabilities, known as robust MDPs (RMDPs) [ 13 ]. An RMDP can be seen as a game between the agent , which chooses the actions, and an adversary ,which chooses transition probabilities from the uncertainty sets. Intuitively, our shield prevents the agent from deploying any policy that leads to unsafe outcomes under any choice by the adversary. As is common in shielding [ 6 , 7], we adopt linear temporal logic (LTL) as a specification language, focusing on the safety fragment for algorithmic purposes [ 14 ]. When used to constrain the agent’s policy, our shield guarantees that, regardless of the choices by the adversary, the probability of satisfying a given LTL formula meets a prescribed threshold. As depicted in Fig. 1, we can instantiate our framework to shield unknown MDPs in two steps: 1. We use sampled transitions in the environment to learn the transition probabilities of the (unknown) MDP as an RMDP with PAC guarantees, i.e., the RMDP “contains” the true MDP with a prescribed (high) confidence probability δ. As common in shielding [ 6], we do not need to learn all probabilities, but instead only those relevant to the safety specification. 2. Based on the learned RMDP, we construct a shield. The shield restricts the agent’s choices to a subset of probability distributions over actions. When used to constrain the actions of the agent on the true MDP, the shield guarantees that, with the same confidence probability δ,the safety LTL formula is satisfied with at least the desired threshold probability. As a key contribution, we prove, under mild assumptions detailed in Theorems 1 and 2, that our shield is both sound and optimal on the RMDP: every policy admissible under the shield is safe and, conversely, every safe RMDP policy is admissible under the shield. Since the RMDP converges to the true MDP as the number of sampled transitions increases, this optimality carries over to optimality for the MDP in the limit. Thus, our shield guarantees safety on the true MDP at any point with high confidence – both during learning and execution – and is minimally restrictive to the learning agent, enabling it to converge to optimal rewards as the quality of the learned RMDP increases. We demonstrate these results empirically and, by contrast, show that state-of-the-art shielding for learned MDPs with point estimates of probabilities can violate safety. 
+
+Related work. Safety in RL is an active area of research [ 5, 15 , 16 ]. Shielding has proved to be a successful approach to block unsafe actions during training and execution [ 6, 8, 9, 17 – 21 ]. Closest to our approach is the probabilistic shielding for MDPs proposed in [ 7], which, however, assumes knowledge of the underlying MDP. Here, we consider the more challenging case of RMDPs and thereby shielding unknown MDPs learned as an RMDP. Existing shields on learned dynamics generally lack finite-sample guarantees by relying on, e.g., Monte Carlo sampling [ 22 ] or learned latent representations [ 23 ]. To our knowledge, the only existing RMDP shielding approach is [ 24 ], which considers RMDPs with intervals of probabilities ( interval MDPs ) and iteratively expands the allowed actions per state, yielding sound but overly conservative shields as a permissive policy [25 ]. Lagrangian approaches [ 26 , 27 ] convert safety-constrained MDPs into unconstrained problems with dual variables to penalize cost violations in the reward objective. Recent works extend these ideas to robust constrained MDPs [ 28 , 29 ]. While often empirically effective, these methods cannot provably guarantee safety at any time (as opposed to shields), thus limiting their use in safety-critical scenarios. 2Lyapunov-based methods enforce safety by satisfying a Lyapunov decrease condition defined w.r.t. a safe baseline policy [ 30 , 31 ], where guarantees depend on accurate safety critics and linearizations. In [ 32 ], Gaussian processes (GP) are used for model-based RL, but guarantees rely on the GP prior and a known Lyapunov function, which is hard to construct in practice. Finally, Dyna-style model-based RL uses rollouts on learned models to generate data for model-free agents [ 33 – 35 ], which reduces required system interactions but cannot give formal safety guarantees as shields do. 
+
+Overview. After the preliminaries in Sect. 2, we present our shields for RMDPs in Sect. 3. We discuss the setting of shielding unknown MDPs in Sect. 4 and empirically evaluate our approach in Sect. 5. Throughout the paper, we focus on intuition for our results and instead present all rigorous details about, e.g., measure-theoretic constructions, and proofs for our results in the appendix. 
+
+## 2 Preliminaries 
+
+A Markov decision process (MDP) is a tuple M = ⟨S, A, P, s init , AP, L ⟩, where S is an (in)finite set of states with initial state sinit ∈ S; A is an (in)finite set of actions ;1 P : S × A → ∆( S) is a transition function; AP is a finite set of atomic propositions ; and L : S → 2AP is the labeling function . We say that M is an MDP with rewards if it is additionally equipped with a reward function 
+
+R : S → R. For simplicity, we may write P (s, a, s ′) instead of P (s, a )( {s′}). A finite history in M
+
+of length n is a finite word h = s0a0 · · · sn−1an−1sn ∈ S(AS )n for some n ∈ N, and we denote its last state sn by last (h). An infinite history h = s0a0 · · · snan · · · is defined analogously. A policy 
+
+π : H → ∆( A) of M is a mapping from the set H of finite histories to distributions over actions. Fixing a policy π and state s ∈ S induces a probability measure prob s 
+
+> M,π
+
+over histories. We write prob M,π for prob sinit  
+
+> M,π
+
+. For details on policies and induced probability measures, see [36, 37]. 
+
+Safe linear temporal logic. We express objectives for MDPs in linear temporal logic (LTL) [ 38 ]. Following [36], an LTL formula φ over the atomic propositions AP is generated by the grammar 
+
+φ ::= ⊤ | p | ¬ φ | φ ∧ φ | Xφ | φ U φ, p ∈ AP. 
+
+As standard, we define φ1 ∨ φ2 := ¬(¬φ1 ∧ ¬ φ2), Fφ := ⊤ U φ, and Gφ := ¬F¬φ. A finite (resp. infinite) trace is a sequence τ = b0b1 · · · ∈ Σ∗ (resp. Σω ), where the alphabet Σ = 2 AP specifies which propositions hold at each timestep. Given an (in)finite history h = s0a0s1a1 · · · , we denote by 
+
+L(h) = L(s0)L(s1)L(s2) · · · the (in)finite trace induced by the labeling function. The satisfaction relation τ, i |= φ for a formula φ is defined inductively over infinite traces τ = b0b1 · · · of M as 
+
+τ, i |= p ⇐⇒ p ∈ bi,τ, i |= ¬φ ⇐⇒ τ, i ̸ |= φ, τ, i |= φ1 ∧ φ2 ⇐⇒ τ, i |= φ1 and τ, i |= φ2,τ, i |= Xφ ⇐⇒ τ, i + 1 |= φ, τ, i |= φ1 U φ2 ⇐⇒ ∃ j ≥ i such that τ, j |= φ2 and τ, k |= φ1 for all i ≤ k < j. 
+
+We write τ |= φ as shorthand for τ, 0 |= φ. An LTL formula φ is a safety formula [ 14 ] if every violating trace has a finite witness of violation, i.e., for every τ ∈ Σω such that τ̸ |= φ, there exists a finite prefix u ≺ τ (called a bad prefix ) such that for every ρ ∈ Σω , uρ ̸ |= φ. For every safety formula φ, there exists a DFA that accepts exactly all bad prefixes of φ [36]: 
+
+Definition 1 (DFA) . A deterministic finite automaton (DFA) over the alphabet Σ is a tuple A =
+
+⟨Q, Σ, q init , δ, F ⟩, where Q is a finite set of states with initial state qinit ∈ Q, δ : Q × Σ → Q is the transition function, and F ⊆ Q is the set of accepting states. 
+
+The transition function extends to finite words as standard: δ∗(q, ua ) = δ(δ∗(q, u ), a ) for u ∈ Σ∗,
+
+a ∈ Σ. A finite word u ∈ Σ∗ is accepted by DFA A iff δ∗(qinit , u ) ∈ F . A specification Φ = P≥λ(φ)
+
+combines an LTL formula φ and a threshold λ ∈ [0 , 1] . For a policy π, we write (M, π ) |= P≥λ(φ)
+
+iff prob M,π 
+
+ {h | L(h) |= φ} ≥ λ, i.e., the probability for generating a satisfying trace is at least λ.
+
+> 1For notational simplicity, we assume every action is enabled in every state (see App. A for the case without this restriction).
+
+3Safe policy optimization. Our goal is to compute a policy π that (1) maximizes the γ-discounted expected return Jγ
+
+> M
+
+(π) := Esinit  
+
+> M,π
+
+[P∞ 
+
+> t=0
+
+γtR(st)] , with the expectation taken w.r.t. the probability measure prob sinit  
+
+> M,π
+
+, and (2) ensures the probability of violating a safety LTL formula φ is below a pre-scribed threshold p ∈ [0 , 1] . Formally, this amounts to solving the safe policy optimization problem :
+
+π⋆ ∈ arg max π Jγ
+
+> M
+
+(π) subject to (M, π ) |= P≥1−p(φ).
+
+If the MDP M is known, π⋆ can be computed using the probabilistic shielding techniques for MDPs from [ 7]. Here, however, we assume that the transition function P is unknown and we only have access to samples from P , rendering existing techniques inapplicable. Instead, we develop a shielding framework for RMDPs (Sect. 3) and use it to shield a learned RMDP of the unknown MDP (Sect. 4). 
+
+Definition 2 (RMDP) . A robust MDP (RMDP) is a tuple MR = ⟨S, A, P, s init , AP , L ⟩, where S,
+
+A, sinit , AP , and L are defined as in an MDP, and P : S × A → 2∆( S) is an uncertain transition function that maps every state-action pair to a set of probability measures over S.
+
+An RMDP with rewards is additionally equipped with a reward function R : S → R. An RMDP defines a game between the agent that chooses actions via the policy π, and an adversary θ that chooses probability distributions in P. Formally, the adversary θ is a mapping that associates every finite history h ∈ H to a distribution in P(last (h) , a ) for every action a ∈ A. Fixing an adversary θ
+
+for MR induces a standard MDP [ 12 ], denoted by MR[θ]. We say that MR satisfies the specification 
+
+P≥1−p(φ), denoted as (MR, π ) |= P≥1−p(φ), iff (MR[θ], π ) |= P≥1−p(φ) for every adversary θ.
+
+## 3 Probabilistic Shields for Robust MDPs 
+
+In this section, we present our shielding approach for RMDPs. We first define our general notion of shield in Sect. 3.1, instantiate it to finite RMDPs in Sect. 3.2, and show its correctness in Sect. 3.3. 
+
+3.1 Shields for RMDPs 
+
+A shield may need internal memory to remember enough about the history to determine which actions can still be taken while satisfying the specification. We encode this memory in a controllable monitor ,which extends standard monitors (used in, e.g., runtime verification [39, 40]) with auxiliary actions. 
+
+Definition 3 (Controllable monitor) . A controllable monitor over an observation space Ξ is a tuple 
+
+D = ⟨M, U, m init , ζ ⟩, where M is a space of monitor states , U is a space of auxiliary actions ,
+
+minit ∈ M is the initial state , and ζ : M × Ξ × U → M is a transition function .
+
+We will use the auxiliary action to allocate a remaining violation budget , which records how much probability of violating the specification is still allowed over the remaining execution. 
+
+Example 1. A DFA (without its accepting states) can be seen as a controllable monitor with singleton auxiliary action U = {∗} and observation space Ξ = Σ as the alphabet of the DFA. An NFA, on the other hand, additionally requires auxiliary actions that resolve nondeterminism at each step. 
+
+To combine an RMDP with a controllable monitor, we construct a product model based on an 
+
+observation map α : S → Ξ from the RMDP states S into the observation space Ξ of the monitor. The product state (s, m ) contains both the RMDP and monitor state, and the product action (a, u )
+
+consists of both an RMDP action a ∈ A and an auxiliary action u ∈ U .
+
+Definition 4 (Product RMDP) . Let MR = ⟨S, A, P, s init , AP, L ⟩ be an RMDP, let α : S → Ξ be an observation map, and let D = ⟨M, U, m init , ζ ⟩ be a controllable monitor over Ξ. The product RMDP 
+
+of MR and D (relative to α) is the RMDP MR ⊗α D = ⟨S, A, P, s init , AP, L ⟩, where S = S × M ,
+
+A = A × U , sinit = ( sinit , m init ), and for every (s, m ) ∈ S,1. L(s, m ) = L(s), and 2. for every action (a, u ) ∈ A(( s, m )) , letting T (s′) =  s′, ζ (m, α (s′), u ), the uncertainty set P(( s, m ), (a, u )) consists of all pushforward measures μ ◦ T −1 with μ ∈ P (s, a ).
+
+Intuitively, choosing action (a, u ) in state (s, m ) of the product RMDP means that the next RMDP state s′ ∈ S is given by P(s, a ), and the next monitor state is m′ = ζ(m, α (s′), u ). Def. 4 extends 4RMDP MR                          
+
+> s′∼P(s, a )
+> Agent
+> ρ∈Γ( ξ, m )
+> Adversary θ
+> Abstraction
+> α:S→Ξ
+> Monitor D
+> m′=ζ(m, ξ, u )Γ
+> Shield S
+> trans. func.
+> P∈ P
+> action
+> a∼ρ
+> state s′
+> ξ=α(s′)ξ, m ′
+> Γ( ξ, m ′)
+> allowed distributions over A×U
+> auxiliary action u
+
+Figure 2: The shield S = ( D, Γ) deployed on an RMDP MR with an abstraction map α.the usual product between an MDP M and a DFA A, used in model checking [ 36 ] and shielding [ 6 ], with auxiliary actions. Indeed, this usual product can be recovered with M ⊗ L A, where L is the labeling function of the MDP, and the DFA is identified with its associated monitor as in Example 1. We can now define our notion of a shield. In a nutshell, a shield specifies, for every observation and monitor state, which randomized choices over (RMDP and auxiliary) actions are allowed. 
+
+Definition 5 (Shield) . Let Ξ be a set of observation states and let AΞ be a set of actions. A shield 
+
+over (Ξ , A Ξ) is a pair S = ( D, Γ) , where D = ⟨M, U, m init , ζ ⟩ is a controllable monitor over Ξ,and Γ is a map from Ξ × M to 2∆( AΞ×U ) that models the allowed distributions over actions. 
+
+The shield in Def. 5 is defined over an observation space Ξ, rather than directly over the full state space S. This feature, in particular, allows us to construct shields on a safety abstraction of the RMDP [ 6 ]. Let MR = ⟨S, A, P, s init , AP, L ⟩ be an RMDP, let S = ( D, Γ) be a shield over (Ξ , A Ξ),and let α : S → Ξ be an observation map. We say that the shield S acts on (MR, α ) if AΞ = A.As visualized in Fig. 2, at runtime, the shield observes only the abstract state ξ = α(s) and monitor state m, and enforces the agent to select a randomized choice over actions contained in Γ( ξ, m ).
+
+3.2 A Shield for Finite RMDPs 
+
+We now instantiate the general shield from Def. 5 to finite RMDPs. Throughout this section, we assume we are given an RMDP MR with finite sets S and A. Inspired by [ 7 ], our construction uses a robust upper bound on the probability of reaching a bad state, formalized as follows. 
+
+Definition 6. An (MR, U )-inductive value function is a function β : S → [0; 1] such that  BU 
+
+> MR
+
+(β) (s) ≤ β(s) for every s ∈ S, where BU 
+
+> MR
+
+is the robust Bellman operator defined as 
+
+ BU 
+
+> MR
+
+(β) (s) = 
+
+
+
+1, if s ∈ U, 
+
+inf  
+
+> a∈A
+
+sup 
+
+> μ∈P (s,a )
+
+Es′∼μ [β(s′)] , otherwise. 
+
+In our case, the states U correspond to violating a given safety LTL formula φ. This violating set is de-fined as S × F on the product MR ⊗L A between the RMDP MR and DFA A = ⟨Q, 2AP , q init , δ, F ⟩
+
+that recognizes the bad prefixes of φ. Thus, we use an (MR ⊗L A, S × F )-inductive value function 
+
+β : S×Q → [0 , 1] . Intuitively, β(s, q ) is an upper bound on the probability of violating φ in state (s, q )
+
+under an optimal policy and worst-case adversary. To enforce the probability threshold p ∈ [0 , 1] ,we thus require that β(sinit , q init ) ≤ p. Furthermore, we define Vβ = Q 
+
+> (s,q )∈S×Q
+
+[β(s, q ), 1] . Each 
+
+v ∈ V β assigns an admissible violation budget v(s, q ) ∈ [0 , 1] to every product state (s, q ).
+
+Definition 7 (Shield for finite RMDP) . Let MR, A, and β be defined as above. The shield 
+
+S(MR, A, β ) = ( D, Γ) is defined as an instantiation of Def. 5 as follows: 1. D = ⟨M, Vβ , m init , ζ ⟩ is a controllable monitor over S with states M := Q × [0 , 1] and 
+
+minit := ( qinit , p ), auxiliary actions Vβ , and transition function ζ : M ×S ×V β → M defined for all (q, y ) ∈ M , s ∈ S, and v ∈ V β as ζ(( q, y ), s, v ) =  δ(q, L (s)) , v (s, δ (q, L (s))) ;
+
+2. for all states (s, q, y ) of MR ⊗ D , the set Γ( s, q, y ) contains exactly those distributions 
+
+ρ ∈ ∆( A × V β ) such that E(a,v )∼ρ
+
+h
+
+sup μ∈P (s,a ) Es′∼μ
+
+v s′, δ (q, L (s′))  i
+
+≤ y. 
+
+5Intuitively, Γ contains those distributions ρ such that the worst-case expected next budget remains below the current budget y. Since the initial budget is at most p, every policy allowed by the shield keeps the worst-case probability of reaching S × F (and thus of a bad prefix) at most p.
+
+3.3 Sound and Optimal Shields on Safety Abstractions 
+
+We now analyze the guarantees of the shield from Def. 7. In this section, we return to the setup in Fig. 2, where MR may be an infinite RMDP but the observation space Ξ is finite . Thus, we in fact analyze the shield S(MR/α, A, β ) for the finite safety abstraction MR/α , which is defined as the standard quotient (see Def. A.4 in App. A). Yet, the shield is deployed on the (non-abstracted) RMDP 
+
+MR, so we need to reason about policies on MR[θ] ⊗α D for different adversaries θ, i.e., on the product of the induced MDP MR[θ] and the monitor D, relative to the abstraction map α.
+
+Definition 8 (Compliant Policies) . A policy π on MR ⊗α D is compliant with the shield S acting on 
+
+(MR, α ) up to time T under the adversary θ, if π only outputs distributions consistent with Γ, i.e., 
+
+prob MR[θ]⊗αD,π 
+
+∀t < T, π (· | ht) ∈ Γ( α(st), m t) = 1 ,
+
+where ht denotes the product history up to time t, and (st, m t) is its last product state. 
+
+We say that a shield is realizable if, after following any compliant policy up to time t, there always exists a continuation policy that is compliant under every adversary. 
+
+Definition 9 (Shield realizability) . A shield S = ( D, Γ) acting on (MR, α ) is realizable over 
+
+(MR, α ) if, for all t ∈ N, adversaries θ of M ⊗ α D, and policies π compliant with S up to time t
+
+under θ, there exists a policy π′ that (1) coincides with π on all histories of length up to t, and (2) is compliant with S under every adversary θ′ that coincides with θ on all histories of length up to t.
+
+As a final ingredient for defining soundness and optimality, we need to project policies π on MR ⊗α D
+
+onto the original RMDP MR. Intuitively, the projected policy π↓ is obtained from π by ignoring the monitor component, i.e., at each history, it selects actions according to the marginal distribution induced by π over product histories consistent with that history (see Def. B.8 for a formal definition). 
+
+Definition 10 (Shield soundness) . Let Φ = P≥1−p(φ) be a specification, and let MR be an RMDP equipped with an observation map α : S → Ξ. A shield S = ( D, Γ) acting on (MR, α ) is sound for 
+
+Φ if, for every policy π on MR ⊗α D compliant with S, we have (MR, π ↓) |= Φ .
+
+Definition 11 (Shield approximate optimality) . Let Φ = P≥1−p(φ) be a specification, let MR be an RMDP equipped with observation map α : S → Ξ, let ϵ > 0, and let γ ∈ (0 , 1] . A shield S = ( D, Γ) 
+
+acting on (MR, α ) is (ϵ, γ )-optimal for Φ if, for every policy π of MR such that (MR, π ) |= Φ ,there exists a policy π of MR ⊗α D compliant with S such that, for every adversary θ,
+
+Jγ
+
+> MR[θ]
+
+(π↓) ≥ Jγ
+
+> MR[θ]
+
+(π) − ϵ. 
+
+We now state the main results of this section. Recall MR is an RMDP equipped with a finite safety abstraction α : S → Ξ, defining the quotient RMDP MR/α = ⟨Ξ, A α, Pα, ξ init , AP, L α⟩. Also, let 
+
+Φ = P≥1−p(φ), let A = ⟨Q, 2AP , q init , δ, F ⟩ recognize the bad prefixes of φ, and let β : Ξ × Q →
+
+[0 , 1] be an (( MR/α ) ⊗Lα A, Ξ × F )- inductive value function such that β(ξinit , q init ) ≤ p.
+
+Theorem 1 (Realizability and soundness) . The shield S(MR/α, A, β ) acts on (MR, α ), is realiz-able over (MR, α ), and is sound over (MR, α ) for Φ.
+
+We say an RMDP MR is conditionally deterministic w.r.t. abstraction α if every reachable abstract history determines a unique concrete history, i.e., for every abstract history bht = ξ0a0ξ1a1 · · · at−1ξt
+
+with ξ0 = α(sinit ), there is at most one concrete history ht = s0a0s1a1 · · · at−1st such that s0 = sinit ,
+
+α(si) = ξi for all i ≤ t, and ht has positive probability under some adversary of MR. We remark that this assumption is trivially satisfied if the safety abstraction α is the identity. As another example, this assumption is satisfied by the Pacman environment used for our experimental evaluation in Section 5. This assumption is needed for Theorem 2 because an optimal safe policy might otherwise induce different safety-relevant behaviors on different concrete states associated with the same abstract history, in which case it might become impossible to certify the safety of that safe optimal policy without some further knowledge of the dynamics of the concrete MDP. 6Theorem 2 (Approximate optimality) . Let ϵ = ∥β−β∞∥∞ 
+
+> ∥β−β∞∥∞+p−β(ξinit ,q init )
+
+, with β∞ the least fixed point of BΞ×F 
+
+> (MR/α )⊗Lα A
+
+, suppose β(ξinit , q init ) < p , and that MR is conditionally deterministic w.r.t. α.Then, for the shield S(MR/α, A, β ), we have: 1. if the total undiscounted return is defined on all infinite paths, and if its absolute value is uniformly bounded by B, then S(MR/α, A, β ) is (2 Bϵ, 1) -optimal over (MR, α ) for Φ;2. if 0 < γ < 1 and sup (s,a )∈S×A |R(s, a )| ≤ Z, then S(MR/α, A, β ) is ( 2Zϵ  
+
+> 1−γ
+
+, γ )-optimal .
+
+Theorems 1 and 2 show that the shield in Def. 7 is sound and approximately optimal, respectively. Furthermore, if the value function β used to define the shield is equal to the exact least fixed point β∞,then our shield is (exactly) optimal, as long as the corresponding return is well-defined. 
+
+## 4 Shielding Unknown MDPs via Learned RMDPs 
+
+We use the shielding approach from Sect. 3 to shield unknown finite MDPs learned as an RMDP. A common approach to learning an unknown (finite) MDP is to estimate transition probabilities from samples and represent the resulting uncertainty via intervals [ 41 – 45 ]. For each state-action (s, a ) and next state s′, we construct an interval [ ˇP (s, a, s ′), ˆP (s, a, s ′)] ⊆ [0 , 1] and define the uncertainty set 
+
+P(s, a ) = 
+
+n
+
+μ ∈ ∆( S) : ∀s′ ∈ S, μ (s′) ∈ [ ˇP (s, a, s ′), ˆP (s, a, s ′)] 
+
+o
+
+.
+
+Suppose that, for a fixed pair (s, a ), we obtain Ns,a samples from P (s, a ), out of which Ns,a,s ′ led to a transition to s′. For any confidence budget τ ∈ (0 , 1) , the Clopper-Pearson confidence interval [ 46 ]provides a probably approximately correct (PAC) estimator of the unknown probability P (s, a, s ′):
+
+PP (s, a, s ′) ∈ [ ˇP (s, a, s ′), ˆP (s, a, s ′)] ≥ 1 − τ, 
+
+which is defined via the inverse CDF of the beta distribution Beta( α, ν ), denoted by Beta −1(·; α, ν ):
+
+ˇP (s, a, s ′) = 
+
+0, Ns,a,s ′ = 0 ,
+
+Beta −1( τ 
+
+> 2
+
+; Ns,a,s ′ , N s,a − Ns,a,s ′ + 1) , otherwise ,
+
+ˆP (s, a, s ′) = 
+
+1, Ns,a,s ′ = Ns,a ,
+
+Beta −1(1 − τ 
+
+> 2
+
+; Ns,a,s ′ + 1 , N s,a − Ns,a,s ′ ), otherwise .
+
+By repeating this procedure for every state-action pair, we obtain the transition function P for an RMDP such that P {P ∈ P} ≥ 1 − ψ · τ, with ψ ≤ | S|2 · | A| the number of transitions in the MDP. 
+
+Remark 1. Without further assumptions on the MDP, the Clopper-Pearson confidence interval cannot prove the absence of a transition (s, a, s ′), even if Ns,a,s ′ = 0 and Ns,a is high. A common workaround is to assume a minimum probability pmin for each transition in the MDP [ 41 , 47 ]. If the sum of the lower bounds ˇP (s, a, s ′) for all states s′ ∈ S with Ns,a,s ′ > 0 exceeds 1 − pmin , then the probability of having overlooked another transition falls within the confidence budget. 
+
+In our experiments, we either assume that (a) the graph of the MDP (and thus ψ) is known, or (b) the graph of the MDP is unknown, but the minimum probability pmin is known (and ψ = |S|2 · | A|). 
+
+Shielding unknown MDPs. Finally, we use our approach from Sect. 3 to shield a learned RMDP cM,representing an unknown MDP M = ⟨S, A, P, s init , AP, L, R ⟩ equipped with a safety abstraction 
+
+α : S → Ξ into a finite set Ξ. We write M/α = ⟨Ξ, A α, P α, ξ init , AP, L α⟩ for the quotient MDP (cf. Def. A.4), Φ = P≥1−p(φ) is a specification, and A is a DFA for the bad prefixes of φ. In the following, we assume we have learned a finite RMDP such that the true Pα is contained in the learned set bP, i.e., Pα(ξ, a ) ∈ bP(ξ, a ) ∀(ξ, a ) ∈ Ξ × Aα. In practice, this holds with probability ≥ 1 − ψ · τ ,so this confidence level carries over to Theorems 3 and 4 below. Let bβ : Ξ × Q → [0 , 1] be an ( cM ⊗ Lα A, Ξ × F )-inductive value function such that bβ(ξinit , q init ) ≤ p.Then, the shield S( cM, A, bβ) computed on the learned RMDP cM is sound for the unknown MDP M:
+
+Theorem 3 (Soundness for the unknown MDP) . The shield S( cM, A, bβ) acts on (M, α ), and every compliant policy π satisfies the specification Φ on the true MDP M, i.e., (M, π ↓) |= P≥1−p(φ).
+
+7We now present our optimality results, which bound the gap in expected return between the optimal policy under the shield S( cM, A, bβ), and the optimal safe policy on the true MDP M. These bounds depend on the total variation abstraction error η := sup (ξ,a )∈Ξ×Aα sup bP ∈ bP(ξ,a ) TV( Pα(ξ, a ), bP ),the least fixed points bβ∞ and β∞ of the Bellman operators BΞ×F  
+
+> cM⊗ Lα A
+
+and BΞ×F  
+
+> (M/α )⊗Lα A
+
+as in Def. 6, and the parameter qmin = pmin (M)·pmin ( cM) 
+
+> pmin (M/α )
+
+, where pmin (·) denotes the minimum transition probability of the respective model. Finally, let Hmax be a uniform upper bound on the expected hitting time to either a bad automaton state or a safe absorbing component, taken over all deterministic A-memory policies and all transitions in bP. As a conservative bound, we may take Hmax = |S|·| Q| 
+
+> (qmin )|S|·| Q|
+
+.In Theorem 4, we again use optimality as per Def. 11 and define bϵβ := ∥ bβ− bβ∞∥∞    
+
+> ∥bβ−bβ∞∥∞+p−bβ(ξinit ,q init )
+
+for brevity. To ensure the denominator of ϵbβ is nonzero, we assume bβ(ξinit , q init ) < p , which in turn implies there exists a policy πsl and a constant κ > 0 such that inf bθ prob cM[bθ],π sl (φ) ≥ 1 − p + κ. 
+
+Theorem 4 (Near-optimality for the unknown MDP) . If M is conditionally deterministic w.r.t. α, it holds that: 1. if M is finite, the learned cM is graph-preserving, 2 and the absolute value of the total undiscounted return is uniformly bounded by B, then the shield S( cM, A, bβ) is (2 Bϵ TV , 1) -optimal over (M, α ) for Φ, where ϵTV := ϵbβ + ηH max  
+
+> κ+ηH max
+
+.2. if 0 < γ < 1 and sup (s,a )∈S×A |R(s, a )| ≤ Z, then the shield S( cM, A, bβ) is 
+
+ 2Zϵ T 
+
+> 1−γ
+
+, γ 
+
+
+
+-optimal over (M, α ) for Φ, where ϵT := min T ∈N
+
+
+
+ϵbβ + γT + T η +∥ bβ∞−β∞∥∞ 
+
+> κ+T η +∥bβ∞−β∞∥∞
+
+
+
+.
+
+The bounds in Theorem 4 separate three sources of suboptimality. First, ϵbβ comes from using the inductive certificate bβ instead of the exact robust fixed point bβ∞. Second, the terms with η quantify the mismatch between the learned RMDP and the true abstraction M/α . Third, the additional term 
+
+γT in the discounted case is the price of switching after T steps to a robustly safe Slater policy; increasing T reduces this switching cost but increases the finite-horizon model error term T η .
+
+## 5 Experimental Evaluation 
+
+We implement our shielding approach and perform numerical experiments to demonstrate our approach for safe reinforcement learning on unknown MDPs via shielding learned RMDPs. 
+
+Implementation. Our shielding pipeline for unknown MDPs consists of three steps: (1) Learn an RMDP from sampled transitions; (2) Construct a shield on the learned RMDP; and (3) Run policy optimization with the shield active. We assume access to a simulator of the underlying MDP M, but crucially do not know its transition function P . For step (1), we use this simulator (in fact, a simulator of the safety abstraction only suffices) to sample transitions for every state-action pair and learn an RMDP cM as described in Sect. 4 that is correct wrt a specified confidence δ ∈ (0 , 1) . For (2), we run robust value iteration [ 11 , 48 ] on the product RMDP cM ⊗ L A to compute an inductive value function β (cf. Def. 6) to construct the shield as per Def. 7. For (3), we use reinforcement learning on the MDP simulator with the action space restricted to AS(s, m ) = Γ( α(s), m ). This space AS(s, m )
+
+is convex and can thus be given by its extremal points. In fact, the set of violation budgets Vβ that satisfy condition 2 in Def. 7 has finitely many extremal points, allowing us to represent and optimize over the shielded action space (see Sect. D.1 for details). In practice, we optimize the policy with PPO [49] and implement a heuristic for choosing the auxiliary actions, described in Sect. D.1. 
+
+Experimental setup. We conduct experiments comparing our contributions (cases 3 and 4 below) against two baselines that use state-of-the-art probabilistic shielding for MDPs (cases 1 and 2):      
+
+> 2An RMDP MRis graph-preserving if each induced MDP MR[θ]has the same graph. For cM, we can ensure graph-preservation (with the specified confidence budget) by using sufficiently many samples to satisfy Remark 1.
+
+81. Known MDP (MDP ). This baseline assumes full knowledge of the true MDP transition probabilities and uses the probabilistic shielding from [ 7] directly on the exact model. This baseline provides a reference for safety and performance under full knowledge of the MDP. 2. MLE-based Shielding (MLE ). This baseline applies the probabilistic shielding from [ 7] on a learned MDP with maximum-likelihood estimates (MLEs) of the transition probabilities. While this approach often achieves strong reward performance, the lack of uncertainty modeling prevents theoretical guarantees and can lead to unsafe behavior. 3. RMDP Shield with Known Support (Kno ). The MDP is unknown and is learned as an RMDP with PAC guarantees, but the graph of the true MDP is known in advance. 4. RMDP Shield with Unknown Support (Unk ). Same as setting 3, but the graph of the true MDP is unknown and must instead be learned based on a given minimum transition probability pmin as part of the RMDP learning, as described in Remark 1. We compare these four cases on two variants of three environments: Media Streaming , Color Bomb Gridworld , and Pacman (see Sect. D.2 for detailed descriptions). We learn each RMDP with an overall confidence level of 0.95 , taking between 10 –20 000 samples per distribution P (s, a ) in the MDP simulator (except for the MDP baseline, which does not use sampling). For each configuration, we report two evaluation metrics: (1) expected discounted reward ( rew ) is the average episodic return, and (2) specification satisfaction probability ( sat ) is the empirical probability that an evaluation rollout satisfies the safety specification on 15 episodes. The experiments are run on a server running Ubuntu 24.04.4 LTS, with an Intel Core i7-10700K CPU, 32 GB of RAM, and NVIDIA GeForce RTX 3080 GPU with 10 GB VRAM. The code to reproduce our results is provided in the supplementary material. Our implementation builds upon the MASA library [50], e.g., for the PPO algorithm. 
+
+Discussion. Fig. 3 summarizes our experimental results, reporting the averaged metrics ( rew and 
+
+sat ) during training as a function of the sample size for each environment. Learning curves showing the evolution of these metrics are deferred to Sect. D.2 to avoid clutter. Finally, all experiments are averaged over three random seeds, and shaded regions show the standard deviation. The MDP baseline corresponds to a perfect-information setting and therefore remains constant across all sample sizes. First, we observe that Kno and Unk cannot always be evaluated for small sample sizes, as illustrated by Pacman Slippery . In particular, for too low sample sizes, the learned uncertainty sets P(s, a )
+
+of the RMDP are too large to construct a shield that satisfies the required satisfaction probability of 
+
+1 − p. Increasing the sample size yields tighter sets P(s, a ), thereby mitigating this issue. For Unk ,we additionally need at least a certain minimum number of samples from each distribution P (s, a ) of the MDP to learn the graph structure, as described in Remark 1. Despite these sampling requirements, Fig. 3 shows that the claimed safety probability of 1 − p is indeed satisfied empirically by our robust shields ( Kno and Unk ). As the number of samples increases, the uncertainty sets become progressively tighter, reducing the conservativeness of the robust shield and allowing the methods to achieve increasingly higher expected rewards while maintaining safety. By contrast, the MLE shield frequently fails to satisfy the required safety threshold for small to moderate sample sizes, despite often achieving strong reward performance, e.g., in the Pacman 
+
+environment. The reason is that MLE does not explicitly model uncertainty in the learned probabilities and thus cannot provide safety guarantees. Overall, our results highlight a trade-off between the data used to learn the RMDP and the shield’s conservatism. For small sample sizes, our robust methods lead to suboptimal rewards, while the specification satisfaction probability remains well above the required threshold. This conservatism is a typical limitation of robust methods, which rely on worst-case reasoning leading to loose bounds for small sample budgets [ 51 , 52 ]. Nevertheless, as the sample size grows, the learned RMDP becomes a tighter approximation to the true MDP, yielding results close to the baseline with a fully known MDP .
+
+## 6 Conclusion 
+
+We presented a novel shielding approach for robust MDPs (RMDPs). Our shielding approach is sound and (approximately) optimal and can be used to shield unknown MDPs learned as an RMDP. By using existing sampling methods for learning transition probabilities with PAC guarantees, we construct shields that, with high confidence, ensure safety while remaining minimally restrictive. Our 9MDP MLE Kno Unk satisfaction prob (1 − p)                                    
+
+> 10 110 210 310 4
+> 2
+> 4
+> 6
+> 8
+> Sample size
+> rew
+> GridWorld
+> 10 110 210 310 4
+> 0
+> 0.5
+> 1
+> Sample size
+> sat
+> GridWorld
+> 10 110 210 310 4
+> 12
+> 14
+> 16
+> 18
+> 20
+> Sample size
+> rew
+> GridWorld LTL
+> 10 110 210 310 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Sample size
+> sat
+> GridWorld LTL
+> 10 110 210 310 4
+> 19
+> 20
+> Sample size
+> rew
+> Pacman
+> 10 110 210 310 4
+> 0.9
+> 0.95
+> 1
+> Sample size
+> sat
+> Pacman
+> 10 110 210 310 4
+> 14
+> 16
+> 18
+> 20
+> Sample size
+> rew
+> Pacman Slippery
+> 10 110 210 310 4
+> 0.6
+> 0.8
+> 1
+> Sample size
+> sat
+> Pacman Slippery
+> 10 110 210 310 4
+> −15
+> −14
+> −13
+> Sample size
+> rew
+> Streaming
+> 10 110 210 310 4
+> 0.5
+> 0.52
+> 0.54
+> 0.56
+> 0.58
+> Sample size
+> sat
+> Streaming
+> 10 110 210 310 4
+> −50
+> −40
+> −30
+> Sample size
+> rew
+> Streaming – Alternative
+> 10 110 210 310 4
+> 0.4
+> 0.6
+> 0.8
+> Sample size
+> sat
+> Streaming Alternative
+
+Figure 3: Avg. rew and sat as a function of the number of samples for each state-action pair. The dashed line shows the specification threshold 1 − p. Shaded regions indicate one standard deviation. experiments confirmed that, while conservative for small sample sizes, our robust shields guarantee probabilistic safety, whereas shields constructed for MDPs with maximum likelihood estimates do not. In the future, we plan to extend our approach to robust shielding of stochastic games and investigate more sophisticated RMDP learning techniques to reduce the required sample sizes. 
+
+## Acknowledgments and Disclosure of Funding 
+
+This research is supported by the EPSRC grant EP/Y028872/1, Mathematical Foundations of In-telligence: An “Erlangen Programme” for AI. Edwin Hamel-De le Court is funded by the ARIA opportunity seed grant titled “Hardware-Level AI Safety Verification.” Thom Badings was supported by the RWTH “Port to Europe” Postdoc Programme, as part of the Excellence Initiative of the German Research Foundation DFG. 
+
+## References 
+
+[1] Richard S. Sutton and Andrew G. Barto. Reinforcement Learning: An Introduction . A Bradford Book, Cambridge, MA, USA, 2018. [2] Jens Kober, J. Bagnell, and Jan Peters. Reinforcement learning in robotics: A survey. The International Journal of Robotics Research , 32:1238–1274, 09 2013. [3] Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis Antonoglou, Daan Wierstra, and Martin A. Riedmiller. Playing Atari with deep reinforcement learning. CoRR ,abs/1312.5602, 2013. [4] B. Ravi Kiran, Ibrahim Sobh, Victor Talpaert, Patrick Mannion, Ahmad A. Al Sallab, Senthil Ku-mar Yogamani, and Patrick Pérez. Deep reinforcement learning for autonomous driving: A survey. IEEE Trans. Intell. Transp. Syst. , 23(6):4909–4926, 2022. [5] Javier García and Fernando Fernández. A comprehensive survey on safe reinforcement learning. 
+
+J. Mach. Learn. Res. , 16:1437–1480, 2015. [6] Mohammed Alshiekh, Roderick Bloem, Rüdiger Ehlers, Bettina Könighofer, Scott Niekum, and Ufuk Topcu. Safe reinforcement learning via shielding. volume abs/1708.08611, 2017. 10 [7] Edwin Hamel-De le Court, Francesco Belardinelli, and Alexander W. Goodall. Probabilistic shielding for safe reinforcement learning. In AAAI , pages 16091–16099. AAAI Press, 2025. [8] Nils Jansen, Bettina Könighofer, Sebastian Junges, Alex Serban, and Roderick Bloem. Safe reinforcement learning using probabilistic shields (invited paper). In CONCUR , LIPIcs, pages 3:1–3:16. Schloss Dagstuhl - Leibniz-Zentrum für Informatik, 2020. [9] Steven Carr, Nils Jansen, Sebastian Junges, and Ufuk Topcu. Safe reinforcement learning via shielding under partial observability. In AAAI , pages 14748–14756. AAAI Press, 2023. [10] Shie Mannor, Duncan Simester, Peng Sun, and John N. Tsitsiklis. Bias and variance approxima-tion in value function estimates. Manag. Sci. , 53(2):308–322, 2007. [11] Arnab Nilim and Laurent El Ghaoui. Robust control of Markov decision processes with uncertain transition matrices. Oper. Res. , 53(5):780–798, 2005. [12] Marnix Suilen, Thom Badings, Eline M. Bovy, David Parker, and Nils Jansen. Robust markov decision processes: A place where AI and formal methods meet. In Principles of Verification (3) , Lecture Notes in Computer Science, pages 126–154. Springer, 2024. [13] Wolfram Wiesemann, Daniel Kuhn, and Berç Rustem. Robust Markov decision processes. 
+
+Math. Oper. Res. , 38(1):153–183, 2013. [14] Orna Kupferman and Moshe Y. Vardi. Model checking of safety properties. Formal Methods Syst. Des. , 19(3):291–314, 2001. [15] Lukas Brunke, Melissa Greeff, Adam W. Hall, Zhaocong Yuan, Siqi Zhou, Jacopo Panerati, and Angela P. Schoellig. Safe learning in robotics: From learning-based control to safe reinforcement learning. Annu. Rev. Control. Robotics Auton. Syst. , 5:411–444, 2022. [16] Shangding Gu, Long Yang, Yali Du, Guang Chen, Florian Walter, Jun Wang, and Alois Knoll. A review of safe reinforcement learning: Methods, theories, and applications. IEEE Trans. Pattern Anal. Mach. Intell. , 46(12):11216–11235, 2024. [17] Haritz Odriozola-Olalde, Maider Zamalloa, and Nestor Arana-Arexolaleiba. Shielded rein-forcement learning: A review of reactive methods for safe learning. In SII , pages 1–8. IEEE, 2023. [18] Wen-Chi Yang, Giuseppe Marra, Gavin Rens, and Luc De Raedt. Safe reinforcement learning via probabilistic logic shields. In IJCAI , pages 5739–5749. ijcai.org, 2023. [19] Ingy Elsayed-Aly, Suda Bharadwaj, Christopher Amato, Rüdiger Ehlers, Ufuk Topcu, and Lu Feng. Safe multi-agent reinforcement learning via shielding. In AAMAS , pages 483–491. ACM, 2021. [20] Bettina Könighofer, Julian Rudolf, Alexander Palmisano, Martin Tappler, and Roderick Bloem. Online shielding for reinforcement learning. Innov. Syst. Softw. Eng. , 19(4):379–394, 2023. [21] Bettina Könighofer, Roderick Bloem, Nils Jansen, Sebastian Junges, and Stefan Pranger. Shields for safe reinforcement learning. Commun. ACM , 68(11):80–90, 2025. [22] Alexander W. Goodall and Francesco Belardinelli. Leveraging approximate model-based shielding for probabilistic safety guarantees in continuous environments. In AAMAS , pages 2291–2293. International Foundation for Autonomous Agents and Multiagent Systems / ACM, 2024. [23] Daniel Bethell, Simos Gerasimou, Radu Calinescu, and Calum Imrie. Safe reinforcement learning in black-box environments via adaptive shielding. In ECAI , Frontiers in Artificial Intelligence and Applications, pages 2450–2457. IOS Press, 2025. [24] Robert Reed and Morteza Lahijanian. Learning-based shielding for safe autonomy under unknown dynamics. In ACC , pages 4940–4946. IEEE, 2025. [25] Khang Vo Huynh, David Parker, and Lu Feng. Optimization-based robust permissive synthesis for interval MDPs, 2026. 11 [26] Yinlam Chow, Mohammad Ghavamzadeh, Lucas Janson, and Marco Pavone. Risk-constrained reinforcement learning with percentile risk criteria. J. Mach. Learn. Res. , 18:167:1–167:51, 2017. [27] Adam Stooke, Joshua Achiam, and Pieter Abbeel. Responsive safety in reinforcement learning by PID lagrangian methods. In ICML , Proceedings of Machine Learning Research, pages 9133–9143. PMLR, 2020. [28] Sourav Ganguly, Arnob Ghosh, Kishan Panaganti, and Adam Wierman. Efficient policy optimization in robust constrained MDPs with iteration complexity guarantees. In NeurIPS ,2025. [29] Reazul Hasan Russel, Mouhacine Benosman, and Jeroen van Baar. Robust constrained-MDPs: Soft-constrained robust policy optimization under model uncertainty. CoRR , abs/2010.04870, 2020. [30] Yinlam Chow, Ofir Nachum, Edgar A. Duéñez-Guzmán, and Mohammad Ghavamzadeh. A Lyapunov-based approach to safe reinforcement learning. In NeurIPS , pages 8103–8112, 2018. [31] Yinlam Chow, Ofir Nachum, Aleksandra Faust, Mohammad Ghavamzadeh, and Edgar A. Duéñez-Guzmán. Lyapunov-based safe policy optimization for continuous control. CoRR ,abs/1901.10031, 2019. [32] Felix Berkenkamp, Matteo Turchetta, Angela P. Schoellig, and Andreas Krause. Safe model-based reinforcement learning with stability guarantees. In NIPS , pages 908–918, 2017. [33] Richard S. Sutton. Dyna, an integrated architecture for learning, planning, and reacting. SIGART Bull. , 2(4):160–163, 1991. [34] Michael Janner, Justin Fu, Marvin Zhang, and Sergey Levine. When to trust your model: Model-based policy optimization. In NeurIPS , pages 12498–12509, 2019. [35] Bernd Frauenknecht, Artur Eisele, Devdutt Subhasish, Friedrich Solowjow, and Sebastian Trimpe. Trust the model where it trusts itself - model-based actor-critic with uncertainty-aware rollout adaption. In ICML , Proceedings of Machine Learning Research, pages 13973–14005. PMLR / OpenReview.net, 2024. [36] Christel Baier and Joost-Pieter Katoen. Principles of model checking . MIT press, 2008. [37] Dimitri P. Bertsekas and Steven E. Shreve. Stochastic Optimal Control: The Discrete-Time Case . Athena Scientific, 2007. [38] Amir Pnueli. The temporal logic of programs. In FOCS , pages 46–57. IEEE Computer Society, 1977. [39] Klaus Havelund and Grigore Rosu. Runtime verification - 17 years later. In RV , Lecture Notes in Computer Science, pages 3–17. Springer, 2018. [40] Ezio Bartocci, Jyotirmoy V. Deshmukh, Alexandre Donzé, Georgios Fainekos, Oded Maler, Dejan Nickovic, and Sriram Sankaranarayanan. Specification-based monitoring of cyber-physical systems: A survey on theory, tools and applications. In Lectures on Runtime Verification ,Lecture Notes in Computer Science, pages 135–175. Springer, 2018. [41] Tobias Meggendorfer, Maximilian Weininger, and Patrick Wienhöft. What are the odds? improving statistical model checking of Markov decision processes. In QEST+FORMATS ,Lecture Notes in Computer Science, pages 195–218. Springer, 2025. [42] Mahdi Nazeri, Thom Badings, Anne-Kathrin Schmuck, Sadegh Soudjani, and Alessandro Abate. Data-driven abstraction and synthesis for stochastic systems with unknown dynamics. In CDC ,pages 6754–6759. IEEE, 2025. [43] Thom Badings, Licio Romao, Alessandro Abate, David Parker, Hasan A. Poonawala, Mariëlle Stoelinga, and Nils Jansen. Robust control for dynamical systems with non-Gaussian noise via formal abstractions. J. Artif. Intell. Res. , 76:341–391, 2023. 12 [44] Marnix Suilen, Thiago D. Simão, David Parker, and Nils Jansen. Robust anytime learning of Markov decision processes. In NeurIPS , 2022. [45] Yannik Schnitzer, Alessandro Abate, and David Parker. Certifiably robust policies for uncertain parametric environments. In TACAS (3) , Lecture Notes in Computer Science, pages 63–83. Springer, 2025. [46] Charles J Clopper and Egon S Pearson. The use of confidence or fiducial limits illustrated in the case of the binomial. Biometrika , 26(4):404–413, 1934. [47] Przemyslaw Daca, Thomas A. Henzinger, Jan Kretínský, and Tatjana Petrov. Faster statistical model checking for unbounded temporal properties. ACM Trans. Comput. Log. , 18(2):12:1– 12:25, 2017. [48] Garud N. Iyengar. Robust dynamic programming. Math. Oper. Res. , 30(2):257–280, 2005. [49] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. CoRR , abs/1707.06347, 2017. [50] Alexander W. Goodall, Omar Adalat, Edwin Hamel De-le Court, and Francesco Belardinelli. MASA-Safe-RL: Multi and single agent safe reinforcement learning. https://github.com/ sacktock/MASA-Safe-RL/ , 2025. GitHub repository. [51] Thom Badings, Thiago D. Simão, Marnix Suilen, and Nils Jansen. Decision-making under uncertainty: beyond probabilities. Int. J. Softw. Tools Technol. Transf. , 25(3):375–391, 2023. [52] D. Bertsimas and D. den Hertog. Robust and Adaptive Optimization . Dynamic Ideas LLC, 2022. [53] Archana Bura, Aria HasanzadeZonuzy, Dileep Kalathil, Srinivas Shakkottai, and Jean-François Chamberland. DOPE: doubly optimistic and pessimistic exploration for safe reinforcement learning. In NeurIPS , 2022. 13 A Extended Preliminaries 
+
+Remark A.1. Throughout the appendices, we provide formalizations of all definitions and results from the paper, including their measure-theoretic constructions and, for example, (R)MDPs with subsets of enabled actions. For completeness, we thus repeat all definitions and results from the paper, often extending them with the appropriate notations. 
+
+For a standard Borel space X, we write ∆( X) for the set of probability measures on X, equipped with the evaluation σ-algebra. When X is endowed with a Polish topology generating its Borel 
+
+σ-algebra, we equip ∆( X) with the corresponding weak topology; its Borel σ-algebra coincides with the evaluation σ-algebra. For any set-valued map f : E → 2F , we let Gr( f ) denote the graph of f, 
+
+i.e., the set {(x, y ) | x ∈ E, y ∈ f (x)}.
+
+A.1 Markov Decision Processes 
+
+A Markov Decision Process (MDP) is a tuple M = ⟨S, A, P, s init , AP, L ⟩, where S is a standard Borel space of states ; A is a mapping A : S → 2A where A is a standard Borel space of actions , that defines for each s ∈ S the actions A(s) enabled in s, and such that Gr( A) is Borel; the transition function P : Gr( A) → ∆( S) is a measurable map; sinit ∈ S is the initial state ; AP is a finite set of 
+
+atomic propositions equipped with the discrete σ-algebra; and L : S → 2AP is a measurable labeling function . We say that M is an MDP with rewards if it is additionally equipped with a measurable 
+
+reward function R : Gr( A) → R. For simplicity, we may write P (s, a, s ′) instead of P (s, a )( {s′})
+
+when {s′} is measurable. A finite path or history in M is a finite word h = s0a0 · · · sn−1an−1sn
+
+in S(AS)n for some n ∈ N such that ai ∈ A(si) for i ∈ { 0, . . . , n − 1}. The length of a history 
+
+h = s0a0 · · · sn−1an−1sn is n, and we denote its last state sn by last (h). An infinite path or infinite history h = s0a0 · · · snan · · · is defined analogously. For n ∈ N, let Hn be the space of histories of length n, equipped with the trace σ-algebra induced by the product σ-algebra of S ×(A×S)n on Hn. A policy of M is a sequence π = ( πn)n≥0, where each 
+
+πn is a measurable map from Hn to ∆( A) such that πn(h)( A(last (h))) = 1 for any h ∈ Hn. We denote πn(h)( E) by π(E | h). We write HR for the general class of history-dependent randomized policies. A policy π ∈ HR is memoryless deterministic if there exists a measurable map d : S → A
+
+such that d(s) ∈ A(s) for every s ∈ S, and for every finite history h, π(· | h) = Dirac ( d(last (h))) .We write MD for the class of memoryless deterministic policies. In the rest of the paper, the policies considered are in HR unless stated otherwise. Fixing a policy π and an initial state s ∈ S induces a probability measure prob s 
+
+> M,π
+
+over paths of the MDP ⟨S, A, P, s, AP, L ⟩. We write prob M,π for prob sinit  
+
+> M,π
+
+. For details on policies and induced probability measures, see [36, 37]. 
+
+A.2 Safe Linear Temporal Logic 
+
+We consider objectives for MDPs expressed in linear temporal logic (LTL). Following [ 36 ], an LTL formula φ over the atomic propositions AP is generated by the grammar 
+
+φ ::= ⊤ | p | ¬ φ | φ ∧ φ | Xφ | φ U φ, p ∈ AP. 
+
+As usual, we define φ1 ∨ φ2 := ¬(¬φ1 ∧ ¬ φ2), Fφ := ⊤ U φ, and Gφ := ¬F¬φ. A finite (resp. infinite) trace is a sequence τ = b0b1 · · · ∈ Σ∗ (resp. Σω ), where the alphabet Σ = 2 AP specifies which propositions hold at one instant. Given an (in)finite path h = s0a0s1a1 · · · , we denote by 
+
+L(h) = L(s0)L(s1)L(s2) · · · the (in)finite trace induced by the labeling function. The satisfaction relation τ, i |= φ for a formula φ is defined inductively over infinite traces τ = b0b1 · · · of M as 
+
+τ, i |= p ⇐⇒ p ∈ bi,τ, i |= ¬φ ⇐⇒ τ, i ̸ |= φ, τ, i |= φ1 ∧ φ2 ⇐⇒ τ, i |= φ1 and τ, i |= φ2,τ, i |= Xφ ⇐⇒ τ, i + 1 |= φ, τ, i |= φ1 U φ2 ⇐⇒ ∃ j ≥ i such that τ, j |= φ2 and τ, k |= φ1 for all i ≤ k < j. 
+
+We write τ |= φ as shorthand for τ, 0 |= φ. An LTL formula φ is a safety formula [ 14 ] if every violating trace has a finite witness of violation, i.e., for every τ ∈ Σω such that τ̸ |= φ, there exists 14 a finite prefix u ≺ τ (called a bad prefix ) such that for every ρ ∈ Σω , uρ ̸ |= φ. For every safety formula φ, there exists a DFA that accepts exactly all bad prefixes of φ:
+
+Definition A.1 (DFA, restatement of Def. 1) . A deterministic finite automaton (DFA) over the alphabet Σ is a tuple A = ( Q, Σ, q init , δ, F ), where Q is a finite set of states, qinit ∈ Q is the initial state, δ : Q × Σ → Q is the transition function, and F ⊆ Q is the set of accepting states. 
+
+The transition function extends to finite words in the standard way: δ∗(q, ua ) = δ(δ∗(q, u ), a ) for 
+
+u ∈ Σ∗ and a ∈ Σ. A finite word u ∈ Σ∗ is accepted by the DFA A iff δ∗(qinit , u ) ∈ F .A specification Φ = P≥p(φ) combines an LTL formula φ and a threshold p ∈ [0 , 1] . For a state s ∈ S
+
+and policy π, we write (M, π, s ) |= P≥p(φ) iff prob s
+
+> M,π
+
+ {h | L(h) |= φ} ≥ p, i.e., the probability for generating a trace satisfying φ is at least p. When s = sinit , we simply write (M, π ) |= P≥p(φ).
+
+A.3 Robust MDPs and Safety Abstractions 
+
+Robust MDPs (RMDPs) extend MDPs with sets of transition probabilities [13]. 
+
+Definition A.2 (RMDP, restatement of Def. 2) . A robust MDP (RMDP) is a tuple MR =
+
+⟨S, A, P, s init , AP , L ⟩, where S, A, sinit , AP , and L are defined as in an MDP, and P : Gr( A) →
+
+2∆( S) is a mapping with measurable graph called an uncertain transition function .
+
+We say that MR is an RMDP with rewards if, additionally, it is equipped with a measurable reward function. An RMDP defines a game between the agent that chooses actions via the policy π, and an adversary θ that chooses probability distributions in P. Formally, an adversary for an RMDP 
+
+MR is a sequence θ = ( θn)n∈N, where each θn assigns to every history h ∈ Hn and every action 
+
+a ∈ A(last (h)) a measure θn(h, a ) ∈ P (last (h) , a ), and is measurable as a map (h, a ) 7 → θn(h, a ).Fixing an adversary θ induces an MDP on the history space H = F 
+
+> n∈N
+
+Hn, whose enabled actions at h ∈ H are A(last (h)) , and whose transition kernel is given by 
+
+Pθ (h, a )( E) = θn(h, a ) {s′ ∈ S : has ′ ∈ E}, h ∈ Hn.
+
+We denote this history MDP by MR[θ]. For an RMDP MR and a policy π, we write MR, π |= Φ if, for every adversary θ of M, MR[θ], π |= Φ .
+
+Remark A.2. Def. A.2 and 2 describes an (s, a )-rectangular RMDP , meaning the sets of probabilities between states and actions are independent, and optimal policies can be computed efficiently by robust dynamic programming [ 13 ]. More generally, RMDPs can be defined with dependent probabilities in different actions in the same state ( s-rectangularity) or even in different states (non-rectangularity). However, computing optimal robust policies for non-rectangular RMDPs is NP-hard in general [ 13 ]. 
+
+We could directly define a shield on the RMDP MR, but often, parts of the state space are unimportant for the satisfaction of the safety formula φ. Thus, we follow the common approach of defining a shield on a safety-relevant abstraction of the model [6], defined as follows. 
+
+Definition A.3 (RMDP abstraction) . Let MR = ⟨S, A, P, s init , AP , L ⟩ be an RMDP, and let Ξ be a standard Borel space. A surjective measurable map α : S → Ξ is an abstraction of MR if the following conditions hold for all s, s ′ ∈ S:1. if α(s) = α(s′), then L(s) = L(s′) and A(s) = A(s′);2. for every action a ∈ A(s), we have 
+
+μ ◦ α−1 | μ ∈ P (s, a ) = μ ◦ α−1 | μ ∈ P (s′, a ) ;
+
+3. the induced correspondence Pα defined by Pα(ξ, a ) = μ ◦ α−1 : μ ∈ P (s, a ) for any 
+
+s ∈ α−1(ξ) has measurable graph. 
+
+Intuitively, condition 1 requires that all states s, s ′ ∈ S mapping to the same abstract state have the same label and enabled actions, and condition 2 that these states induce the same sets of transition probabilities under the abstraction map. Since α is surjective and refines the labeling, the induced labeling map Lα : Ξ → 2AP is well-defined by Lα(ξ) = L(s) for any s ∈ α−1({ξ}).
+
+Definition A.4 (Quotient RMDP) . Let MR be an RMDP and let α : S → Ξ be an RMDP abstraction. The quotient RMDP of MR by α is MR/α = ⟨Ξ, A α, Pα, ξ init , AP, L α⟩, where ξinit = α(sinit ),
+
+Aα(ξ) = A(s) for any s ∈ α−1(ξ), Pα(ξ, a ) = μ ◦ α−1 | μ ∈ P (s, a ) for any s ∈ α−1(ξ), Lα
+
+is given by the abstraction property above. 
+
+15 B Probabilistic Shields for Robust MDPs 
+
+In this appendix, we present all extended definitions, results, and proofs for our RMDP shielding approach from Sect. 3. 
+
+B.1 Shields for RMDPs 
+
+In this section, we formally define the notion of shield for an RMDP and how it constrains the action choices when deployed on an RMDP. We first define the notion of controllable monitor .
+
+Definition B.1 (Controllable monitor, restatement of Def. 3) . A controllable monitor over a mea-surable observation space Ξ is a tuple D = ⟨M, U, m init , ζ ⟩, where M is a measurable space of 
+
+monitor states , U is a measurable space of auxiliary actions , minit ∈ M , and ζ : M × Ξ × U → M
+
+is a measurable transition function .
+
+For simplicity, we identify DFAs and their associated controllable monitor. Recall that, for any measurable map T : X → Y and any measure μ on X, the pushforward of μ by T is the measure 
+
+μ ◦ T −1 on Y defined by (μ ◦ T −1)( E) = μ(T −1(E)) for every measurable set E ⊆ Y .An observation map for a state space S is a measurable map α : S → Ξ into the observation space Ξ
+
+of a controllable monitor. 
+
+Lemma B.1 (Measurability of the product uncertainty graph) . Let S, A, M, Ξ, U be standard Borel spaces. Let A : S → 2A have measurable graph, and let P : Gr( A) → 2∆( S) have Borel measurable graph. Let α : S → Ξ be measurable and let ζ : M × Ξ × U → M be measurable. For m ∈ M and 
+
+u ∈ U , define 
+
+Tm,u : S → S × M, Tm,u (s′) =  s′, ζ (m, α (s′), u ).
+
+Define the product uncertainty correspondence by 
+
+P(( s, m ), (a, u )) = μ ◦ T −1 
+
+> m,u
+
+: μ ∈ P (s, a ) .
+
+Then Gr( P) is Borel measurable. Proof. First, since α and ζ are measurable, the map K : M × U × S → S × M defined by 
+
+K(m, u, s ′) =  s′, ζ (m, α (s′), u )
+
+is measurable. Hence, the induced pushforward map F : M × U × ∆( S) → ∆( S × M ) such that 
+
+F (m, u, μ ) = μ ◦ T −1
+
+> m,u
+
+, is measurable, since for every measurable E ⊆ S × M , we have 
+
+F (m, u, μ )( E) = μ {s′ ∈ S : K(m, u, s ′) ∈ E}.
+
+Now define D = {(s, m, a, u, μ ) : ( s, a, μ ) ∈ Gr( P)}. Since Gr( P) is Borel, D is Borel. Let 
+
+H : D → (S × M ) × (A × U ) × ∆( S × M ) be the map such that 
+
+H(s, m, a, u, μ ) =  (s, m ), (a, u ), F (m, u, μ ).
+
+The map H is Borel and injective. Indeed, from ν = F (m, u, μ ) = μ◦T −1
+
+> m,u
+
+, we recover μ = ν◦pr −1 
+
+> S
+
+,
+
+with the projection pr S : S × M → S. Thus the value of μ is uniquely determined by ν, m, and u.By the Lusin–Souslin theorem, the image of a Borel set under an injective Borel map between standard Borel spaces is Borel. Hence H(D) is Borel. Finally, H(D) = Gr( P). Therefore Gr( P) is Borel measurable. The above lemma allows us to define the product of an RMDP and a controllable monitor. 
+
+Definition B.2 (Product RMDP, extension of Def. 4) . Let MR = ⟨S, A, P, s init , AP, L ⟩ be an RMDP, let α : S → Ξ be an observation map, and let D = ⟨M, U, m init , ζ ⟩ be a controllable monitor over Ξ.The product RMDP of MR and D (relative to α) is the RMDP MR ⊗α D = ⟨S, A, P, s init , AP, L ⟩,such that S = S × M , sinit = ( sinit , m init ), and for any (s, m ) ∈ S,
+
+• L(s, m ) = L(s),
+
+16 • A is a mapping from S to 2A, where A = A × U , such that A(s, m ) = A(s) × U ;
+
+• for every (a, u ) ∈ A(( s, m )) , letting T (s′) =  s′, ζ (m, α (s′), u ), the uncertainty set 
+
+P(( s, m ), (a, u )) consists of all pushforward measures μ ◦ T −1 with μ ∈ P (s, a ).
+
+We now state our general definition of a shield, which extends Def. 5 from the main paper with the necessary measurability requirements. 
+
+Definition B.3 (Shield, extension of Def. 5) . Let Ξ be a standard Borel space, and let AΞ be a standard Borel space of actions, let AΞ assign to each ξ ∈ Ξ a subset AΞ(ξ) ⊆ AΞ so that the graph 
+
+{(ξ, a ) | ξ ∈ Ξ, a ∈ AΞ(ξ)} is measurable. A shield over (Ξ , A Ξ) is a pair S = ( D, Γ) , where 
+
+D = ⟨M, U, m init , ζ ⟩ is a controllable monitor over Ξ, and where Γ is a mapping from Ξ × M to 
+
+2∆( AΞ×U ) such that 
+
+• for every (ξ, m ) ∈ Ξ × M , Γ( ξ, m ) is a closed subset of ∆( AΞ × U );
+
+• for every open set O ⊆ ∆( AΞ × U ), the set {(ξ, m ) ∈ Ξ × M : Γ( ξ, m ) ∩ O̸ = ∅} is measurable; 
+
+• for every (ξ, m ) ∈ Ξ × M and every ρ ∈ Γ( ξ, m ), we have ρ(AΞ(ξ) × U ) = 1 .
+
+B.2 A Shield for Finite RMDPs 
+
+The robust Bellman operator BU 
+
+> MR
+
+acts on functions f ∈ [0 , 1] S as 
+
+ BU 
+
+> MR
+
+(f ) (s) = 
+
+
+
+1, if s ∈ U, 
+
+inf  
+
+> a∈A(s)
+
+sup 
+
+> μ∈P (s,a )
+
+Es′∼μ [f (s′)] , otherwise. 
+
+Definition B.4 (Restatement of Def. 6) . An (MR, U )-inductive value function is a function β : S →
+
+[0; 1] such that, for all s ∈ S,  BU 
+
+> MR
+
+(β) (s) − β(s) ≤ 0.
+
+In the following, we let MR = ⟨S, A, P, s init , AP, L, R ⟩ with A : S → 2A be a finite RMDP, we let 
+
+p ∈ [0; 1] be a safety threshold, and we let Φ = P≥1−p(φ) be a probabilistic safety LTL formula. We let A = ⟨Q, 2AP , q init , δ, F ⟩ be a DFA recognizing the bad prefixes of φ. We additionally let 
+
+β be an (MR ⊗L A, S × F )-inductive value function such that β(sinit , q init ) ≤ p. Finally, we let 
+
+Vβ = Q
+
+> (s,q )∈S×Q
+
+[β(s, q ), 1] .
+
+Definition B.5 (Shield for finite RMDP, extension of Def. 7) . Let MR, A, and β be defined as above. The shield S(MR, A, β ) = ( D, Γ) is defined as an instantiation of Def. 5 as follows: 1. D = ⟨M, Vβ , m init , ζ ⟩ is a controllable monitor over S with states M := Q×[0 , 1] , auxiliary actions Vβ , initial state minit = ( qinit , p ), and transition function ζ : M × S × V β → M
+
+defined for all (q, y ) ∈ M , s ∈ S, and v ∈ V β as 
+
+ζ(( q, y ), s, v ) =  δ(q, L (s)) , v (s, δ (q, L (s))) ;
+
+2. for all states (s, q, y ) of MR ⊗ D , the set Γ( s, q, y ) contains exactly those distributions 
+
+ρ ∈ ∆( A × V β ) such that ρ(A(s) × V β ) = 1 , and such that 
+
+E(a,v )∼ρ
+
+h
+
+sup 
+
+> μ∈P (s,a )
+
+Es′∼μ
+
+v s′, δ (q, L (s′))  i
+
+≤ y. 
+
+Lemma B.2. The pair S(MR, A, β ) = ( D, Γ) is a shield over (S, A ).Proof. Since S, Q, and A are finite, we equip them with the discrete topology. The space 
+
+Vβ = Y
+
+> (s,q )∈S×Q
+
+[β(s, q ), 1] 
+
+is a compact metric space, as a finite product of compact intervals. Thus, M = Q × [0 , 1] and A × V β
+
+are compact metric spaces. We equip ∆( A × V β ) with the weak topology. 17 The monitor transition ζ(( q, y ), s, v ) =  δ(q, L (s)) , v (s, δ (q, L (s)))  is measurable, since S and Q
+
+are finite and v 7 → v(s, q ′) is a coordinate projection on Vβ .It remains to show that Γ is a closed-valued measurable correspondence. For fixed s ∈ S and q ∈ Q,define 
+
+Gs,q (a, v ) := 
+
+
+
+sup 
+
+> μ∈P (s,a )
+
+Es′∼μ
+
+v s′, δ (q, L (s′))  , a ∈ A(s),
+
+0, a / ∈ A(s).
+
+For a ∈ A(s), the map v 7 → Gs,q (a, v ) is continuous. Indeed, for any v, w ∈ V β ,
+
+|Gs,q (a, v ) − Gs,q (a, w )| ≤ ∥ v − w∥∞.
+
+Since A is finite and discrete, Gs,q is a bounded continuous function on A × V β . Now, for (s, q, y ) ∈
+
+S × Q × [0 , 1] ,
+
+Γ( s, q, y ) = 
+
+
+
+μ ∈ ∆( A × V β ) : μ(A(s) × V β ) = 1 and 
+
+Z
+
+Gs,q (a, v ) μ(d(a, v )) ≤ y
+
+
+
+.
+
+The set A(s) × V β is closed in A × V β . Therefore the constraint μ(A(s) × V β ) = 1 defines a closed subset of ∆( A × V β ) by the Portmanteau theorem. Moreover, because Gs,q is bounded and continuous, the map μ 7 → R Gs,q (a, v ) μ(d(a, v )) is continuous under weak convergence. Hence each value Γ( s, q, y ) is closed. Finally, since S and Q are finite and the defining constraints are Borel in y and μ, the correspondence 
+
+Γ is measurable. Therefore S(M, A, β ) is a shield over (S, A ).
+
+B.3 Realizability, Soundness and Optimality 
+
+For any RMDP MR = ⟨S, A, P, s init , AP, L ⟩ with A : S → 2A and monitor observation map α, we say that a shield S = ( D, Γ) over (Ξ , A Ξ) with AΞ : Ξ → 2AΞ acts on (M, α ) if A = AΞ, and if 
+
+A(s) = AΞ(α(s)) for all s ∈ S.If θ is an adversary of the RMDP MR, we denote by θ⊗ the canonical adversary of the product RMDP MR ⊗α D induced by θ, which is defined as follows. For a product history ht ending in 
+
+(s, m ), and for a product action (a, u ) ∈ A(s) × U , let Tm,u : S → S × M be defined by 
+
+Tm,u (s′) =  s′, ζ (m, α (s′), u ).
+
+Then 
+
+θ⊗ 
+
+> t
+
+(ht, (a, u )) = θt(h↓ 
+
+> t
+
+, a ) ◦ T −1
+
+> m,u
+
+.
+
+A distribution ρ ∈ ∆( A × U ) is compliant with S at a product history ht ending in (s, m ) if 
+
+ρ ∈ Γ( α(s), m ).
+
+Let π be an HR policy on MR ⊗α D. We say that π is compliant with S up to time t under the adversary θ of MR if prob (MR⊗αD)[ θ⊗],π 
+
+∀k < t, π (· | Hk) ∈ Γ( α(Sk), M k) = 1 ,
+
+where Hk is the product history up to time k, and (Sk, M k) is its last product state. We say that π is compliant with S up to time t if it is compliant up to time t under every adversary θ
+
+of the base RMDP MR. Finally, π is compliant with S if it is compliant up to time t for every t ∈ N.
+
+Definition B.6 (Non-blocking Shield) . Let (D, Γ) be a shield acting on (MR, α ), and let let DΓ
+
+denote the set {(ξ, m ) ∈ Ξ × M : Γ( ξ, m )̸ = ∅} . The shield is (D, Γ) non-blocking over (MR, α )
+
+if (ξinit , m init ) ∈ DΓ and if, for every (ξ, m ) ∈ DΓ and every ρ ∈ Γ( ξ, m ), we have 
+
+E(a,u )∼ρ
+
+"
+
+sup 
+
+> μ∈P α(ξ,a )
+
+μ({ξ′ ∈ Ξ : ( ξ′, ζ (m, ξ ′, u )) /∈ DΓ})
+
+#
+
+= 0 .
+
+18 We use the following concatenation notation for history-dependent randomized policies. Let t ∈ N,and let π− and π+ be policies on MR ⊗α D. We define π− ⋆t π+ as the policy that follows π− for the first t decision times and then follows π+. Formally, for every augmented history hk of length k,
+
+(π− ⋆t π+)( · | hk) = 
+
+(π−(· | hk), k < t, π+(· | hk), k ≥ t. 
+
+Similarly, if θ− and θ+ are adversaries of MR ⊗α D, we write θ− ⋆t θ+ for the adversary defined by 
+
+(θ− ⋆t θ+)k(hk, a ) = 
+
+(
+
+θ− 
+
+> k
+
+(hk, a ), k < t, θ+ 
+
+> k
+
+(hk, a ), k ≥ t. 
+
+Definition B.7 (Realizable Shield, extension of Def. 9) . A shield S = ( D, Γ) acting on (MR, α )
+
+is realizable over (MR, α ) if, for every t ∈ N, every adversary θ− of MR ⊗α D, and every policy 
+
+π− compliant with S up to time t under θ−, there exists a continuation policy π+ such that, for every adversary θ+, the concatenated policy π− ⋆t π+ is compliant with S under the concatenated adversary θ− ⋆t θ+.
+
+Lemma B.3 (Non-blocking shields are realizable) . Every nonblocking shield is realizable. Proof. Let S = ( D, Γ) be nonblocking, and let 
+
+DΓ = {(ξ, m ) : Γ( ξ, m )̸ = ∅} .
+
+Since Γ is closed-valued and measurable, DΓ is measurable. By the Kuratowski–Ryll-Nardzewski selection theorem, there is a measurable selector g : DΓ → ∆( A × U ) such that g(ξ, m ) ∈ Γ( ξ, m )
+
+for every (ξ, m ) ∈ DΓ. Fix t ∈ N, an adversary θ−, and a policy π− compliant up to time t under θ−.We first show that (α(st), m t) ∈ DΓ almost surely. This follows by induction on k ≤ t. At k = 0 ,since the shield is non-blocking, (α(sinit ), m init ) ∈ DΓ. For the induction step, if (α(sk), m k) ∈ DΓ
+
+almost surely and k < t , compliance gives that the action distribution used at time k belongs to Γ( α(sk), m k) almost surely. Since the shield is non-blocking, any such distribution keeps the next abstract-monitor state in DΓ with conditional probability one, for every admissible adversarial transition. Thus (α(sk+1 ), m k+1 ) ∈ DΓ almost surely. Now define a memoryless randomized continuation policy π+ by 
+
+π+(s, m ) = 
+
+g(α(s), m ), if (α(s), m ) ∈ DΓ,ρ0(s, m ), otherwise, where ρ0(s, m ) is any measurable valid distribution supported on A(s) × U . The value outside DΓ
+
+is irrelevant after a compliant prefix. Let θ+ be any adversary continuation. Under θ− ⋆t θ+, the process is in DΓ at time t almost surely. From then on, whenever the process is in DΓ, the continuation chooses g(α(s), m ) ∈ Γ( α(s), m ).Since the shield is non-blocking, the next abstract-monitor state remains in DΓ almost surely, independently of the future adversary. Inducting over all future times, the concatenated policy 
+
+π− ⋆t π+ is compliant under θ− ⋆t θ+. Since θ+ was arbitrary, the shield is realizable. Given a history ht = (( s0, m 0), (a0, u 0), . . . , (at−1, u t−1), (st, m t)) of MR ⊗α D, its projection 
+
+onto MR is the history h↓ 
+
+> t
+
+= ( s0, a 0, s 1, a 1, . . . , s t−1, a t−1, s t).
+
+Definition B.8 (Projected policy) . Let MR be an RMDP, let α : S → Ξ be a monitor observation map, let D be a controllable monitor over Ξ, and let π be a policy on MR ⊗α D. For every adversary 
+
+θ of the transition uncertainty of MR, we denote by π↓,θ the projection of π onto MR under θ,defined as follows: For every projected history h, let νθt (· | h) be the conditional distribution of the augmented histories 
+
+H given H↓ = h, as induced by the policy π in the (MR ⊗α D)[ θ⊗]. The projection of π onto MR
+
+under θ is the policy π↓,θ defined by 
+
+π↓,θ (E | h) = 
+
+Z
+
+π(E × U | h) νθt (dh | h)
+
+for every measurable E ⊆ A.
+
+19 For two policies π and π′ on an RMDP MR, and for an adversary θ of MR, we write π ≡θ π′ if they induce the same probability measure on infinite state-action paths under θ, i.e., prob MR[θ],π =
+
+prob MR[θ],π ′ .
+
+Lemma B.4 (Adversary-independent projection) . Let MR be an RMDP, let α : S → Ξ be a monitor observation map, let D be a controllable monitor over Ξ, and let π be an HR policy on MR ⊗α D.Then there exists an HR policy π↓ on MR such that, for every adversary θ of MR, for every t ∈ N,
+
+π↓,θ ≡θ π↓
+
+Proof. We construct a common version of the projection. For each t, define a kernel 
+
+νt(· | h) : Ht → ∆( Ht)
+
+which will serve as a conditional law of augmented histories given their projection, independently of the adversary. This kernel is defined as follows: • At time 0, set ν0(· | s0) = Dirac (( s0, m init )) . Assume that νt has been constructed. Fix a projected history ht = s0a0 · · · at−1st. Draw ht ∼ νt(· | ht), and then draw a product action (a, u ) ∼ π(· | ht). Since the spaces are standard Borel, there exists a regular conditional distribution Rt(dh t, du | ht, a ) of (ht, u ) given the observed base action a.• For ht+1 = htatst+1 , define 
+
+Φat,s t+1 (ht, u ) = ht (at, u )  st+1 , ζ (mt, α (st+1 ), u ),
+
+where mt is the monitor component of the last state of ht. Then set 
+
+νt+1 (· | htatst+1 ) = Rt(· | ht, a t) ◦ Φ−1 
+
+> at,s t+1
+
+.
+
+On histories where the conditional distribution is not uniquely determined, choose an arbitrary version. We claim that, for every adversary θ of MR, the kernel νt is a version of the conditional law of 
+
+Ht given H↓ 
+
+> t
+
+under (MR ⊗α D)[ θ⊗] and π. We prove this by induction on t. The case t = 0 is immediate. For the induction step, under the canonical product adversary, after an augmented history 
+
+ht with projection ht, and after a product action (at, u t), the next concrete state is sampled from 
+
+θt(ht, a t). This distribution depends only on the projected history ht and the base action at, not on the hidden augmented history ht nor on the auxiliary action ut. Therefore, after conditioning on the projected next history htatst+1 , the hidden part is obtained by conditioning (ht, u t) on the observed base action at, and then applying the deterministic monitor update. This is exactly the recursive definition of νt+1 .Now define the HR policy π↓ on MR by 
+
+π↓(E | h) = 
+
+Z
+
+π(E × U | h) νt(dh | h), h ∈ Ht.
+
+For every adversary θ, the kernel νt is a version of the conditional law used in the definition of π↓,θ .Hence, for every t,
+
+π↓,θ (· | Ht) = π↓(· | Ht) prob MR[θ],π ↓ -a.s. Therefore, the two policies induce the same state-action path measure under θ, i.e., 
+
+π↓,θ ≡θ π↓,
+
+which concludes the proof. 
+
+Definition B.9 (Shield soundness, extension of Def. 10) . Let Φ be a specification, let MR be an RMDP equipped with a monitor observation map α. A shield S = ( D, Γ) acting on (MR, α )
+
+is sound over (MR, α ) for Φ if, for every policy π on MR ⊗α D compliant with S, we have 
+
+MR, π ↓ |= Φ .
+
+20 For two policies π and π′ on an RMDP MR, we write π ≡ π′ if, for every adversary θ of MR,
+
+π ≡θ π′.
+
+Definition B.10 (Shield completeness) . Let Φ be a specification and let MR be an RMDP equipped with a monitor observation map α. Let C ⊆ HR be a class of policies. A shield S = ( D, Γ) acting on 
+
+(MR, α ) is C-complete over (MR, α ) for Φ if, for every policy π ∈ C of MR such that MR, π |= Φ ,there exists an HR policy π of MR ⊗α D compliant with S such that π ≡ π↓.
+
+For any two measures μ, ν over a measurable space (X, F), we denote by TV( μ, ν ) their total variation distance, i.e., TV( μ, ν ) = sup A∈F |μ(A) − ν(A)|.For any standard Borel spaces of states S and actions A, for any γ ∈ (0 , 1) , we let Ω = ( SA )ω
+
+equipped with the σ-algebra FΩ generated by cylinder sets. The discounted Hamming distance on Ω
+
+is the distance dγ such that, for any two words h = s0a0s1a1 · · · and h′ = s′
+
+> 0
+
+a′
+
+> 0
+
+s′
+
+> 1
+
+a′ 
+
+> 1
+
+· · · , we have 
+
+dγ (h, h ′) = (1 − γ)
+
+> ∞
+
+X
+
+> t=0
+
+γt1{(st, a t)̸ = ( s′
+
+> t
+
+, a ′
+
+> t
+
+)} .
+
+The discounted Hamming distance is a metric on Ω, and it satisfies 0 ≤ dγ (h, h ′) ≤ 1. Given two probability measures μ, ν on Ω, a coupling of μ and ν is a probability measure ξ on Ω × Ω whose first marginal is μ and second marginal is ν. We denote by Γ( μ, ν ) the set of all such couplings. We define the 1-Wasserstein distance associated to dγ as the distance W1,γ on ∆(Ω , FΩ) such that 
+
+W1,γ (μ, ν ) = inf 
+
+> ξ∈Γ( μ,ν )
+
+Z
+
+> Ω×Ω
+
+dγ (h, h ′) ξ(dh, dh ′).
+
+Lemma B.5. For all probability measures μ, ν on (Ω , FΩ), it holds that W1,γ (μ, ν ) ≤ TV( μ, ν ).
+
+Proof. Recall that the total variation distance admits the coupling characterization 
+
+TV( μ, ν ) = inf  
+
+> ξ∈Γ( μ,ν )
+
+ξ(ω̸ = ω′).
+
+A coupling ξ⋆ ∈ Γ( μ, ν ) is called maximal if it attains this infimum, i.e., if ξ⋆(ω̸ = ω′) = TV( μ, ν ).
+
+Let ξ ∈ Γ( μ, ν ) be a maximal coupling, so that ξ {(ω, ω ′) ∈ Ω × Ω : ω̸ = ω′} = TV( μ, ν ). Then, since dγ is bounded by 1, we have 
+
+Z
+
+dγ (ω, ω ′) ξ(dω, dω ′) ≤ ξ(ω̸ = ω′) = TV( μ, ν ).
+
+Taking the infimum over all couplings yields 
+
+W1,γ (μ, ν ) ≤ TV( μ, ν ).
+
+For any RMDP MR, and any two policies π, π ′ over MR, we define 
+
+TV MR (π, π ′) = sup 
+
+> θ
+
+TV 
+
+
+
+prob MR[θ],π , prob MR[θ],π ′
+
+
+
+,
+
+and, for γ ∈ (0 , 1) ,
+
+W MR 
+
+> 1,γ
+
+(π, π ′) = sup 
+
+> θ
+
+W1,γ 
+
+
+
+prob MR[θ],π , prob MR[θ],π ′
+
+
+
+,
+
+where the suprema range over all adversaries θ of MR.
+
+Definition B.11 (Shield approximate completeness) . Let Φ be a specification, let MR be an RMDP equipped with a monitor observation map α, and let ϵ > 0. Let C ⊆ HR be a class of policies. A shield S = ( D, Γ) acting on (MR, α ) is C-ϵ-TV -complete (resp. C-ϵ-W1,γ -complete ) over 
+
+(MR, α ) for Φ if, for every policy π ∈ C of MR such that MR, π |= Φ , there exists an HR policy π
+
+of MR ⊗α D compliant with S such that 
+
+TV MR
+
+ π, π ↓ ≤ ϵ (resp. W MR
+
+> 1,γ
+
+ π, π ↓ ≤ ϵ).
+
+21 The notion of C-completeness is equivalent to C-0-TV -completeness, and also to C-0-W1,γ -completeness. 
+
+Definition B.12 (Shield approximate optimality, extension of Def. 11) . Let Φ be a specification, let 
+
+MR be an RMDP equipped with a monitor observation map α, let ϵ > 0, and let γ ∈ (0 , 1] . Let 
+
+C ⊆ HR be a class of policies. A shield S = ( D, Γ) acting on (MR, α ) is C-(ϵ, γ )-optimal for Φ if, for every policy π ∈ C of MR such that MR, π |= Φ , there exists a policy π of MR ⊗α D compliant with S such that, for any adversary θ of M,
+
+Jγ
+
+> MR[θ]
+
+(π↓) ≥ Jγ
+
+> MR[θ]
+
+(π) − ϵ. 
+
+Lemma B.6. Let S be a set of states, A be a set of actions, γ ∈ (0 , 1) , and let Ω = ( SA )ω be equipped with the σ-algebra FΩ generated by cylinder sets. Suppose that 
+
+sup 
+
+> (s,a )∈S×A
+
+|R(s, a )| ≤ Z. 
+
+Then, for all probability measures μ, ν on Ω,
+
+Es0a0···∼ μ
+
+" ∞X
+
+> t=0
+
+γtR(st, a t)
+
+#
+
+− Es0a0···∼ ν
+
+" ∞X
+
+> t=0
+
+γtR(st, a t)
+
+#
+
+≤ 2Z
+
+1 − γ W1,γ (μ, ν ).
+
+Moreover, suppose that the absolute value of the total undiscounted return is uniformly bounded by 
+
+B on Ω, i.e., ∞X
+
+> t=0
+
+R(st, a t) ≤ B for all s0a0s1a1 · · · ∈ Ω.
+
+Then, for all probability measures μ, ν on Ω,
+
+Es0a0···∼ μ
+
+" ∞X
+
+> t=0
+
+R(st, a t)
+
+#
+
+− Es0a0···∼ ν
+
+" ∞X
+
+> t=0
+
+R(st, a t)
+
+#
+
+≤ 2B TV( μ, ν ).
+
+Proof. For any h = s0a0s1a1 · · · , let 
+
+Gγ (h) := 
+
+> ∞
+
+X
+
+> t=0
+
+γtR(st, a t),
+
+and let 
+
+span( R) := sup 
+
+> (s,a ),(s′,a ′)∈S×A
+
+|R(s, a ) − R(s′, a ′)|.
+
+Since |R(s, a )| ≤ Z for all (s, a ), we have 
+
+span( R) ≤ 2Z. 
+
+Let ξ ∈ Γ( μ, ν ) be any coupling. Then 
+
+Z
+
+Gγ dμ −
+
+Z
+
+Gγ dν =
+
+Z
+
+> Ω×Ω
+
+ Gγ (h) − Gγ (h′) ξ(dh, dh ′)
+
+≤
+
+Z
+
+> Ω×Ω
+
+|Gγ (h) − Gγ (h′)| ξ(dh, dh ′).
+
+Now, for h = s0a0 · · · and h′ = s′
+
+> 0
+
+a′ 
+
+> 0
+
+· · · ,
+
+|Gγ (h) − Gγ (h′)| ≤ 
+
+> ∞
+
+X
+
+> t=0
+
+γt|R(st, a t) − R(s′
+
+> t
+
+, a ′
+
+> t
+
+)|≤ span( R)
+
+> ∞
+
+X
+
+> t=0
+
+γt1{(st, a t)̸ = ( s′
+
+> t
+
+, a ′
+
+> t
+
+)}
+
+= span( R)1 − γ dγ (h, h ′).
+
+22 Hence Z
+
+Gγ dμ −
+
+Z
+
+Gγ dν ≤ span( R)1 − γ
+
+Z
+
+dγ (h, h ′) ξ(dh, dh ′).
+
+Since this holds for every coupling ξ ∈ Γ( μ, ν ), taking the infimum over ξ yields 
+
+Z
+
+Gγ dμ −
+
+Z
+
+Gγ dν ≤ span( R)1 − γ W1,γ (μ, ν ) ≤ 2Z
+
+1 − γ W1,γ (μ, ν ).
+
+For the undiscounted case, define 
+
+G1(h) := 
+
+> ∞
+
+X
+
+> t=0
+
+R(st, a t).
+
+By assumption, |G1(h)| ≤ B for all h ∈ Ω, hence 
+
+span( G1) := sup 
+
+> h,h ′∈Ω
+
+|G1(h) − G1(h′)| ≤ 2B. 
+
+Using the standard inequality 
+
+Z
+
+f dμ −
+
+Z
+
+f dν ≤ span( f ) TV( μ, ν )
+
+for bounded measurable functions f , applied to f = G1, we obtain 
+
+Z
+
+G1 dμ −
+
+Z
+
+G1 dν ≤ 2B TV( μ, ν ).
+
+Lemma B.7 (Approximate completeness implies approximate optimality) . Let Φ be a specification, let MR be an RMDP equipped with a monitor observation map α, let S be a shield acting on 
+
+(MR, α ), and let C ⊆ HR .1. Suppose that sup (s,a )∈S×A |R(s, a )| ≤ Z, that γ < 1, and that S is C-ϵ-W1,γ -complete over (MR, α ) for Φ. Then S is 
+
+C-
+
+ 2Zϵ 
+
+1 − γ , γ 
+
+
+
+-optimal over (MR, α ) for Φ.2. Suppose that the absolute value of the total undiscounted return is uniformly bounded by B,and that S is C-ϵ-TV -complete over (MR, α ) for Φ. Then S is 
+
+C-(2 Bϵ, 1) -optimal over (MR, α ) for Φ.Proof. We prove the first item; the second is analogous. Let π ∈ C be such that MR, π |= Φ . By 
+
+C-ϵ-W1,γ -completeness, there exists a compliant policy π such that, 
+
+W1,γ 
+
+
+
+prob MR[θ],π , prob MR[θ],π ↓
+
+
+
+≤ ϵ. 
+
+Fix an adversary θ. Applying the previous lemma to the two path measures above yields 
+
+Jγ
+
+> MR[θ]
+
+(π) − Jγ
+
+> MR[θ]
+
+(π↓) ≤ 2Z
+
+1 − γ ϵ. 
+
+Hence 
+
+Jγ
+
+> MR[θ]
+
+(π↓) ≥ Jγ
+
+> MR[θ]
+
+(π) − 2Z
+
+1 − γ ϵ. 
+
+Since θ was arbitrary, S is C-
+
+ 2Z 
+
+> 1−γ
+
+ϵ, γ 
+
+
+
+-optimal. 23 In the rest of the section, we let MR be an RMDP equipped with a finite safety abstrac-tion α : S → Ξ, we let ⟨Ξ, A, A α, Pα, ξ init , AP, L α⟩ = MR/α , we let Φ = P≥1−p(φ), we let A = ⟨Q, 2AP , q init , δ, F ⟩ recognize the bad prefixes of φ, and β : Ξ × Q → [0 , 1] be an 
+
+(( MR/α ) ⊗Lα A, Ξ × F )- inductive value function such that β(ξinit , q init ) ≤ p.
+
+Theorem B.1 (Realizability and soundness, restatement of Theorem 1) . The shield S(MR/α, A, β )
+
+acts on (MR, α ), is realizable over (MR, α ), and is sound over (MR, α ) for Φ.Proof. Let S(MR/α, A, β ) = ( D, Γ) . Since α is an abstraction of MR, we have A(s) = Aα(α(s)) 
+
+for all s ∈ S. Hence, the shield acts on (MR, α ).We first prove that the shield is nonblocking. Let 
+
+DΓ = {(ξ, q, y ) : Γ( ξ, q, y )̸ = ∅} .
+
+We claim that 
+
+Bβ := {(ξ, q, y ) : β(ξ, q ) ≤ y} ⊆ DΓ.
+
+Indeed, fix (ξ, q, y ) ∈ Bβ . Since Ξ and Aα are finite, the infimum in the Bellman operator is attained. Hence, by inductiveness of β, there exists a ∈ Aα(ξ) such that 
+
+sup 
+
+> μ∈P α(ξ,a )
+
+Eξ′∼μ
+
+β ξ′, δ (q, L α(ξ′))  ≤ β(ξ, q ).
+
+If q ∈ F , then β(ξ, q ) = 1 , and any enabled action satisfies the required bound since β ≤ 1. Thus 
+
+Dirac ( a) ⊗ Dirac ( β) ∈ Γ( ξ, q, y ),
+
+because y ≥ β(ξ, q ). Therefore (ξ, q, y ) ∈ DΓ.Since β(ξinit , q init ) ≤ p, we have (ξinit , q init , p ) ∈ DΓ. Now let (ξ, q, y ) ∈ DΓ and ρ ∈ Γ( ξ, q, y ).By definition of the shield, ρ is supported on Aα(ξ) × V β . Hence, for ρ-almost every (a, v ), every 
+
+μ ∈ P α(ξ, a ), and every next abstract state ξ′, if 
+
+q′ = δ(q, L α(ξ′)) , y′ = v(ξ′, q ′),
+
+then y′ ≥ β(ξ′, q ′), since v ∈ V β . Thus (ξ′, q ′, y ′) ∈ Bβ ⊆ DΓ. Therefore, every compliant one-step action distribution keeps the next abstract-monitor state in DΓ with probability one under every admissible transition measure. Hence, the shield is nonblocking. By the previous lemma, it is realizable. It remains to prove soundness. Let π be an HR policy on MR ⊗α D compliant with the shield, and let 
+
+θ be an adversary of MR. Consider the product process under π and the canonical product adversary 
+
+θ⊗. Write St = ( St, Q t, Y t), and let Ft be the σ-algebra generated by the augmented history Ht.By compliance, almost surely, 
+
+π(· | Ht) ∈ Γ( α(St), Q t, Y t).
+
+For a realized product action (a, v ), the adversary chooses a measure in P(St, a ), whose pushforward by α belongs to Pα(α(St), a ). Hence, the defining inequality of Γ gives 
+
+E[Yt+1 | F t] ≤ Yt.
+
+Thus (Yt)t∈N is a bounded supermartingale. Let τF = inf {t ≥ 0 : Qt ∈ F }. Since β = 1 on 
+
+Ξ × F , and every v ∈ V β satisfies v(ξ, q ) ≥ β(ξ, q ), every reachable accepting monitor state satisfies 
+
+Qt ∈ F ⇒ Yt = 1 . Therefore, for every n ∈ N,
+
+1{τF ≤n} ≤ YτF ∧n.
+
+By optional stopping for bounded supermartingales, 
+
+Pr( τF ≤ n) ≤ E[YτF ∧n] ≤ Y0 = p. 
+
+Letting n → ∞ , we obtain 
+
+Pr( τF < ∞) ≤ p. 
+
+The DFA A recognizes the bad prefixes of φ, so τF < ∞ is exactly the event that φ is violated. Moreover, by construction of the projected policy, the law of paths in MR[θ] under π↓ is the 24 projection of the product path law. Since the product preserves labels, the satisfaction probability is the same under projection. Hence 
+
+MR[θ], π ↓ |= P≥1−p(φ) = Φ .
+
+Since θ was arbitrary, we have 
+
+MR, π ↓ |= Φ .
+
+Thus, the shield is sound. We proceed with proving the optimality results. In what follows, we let β∞ be the lowest fixed point of BΞ×F 
+
+> (MR/α )⊗Lα A
+
+. Furthermore, we say that an RMDP MR is conditionally deterministic w.r.t an abstraction α if every reachable abstract history determines a unique concrete history. More precisely, for every abstract history bht = ξ0a0ξ1a1 · · · at−1ξt with ξ0 = α(sinit ), there is at most one concrete history ht = s0a0s1a1 · · · at−1st such that s0 = sinit , α(si) = ξi for all i ≤ t, and ht has positive probability under some adversary of MR. When such a concrete history exists, we denote its last state by χ(bht) = st.
+
+Theorem B.2. Suppose that β(ξinit , q init ) < p , and that MR is conditionally deterministic w.r.t. α.Then the shield S(MR/α, A, β ) acts on (MR, α ), and is HR -ϵ-TV-complete over (MR, α ) for Φ,where 
+
+ϵ = ∥β − β∞∥∞
+
+∥β − β∞∥∞ + p − β(ξinit , q init ) .
+
+In particular, the shield S(MR/α, A, β ∞) acts on (MR, α ) and is HR -complete over (MR, α )
+
+for Φ.Proof. Since α is an abstraction of MR, we have A(s) = Aα(α(s)) for all s ∈ S, so the shield acts on (MR, α ).Fix an HR policy π of MR such that MR, π |= Φ . For a history eh of MR ⊗L A, let Vπ (eh) denote the supremal probability, over all adversaries, of eventually reaching F when continuing from eh
+
+under π. Since π satisfies Φ = P≥1−p(φ), we have Vπ (( sinit , q init )) ≤ p.Define δ = ∥β − β∞∥∞ and V δπ (eh) = min {1, V π (eh) + δ}. For a ∈ A(s) and ξ′ ∈ Ξ, we write qξ′ =
+
+δ(q, L α(ξ′)) . We define zeh,a ∈ [0 , 1] Ξ×Q as follows. If, for any history eh = ( s0, q 0)a0 · · · (sn, q n),denoting bh = α(s0)a0 · · · α(sn), the history bhaξ ′ is reachable in MR/α , then we set 
+
+zeh,a (ξ′, q ξ′ ) = V δπ
+
+eha 
+
+
+
+χ
+
+bhaξ ′
+
+, q ξ′
+
+ 
+
+.
+
+On entries (ξ′, q ′) with q′̸ = qξ′ , and on unreachable abstract successors, we set 
+
+zeh,a (ξ′, q ′) = min {1, β ∞(ξ′, q ′) + δ}.
+
+This vector belongs to Vβ . Indeed, for unreachable entries and for entries not corresponding to the automaton successor, this follows immediately from 
+
+β(ξ′, q ′) ≤ β∞(ξ′, q ′) + δ ≤ min {1, β ∞(ξ′, q ′) + δ}.
+
+For the other entries, we have 
+
+β∞(ξ′, q ξ′ ) ≤ Vπ
+
+eha 
+
+
+
+χ
+
+bhaξ ′
+
+, q ξ′
+
+ 
+
+,
+
+and therefore 
+
+β(ξ′, q ξ′ ) ≤ min {1, β ∞(ξ′, q ξ′ ) + δ} ≤ zeh,a (ξ′, q ξ′ ).
+
+Hence zeh,a ∈ V β .Define an HR policy π0 on MR ⊗α D as follows. For an augmented history h, let eh be its associated history in MR ⊗ A . Then π0(· | h) is the pushforward of π(· | h↓) by a 7 → (a, z eh,a ). Thus, if π0 is followed at all histories, then 
+
+(π0)↓ ≡ π. 
+
+25 We also define a safe HR policy πsafe . For every (ξ, q ), choose a distribution μξ,q over Aα(ξ)
+
+witnessing the inductiveness of β, namely 
+
+Ea∼μξ,q 
+
+"
+
+sup 
+
+> λ∈P α(ξ,a )
+
+Eξ′∼λ
+
+β ξ′, δ (q, L α(ξ′))  #
+
+≤ β(ξ, q ).
+
+For an augmented history ending in (s, q, y ), set 
+
+πsafe (· | h) = μα(s),q ⊗ Dirac ( β) .
+
+Whenever y ≥ β(α(s), q ), this distribution belongs to Γ( α(s), q, y ). Let ϵ = δδ+p−β(ξinit ,q init ) . and define the shielded HR policy πϵ as follows: • At the initial history, set πϵ = (1 − ϵ)π0 + ϵπ safe .
+
+• At any non-initial augmented history h ending in (s, q, y ), with projection eh, set 
+
+πϵ(· | h) = 
+
+(π0(· | h), if y ≥ V δπ (eh),πsafe (· | h), otherwise. We show that πϵ is compliant. At the initial state, the expected next y-value under π0 is at most p + δ,while under πsafe it is at most β(ξinit , q init ). Hence (1 − ϵ)( p + δ) + ϵβ (ξinit , q init ) = p, so the initial action distribution is compliant. Moreover, along every reachable history we have y ≥ β(α(s), q ), because both auxiliary vectors zeh,a 
+
+and β belong to Vβ . Thus, if the policy chooses πsafe , it is compliant. If the policy chooses π0, then by definition y ≥ V δπ (eh). We show that the shield constraint is satisfied. Let bh be the abstract history of MR/α associated to eh, and let ξ = α(s). For a chosen base action a, let Ξt+1 denote the next abstract state. Under the augmented action (a, z eh,a ), the next budget coordinate is 
+
+Yt+1 = zeh,a 
+
+ Ξt+1 , δ (q, L α(Ξ t+1 )) .
+
+Fix a ∈ A(s) and λ ∈ P α(ξ, a ). By the definition of the quotient RMDP, there exists μ ∈ P (s, a )
+
+such that λ = μ ◦ α−1. Moreover, since MR is conditionally deterministic with respect to α, for every abstract successor ξ′ in the support of λ, the corresponding concrete successor is uniquely given by χ(bhaξ ′). Therefore, 
+
+Eξ′∼λ
+
+h
+
+zeh,a 
+
+ ξ′, δ (q, L α(ξ′)) i
+
+≤ δ + Es′∼μ
+
+h
+
+Vπ
+
+ eha (s′, δ (q, L (s′))) i
+
+.
+
+Taking the supremum over λ ∈ P α(ξ, a ), we obtain 
+
+sup 
+
+> λ∈P α(ξ,a )
+
+Eξ′∼λ
+
+h
+
+zeh,a 
+
+ ξ′, δ (q, L α(ξ′)) i
+
+≤ δ + sup 
+
+> μ∈P (s,a )
+
+Es′∼μ
+
+h
+
+Vπ
+
+ eha (s′, δ (q, L (s′))) i
+
+.
+
+Averaging over a ∼ π(· | eh↓) and using the dynamic programming inequality for Vπ , we get 
+
+E[Yt+1 | h, π 0] ≤ Vπ (eh) + δ. 
+
+Since Yt+1 ∈ [0 , 1] , this also implies 
+
+E[Yt+1 | h, π 0] ≤ min {1, V π (eh) + δ} = V δπ (eh) ≤ y. 
+
+Hence the shield constraint is satisfied. Hence πϵ(· | h) ∈ Γ( α(s), q, y ). Therefore πϵ is compliant. It remains to bound the TV distance. Fix an adversary θ of MR. Couple the run of π and the projected run of πϵ as follows. At the initial decision, with probability 1 − ϵ, use the π0-component and couple the base action with the action sampled by π; with probability ϵ, use the safe component. On the first event, the projected history agrees with the run of π, the invariant y ≥ V δπ (eh) ensures that πϵ keeps choosing π0 forever. Indeed, whenever π0 is used and the next abstract successor is ξ′,the next budget is 
+
+y′ = zeh,a 
+
+ ξ′, δ (q, L α(ξ′))  = V δπ
+
+eha (χ(bhaξ ′), δ (q, L α(ξ′))) 
+
+
+
+,
+
+26 so the invariant is preserved along the coupled run. Thus the two projected paths agree on an event of probability at least 1 − ϵ. Consequently, 
+
+TV 
+
+
+
+prob MR[θ],π , prob MR[θ],(πϵ)↓
+
+
+
+≤ ϵ. 
+
+Since θ was arbitrary, we obtain 
+
+TV MR
+
+ π, (πϵ)↓ ≤ ϵ. 
+
+Therefore, the shield is HR -ϵ-TV-complete. If β = β∞, then δ = 0 , hence ϵ = 0 . The same construction gives a compliant policy π0 whose projection is equivalent to π. Therefore, the shield is HR -complete. Notice that by Lemma B.5, the above theorem implies that the shield S(MR/α, A, β ) is HR -ϵ-
+
+W1,γ -complete over (MR, α ) for Φ as well. By Lemma B.7, we have the following. 
+
+Theorem B.3 (Approximate optimality of the shield, extension of Theorem 2) . Suppose that 
+
+β(ξinit , q init ) < p , that MR is conditionally deterministic w.r.t. α, and let 
+
+ϵ = ∥β − β∞∥∞
+
+∥β − β∞∥∞ + p − β(ξinit , q init ) .
+
+Then the two following properties hold. 1. If the absolute value of the total undiscounted return is uniformly bounded by B, then 
+
+S(MR/α, A, β ) is 
+
+HR -(2 Bϵ, 1) -optimal over (MR, α ) for Φ.2. If γ ∈ (0 , 1) and sup (s,a )∈S×A |R(s, a )| ≤ Z, then S(MR/α, A, β ) is 
+
+HR -
+
+ 2Zϵ 
+
+1 − γ , γ 
+
+
+
+-optimal over (MR, α ) for Φ.In particular, the shield S(MR/α, A, β ∞) is HR -(0 , γ )-optimal for every γ ∈ (0 , 1] for which the corresponding return is well-defined. 
+
+## C Probabilistic Shielding for Unknown MDPs 
+
+In this appendix, we present all extended definitions, results, and proofs for our shielding approach for unknown MDPs, learned as RMDP from Sect. 4. Throughout, we suppose that M = ⟨S, A, P, s init , AP, L, R ⟩ is an MDP equipped with a finite 
+
+abstraction α : S → Ξ, we let M/α = ⟨Ξ, A α, P α, ξ init , AP, L α⟩ by its quotient, we suppose that 
+
+Φ = P≥1−p(φ) is a probabilistic safety LTL formula, that A = ⟨Q, 2AP , q init , δ, F ⟩ is a DFA recognizing the bad prefixes of φ, and that cM = (Ξ , A α, bP, ξ init , AP, L α, R α) is an RMDP with 
+
+Pα ∈ bP. Furthermore, we suppose that bβ is an ( cM ⊗ Lα A, Ξ × F )-inductive value function such that bβ(ξinit , q init ) ≤ p.
+
+C.1 Soundness of the Shield for Unknown MDPs 
+
+We first prove the soundness result from Theorem 3. 
+
+Definition C.1 (Conditional concrete lift of the learned RMDP) . For every ξ ∈ Ξ, let Cξ = α−1(ξ).Since Ξ is finite and α is surjective, fix one representative rξ ∈ Cξ .For every (s, a ) ∈ Gr( A) and every ξ′ ∈ Ξ, define a probability measure Kξ′ 
+
+> s,a
+
+∈ ∆( S) by 
+
+Kξ′
+
+> s,a
+
+(B) = 
+
+
+
+P (s, a )( B ∩ Cξ′ )
+
+Pα(α(s), a )( ξ′) , if Pα(α(s), a )( ξ′) > 0,
+
+Dirac ( rξ′ ) ( B), if Pα(α(s), a )( ξ′) = 0 ,
+
+27 for every measurable B ⊆ S. Thus Kξ′ 
+
+> s,a
+
+is the conditional distribution of the next concrete state inside the abstraction cell Cξ′ , with an arbitrary choice when that cell has zero probability under the true transition. For bμ ∈ ∆(Ξ) , define 
+
+Λs,a (bμ) = X
+
+> ξ′∈Ξ
+
+bμ(ξ′)Kξ′
+
+> s,a
+
+.
+
+The conditional concrete lift of cM is the RMDP fM = ⟨S, A, eP, s init , AP, L, R ⟩, where 
+
+eP(s, a ) = 
+
+n
+
+Λs,a (bμ) : bμ ∈ bP(α(s), a )
+
+o
+
+.
+
+Lemma C.1. The map α : S → Ξ is an abstraction of fM, and fM/α = cM. Moreover, there exists an adversary θP of fM such that M = fM[θP ].
+
+Proof. The action and label conditions follow from the fact that α is an abstraction of the true MDP. We first identify the quotient transition correspondence. Fix (s, a ) ∈ Gr( A), and write ξ = α(s). For every bμ ∈ bP(ξ, a ), we have 
+
+Λs,a (bμ) ◦ α−1 = bμ. 
+
+Indeed, each Kξ′ 
+
+> s,a
+
+is supported on Cξ′ , and therefore 
+
+Kξ′
+
+> s,a
+
+(α−1(ξ′′ )) = 1{ξ′=ξ′′ },
+
+which implies that 
+
+{μ ◦ α−1 : μ ∈ eP(s, a )} = bP(α(s), a ).
+
+This set depends only on α(s) and a. Therefore α is an abstraction of fM, and its quotient transition correspondence is exactly bP. Thus 
+
+fM/α = cM.
+
+It remains to show that the true MDP is induced in fM by an adversary. For every (s, a ), we have 
+
+P (s, a ) = Λ s,a 
+
+ Pα(α(s), a ).
+
+Indeed, for every measurable B ⊆ S,
+
+Λs,a 
+
+ Pα(α(s), a )(B) = X
+
+> ξ′∈Ξ
+
+Pα(α(s), a )( ξ′)Kξ′
+
+> s,a
+
+(B).
+
+The terms with Pα(α(s), a )( ξ′) = 0 vanish, and the remaining terms give 
+
+X
+
+> ξ′∈Ξ
+
+P (s, a )( B ∩ Cξ′ ) = P (s, a )( B).
+
+Since Pα(α(s), a ) ∈ bP(α(s), a ), we obtain P (s, a ) ∈ eP(s, a ). Thus M is induced by the adversary 
+
+θP that always selects the transition P (s, a ).Finally, the measurability of the lifted uncertainty correspondence follows from the measurability of 
+
+bP and of the map (s, a, bμ) 7 → Λs,a (bμ). Since Λs,a (bμ) ◦ α−1 = bμ, the relevant graph map is injective, so the image of the measurable graph of bP is measurable. 
+
+Theorem C.1 (Restatement of Theorem 3) . The shield S( cM, A, bβ) acts on (M, α ), is nonblocking over (M, α ), and is sound over (M, α ) for Φ.Proof. Let fM be the concrete lift defined above. By the Lemma C.1, fM/α = cM. Therefore 
+
+S( cM, A, bβ) = S( fM/α, A, bβ).
+
+Applying Theorem B.1 to fM, the shield acts on ( fM, α ), is nonblocking, and is sound over ( fM, α ).28 Since the true MDP M is induced by an adversary in fM, the non-blocking condition for all transitions in eP implies the non-blocking condition for the true transition P . Hence the shield is non-blocking over (M, α ).For soundness, let π be a compliant policy on M ⊗ α D. We redefine π arbitrarily on histories that are null under the true MDP, choosing a measurable compliant selector on DΓ. This modification does not change the induced path law under the true MDP, and it is compliant for the lifted RMDP. Applying soundness over fM to this modified policy yields the desired soundness for M.
+
+C.2 TV -Completeness of the Shield for Unknown and Finite MDPs 
+
+In the following, we use policies with randomized memory. Formally, a memory-based randomized policy (MBR policy) on an RMDP MR is specified by a standard Borel memory space Z, an initial memory distribution λ ∈ ∆( Z), a measurable action-selection kernel 
+
+σ : S × Z → ∆( A),
+
+and a measurable memory-update kernel 
+
+υ : Z × S × A × S → ∆( Z),
+
+such that σ(s, z )( A(s)) = 1 for all (s, z ) ∈ S × Z. Such a policy is executed as follows. First, an initial memory state z0 ∼ λ is sampled. At time t, after observing the current state st and holding memory zt, the controller samples 
+
+at ∼ σ(st, z t).
+
+After the next state st+1 is generated by the measure selected by the adversary, the memory is updated according to 
+
+zt+1 ∼ υ(· | zt, s t, a t, s t+1 ).
+
+Although MBR policies are useful as compact representations, in our setting, they do not induce more state-action path laws than HR policies. Indeed, every MBR policy admits an adversary-uniform HR realization. 
+
+Lemma C.2 (HR realization of MBR policies) . Let MR be an RMDP whose adversaries observe only the public state-action history. For every MBR policy Π on MR, there exists an HR policy Π♭
+
+such that, for every adversary θ of MR,
+
+prob MR[θ],Π = prob MR[θ],Π♭ .
+
+Proof. Let Π = ( Z, λ, σ, υ ). We construct an HR policy Π♭ that keeps, as a function of the public history, the belief over the private memory of Π.For a history ht = s0a0 · · · at−1st, let bt(· | ht) be a probability measure on Z. At time 0, set 
+
+b0(· | s0) = λ. 
+
+Given bt(· | ht), define 
+
+Π♭(E | ht) = 
+
+Z
+
+> Z
+
+σ(st, z )( E) bt(dz | ht), E ⊆ A.
+
+It remains to define bt+1 . Fix ht and a possible next state st+1 . Define a probability measure Kht,s t+1 
+
+on A × Z by 
+
+Kht,s t+1 (E × B) = 
+
+Z
+
+> Z
+
+Z
+
+> E
+
+υ(B | z, s t, a, s t+1 ) σ(da | st, z ) bt(dz | ht),
+
+for measurable E ⊆ A and B ⊆ Z. Since the spaces are standard Borel, this measure admits a regular conditional distribution of the next memory zt+1 given the observed action at. Choose one such version and denote it by 
+
+bt+1 (· | htatst+1 ).
+
+On histories where this conditional distribution is not uniquely determined, any version may be chosen. 29 We claim that, for every adversary θ, bt(· | ht) is a version of the conditional law of the private memory Zt given the public history Ht = ht under the process induced by (Π , θ ). The proof is by induction on t. The claim is immediate at t = 0 . Assume it holds at time t. Given Ht = ht, the MBR policy samples at according to Z
+
+> Z
+
+σ(st, z )( ·) bt(dz | ht).
+
+The adversary then samples st+1 according to θt(ht, a t), which depends only on the public history and the chosen action, not on the private memory. Therefore, after conditioning on the public next history htatst+1 , the conditional law of Zt+1 is exactly the regular conditional distribution used above to define bt+1 (· | htatst+1 ). This proves the induction. Consequently, under every adversary θ, after every public history ht, the action distribution of Π♭
+
+equals the conditional action distribution of Π after marginalizing its private memory. Since both policies then face the same adversarial transition kernel, they induce the same measures on all finite cylinders, and hence on infinite state-action paths: prob MR[θ],Π = prob MR[θ],Π♭ .
+
+Bernoulli mixtures of policies are a special case of MBR policies. Let Π0 and Π1 be two policies on the same RMDP, and let ε ∈ [0 , 1] . We write 
+
+(1 − ε)Π 0 ⊕ εΠ1
+
+for the policy that first samples Z ∈ { 0, 1} with Pr( Z = 1) = ε, and then follows ΠZ for the whole execution. We call ⊕ an external mixture . It should not be confused with the combination of policies that, at each history, independently randomizes between the action distributions of Π0 and Π1.We now define the policy class used in the following completeness theorem. Throughout this paragraph, M is finite. Let DA(M) be the finite set of maps d : S × Q → A such that d(s, q ) ∈ A(s)
+
+for every (s, q ) ∈ S × Q.For every λ ∈ ∆( DA(M)) , let Πλ be the MBR policy: • memory space Z = DA(M) × Q, 
+
+• initial memory distribution λ ⊗ Dirac ( qinit ) ,
+
+• action-selection kernel σ(s, (d, q )) = Dirac ( d(s, q )) , and • memory-update kernel υ(· | (d, q ), s, a, s ′) = Dirac (( d, δ (q, L (s′)))) .
+
+Thus Πλ first samples a deterministic map d, keeps it fixed for the whole execution, and uses the DFA state as finite memory. Furthermore, we define 
+
+CA(M) = 
+
+n
+
+Π♭λ : λ ∈ ∆( DA(M)) 
+
+o
+
+,
+
+where Π♭λ denotes the HR realization of Πλ from Lemma C.2. 
+
+In the rest of this section, we assume that the MDP M is finite, and that cM is graph-preserving .We define the minimum transition probability parameter pmin as 
+
+pmin := min 
+
+(
+
+inf  
+
+> μ∈eP(s,a )
+
+μ(s′) s ∈ S, a ∈ A(s), P (s, a, s ′) > 0
+
+)
+
+.
+
+Furthermore, we define N = |S| · | Q|, Hmax = Np N
+
+> min
+
+, and 
+
+η = sup 
+
+> (ξ,a )∈Ξ×Aα(ξ)
+
+sup   
+
+> bP(ξ,a )∈bP(ξ,a )
+
+TV( Pα(ξ, a ), bP (ξ, a )) .
+
+Lemma C.3 (Concrete one-step perturbation) . For every (s, a ) ∈ Gr( A) and every μ ∈ eP(s, a ),
+
+TV  P (s, a ), μ  ≤ η. 
+
+30 Proof. By definition of the conditional lift, there exists bμ ∈ bP(α(s), a ) such that 
+
+μ = Λ s,a (bμ) = X
+
+> ξ′∈Ξ
+
+bμ(ξ′)Kξ′
+
+> s,a
+
+.
+
+Moreover, 
+
+P (s, a ) = Λ s,a 
+
+ Pα(α(s), a ) = X
+
+> ξ′∈Ξ
+
+Pα(α(s), a )( ξ′)Kξ′
+
+> s,a
+
+.
+
+The kernels Kξ′ 
+
+> s,a
+
+are supported on the disjoint cells Cξ′ = α−1(ξ′). Hence, the total variation distance between the two concrete mixtures is exactly the total variation distance between their cell-mass distributions: 
+
+TV  P (s, a ), μ  = TV  Pα(α(s), a ), bμ.
+
+By definition of η, the right-hand side is at most η.
+
+Lemma C.4 (Concrete perturbation bound) . Let π ∈ C A(M). Then 
+
+inf 
+
+> eθ
+
+prob fM[eθ],π (φ) ≥ prob M,π (φ) − ηH max ,
+
+where the infimum ranges over adversaries of fM.Proof. First fix a deterministic A-memory policy d : S × Q → A, and let Cd be the union of the bottom strongly connected components of the support graph of the concrete product chain induced by 
+
+d on S × Q that do not intersect S × F . Let 
+
+τd = inf {t ≥ 0 : ( St, Q t) ∈ Cd ∪ (S × F )}.
+
+Because the conditional lift is graph-preserving, every adversary of fM induces the same support graph on S × Q under d. From any state outside Cd ∪ (S × F ), there is a path of length at most 
+
+N = |S| · | Q| to Cd ∪ (S × F ). Every edge on such a path has probability at least pmin , under every adversary and after every history. Hence, conditionally on any history before hitting Cd ∪ (S × F ),the probability of hitting this set within the next N steps is at least pN
+
+> min
+
+. Therefore 
+
+sup 
+
+> eθ
+
+E fM[eθ],d [τd] ≤ NpN
+
+> min
+
+= Hmax .
+
+Now fix an adversary eθ of fM. Couple the run of (M, d ) and the run of ( fM[eθ], d ) as follows. As long as the two concrete product histories coincide, the policy chooses the same action. At each step, use a maximal coupling between the true transition P (s, a ) and the transition selected by eθ. By the previous lemma, the one-step mismatch probability is at most η.Let σ be the first mismatch time. If σ > τ d, then the two product runs agree up to τd. At time τd,either both have reached S × F , in which case both have observed a bad prefix, or both have entered a bottom component Cd avoiding S × F , in which case neither run can later observe a bad prefix. Thus, the two satisfaction events can differ only on {σ ≤ τd}. Hence 
+
+prob fM[eθ],d (φ) − prob M,d (φ) ≤ Pr( σ ≤ τd).
+
+The stepwise coupling gives 
+
+Pr( σ ≤ τd) ≤ η E fM[eθ],d [τd] ≤ ηH max .
+
+Therefore, prob fM[eθ],d (φ) ≥ prob M,d (φ) − ηH max .
+
+Finally, let π ∈ C A(M) and write π = P 
+
+> d
+
+λdd as an initial mixture over deterministic A-memory policies. For fixed eθ, the path law under π is the corresponding mixture of the path laws under the d’s. Averaging the previous inequality gives prob fM[eθ],π (φ) ≥ prob M,π (φ) − ηH max .
+
+Taking the infimum over eθ proves the claim. 31 We assume in the following that there exists a policy πsl on cM and a constant κ > 0 such that 
+
+inf 
+
+> bθ
+
+prob cM[bθ],π sl (φ) ≥ 1 − p + κ. 
+
+We identify πsl with its lift to the concrete state space via α.
+
+Lemma C.5 (Concrete Slater repair) . Let π ∈ C A(M) such that M, π |= Φ . Set 
+
+r = ηH max 
+
+κ + ηH max 
+
+, bπ = (1 − r)π ⊕ rπ sl .
+
+Then, it holds that fM, bπ |= Φ , and TV M(π, bπ) ≤ r. 
+
+Proof. Since M, π |= Φ , we have prob M,π (φ) ≥ 1 − p. 
+
+By the concrete perturbation bound, 
+
+inf 
+
+> eθ
+
+prob fM[eθ],π (φ) ≥ 1 − p − ηH max .
+
+Since fM/α = cM, the lifted Slater policy satisfies 
+
+inf 
+
+> eθ
+
+prob fM[eθ],π sl (φ) ≥ 1 − p + κ, 
+
+so for every adversary eθ,prob fM[eθ],bπ (φ) ≥ (1 − r)(1 − p − ηH max ) + r(1 − p + κ).
+
+The choice 
+
+r = ηH max 
+
+κ + ηH max 
+
+makes the right-hand side equal to 1 − p. Hence 
+
+fM, bπ |= Φ .
+
+Finally, the TV bound follows by coupling the initial mixture: with probability 1 − r, bπ follows π for the whole run, and with probability r, it follows πsl . Thus, under the true MDP, 
+
+TV  prob M,π , prob M,bπ
+
+ ≤ r, 
+
+which is equivalent to the claim TV M(π, bπ) ≤ r, which concludes the proof. 
+
+Theorem C.2 (TV completeness for concrete automaton-memory policies) . Suppose that M is finite, that M is conditionally deterministic w.r.t. α, that cM is graph-preserving, that pmin > 0, and that there exists a Slater policy πsl with margin κ > 0. Suppose also that bβ(ξinit , q init ) < p . Then the shield S( cM, A, bβ) acts on (M, α ) and is CA(M)-ϵ-TV -complete over (M, α ) for Φ, where 
+
+ϵ = ∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) + ηH max 
+
+κ + ηH max 
+
+,
+
+with 
+
+Hmax = |S| · | Q|
+
+(pmin )( |S|·| Q|) .
+
+Proof. Let π ∈ C A(M) be such that M, π |= Φ . By the Slater repair lemma, the policy 
+
+bπ = (1 − r)π ⊕ rπ sl , r = ηH max 
+
+κ + ηH max 
+
+,
+
+is safe for the conditional lift fM, and TV M(π, bπ) ≤ r.32 Since fM/α = cM, the shield S( cM, A, bβ) is exactly S( fM/α, A, bβ). Since M is conditionally deterministic with respect to α and cM is graph-preserving, the conditional concrete lift fM is conditionally deterministic with respect to α. Hence Theorem B.3 applies to fM. As a consequence, there exists a compliant HR policy π on M ⊗ α D such that 
+
+TV fM
+
+ bπ, π ↓ ≤ ϵβ ,
+
+where 
+
+ϵβ = ∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) .
+
+This, in particular, implies that 
+
+TV M
+
+ bπ, π ↓ ≤ ϵβ ,
+
+which, by the triangle inequality, yields 
+
+TV M
+
+ π, π ↓ ≤ r + ϵβ .
+
+Thus, the shield is CA(M)-ϵ-TV-complete with ϵ = ϵβ + ηH max  
+
+> κ+ηH max
+
+, which concludes the proof. 
+
+C.3 W1,γ -Completeness of the Shield for Unknown MDPs 
+
+We now prove a W1,γ -completeness result. In contrast to the TV -completeness theorem above, this result does not require a uniform hitting-time bound. Instead, we only compare the true MDP and the conditional lift over a finite horizon T .Let bβ∞ be the least fixed point of BΞ×F 
+
+> cM⊗ Lα A
+
+. Let β∞ be the least fixed point of BΞ×F 
+
+> (M/α )⊗Lα A
+
+. We define ∆∞ = ∥ bβ∞ − β∞∥∞. Since α is an exact safety abstraction, the least bad-reachability value on the concrete product M ⊗ L A is the lift of β∞, namely (s, q ) 7 → β∞(α(s), q ).Since the learned product RMDP is finite, choose a policy bπ⋆ on cM ⊗ Lα A such that, for every 
+
+(ξ, q ) ∈ Ξ × Q,
+
+sup 
+
+> bθ
+
+prob (ξ,q ) 
+
+> cM[bθ],bπ⋆
+
+[{h | h |= F(Ξ × F )}] ≤ bβ∞(ξ, q ).
+
+We identify bπ⋆ with its lift to the concrete state space through α.For an HR policy π on M and T ∈ N, let π(T ) be the policy that follows π for the first T decision times and then follows the lifted policy bπ⋆ forever. 
+
+Lemma C.6 (Hard-switch perturbation bound) . For every HR policy π on M and every T ∈ N,
+
+inf 
+
+> eθ
+
+prob fM[eθ],π (T ) (φ) ≥ prob M,π (φ) − T η − ∆∞,
+
+where the infimum ranges over adversaries of fM.Proof. Fix an adversary eθ of fM. We couple the run of (M, π ) with the run of ( fM[eθ], π (T )) during the first T decision times. As long as the two concrete histories coincide, the two policies choose the same action distribution, because π(T ) coincides with π before time T . We couple the actions identically, and then use a maximal coupling between the true transition P (s, a ) and the transition selected by eθ. By the concrete one-step perturbation lemma, the one-step mismatch probability is at most η.Let σ = inf {t ≥ 0 : St̸ = eSt} be the first time at which the two concrete state sequences differ. Then 
+
+Pr( σ ≤ T ) ≤ T η. 
+
+Let B be the event that the true run violates φ, and let eB be the event that the lifted run violates φ. Let 
+
+AT be the event that no accepting state of the DFA has been reached up to time T along the true run. On the event {σ > T } ∩ AT , the two product runs have the same concrete product state (ST , Q T )
+
+at time T . From that time onward, the lifted run follows bπ⋆. Hence the conditional probability of eventually reaching S × F is at most 
+
+bβ∞(α(ST ), Q T ).
+
+33 Therefore, we obtain 
+
+Pr( eB) ≤ Pr( σ ≤ T ) + Pr( B ∩ AcT ) + E
+
+h
+
+1AT
+
+bβ∞(α(ST ), Q T )
+
+i
+
+.
+
+Let vπ (HT ) be the conditional probability, under the true MDP and policy π, of eventually violating 
+
+φ after the concrete history HT . Using this notation, we write 
+
+Pr( B) = Pr( B ∩ AcT ) + E[1AT vπ (HT )] .
+
+Since α is a safety abstraction, the least bad-reachability value on the concrete product is the lift of 
+
+β∞. Hence, on AT ,
+
+β∞(α(ST ), Q T ) ≤ vπ (HT ),
+
+from which we find that 
+
+bβ∞(α(ST ), Q T ) − vπ (HT ) ≤ bβ∞(α(ST ), Q T ) − β∞(α(ST ), Q T ) ≤ ∆∞.
+
+Combining the previous inequalities gives 
+
+Pr( eB) − Pr( B) ≤ T η + ∆ ∞,
+
+which is equivalent to prob fM[eθ],π (T ) (φ) ≥ prob M,π (φ) − T η − ∆∞.
+
+Taking the infimum over eθ proves the claim. 
+
+Lemma C.7 (Hard-switch Wasserstein cost) . For every HR policy π on M and every T ∈ N,
+
+W M
+
+> 1,γ
+
+
+
+π, π (T )
+
+≤ γT .
+
+Proof. Couple the runs of π and π(T ) on the true MDP so that they use the same actions and transition randomness during the first T decision times. The two induced state-action trajectories then coincide up to time T . Therefore, their discounted Hamming distance is at most 
+
+(1 − γ)
+
+> ∞
+
+X
+
+> t=T
+
+γt = γT .
+
+Taking the infimum over all couplings yields the claim. 
+
+Lemma C.8 (Hard-switch Slater repair) . Assume that there exists a policy πsl on cM and a constant 
+
+κ > 0 such that 
+
+inf 
+
+> bθ
+
+prob cM[bθ],π sl (φ) ≥ 1 − p + κ. 
+
+Let π be an HR policy on M such that M, π |= Φ . For T ∈ N, set 
+
+δT := T η + ∆ ∞, λT := δT
+
+κ + δT
+
+,
+
+and define 
+
+bπ(T ) := (1 − λT )π(T ) ⊕ λT πsl ,
+
+where πsl is lifted to the concrete state space through α. Then fM, bπ(T ) |= Φ . Moreover, 
+
+W M
+
+> 1,γ
+
+
+
+π, bπ(T )
+
+≤ γT + λT .
+
+Proof. Since M, π |= Φ , we have prob M,π (φ) ≥ 1 − p. By Lemma C.6, 
+
+inf 
+
+> eθ
+
+prob fM[eθ],π (T ) (φ) ≥ 1 − p − δT .
+
+Since fM/α = cM, the lifted Slater policy satisfies 
+
+inf 
+
+> eθ
+
+prob fM[eθ],π sl (φ) ≥ 1 − p + κ. 
+
+34 Therefore, for every adversary eθ,prob fM[eθ],bπ(T ) (φ) ≥ (1 − λT )(1 − p − δT ) + λT (1 − p + κ).
+
+By the definition of λT , the right-hand side is equal to 1 − p, so the first claim fM, bπ(T ) |= Φ follows. Second, for the Wasserstein bound, by convexity of W1,γ in its second argument, 
+
+W M
+
+> 1,γ
+
+
+
+π, bπ(T )
+
+≤ (1 − λT )W M
+
+> 1,γ
+
+
+
+π, π (T )
+
++ λT W M 
+
+> 1,γ
+
+(π, π sl ) .
+
+Since W1,γ ≤ 1, and by Lemma C.7, 
+
+W M
+
+> 1,γ
+
+
+
+π, bπ(T )
+
+≤ (1 − λT )γT + λT ≤ γT + λT .
+
+Theorem C.3 (Hard-switch W1,γ -completeness) . Suppose that bβ(ξinit , q init ) < p , suppose that M
+
+is conditionally deterministic w.r.t. α, and suppose that there exists a Slater policy πsl with margin 
+
+κ > 0, i.e., 
+
+inf 
+
+> bθ
+
+prob cM[bθ],π sl (φ) ≥ 1 − p + κ. 
+
+Then, for every T ∈ N, the shield S( cM, A, bβ) acts on (M, α ) and is HR -ϵT -W1,γ -complete over 
+
+(M, α ) for Φ, where 
+
+ϵT = ∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) + γT + T η + ∆ ∞
+
+κ + T η + ∆ ∞
+
+.
+
+Proof. Let π be an HR policy on M such that 
+
+M, π |= Φ .
+
+By Lemma C.8, the policy bπ(T ) is safe for the conditional lift fM, and 
+
+W M
+
+> 1,γ
+
+
+
+π, bπ(T )
+
+≤ γT + T η + ∆ ∞
+
+κ + T η + ∆ ∞
+
+.
+
+For brevity, define 
+
+ϵβ = ∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) .
+
+Since fM/α = cM, the shield S( cM, A, bβ) is exactly S( fM/α, A, bβ). Applying the RMDP TV -completeness theorem to fM, there exists a compliant HR policy π on M ⊗ α D such that 
+
+TV fM
+
+bπ(T ), π ↓
+
+≤ ϵβ .
+
+Since the true MDP M is a resolution of fM, this implies 
+
+TV M
+
+bπ(T ), π ↓
+
+≤ ϵβ .
+
+By Lemma B.5, we obtain 
+
+W M
+
+> 1,γ
+
+bπ(T ), π ↓
+
+≤ ϵβ ,
+
+which, via the triangle inequality gives 
+
+W M
+
+> 1,γ
+
+ π, π ↓ ≤ ϵβ + γT + T η + ∆ ∞
+
+κ + T η + ∆ ∞
+
+.
+
+Thus, the shield is HR -ϵT -W1,γ -complete. 35 C.4 Optimality Results 
+
+We now derive optimality guarantees presented in Theorem 4 from the completeness results above. The W1,γ -result already applies to all HR policies. For the TV -result, which was proved only for the class CA(M), we first recall that this class is sufficient to attain the optimal value of the finite undiscounted safe policy optimization problem under standard total-reward assumptions. 
+
+Lemma C.9 (Initial mixtures with automaton memory suffice) . Assume that M is finite. Consider the undiscounted safe policy optimization problem 
+
+sup 
+
+> π∈HR
+
+J1
+
+> M
+
+(π) subject to M, π |= P≥1−p(φ).
+
+Suppose that: 1. for every HR policy π, the total reward P∞ 
+
+> t=0
+
+R(st, a t) is almost surely convergent and has finite expectation; 2. an optimal feasible HR policy exists. Then there exists an optimal feasible policy π⋆ ∈ C A(M). Moreover, π⋆ can be chosen as an initial mixture of at most two deterministic A-memory policies. Proof. Consider the product MDP M ⊗ L A with state space S × Q, and let G = S × F be the set of bad product states. We make G absorbing and set the reward to zero after G is reached. This does not change either the event of violating φ or the value of the total reward up to violation. The safety constraint can be written as a total-cost constraint. Define the one-step cost 
+
+c(( s, q ), a ) = Ps′∼P (s,a ) [δ(q, L (s′)) ∈ F ]
+
+for q / ∈ F , and c(( s, q ), a ) = 0 for q ∈ F . Then, for every policy π,
+
+Eπ
+
+" ∞X
+
+> t=0
+
+c(( st, q t), a t)
+
+#
+
+is the probability to reach G following π, so the constraint 
+
+M, π |= P≥1−p(φ)
+
+is equivalent to 
+
+Eπ
+
+" ∞X
+
+> t=0
+
+c(( st, q t), a t)
+
+#
+
+≤ p. 
+
+Thus, the problem is a finite total-reward CMDP on the product MDP with one total-cost constraint. By the standard occupation-measure formulation for finite total-reward CMDPs, the achievable reward-cost region is the convex hull of the performance vectors of deterministic stationary policies on the product MDP. Hence, an optimal feasible point can be achieved by an initial mixture of deterministic stationary product policies. Since there is one cost constraint, Carathéodory’s theorem, or equivalently, the basic feasible solution structure of the corresponding linear program, implies that at most two deterministic stationary product policies are needed. Finally, deterministic stationary policies on the product S × Q are exactly deterministic A-memory policies on M, and their initial mixtures are precisely the policies in CA(M). Therefore, an optimal feasible policy exists in CA(M).We are now ready to state our two final optimality results, as presented in Sect. 4. The first follows directly from combining Theorem C.2, Lemma C.9, and Lemma B.7. 
+
+Theorem C.4 (Undiscounted HR-optimality from TV-completeness; extension of Theorem 4, case 1) .
+
+Assume the hypotheses of Theorem C.2 and Lemma C.9. Suppose moreover that the absolute value of the total undiscounted return is uniformly bounded by B. Let 
+
+ϵTV = ∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) + ηH max 
+
+κ + ηH max 
+
+.
+
+36 Then the shield S( cM, A, bβ) is 
+
+HR -(2 Bϵ TV , 1) -optimal over (M, α ) for Φ.
+
+The following result follows directly from combining Theorem C.3 and Lemma B.7. 
+
+Theorem C.5 (Discounted HR-optimality from hard-switch completeness; extension of Theo-rem 4, case 2) . Assume the hypotheses of Theorem C.3. Suppose that sup (s,a )∈S×A |R(s, a )| ≤ Z.Then, the shield S( cM, A, bβ) is 
+
+HR -
+
+ 2Zϵ 
+
+1 − γ , γ 
+
+
+
+-optimal over (M, α ) for Φ, where 
+
+ϵ = min  
+
+> T∈N
+
+∥ bβ − bβ∞∥∞
+
+∥ bβ − bβ∞∥∞ + p − bβ(ξinit , q init ) + γT + T η + ∆ ∞
+
+κ + T η + ∆ ∞
+
+!
+
+.
+
+## D Details for Experiments 
+
+D.1 Implementation Details 
+
+In this appendix, we further detail the implementation of our shielding pipeline, in particular, for step (3) of running policy optimization with the shield active. Recall that the transition function P of the true MDP M is unknown, but we instead have access to a simulator. Thus, enabling the shield means that we obtain a shielded simulator MDP MS  S, A S, P S, s init , AP, L , obtained from the restriction of policy distributions allowed by the shield. More precisely, MS is the MDP with same set of states, labels, labelling, and rewards as M⊗ α D, but with action space AS(s, m ) = Γ( α(s), m ),and probability transition function 
+
+P S(( s, m ), ρ )( E) = 
+
+Z
+
+> A×U
+
+P (( s, m ), (a, u ))( E) ρ(d(a, u )) .
+
+Given the definition of Γ, the space AS(s, m ) is convex, and, for optimization purposes, AS(s, m )
+
+can be taken as its extremal points. Furthermore, since Γ( α(s), m ) is defined over μ ∈ ∆( A × V β )
+
+by a single scalar inequality, an extremal point of AS(s, m ) is always a mixture of at most two Dirac distributions over A × U . In addition, for a fixed action distribution μ over two actions a and a′, the set of all auxiliary actions (v, v ′) that satisfy compliance with the shield is a convex polytope itself. More precisely, for any action distribution μ, the set of all possible auxiliary actions for every base action a that satisfy compliance with the shield is the set Vλ(ξ, q, y ) of all (va)a∈Aα(ξ) ∈ V Aα(ξ)
+
+> β
+
+such that X
+
+> a∈Aα(ξ)
+
+μ(a) sup 
+
+> μ∈P α(ξ,a )
+
+Eξ′∼μ
+
+va
+
+ ξ′, δ (q, L α(ξ′))  ≤ y. 
+
+As a consequence, since we still assume the the quotient M/α is finite, the VAα(ξ) 
+
+> β
+
+has finitely many extremal points. Thus, we can restrict the action space of MS to 1. the choice of two actions, of a trade-off λ ∈ [0; 1] between those two action, inducing a distribution μ over actions, and 2. the choice of an extremal point of Vλ(ξ, q, y ).In practice, we optimize with PPO [ 49 ] over MS, we leave the choice of the trade-off λ to the actor, and implement the following heuristic for the choice of the extremal point of Vλ(ξ, q, y ).
+
+Auxiliary action heuristic. We describe the heuristic used to choose the auxiliary actions after the actor has selected a mixed base action. Fix a shield state (ξ, q, y ), and let λ ∈ ∆( Aα(ξ)) be the 37 action distribution selected by the actor. In principle, a compliant shielded action may assign an action-dependent continuation certificate (va)a∈Aα(ξ) ∈ V Aα(ξ) 
+
+> bβ
+
+satisfying 
+
+X
+
+> a∈Aα(ξ)
+
+λ(a) sup  
+
+> bμ∈bP(ξ,a )
+
+Eξ′∼bμ
+
+va
+
+ ξ′, δ (q, L α(ξ′))  ≤ y. 
+
+Rather than optimizing over this full polytope, our implementation uses a single shared continuation certificate v ∈ V bβ for all actions in the support of λ. This is conservative but simplifies the shielded action parametrization. Starting from the baseline certificate bβ, we distribute the available residual budget uniformly by considering the one-dimensional family 
+
+vm(ξ′, q ′) = min { bβ(ξ′, q ′) + m, 1}, m ≥ 0.
+
+We then choose the largest margin m preserving one-step robust feasibility: 
+
+m⋆ = sup 
+
+m ≥ 0 : X
+
+> a∈Aα(ξ)
+
+λ(a) sup  
+
+> bμ∈bP(ξ,a )
+
+Eξ′∼bμ
+
+vm
+
+ ξ′, δ (q, L α(ξ′))  ≤ y
+
+ .
+
+The auxiliary action used by the shield is vm⋆ , i.e. we take va = vm⋆ for every action a in the support of λ. If m = 0 is already infeasible, then the proposed action distribution λ is not compatible with the shield; in that case the implementation falls back to a precomputed safe distribution witnessing the inductiveness of bβ.For finite RMDPs, the map 
+
+m 7 → X
+
+> a∈Aα(ξ)
+
+λ(a) sup  
+
+> bμ∈bP(ξ,a )
+
+Eξ′∼bμ
+
+vm
+
+ ξ′, δ (q, L α(ξ′))  
+
+is monotone and piecewise affine. Its breakpoints occur only when a coordinate bβ(ξ′, q ′) + m
+
+reaches 1. We therefore compute m⋆ by sorting these saturation breakpoints and scanning the corresponding affine pieces. On the first segment where the robust expectation reaches the budget y,
+
+m⋆ is obtained by solving a one-dimensional affine equation. If the robust expectation remains below 
+
+y after all coordinates have saturated, then all continuation thresholds can be set to 1.
+
+D.2 Additional Experimental Results 
+
+This section reports the full experimental results for each environment considered in the main paper. 
+
+Environments. We now provide a description of the environments used to evaluate our approach. These environments have been used in prior work, and their behavior remains unchanged unless stated otherwise. In particular, we consider two variants of the Media Streaming environment, two variants of the Colour Bomb Gridworld , as well as Pacman and its variant, Pacman Slippery , in which the agent may execute slippery actions. Overall, this results in a total of six environments. For brevity, we provide a detailed description only for the general version of each environment family ( i.e., three environments in total), while the corresponding variants differ only in the aspects mentioned above. • Media streaming. The agent manages a data buffer of size 20 . Packets leave the buffer according to a Bernoulli process with rate μout = 0 .7. At each timestep, the agent chooses between two actions A = {slow , fast }, which add packets according to Bernoulli rates 
+
+μslow = 0 .1 and μfast = 0 .9, respectively. The reward objective is to minimise outage time: the agent receives reward −1 whenever the buffer is empty and 0 otherwise. Safety is governed by a counter ct recording the number of times the fast action has been used, capped at C + 1 , with C = ⌊T / 2⌋ and T = 100 . We use the probabilistic safety constraint 
+
+P≥0.5 (G(ct ≤ C)) .
+
+The environment has 20 × 52 = 1040 states, corresponding to the buffer level and the capped fast-action counter. A related benchmark has been considered in [53]. 38 • Media streaming - Alternative. We also consider a stochastic-safety variant of the media-streaming environment. The buffer dynamics and reward function are the same as above, but safety is governed by a danger level dt, initialised at 0 and capped at Dmax + 1 , where 
+
+Dmax = 20 . We use the safety constraint 
+
+P≥0.5 (G(dt ≤ Dmax )) .
+
+Under the slow action, the danger level decreases by one with probability 0.5, remains unchanged with probability 0.1, and increases by one with probability 0.4. Under the fast action, the danger level increases by one with probability 0.8, remains unchanged with probability 0.1, and decreases by one with probability 0.1. Thus, the fast action improves the buffer more reliably but tends to increase the probability of entering unsafe states, while the slow action is safer on average but does not guarantee that danger decreases. The full observation is (dt, b t, t ), giving 22 × 20 × 101 = 44440 possible observations. Since the buffer affects reward but not safety, the shield uses the abstraction (dt, t ), which has 
+
+22 × 101 = 2222 states. • Colour bomb gridworld. The agent operates in a 15 × 15 gridworld, with discrete actions 
+
+A = {left , right , down , up , stay }. Outside the medic states, the intended action is executed with probability 0.9, while with probability 0.1 the agent slips uniformly to one of the other actions. In medic states, the dynamics are deterministic. The environment contains wall cells, bomb cells, medic cells, and coloured goal regions. At the beginning of each episode, the initial state is sampled uniformly from a fixed set of start states. The agent receives reward +1 upon entering any coloured goal region and reward 0 otherwise; after reaching such a goal region, the process is reset to a uniformly sampled start state. The base gridworld has 15 2 = 225 states. We consider the probabilistic safety constraint 
+
+P≥0.5 (G ¬bomb ) ,
+
+and an LTL-safety variant 
+
+P≥0.99 (G (bomb ⇒ F≤10 (medic ∧ Xmedic ))) .
+
+The LTL property is represented by a 22 -state safety automaton, so the product MDP used by the shield has 225 × 22 = 4950 states. A related gridworld has been used in [6]. • Pacman and slippery Pacman. We consider a Pacman-with-coins environment on a 7 × 10 
+
+map. The environment contains one Pacman agent, one ghost, walls, and collectible coins, with reward +1 obtained when Pacman visits a cell containing an uncollected coin. The full coin-augmented state is combinatorial: the map has 28 free cells, giving up to 228 
+
+possible coin configurations for each agent–ghost configuration. For shielding, we use a safety abstraction that discards the coins and retains only the positions and directions of Pacman and the ghost. This abstraction has 4624 states. The ghost dynamics are stochastic: the ghost chooses an available action directed toward Pacman with probability 0.4, and otherwise randomises uniformly over the other available actions with total probability 0.6.We use the safety specification 
+
+P≥1−p (G(loc Pacman ̸ = loc Ghost )) ,
+
+where p = 0 .05 for Pacman and 0.5 for Pacman slippery. We also evaluate a slippery variant on the same map and with the same 4624 -state safety abstraction. In this variant, the requested Pacman action is executed with probability 0.9, while with probability 0.1
+
+one of the other actions is executed uniformly at random. The task is to collect as many coins as possible while satisfying the probabilistic safety specification of avoiding the ghost throughout the episode. Similar environments were considered in [6, 7]. We use the shorthand labels MDP , MLE , Kno , and Unk in all plots to indicate the four different cases described in Sect. 5. 
+
+Evaluation metrics. We report two evaluation metrics: • Expected discounted reward (rew ): the average episodic return, corresponding to an empirical estimate of JγM (π).39 • Specification satisfaction probability (sat ): the empirical probability that a rollout satisfies the specification. When learning curves are shown, we additionally report the corresponding training-time quantities 
+
+rew and sat . For each environment, we provide two groups of plots: 1. learning curves over training steps, shown for each sample size (the specific number that changes across the various environments represents the minimum number of samples needed for Unk ); 2. averaged performance as a function of sample size. 
+
+Colour bomb gridworld 
+
+MDP MLE Kno Unk satisfaction prob (1 − p) Samples      
+
+> 012345
+> ·10 5
+> 0
+> 5
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0
+> 0.5
+> 1
+
+Training steps 
+
+> sat
+
+10      
+
+> 012345
+> ·10 5
+> 0
+> 5
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.5
+> 1
+
+Training steps 
+
+> sat
+
+100      
+
+> 012345
+> ·10 5
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+980      
+
+> 012345
+> ·10 5
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+1000      
+
+> 012345
+> ·10 5
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+5000 40 0 1 2 3 4 5
+
+> ·10 5
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+10000      
+
+> 012345
+> ·10 5
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+20000 Figure 4: Learning curves for the Colour bomb gridworld environment. Left: rew . Right: sat .Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> 2
+> 4
+> 6
+> 8
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Sample size 
+
+> sat
+
+Figure 5: Average performance on Colour bomb gridworld as a function of sample size. Left: rew .Right: sat .
+
+Colour bomb gridworld – LTL goal 
+
+MDP MLE Kno Unk satisfaction prob (1 − p) Samples      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0
+> 0.5
+> 1
+
+Training steps 
+
+> sat
+
+10      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.94
+> 0.96
+> 0.98
+> 1
+> 1.02
+
+Training steps 
+
+> sat
+
+100 41 0 1 2 3 4 5
+
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.96
+> 0.98
+> 1
+
+Training steps 
+
+> sat
+
+1000      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.96
+> 0.98
+> 1
+
+Training steps 
+
+> sat
+
+1226      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.96
+> 0.98
+> 1
+
+Training steps 
+
+> sat
+
+5000      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.96
+> 0.98
+> 1
+
+Training steps 
+
+> sat
+
+10000      
+
+> 012345
+> ·10 5
+> 0
+> 10
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.96
+> 0.98
+> 1
+
+Training steps 
+
+> sat
+
+20000 Figure 6: Learning curves for the Colour bomb gridworld – LTL environment. Left: rew . Right: 
+
+sat . Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> 12
+> 14
+> 16
+> 18
+> 20
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Sample size 
+
+> sat
+
+42 Figure 7: Average performance on Colour bomb gridworld – LTL as a function of sample size. Left: rew . Right: sat .
+
+Pacman 
+
+MDP MLE Kno Unk satisfaction prob (1 − p) Samples      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.8
+> 0.9
+> 1
+
+Training steps 
+
+> sat
+
+10      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+> 24
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.85
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+100      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+317      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+1000      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+5000      
+
+> 012345
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+> 24
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+10000 43 0 1 2 3 4 5
+
+> ·10 5
+> 16
+> 18
+> 20
+> 22
+> 24
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.85
+> 0.9
+> 0.95
+> 1
+
+Training steps 
+
+> sat
+
+20000 Figure 8: Learning curves for the Pacman environment. Left: rew . Right: sat . Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> 19
+> 20
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.9
+> 0.95
+> 1
+
+Sample size 
+
+> sat
+
+Figure 9: Average performance on Pacman as a function of sample size. Left: rew . Right: sat .
+
+Pacman Slippery 
+
+MDP MLE Kno Unk satisfaction prob (1 − p) Samples      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+10      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+
+Training steps 
+
+> sat
+
+100      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+1000 44 0 1 2 3 4 5
+
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+
+Training steps 
+
+> sat
+
+5000      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+10000      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+16215      
+
+> 012345
+> ·10 5
+> 15
+> 20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+20000 Figure 10: Learning curves for the Pacman Slippery environment. Left: rew . Right: sat . Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> 14
+> 16
+> 18
+> 20
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.6
+> 0.8
+> 1
+
+Sample size 
+
+> sat
+
+Figure 11: Average performance on Pacman Slippery as a function of sample size. Left: rew . Right: 
+
+sat .
+
+Media Streaming 
+
+45 MDP MLE Kno Unk satisfaction prob (1 − p) Samples 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+10 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+100 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+869 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+1000 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+5000 
+
+0 1 2 3 4 5
+
+·10 5
+
+−40 
+
+−20 
+
+Training steps 
+
+> rew
+
+0 1 2 3 4 5
+
+·10 5
+
+0.4
+
+0.6
+
+0.8
+
+1
+
+Training steps 
+
+> sat
+
+10000 46 0 1 2 3 4 5
+
+> ·10 5
+> −40
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+20000 Figure 12: Learning curves for the Media Streaming environment. Left: rew . Right: sat . Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> −15
+> −14
+> −13
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.5
+> 0.52
+> 0.54
+> 0.56
+> 0.58
+
+Sample size 
+
+> sat
+
+Figure 13: Average performance on Media Streaming as a function of sample size. Left: rew . Right: 
+
+sat .
+
+Media Streaming – Alternative 
+
+MDP MLE Kno Unk satisfaction prob (1 − p) Samples      
+
+> 012345
+> ·10 5
+> −50
+> −40
+> −30
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+
+Training steps 
+
+> sat
+
+10      
+
+> 012345
+> ·10 5
+> −50
+> −40
+> −30
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+
+Training steps 
+
+> sat
+
+100      
+
+> 012345
+> ·10 5
+> −60
+> −40
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+> 1
+
+Training steps 
+
+> sat
+
+1000 47 0 1 2 3 4 5
+
+> ·10 5
+> −40
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+
+Training steps 
+
+> sat
+
+5000      
+
+> 012345
+> ·10 5
+> −50
+> −40
+> −30
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+
+Training steps 
+
+> sat
+
+10000      
+
+> 012345
+> ·10 5
+> −50
+> −40
+> −30
+> −20
+
+Training steps      
+
+> rew
+> 012345
+> ·10 5
+> 0.4
+> 0.6
+> 0.8
+
+Training steps 
+
+> sat
+
+20000 Figure 14: Learning curves for the Media Streaming – Alternative environment. Left: rew . Right: 
+
+sat . Rows correspond to different sample sizes. 
+
+MDP MLE Kno Unk satisfaction prob (1 − p)   
+
+> 10 110 210 310 4
+> −50
+> −40
+> −30
+
+Sample size    
+
+> rew
+> 10 110 210 310 4
+> 0.4
+> 0.6
+> 0.8
+
+Sample size 
+
+> sat
+
+Figure 15: Average performance on Media Streaming – Alternative as a function of sample size. Left: rew . Right: sat .48
