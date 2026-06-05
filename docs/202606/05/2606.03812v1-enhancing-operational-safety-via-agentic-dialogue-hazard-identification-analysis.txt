@@ -1,0 +1,774 @@
+Title: Enhancing Operational Safety via Agentic Dialogue Hazard Identification Analysis
+
+URL Source: https://arxiv.org/pdf/2606.03812v1
+
+Published Time: Wed, 03 Jun 2026 01:24:40 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Enhancing Operational Safety via Agentic Dialogue Hazard Identification Analysis 
+
+Sanjay Das 
+
+Oak Ridge National Laboratory Oak Ridge, Tennessee, USA 
+
+dass3@ornl.gov 
+
+Ran Elgedawy 
+
+Oak Ridge National Laboratory Oak Ridge, Tennessee, USA 
+
+elgedawyr@ornl.gov 
+
+Ethan Seefried 
+
+Oak Ridge National Laboratory Oak Ridge, Tennessee, USA 
+
+seefriedej@ornl.gov 
+
+Ryan Burchfield 
+
+Oak Ridge National Laboratory Oak Ridge, Tennessee, USA 
+
+burchfieldra@ornl.gov 
+
+Tirthankar Ghosal 
+
+Oak Ridge National Laboratory Oak Ridge, Tennessee, USA 
+
+ghosalt@ornl.gov 
+
+Abstract 
+
+Operational safety in high-stakes domains— such as industrial process control, autonomous, and safety-critical systems—demand reliable hazard identification. While large language models (LLMs) have shown promise in au-tomating safety analysis tasks, single-turn, monolithic inference is brittle: it lacks the self-correction, deliberation, and contextual refinement that safety engineers apply itera-tively. In this paper, we introduce H AZ DIAL ,a framework that investigates whether struc-tured agentic dialogue —multi-agent, multi-turn interactions—improves the quality of NLP-based hazard identification over single-pass baselines. We systematically compare two dia-logue modalities: adversarial debate and con-structive discussion , and propose an algorithm-based agentic interaction optimization. We evaluate all configurations against a curated golden dataset using standard classification metrics (accuracy, precision, recall, F 1) and novel dialogue metrics. This work advances the intersection of dialogue systems, multi-agent reasoning, and AI safety, providing an empiri-cal evidence for dialogue-driven hazard analy-sis. 
+
+1 Introduction 
+
+Operational safety analysis is a cornerstone of en-gineering practice. Processes such as Hazard and Operability Studies (HAZOP) (Kletz, 2018), Fail-ure Mode and Effects Analysis (FMEA) (Stama-tis, 2003), and Fault Tree Analysis (FTA) (Vesely et al., 1981) require safety engineers to systemat-ically enumerate potential hazards, failure modes, their causes, and their consequences. These analy-ses are labor-intensive, domain-specific, and prone 
+
+Figure 1: Dialogue-driven hazard analysis. 
+
+to human errors, fatigue, making them compelling targets for NLP-assisted automation (Brown et al., 2020; Wei et al., 2022). Recent work has begun to apply LLMs to safety-related text classification and extraction tasks (Pal-trinieri et al., 2019; Rajpurkar et al., 2018), but a persistent challenge remains: a single-pass LLM inference is epistemically flat. It cannot challenge its own assumptions, incorporate counterfactual reasoning, or refine outputs through deliberation— all of which safety engineers do naturally through structured reviews and peer challenges. 
+
+Why agentic dialogue? Multi-agent dialogue systems introduce structured deliberation into the inference process. When two or more agents interact—whether through cooperative discussion or adversarial debate—the resulting output bene-fits from error correction, coverage expansion, and iterative refinement (Liang et al., 2024; Du et al., 2024). Yet it remains unclear: (1) whether dialogue 
+
+actually improves hazard identification quality, and (2) what type of dialogue structure and optimization strategy yields the greatest gains. 
+
+The gap we address. Prior work on multi-agent debate (Du et al., 2024; Chan et al., 2024) and 1
+
+> arXiv:2606.03812v1 [cs.AI] 2 Jun 2026
+
+collaborative reasoning (Wang et al., 2024) has focused primarily on factual QA, mathematical rea-soning, and commonsense tasks. Safety-critical hazard identification introduces distinct challenges: outputs must be comprehensive (high recall over hazard space), precise (low false-positive rate to avoid alarm fatigue), and explainable (agents must justify their claims with engineering evidence). Fur-thermore, the optimization of the agentic configura-tion itself —which agent speaks when, in what or-der, with what prompt—has received little rigorous attention. We make the following contributions: 1. We formulate hazard identification as a closed-list task and define the Hazard Identification Dialogue (H AZ DIAL ) framework, specifying agents, shared mutable state, dialogue tags, and a deterministic aggregation function. 2. We design and implement two structurally dis-tinct multi-agent configurations D EBATE (ad-versarial Proposer/Critic) and D ISCUSS (co-operative Analyst/Reviewer) that prevents cir-cular argumentation and enforces evidence-grounded verdicts to study of how dialogue structure affects hazard identification. 3. We propose a genetic policy optimization al-gorithm that treats the agentic configuration parameters as learnable genes, using a recall-prioritized Fβ (β = 2 ) fitness signal to evolve configurations that minimize missed hazards across successive work descriptions. 4. Experiments with GPT-OSS 20B and GPT-4.1 demonstrate that adversarial debate con-sistently reduces false positives by up to 40% across both models, while constructive discus-sion degrades F1 on the smaller model but achieves the highest recall (0.586) on GPT-4.1, showing that cooperative dialogue may helps in certain scenarios. 
+
+2 Background and Related Work 
+
+2.1 Hazard Identification in Safety Engineering 
+
+Hazard identification (HazID) is the first and most critical phase of risk assessment (International Elec-trotechnical Commission, 2010; Debouk, 2019). Classical methods—HAZOP, FMEA, STPA (Leve-son, 2011)—rely on structured checklists and guidewords ( NO, MORE, LESS, AS WELL AS, RE-VERSE, OTHER THAN ) applied systematically to process deviations. NLP-based approaches have begun automating aspects of this process: extract-ing safety-relevant entities (Paltrinieri et al., 2019), classifying incident reports, and generating FMEA entries from process descriptions (Liao et al., 2023). However, these approaches treat HazID as a static extraction task, ignoring the iterative, collaborative nature of real-world safety reviews. 
+
+2.2 Large Language Models for Safety Analysis 
+
+Brown et al. (2020) and subsequent work have demonstrated broad capability in NLP tasks with minimal supervision. Wei et al. (2022) introduced chain-of-thought prompting, enabling step-by-step reasoning that is beneficial for complex safety rea-soning. Kojima et al. (2022) showed that zero-shot CoT achieves competitive performance, while Yao et al. (2023) extended this to tree-structured deliber-ation. Despite these advances, LLMs remain prone to hallucination and overconfidence in safety con-texts (Ji et al., 2023), motivating dialogue-based verification. 
+
+2.3 Multi-Agent Dialogue and Debate 
+
+Du et al. (2024) demonstrated that multi-agent debate—where models critique and revise each other’s outputs over multiple rounds—improves factual accuracy and reasoning quality on bench-marks. Liang et al. (2024) showed that diver-sity of perspectives in multi-agent setups reduces groupthink. Chan et al. (2024) proposed ChatEval for reference-free dialogue evaluation using multi-agent frameworks. Xiong et al. (2024) examined LLM consistency under self-contradiction. In par-allel, Park et al. (2023) explored emergent social behaviors in LLM agent societies. Our work ex-tends this line by (a) applying it to safety-critical HazID, and (b) systematically optimizing the di-alogue configuration itself through genetic evolu-tionary optimization. 
+
+2.4 Dialogue Optimization and Policy Learning 
+
+Policy gradient methods for dialogue (Li et al., 2016; Williams, 1992) and reward shaping (Ziegler et al., 2019) have been applied to task-oriented sys-tems. Our optimization component adapts these ideas to a lightweight, prompt-level policy without full RL, making it computationally tractable for deployment. Evolutionary approaches to prompt optimization (Guo et al., 2024; Das et al., 2024) 2have shown promise; we extend this to the level of entire agent call sequences. 
+
+3 Problem Formulation 
+
+3.1 Hazard Identification 
+
+Let W denote a corpus of natural-language work descriptions drawn from operational safety records. A hazard identification system F takes (w, L) as input and returns a predicted subset ˆH(w) ⊆ L .This framing mirrors real engineering practice: safety analysts consult a pre-approved hazard tax-onomy and decide which entries apply to the work at hand. Constraining predictions to L eliminates unconstrained generation noise and makes evalua-tion deterministic, while the selection task remains non-trivial because |L| is large and the evidence for each hazard must be inferred from unstructured prose. 
+
+3.2 Dialogue Modalities 
+
+We study two dialogue modes: 
+
+Adversarial Debate (AD). Two agents take op-posing epistemic stances. Agent a1 (Proposer) identifies hazards; agent a2 (Challenger) critiques and seeks to identify errors, missed hazards, or over-classified events. The Challenger’s objective is to find faults, identify omissions , and propose counter-evidence .
+
+Constructive Discussion (CD). Agents collabo-ratively elaborate hazard coverage from comple-mentary perspectives (e.g., Analyst, Reviewer). Each agent extends, refines, or validates prior con-tributions without an adversarial objective. 
+
+3.3 Dialogue-Augmented Hazard Identification Definition 1 (Hazard Identification Dialogue) . A
+
+Hazard Identification Dialogue (HID) is a tuple 
+
+⟨A , T, Σ, Ω⟩ where: 
+
+• A = {a1, a 2} is a pair of LLM-backed agents, each assigned a distinct epistemic role; 
+
+• T = ( t1, t 2, . . . , t N ) is an ordered sequence of dialogue turns, with N = 2 R for R rounds; 
+
+• Σ is a shared mutable dialogue state recording which hazards have been proposed, accepted, rejected, or withdrawn; 
+
+• Ω : Σ → ˆH is a deterministic aggregation function that reads the final state to produce the predicted hazard set. 
+
+At each turn tn, the active agent ai(n) generates a response rn conditioned on the work description 
+
+w, the master list L, and the accumulated dialogue history hn = ( r1, . . . , r n−1):
+
+rn = ai(n)
+
+ πi(n), w, L, hn
+
+ (1) where πi(n) is the role-specific system prompt for the active agent. After R rounds, Ω reads the ter-minal state ΣR to yield ˆH.
+
+4 Proposed Systems 
+
+We investigate three system configurations, pro-gressing from a non-interactive baseline to increas-ingly structured multi-agent dialogue. All three share the same underlying LLM and the same mas-ter hazard list. 
+
+4.1 System 1: Single-Prompt Baseline (B ASE )
+
+Before introducing dialogue, we must establish what a competent single-pass LLM can already achieve. The baseline mirrors the simplest version: one agent, one turn, no deliberation. 
+
+Formulation. Given work description w and master list L, the agent produces a predicted hazard set in a single forward pass: 
+
+ˆHBASE = Parse( a1(πBASE , w, L)) (2) The system prompt πBASE instructs the model to act as a safety expert and return only hazard labels present verbatim in L. No second agent, no state, no iteration. 
+
+4.2 System 2: Adversarial Debate (D EBATE )
+
+Prior work has demonstrated that adversarial multi-agent debate improves factual accuracy on open-domain tasks (Du et al., 2024; Liang et al., 2024); we test whether the same mechanism transfers to the constrained, evidence-bound domain of hazard identification. 
+
+Agent roles and dialogue tags. DEBATE em-ploys two agents with opposing epistemic stances: • Hazard_Proposer selects hazards from L
+
+that are directly evidenced by w and anno-tates each with a textual justification. Each proposal is tagged [PROPOSE] .3• Hazard_Critic challenges the proposed list, tagging each verdict as either [AGREE] (haz-ard retained) or [DISAGREE] (hazard elimi-nated), with a supporting reason. After R rounds of exchange, the Proposer issues a final reconciliation pass, outputting the agreed-upon set using [FINAL] tags. Full prompt tem-plates are provided in Appendix C. 
+
+State system. The shared state Σ tracks three disjoint sets across rounds: 
+
+Σ =  P, L+, L− (3) where P is the set of all proposed hazard labels, 
+
+L+ (“locked”) contains Critic-agreed hazards, and 
+
+L− (“rejected”) contains Critic-disagreed hazards. Previously decided hazards are excluded from sub-sequent Proposer turns to prevent circular argumen-tation. 
+
+4.3 System 3: Constructive Discussion (D ISCUSS )
+
+Adversarial debate assumes that tension between agents drives quality. We design D ISCUSS to model a collaborative safety review pattern, testing whether cooperative elaboration produces qualita-tively different outcomes to adversarial challenge. 
+
+Agent roles and dialogue tags. DISCUSS em-ploys two cooperatively-oriented agents: • Hazard_Analyst proposes hazards, tagged 
+
+[SUGGEST] , with evidence from w. When queried, the Analyst either confirms a haz-ard ( [CONFIRM] ) with direct textual evidence or retracts it ( [WITHDRAW] ) when challenged. • Hazard_Reviewer validates proposals coop-eratively: it supports well-evidenced hazards ([SUPPORT] ), refines imprecise labels to more specific entries in L ([REFINE] ), or raises a targeted clarification request ( [QUERY] ) be-fore committing. This richer tag vocabulary captures qualita-tively different dialogue behaviors: incremental refinement, epistemic uncertainty, and evidence-contingent commitment. 
+
+State system. The shared state extends Equa-tion (3) with two additional sets: 
+
+Σ =  S, C, F, Q, W (4) 
+
+Table 1: Dialogue tag vocabulary by system. “Epistemic stance” indicates whether the tag conveys agreement, disagreement, or epistemic suspension.                        
+
+> System Tag Agent Stance
+> DEBATE
+> [PROPOSE] Proposer Assertion
+> [AGREE] Critic Positive
+> [DISAGREE] Critic Negative DISCUSS
+> [SUGGEST] Analyst Assertion
+> [SUPPORT] Reviewer Positive
+> [REFINE] Reviewer Positive+
+> [QUERY] Reviewer Suspended
+> [CONFIRM] Analyst Positive
+> [WITHDRAW] Analyst Negative
+> [PASS] Either Neutral
+
+where S is the set of suggested hazards, C the con-firmed set (contributed by [SUPPORT] , [REFINE] ,or [CONFIRM] ), F the set of refinement substitu-tions {(horig , h refined )}, Q the queried set, and W
+
+the withdrawn set. 
+
+4.4 System 4: Evolutionary Policy Optimization (GA-D EBATE )
+
+Both previous dialogue systems expose a discrete configuration space: how many rounds to run, how aggressively the Proposer should generate, how strictly the Critic should filter, and at what level of chain-of-thought verbosity. Manually tuning these parameters is impractical at scale. We propose a 
+
+Genetic Algorithm (GA) that learns the optimal con-figuration by treating each parameter assignment as an individual and using prediction performance as fitness. 
+
+Learnable parameters. Five parameters consti-tute an individual θ:                
+
+> Param Description Values
+> θ1Number of rounds {1,2,3}
+> θ2Proposer persona Thorough, Focused, Cautious
+> θ3Critic persona Strict, Balanced, Skeptical
+> θ4Reasoning depth high, medium, low
+> θ5Proposal cap/round {5,10 ,20 }
+
+Table 2: GA parameter space Θ.
+
+Fitness function. Given the asymmetric cost of missed hazards in safety-critical contexts, where a false negative (missed hazard) can lead to injury or incident while a false alarm (false positive) merely requires investigation, we use the Fβ score with 
+
+β = 2 as the fitness signal (Lee et al., 2021): Fit ( ˆH, H∗) = (1 + β2) · P · Rβ2 · P + R , β = 2 (5) 4Algorithm 1 Evolutionary Policy Optimization for Agentic Hazard Identification 
+
+Require: W = {w1, . . . , w N }, {H ∗(wi)}, Θ,
+
+Ninit , K elite , K offs , mutation rate pmu 
+
+Ensure: Best individual θ∗ and fitness history A 
+
+> 1:
+
+E ← ∅ {Evaluated individuals archive}  
+
+> 2:
+
+A ← ∅ {Fitness trajectory log (all sessions)}  
+
+> 3:
+
+g ← 0 {Generation counter}  
+
+> 4:
+
+for i = 1 to Ninit do  
+
+> 5:
+
+θi ← RANDOM SAMPLE (Θ)  
+
+> 6:
+
+ˆHi ← RUN DEBATE (wi, L, θi) 
+
+> 7:
+
+fi ← FITNESS ( ˆHi, H∗(wi))  
+
+> 8:
+
+E ← E ∪ { (θi, f i)}, A ← A ∪ {(θi, f i, g )} 
+
+> 9:
+
+end for  
+
+> 10:
+
+P ← BUILD POOL (E, K elite , K offs , p mu ) 
+
+> 11:
+
+j ← 0 {Pool pointer}  
+
+> 12:
+
+for i = Ninit + 1 to N do  
+
+> 13:
+
+θcur ← P [j mod |P| ] 
+
+> 14:
+
+ˆHi ← RUN DEBATE (wi, L, θcur ) 
+
+> 15:
+
+fi ← FITNESS ( ˆHi, H∗(wi))  
+
+> 16:
+
+Update mean fitness of θcur in E; A ← A ∪ { (θcur , f i, g )} 
+
+> 17:
+
+j ← j + 1  
+
+> 18:
+
+if j mod |P| = 0 then  
+
+> 19:
+
+P ← BUILD POOL (E, K elite , K offs , p mu ) 
+
+> 20:
+
+g ← g + 1 ; j ← 0 
+
+> 21:
+
+end if  
+
+> 22:
+
+end for  
+
+> 23:
+
+θ∗ ← arg max θ∈E f (θ) 
+
+> 24:
+
+return θ∗, A
+
+This weights recall four times more heavily than precision in the harmonic mean, incentivising the GA to converge on configurations that minimize false negatives even at some precision cost. 
+
+GA lifecycle. Algorithm 1 formalizes the full optimization procedure. The algorithm operates in two phases and treats each work description as a single fitness evaluation, enabling continual online learning. 
+
+Phase 1 — Exploration. The first Ninit data points are each evaluated with a distinct randomly sam-pled individual, covering the parameter space be-fore any selection occurs ( lines 1-11 ). 
+
+Phase 2 — Evolution. After each pool of Kelite +
+
+Koffs evaluated individuals, they are ranked by mean fitness. Then top Kelite as the elite set are retained. Next Koffs offspring are generated by ap-plying gene-wise mutation (rate pmu ) to randomly selected elite parents to form the new active pool as elite ∪ offspring. This process is continued until all data points are exhausted. 
+
+5 Experimental Setup 
+
+5.1 Dataset 
+
+We evaluate on the HazID-Ops dataset compris-ing 213 real-world operational work descriptions drawn from safety management systems across con-struction, maintenance, chemical processing, and electrical infrastructure domains. Each descrip-tion is paired with expert-annotated golden hazard labels drawn from a master list of standardised en-tries compiled from domain safety taxonomies. 
+
+5.2 Models and Inference Platform 
+
+All experiments were conducted on NVIDIA A100 GPU servers. Two language model configurations are evaluated: • GPT-OSS 20B (gpt-oss:20b ): an open-source 20B-parameter instruction-tuned model served locally via Ollama with temperature 0.2. Used for the primary OSS comparison (Agarwal et al., 2025). • GPT-4.1 (gpt-4.1 ): accessed via the Ope-nAI API with temperature 0.2 (Wang and Lim, 2025). Used for the GPT comparison and GA-optimized experiments. Using the same model for all agent roles within a configuration ensures that performance differences are attributable to dialogue structure and policy parameters, not model capacity. 
+
+5.3 Evaluation Metrics Classification metrics. In label matching we use fuzzy Jaccard similarity (Li et al., 2021) ( ≥
+
+0.60 threshold) over morphologically normalized word tokens, tolerating trivial surface variants (plu-rals, verb inflections, hyphenation differences). We report precision, recall, F1 score and accu-racy (Goutte and Gaussier, 2005). Macro-averages across scenarios are reported with standard devia-tions. 
+
+Dialogue metrics. Derived from tagged turn records (Section 4): • ρag : Agreement Rate — fraction of pro-posals receiving a positive verdict ( [AGREE] ,
+
+[SUPPORT] , [CONFIRM] , or [REFINE] ). 5Figure 2: Precision vs. recall for all systems. 
+
+• ρdis : Disagreement/Withdrawal Rate —fraction of proposals rejected or withdrawn. • ρqry : Query Rate — fraction of suggestions queried before commitment (D ISCUSS only). • ρref : Refine Rate — fraction of suggestions replaced by a more precise label (D ISCUSS 
+
+only). • ρss : Stance Shift Rate — fraction of rounds in which the confirmed/locked set changed. • η: Dialogue Efficiency — ratio of final con-firmed hazards to total proposals. • Convergence Rate : fraction of scenarios where the confirmed set stabilized before the final round. These metrics are defined in Appendix A. 
+
+6 Results 
+
+6.1 OSS 20B Model: Base, Debate, and Discuss 
+
+Table 3 reports classification metrics for all three systems on the GPT-OSS 20B model across 213 scenarios. Table 4 presents the corresponding dia-logue metrics. 
+
+Table 3: Classification metrics — GPT-OSS 20B.                 
+
+> System Precision Recall F1Accuracy
+> BASE 0.1526 0.3582 0.2140 0.1198 DEBATE 0.2550 ±0.2454 0.3216 ±0.2733 0.2492 ±0.1992 0.1589 ±0.1485 DISCUSS 0.1856 ±0.2299 0.2218 ±0.2524 0.1763 ±0.1841 0.1089 ±0.1216
+
+Figure 3: F 1 score for all systems. Table 4: Dialogue metrics — GPT-OSS 20B.                         
+
+> Metric DEBATE DISCUSS
+> Agreement Rate ρag 0.5988 ±0.2267 0.6055 ±0.2471 Disagreement/Withdrawal Rate ρdis 0.4012 ±0.2267 0.8998 ±0.2572 Query Rate ρqry —0.4323 ±0.2487 Refine Rate ρref —0.2020 ±0.1810 Stance Shift Rate ρss 0.7715 ±0.2682 0.7121 ±0.2899 Dialogue Efficiency η0.5918 ±0.2269 0.5587 ±0.2368 Convergence Rate 0.4883 0.5915 Mean Convergence Round 2.37 ±0.57 2.23 ±0.67
+
+Finding 1: Adversarial debate is the best-performing OSS configuration. DEBATE im-proves F1 by +0 .035 over B ASE (0.2492 vs. 
+
+0.2140 ) and reduces the corpus-level FP count by 40.0% (from 1,761 to 1,057). The improvement is driven entirely by precision ( +0 .102 ), with a mod-est recall loss ( −0.037 ) attributable to the Critic’s evidence-grounded rejection defaults. 
+
+Finding 2: Constructive discussion underper-forms the base model. Despite a 43.8% FP re-duction, D ISCUSS posts F1 = 0.1763 , below both B ASE and D EBATE . The withdrawal rate of ρdis = 0 .8998 , meaning that 90% of queried hazards are subsequently retracted by the Analyst. The query-withdraw mechanism eliminates true positives alongside false positives, producing a net recall loss of −0.137 relative to B ASE .
+
+6.2 GPT-4.1 Model: Base, Debate, and Discuss 
+
+Table 5 reports classification metrics for GPT-4.1. Table 6 presents the dialogue metrics. 
+
+Finding 3: Both dialogue modes substantially improve recall on GPT-4.1. DEBATE raises re-call from 0.3018 to 0.4644 (∆ = +0 .163 ), achiev-ing F1 = 0 .2473 . D ISCUSS achieves the highest re-call observed across all experiments ( 0.5864 )( ∆ = 
+
+6−0.048 ), though at a FP:TP ratio of 5.31, which is only marginally better than the base model’s 5.70. 
+
+Finding 4: GPT-4.1 reverses the OSS behaviour of D ISCUSS . On GPT-OSS 20B, D ISCUSS under-performed B ASE due to over-pruning ( ρdis = 0 .90 ). On GPT-4.1, the same architecture achieves the highest recall of any system, with a far lower withdrawal rate ( 0.5708 ) and near-zero query rate (0.073 ). The GPT-4.1 Analyst is more willing to confirm queried hazards, resulting in larger con-firmed sets. The stance shift rate of 1.000 (ev-ery round changed the confirmed set) and conver-gence rate of 0.000 (no scenario converged within 3 rounds) indicate that GPT-4.1 Discuss operates in a regime of continued expansion rather than selective refinement. 
+
+Finding 5: Dialogue efficiency anomalies in GPT-4.1 Discuss. The acceptance rate of 1.021 
+
+and dialogue efficiency of 1.045 exceed 1.0, which is mathematically infeasible under the tag def-initions. This arises from tag-parsing artifacts: GPT-4.1 occasionally outputs multiple [SUPPORT] 
+
+or [SUGGEST] tags referencing the same hazard within a single utterance, inflating the denominator count. Classification metrics are computed from parsed final hazard lists and are therefore unaf-fected. 
+
+6.3 GA-Optimized Adversarial Debate (GA-D EBATE )
+
+Following the GPT-OSS 20B and GPT-4.1 results analysis, D EBATE was selected for evolutionary op-timization as the best-performing dialogue modal-ity by F1. Table 7 presents the classification results, Table 8 the dialogue metrics, and Table 9 the con-verged optimal policy. 
+
+Finding 6: GA optimization improves precision and F1 without sacrificing recall. GA-D EBATE 
+
+achieves F1 = 0 .2585 compared to 0.2473 for vanilla GPT-4.1 D EBATE (∆F1 = +0 .011 ) and 
+
+0.1997 for GPT-4.1 B ASE (∆F1 = +0 .059 ). Re-call is maintained at 0.4656 (essentially identical to D EBATE ’s 0.4644 ) while precision rises from 
+
+0.1914 to 0.2159 (∆P = +0 .025 ), demonstrating 
+
+Table 5: Classification metrics — GPT-4.1.                 
+
+> System Precision Recall F1Accuracy
+> BASE 0.1492 0.3018 0.1997 —DEBATE 0.1914 ±0.1626 0.4644 ±0.2986 0.2473 ±0.1513 0.1498 ±0.1016 DISCUSS 0.1564 ±0.1026 0.5864 ±0.2853 0.2336 ±0.1276 0.1383 ±0.0845
+
+Table 6: Dialogue metrics — GPT-4.1.                           
+
+> Metric DEBATE DISCUSS
+> Agreement Rate ρag 0.5710 ±0.1707 1.021 ±0.0843 †
+> Disagreement/Withdrawal Rate ρdis 0.4289 ±0.1703 0.5708 ±0.4634 Query Rate ρqry —0.0729 ±0.0607 Refine Rate ρref —0.0967 ±0.0556 Stance Shift Rate ρss 0.9208 ±0.1566 1.000 ±0.000 Dialogue Efficiency η0.5651 ±0.1676 1.045 ±0.0887 †
+> Convergence Rate 0.2178 0.000 Mean Convergence Round 2.45 ±0.50 —
+> †Values >1 indicate a tag-parsing artefact; see §7.
+
+Table 7: Classification metrics — GA-D EBATE vs GPT-4.1 baselines.                 
+
+> System Precision Recall F1Accuracy
+> GPT-4.1 B ASE 0.1492 0.3018 0.1997 —GPT-4.1 D EBATE 0.1914 ±0.1626 0.4644 ±0.2986 0.2473 ±0.1513 0.1498 ±0.1016 GA-D EBATE 0.2159 ±0.1901 0.4656 ±0.2502 0.2585 ±0.1541 0.1579 ±0.1078
+
+that the GA improves the precision–recall balance rather than trading one for the other. 
+
+Finding 7: GA-optimized dialogue is substan-tially more deliberative. The agreement rate rises from 0.571 to 0.794 (∆ρag = +0 .223 ), and dialogue efficiency improves from 0.565 to 0.787 
+
+(∆η = +0 .222 ), indicating that the Proposer’s suggestions are better calibrated to the Critic’s stan-dards. The near-unity stance shift rate ( 0.997 ) con-firms active revision of the hazard set in virtually every round. 
+
+Finding 8: The converged policy recovers a recall-oriented configuration. The Thorough 
+
+Proposer persona (which prioritizes coverage over precision) combined with a high proposal cap of 20 and a Strict Critic reflects the fitness function’s recall bias ( β = 2 ): the GA learned to generate broadly and filter aggressively, rather than gener-ating conservatively. The medium reasoning depth balances deliberation quality against inference cost. 
+
+Table 8: Dialogue metrics — GA-D EBATE vs GPT-4.1 DEBATE .
+
+Metric GPT-4.1 Debate GA-Debate 
+
+ρag 0.5710 0.7939 ±0.2122 
+
+ρdis 0.4289 0.2046 ±0.2114 
+
+ρss 0.9208 0.9968 ±0.0327 
+
+η 0.5651 0.7874 ±0.2411 Convergence Rate 0.2178 0.0097 Mean Conv. Round 2.45 3.00 
+
+7Table 9: Optimal policy discovered by the GA after convergence. 
+
+Parameter Converged Value 
+
+θ1: num_rounds 3
+
+θ2: proposer_persona Thorough 
+
+θ3: critic_persona Strict 
+
+θ4: reasoning_depth medium 
+
+θ5: proposal_cap 20 
+
+7 Discussion 
+
+7.1 The Asymmetric Value of Dialogue Across Model Capacity 
+
+The most striking cross-model finding is that dia-logue mode interacts strongly with model capac-ity in determining the direction of improvement. On GPT-OSS 20B, adversarial debate improves F1
+
+while constructive discussion harms it; on GPT-4.1, both modes improve F1 and constructive dis-cussion achieves the highest recall observed. We attribute this to the quality of evidence ground-ing: the [QUERY] /[CONFIRM] /[WITHDRAW] proto-col in D ISCUSS requires the Analyst to defend suggestions with specific textual evidence. GPT-OSS 20B frequently withdraws valid hazards when challenged because it cannot generate sufficiently specific justifications; GPT-4.1’s stronger language grounding allows it to confirm borderline hazards correctly, flipping the withdrawal rate from 0.90 
+
+to 0.57 . This suggests that cooperative discussion architectures may be weak in smaller models. 
+
+7.2 Evolutionary Policy Learning Aligns the Proposer–Critic Calibration 
+
+The GA’s most substantive finding is the emergence of the Thorough + Strict persona combination. Intuitively, a Thorough Proposer with an higher-cap (= 20 ) generates more candidates, ensuring recall is not sacrificed in the proposal phase; the Strict Critic then filters aggressively, recovering preci-sion. This pipeline structure mirrors a “generate-then-verify” paradigm that the system discovered without being explicitly programmed. The agree-ment rate improvement ( +0 .223 ) indicates that af-ter optimization, Proposer outputs are substantially better matched to the Critic’s evidence standards, reducing wasted computation on proposals that will be rejected. 
+
+7.3 Dialogue Efficiency as a Convergence Indicator 
+
+The GA-optimized system’s convergence rate drops to 0.010 (from 0.218 ), meaning almost no scenario converges before round 3. This initially appears negative but reflects the Thorough Proposer contin-ually surfacing new hazards each round under the high cap, maintaining productive coverage expan-sion throughout. Combined with the high stance shift rate ( 0.997 ), this indicates that all three rounds contribute meaningfully to hazard discovery, vali-dating the GA’s selection of θ1 = 3 rounds. 
+
+7.4 Limitations Tag-parsing artefacts. GPT-4.1 D ISCUSS pro-duces acceptance rates and dialogue efficiency scores above 1.0 due to repeated tag emission within single utterances. Robust tag deduplication should be applied in future work to make these metrics directly comparable across models. 
+
+GA evaluation cost. The exploration phase re-quires Ninit = 20 distinct policy evaluations before selection begins. For larger datasets, the explo-ration overhead is proportionally smaller; for small datasets, a warm-start from prior domain knowl-edge could reduce it. 
+
+Fuzzy matching threshold. The Jaccard thresh-old of 0.60 handles most surface variants but does not capture derivational morphology (e.g. electric 
+
+vs. electrical ). An embedding-based matching layer would improve evaluation fidelity for label vocabularies with high morphological diversity. 
+
+8 Conclusion 
+
+This paper presented a systematic investigation of agentic dialogue for operational hazard iden-tification from a closed label list. We evaluated three base configurations—single-prompt inference (B ASE ), adversarial debate (D EBATE ), and cooper-ative discussion (D ISCUSS )—across two language models (GPT-OSS 20B and GPT-4.1), and pro-posed an evolutionary policy optimization frame-work (GA-D EBATE ) that learns the optimal agentic configuration from prediction feedback. The re-sults demonstrates the concrete gains of an agentic dialogue system on hazard identification perfor-mance. 89 Acknowledgment 
+
+This research is sponsored by the Office of the Lab-oratory Director, Oak Ridge National Laboratory’s Operational Excellence Initiatives, which is sup-ported by the United States Department of Energy (DOE)’s Office of Science under Contract No. DE-AC05-00OR22725. 
+
+References 
+
+Sandhini Agarwal, Lama Ahmad, Jason Ai, Sam Alt-man, Andy Applebaum, Edwin Arbus, Rahul K Arora, Yu Bai, Bowen Baker, Haiming Bao, and 1 others. 2025. gpt-oss-120b & gpt-oss-20b model card. arXiv preprint arXiv:2508.10925 .Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M. Ziegler, Jeffrey Wu, Clemens Winter, and 12 others. 2020. Language models are few-shot learners. Advances in Neural Information Processing Systems (NeurIPS) , 33:1877– 1901. Chi-Min Chan, Weize Chen, Yusheng Su, Jianxuan Yu, Wei Xue, Shanghang Zhang, Jie Fu, and Zhiyuan Liu. 2024. ChatEval: Towards better LLM-based eval-uators through multi-agent debate. In Proceedings of the 12th International Conference on Learning Representations (ICLR) .Sanjay Das, Swastik Bhattacharya, Souvik Kundu, Shamik Kundu, Anand Menon, Arnab Raha, and Kanad Basu. 2024. Genbfa: An evolutionary opti-mization approach to bit-flip attacks on llms. arXiv preprint arXiv:2411.13757 .Rami Debouk. 2019. Overview of the second edition of iso 26262: Functional safety—road vehicles. Journal of System Safety , 55(1):13–21. Yilun Du, Shuang Li, Antonio Torralba, Joshua B. Tenenbaum, and Igor Mordatch. 2024. Improving factuality and reasoning in language models through multiagent debate. In Proceedings of the 41st Inter-national Conference on Machine Learning (ICML) .Cyril Goutte and Eric Gaussier. 2005. A probabilistic interpretation of precision, recall and f-score, with implication for evaluation. In European conference on information retrieval , pages 345–359. Springer. Qingyan Guo, Rui Wang, Junliang Guo, Bei Li, Kaitao Song, Xu Tan, Guoqing Liu, Jiang Bian, and Yujiu Yang. 2024. Connecting large language models with evolutionary algorithms yields powerful prompt op-timizers. In Proceedings of the 12th International Conference on Learning Representations (ICLR) .International Electrotechnical Commission. 2010. IEC 61508: Functional safety of electri-cal/electronic/programmable electronic safety-related systems. Technical report, IEC. Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Yejin Bang, Andrea Madotto, and Pascale Fung. 2023. Survey of halluci-nation in natural language generation. ACM Comput-ing Surveys , 55(12):1–38. Trevor A Kletz. 2018. Hazop & Hazan: identifying and assessing process industry hazards . CRC Press. Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yu-taka Matsuo, and Yusuke Iwasawa. 2022. Large lan-guage models are zero-shot reasoners. In Advances in Neural Information Processing Systems (NeurIPS) ,volume 35. Namgil Lee, Heejung Yang, and Hojin Yoo. 2021. A sur-rogate loss function for optimization of f _\β score in binary classification with imbalanced data. arXiv preprint arXiv:2104.01459 .Nancy G. Leveson. 2011. Engineering a Safer World: Systems Thinking Applied to Safety . MIT Press. Jiwei Li, Will Monroe, Alan Ritter, Michel Galley, Jian-feng Gao, and Dan Jurafsky. 2016. Deep reinforce-ment learning for dialogue generation. In Proceed-ings of the 2016 Conference on Empirical Methods in Natural Language Processing (EMNLP) , pages 1192–1202. Peng Li, Xiang Cheng, Xu Chu, Yeye He, and Surajit Chaudhuri. 2021. Auto-fuzzyjoin: Auto-program fuzzy similarity joins without labeled examples. In 
+
+Proceedings of the 2021 international conference on management of data , pages 1064–1076. Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yue Zhang, Zhaopeng Tu, and Shuming Shi. 2024. Encouraging divergent thinking in large language models through multi-agent debate. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP) .Jianwei Liao, Yue Zhang, and Others. 2023. Automated FMEA generation using large language models. In 
+
+Proceedings of the Annual Reliability and Maintain-ability Symposium (RAMS) .Nicola Paltrinieri, Louise Comfort, and Genserik Re-niers. 2019. Learning about risk: Machine learning for risk assessment. Safety science , 118:475–486. Joon Sung Park, Joseph C. O’Brien, Carrie J. Cai, Meredith Ringel Morris, Percy Liang, and Michael S. Bernstein. 2023. Generative agents: Interactive simu-lacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology (UIST) .
+
+9Pranav Rajpurkar, Robin Jia, and Percy Liang. 2018. Know what you don’t know: Unanswerable ques-tions for SQuAD. In Proceedings of the 56th Annual Meeting of the Association for Computational Lin-guistics (ACL) , pages 784–789. Diomidis H Stamatis. 2003. Failure mode and effect analysis . Quality Press. William E Vesely, Francine F Goldberg, Norman H Roberts, and David F Haasl. 1981. Fault tree hand-book. Technical report, Nuclear Regulatory Commis-sion. Peiyi Wang, Lei Li, Liang Chen, Zefan Cai, Dawei Zhu, Binghuai Lin, Yunbo Cao, Qi Liu, Tianyu Liu, and Zhifang Sui. 2024. Large language models are not robust multiple choice selectors. In Proceedings of the 11th International Conference on Learning Representations (ICLR) .Vincent Xian Wang and Lily Lim. 2025. How does gpt-4.1 comprehend conversational implicatures? reason-ing with contextual alternatives in discourse frames. 
+
+Linguistic Research , 42. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc Le, and Denny Zhou. 2022. Chain-of-thought prompting elic-its reasoning in large language models. In Advances in Neural Information Processing Systems (NeurIPS) ,volume 35. Ronald J. Williams. 1992. Simple statistical gradient-following algorithms for connectionist reinforcement learning. Machine Learning , 8(3–4):229–256. Miao Xiong, Zhiyuan Hu, Xinyang Lu, YIFEI LI, Jie Fu, Junxian He, and Bryan Hooi. 2024. Can LLMs express their uncertainty? an empirical evaluation of confidence elicitation in LLMs. In Proceedings of the 12th International Conference on Learning Representations (ICLR) .Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Thomas L. Griffiths, Yuan Cao, and Karthik Narasimhan. 2023. Tree of thoughts: Deliberate problem solving with large language models. In Ad-vances in Neural Information Processing Systems (NeurIPS) , volume 36. Daniel M. Ziegler, Nisan Stiennon, Jeffrey Wu, Tom B. Brown, Alec Radford, Dario Amodei, Paul Chris-tiano, and Geoffrey Irving. 2019. Fine-tuning lan-guage models from human preferences. arXiv preprint arXiv:1909.08593 .
+
+A Dialogue Metrics: Definitions and Interpretation 
+
+This appendix provides formal definitions of all dialogue metrics reported in Section 5.3, together with interpretive notes on boundary conditions and known measurement artifacts. 
+
+A.1 Formal Metric Definitions 
+
+Let R denote the number of dialogue rounds per session, NPROP the total number of proposals or suggestions across all rounds, and subscripts r aper-round quantity. 
+
+Agreement Rate ( ρag ). 
+
+ρag = |[AGREE] | + |[SUPPORT] | + |[REFINE] | + |[CONFIRM] |
+
+NPROP 
+
+(6) Measures the fraction of proposals that received a positive verdict. Values near 1.0 indicate ei-ther high-quality proposals or a permissive second agent. Values above 1.0 are a parsing artefact (see §A.2). 
+
+Disagreement/Withdrawal Rate ( ρdis ). 
+
+ρdis = |[DISAGREE] | + |[WITHDRAW] |
+
+NPROP 
+
+(7) Measures the fraction of proposals eliminated. In DEBATE , ρag + ρdis = 1 by construction. In DISCUSS , the three-stage query-confirm-withdraw pathway means the sum can differ from 1.0 for sessions with unresolved queries. 
+
+Query Rate ( ρqry ) — D ISCUSS only. 
+
+ρqry = |[QUERY] |
+
+NPROP 
+
+(8) Fraction of suggestions placed into the three-stage query-confirm-withdraw deliberation path-way. High ρqry indicates epistemic caution; near-zero values (as observed for GPT-4.1 Discuss, 
+
+ρqry = 0 .073 ) indicate the Reviewer commits to a verdict without intermediate deliberation. 
+
+Refine Rate ( ρref ) — D ISCUSS only. 
+
+ρref = |[REFINE] |
+
+NPROP 
+
+(9) Fraction of suggestions replaced by a more pre-cise label from L. Non-zero values indicate the Reviewer is actively exercising label-vocabulary expertise beyond simple accept/reject decisions. 10 Stance Shift Rate ( ρss ). 
+
+ρss =
+
+r ∈ { 1, . . . , R } : Σ r̸ = Σ r−1
+
+R (10) Fraction of rounds in which the confirmed/locked set Σ changed. A value of 1.0 indicates that every round produced a non-empty net change; a value near 0 indicates early convergence (or a degenerate dialogue in which no proposals are generated). 
+
+Dialogue Efficiency ( η). 
+
+η = | ˆH| 
+
+NPROP 
+
+(11) Signal-to-noise ratio of the dialogue: the fraction of all proposals that survive to the final predicted set. Higher values indicate that a larger proportion of agent effort translates to output. Values above 1.0 are a parsing artefact. 
+
+Convergence Rate. 
+
+Conv. Rate = |{ w : ∃ r < R s.t. Σr = Σ r′ ∀r′ > r }| |W| 
+
+(12) Fraction of scenarios for which the confirmed set stabilized before the final round. Rapid conver-gence is not inherently desirable; it may reflect pro-ductive early consensus or premature over-pruning. 
+
+A.2 Measurement Artifacts and Boundary Conditions Values above 1.0 in GPT-4.1 Discuss. The ac-ceptance rate of 1.021 and dialogue efficiency of 
+
+1.045 observed for GPT-4.1 D ISCUSS arise when the model emits multiple [SUPPORT] tags refer-encing the same hazard label within a single ut-terance, inflating the denominator count while the numerator is deduplicated. This is a tag-parsing ar-tifact specific to GPT-4.1’s tendency for repetitive structured output. Classification metrics (precision, recall, F1) are computed from the parsed hazard lists and are unaffected. Future work should im-plement utterance-level tag deduplication before metric computation. 
+
+Convergence rate of 0.0 for GPT-4.1 Discuss. Aconvergence rate of 0.000 indicates that in no sce-nario did the confirmed set stabilize before round 3. Given that GPT-4.1 Discuss achieves the highest recall of any system, this reflects continued pro-ductive coverage expansion across all three rounds rather than a failure to converge. The GA-Debate near-zero convergence rate ( 0.010 ) reflects a simi-lar dynamic: the Thorough Proposer persona con-tinuously discovers new hazards each round under the high proposal cap. 
+
+Fuzzy label matching in per-round metrics. 
+
+Per-round F1 and safety scores are computed against the golden set using the same Jaccard-based fuzzy matching (threshold ≥ 0.60 ) as the final eval-uation metrics, ensuring that per-round and final metrics are commensurable. 
+
+B Turn Design Principles 
+
+B.1 Adversarial Debate 
+
+Let r ∈ { 1, . . . , R } index rounds. Each round consists of two turns: 
+
+u2r−1 = PROPOSER 
+
+ πPROP , w, L, L+
+
+> r−1
+
+, L−
+
+> r−1
+
+
+
+(13) 
+
+u2r = CRITIC (πCRIT , w, u 2r−1) (14) State updates after each critic turn: 
+
+L+ 
+
+> r
+
+= L+ 
+
+> r−1
+
+∪ { h : [AGREE] (h) ∈ u2r} (15) 
+
+L− 
+
+> r
+
+= L− 
+
+> r−1
+
+∪ { h : [DISAGREE] (h) ∈ u2r} (16) The aggregation function reads the final locked set and the finalization pass: 
+
+ˆHDEBATE = Ω(Σ R) = FINALIZE 
+
+ L+
+
+> R
+
+, L−
+
+> R
+
+ (17) 
+
+B.2 Constructive Discussion 
+
+Each round r consists of three sub-turns: 
+
+uSUG  
+
+> r
+
+= ANALYST (πANA , w, L, Cr−1, Wr−1)
+
+(18) 
+
+uREV  
+
+> r
+
+= REVIEWER (πREV , w, u SUG  
+
+> r
+
+) (19) 
+
+uRESP  
+
+> r
+
+= ANALYST (πRESP , w, u REV  
+
+> r
+
+) if Qr̸ = ∅
+
+(20) The query-response sub-turn (Equation 20) fires only when the Reviewer raises at least one 
+
+[QUERY] , making the number of LLM calls per round data-dependent. State updates proceed anal-ogously to Equations (15)–(16), with [REFINE] 
+
+entries additionally populating F.
+
+Aggregation. Refinement substitutions are ap-plied to the confirmed set before output: 
+
+ˆHDISCUSS = Ω(Σ R)= {hrefined | (horig , h refined ) ∈ F R} ∪ 
+
+
+
+CR \ C orig 
+
+> R
+
+
+
+(21) where Corig  
+
+> R
+
+denotes confirmed hazards that were subsequently refined. 11 C Prompt Templates 
+
+This appendix provides the complete system and user-turn prompt templates for all four systems evaluated in this work. All templates are used ver-batim in the experimental implementation. 
+
+C.1 Base Single-Prompt System (B ASE )
+
+System: 
+
+You are an expert Safety AI. Your task is to identify relevant hazards from a provided master list based on a specific work description. 1. Analyse the "Work Description" and "Master Hazard List" carefully. 2. Select ONLY hazards from the "Master Hazard List" that directly apply to the described work. 3. If no hazards apply, return "No applicable hazards". 4. Output the result as a raw Python list of strings. Do not include any reasoning or introductory text. 
+
+User: 
+
+### Master Hazard List {hazard_list} ### Work Description {work_description} ### Relevant Hazards [
+
+C.2 Adversarial Debate: Proposer (D EBATE )
+
+System: 
+
+You are Hazard_Proposer, a senior operational safety expert. Persona: {proposer_persona_text} Reasoning: {reasoning_depth_text} {proposal_cap_instruction} Your task: SELECT hazards from the Master Hazard List that apply to the Work Description. - ONLY use hazard names that appear verbatim in the Master Hazard List. - Do NOT re-propose hazards already agreed or rejected this session. Output format — one entry per hazard: [PROPOSE]: <exact hazard name from master list> [REASON]: <why this hazard applies to this specific work> 
+
+User (per round): 
+
+Work Description: {work_description} Master Hazard List: {hazard_list} Already AGREED: {locked_hazards} Already REJECTED: {rejected_hazards} {proposal_cap_instruction} 
+
+C.3 Adversarial Debate: Critic (D EBATE )
+
+System: 
+
+You are Hazard_Critic, a senior operational safety auditor. Persona: {critic_persona_text} Reasoning: {reasoning_depth_text} Your task: Review each proposed hazard and give a verdict. - [AGREE] if the hazard clearly applies to this work. - [DISAGREE] if it does not clearly apply. Output format — one verdict per hazard: [AGREE]: <exact hazard name> [REASON]: <why it applies> or [DISAGREE]: <exact hazard name> [REASON]: <why it does not apply> 
+
+User (per round): 
+
+Work Description: {work_description} Proposed hazards: {proposed_list} 
+
+C.4 Adversarial Debate: Finalisation 
+
+System: 
+
+You are Hazard_Proposer producing the final hazard list. Include ONLY hazards the Critic explicitly AGREED to. Exclude all DISAGREED hazards. Remove duplicates. If none were agreed: [FINAL]: No applicable hazards Output format — one line per hazard: [FINAL]: <exact hazard name> 
+
+User: 
+
+Work Description: {work_description} AGREED hazards: {locked_hazards} REJECTED hazards (exclude): {rejected_hazards} 
+
+C.5 Constructive Discussion: Analyst (D ISCUSS )
+
+System: 
+
+You are Hazard_Analyst, a senior safety engineer working with a peer reviewer to build a shared hazard list. Your job each round is to suggest hazards from the Master Hazard List that you believe apply to the work description. Draw on your safety expertise — consider the materials, equipment, environment, and activities involved. Use this format for each hazard you suggest: [SUGGEST]: <hazard name from master list> [REASON]: <why this hazard applies to this specific work> If you have nothing new to add this round: [PASS]: No further suggestions 
+
+User (per round): 
+
+12 Work Description: {work_description} Master Hazard List: {hazard_list} Already confirmed hazards (no need to re-suggest): {confirmed_hazards} Withdrawn hazards (avoid re-suggesting): {withdrawn_hazards} Suggest hazards from the Master Hazard List that apply. 
+
+C.6 Constructive Discussion: Reviewer (D ISCUSS )
+
+System: 
+
+You are Hazard_Reviewer, a peer safety expert collaborating with Hazard_Analyst to produce the best possible hazard list. Review each suggested hazard openly and constructively. Your options: - [SUPPORT] it if it clearly applies — say why. - [REFINE] it if a more precise hazard from the master list better fits the work — suggest the better label. - [QUERY] it if genuinely unsure — ask one focused question. You may also volunteer [SUGGEST] new hazards you think were missed. Formats: [SUPPORT]: <hazard name> [REASON]: <why it applies> [REFINE]: <original> -> <better hazard name from masterlist> [REASON]: <why the refined label fits better> [QUERY]: <hazard name> [QUESTION]: <one focused question> [SUGGEST]: <hazard name from master list> [REASON]: <why this was missed and applies> If nothing to add or query: [PASS]: Nothing to review 
+
+User (per round): 
+
+Work Description: {work_description} Master Hazard List: {hazard_list} Analyst 's suggestions this round: {suggestion_block} Already confirmed: {confirmed_hazards} Already withdrawn: {withdrawn_hazards} Review each suggestion and add any hazards you think were missed. 
+
+C.7 Constructive Discussion: Analyst Query Response 
+
+System: 
+
+You are Hazard_Analyst responding to your peer reviewer 's queries and suggestions. For each [QUERY]: answer based on the work description. - If the hazard applies: [CONFIRM] it with reasoning. - If not: [WITHDRAW] it and explain briefly. For new [SUGGEST] from the reviewer: [SUPPORT] if you agree, or [QUERY] back if unsure. Formats: [CONFIRM]: <hazard name> [EVIDENCE]: <reasoning from the work description> [WITHDRAW]: <hazard name> [REASON]: <why it does not clearly apply> [SUPPORT]: <hazard name> [REASON]: <why you agree with reviewer 'ssuggestion> 
+
+User: 
+
+Work Description: {work_description} Reviewer 's queries: {query_block} Reviewer also suggested: {reviewer_suggestion_block} Respond to each query. If the reviewer suggested new hazards, [SUPPORT] or [QUERY] them as appropriate. 
+
+C.8 Constructive Discussion: Finalization 
+
+System: 
+
+You are Hazard_Analyst producing the final agreed hazard list. Include hazards that were [SUPPORT]ed or [CONFIRM]ed. Apply any [REFINE] substitutions — use the refined name. Exclude hazards that were [WITHDRAW]n. Remove duplicates. If nothing was confirmed: [FINAL]: No applicable hazards Output format — one line per hazard: [FINAL]: <hazard name> 
+
+User: 
+
+Work Description: {work_description} CONFIRMED hazards: {confirmed_hazards} WITHDRAWN hazards (exclude these): {withdrawn_hazards} REFINEMENTS (use refined name): {refinement_notes} Output the final list using [FINAL]: <hazard name>, one per line. 
+
+13 C.9 GA-Debate: Persona Prompt Fragments 
+
+The GA-optimized system injects persona-specific text into the Proposer and Critic system prompts. Table 10 lists the complete text for each value of the learnable parameters θ2
+
+(Proposer persona) and θ3 (Critic persona). 
+
+Reasoning depth fragments. 
+
+• high : “Think step-by-step through each hazard carefully before deciding.” 
+
+• medium (converged optimal): “Provide a brief justifi-cation for each decision.” 
+
+• low : “Respond concisely with minimal explanation.” 
+
+14 Table 10: Persona prompt fragments injected into agent system prompts during GA-optimised adversarial debate. The converged optimal values are bolded .
+
+Value Proposer Persona Text Critic Persona Text Thorough /Strict 
+
+“Be comprehensive — identify every plausible hazard the work could involve, including those implied by the equipment, environment, and materials. It is better to propose more and let the critic filter.” “Apply a high evidence bar. DISAGREE with any hazard not directly and unambiguously evidenced by a named activity or condition. When in doubt, DISAGREE.” 
+
+Focused / Bal-anced 
+
+“Be selective — only propose hazards with clear, direct evidence in the work descrip-tion. Avoid speculation. Propose fewer, well-justified hazards.” “Apply a balanced judgement. AGREE if clearly or reasonably implied. DISAGREE only when there is genuinely no evidence. Give the proposer the benefit of the doubt for borderline cases.” 
+
+Cautious / Skep-tical 
+
+“Apply conservative safety principles. When in doubt whether a hazard applies, propose it — a missed hazard is worse than a false alarm. Prioritise recall over precision.” “Scrutinise the proposer’s reasoning, not just the label. DISAGREE if the reason is generic. AGREE only when the reason di-rectly references a specific feature of the work description.” 
+
+15
