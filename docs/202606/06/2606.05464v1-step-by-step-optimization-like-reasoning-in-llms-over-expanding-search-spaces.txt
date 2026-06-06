@@ -1,0 +1,2645 @@
+Title: Step-by-Step Optimization-like Reasoning in LLMs over Expanding Search Spaces
+
+URL Source: https://arxiv.org/pdf/2606.05464v1
+
+Published Time: Fri, 05 Jun 2026 00:25:03 GMT
+
+Number of Pages: 55
+
+Markdown Content:
+# Step-by-Step Optimization-like Reasoning in LLMs over Expanding Search Spaces 
+
+Nicolas Astorga ∗
+
+University of Cambridge 
+
+Nabeel Seedat 
+
+University of Cambridge 
+
+Mihaela van der Schaar 
+
+University of Cambridge 
+
+Abstract 
+
+Verifiable reward training has improved mathematical and coding reasoning, but these domains capture only part of step-by-step decision making. Many real-world tasks require finding a high-value feasible plan among many valid alternatives. We introduce OPT ⋆, a scalable family of optimization-style tasks for training and evaluating LLM step-by-step optimization-like reasoning along a complexity axis: each task provides a feasibility checker and evaluator, while a complexity parameter expands the search space without requiring new human labels. This motivates studying these tasks in two regimes: (i) solver-guided online policy optimization, which uses a solver as a value oracle for partial states and applies rank-based reward shaping to reinforce better next steps, and (ii) search-based offline RL when such solvers are unavailable. Theoretically, we relate success in large search spaces to the information a reasoner extracts per unit of search budget. Empirically, we ablate the ingredients that make search efficient on OPT ⋆ and show that training on OPT ⋆ improves step-by-step optimization-like reasoning. 
+
+1 Introduction 
+
+Large language models (LLMs) have shown remarkable success on diverse reasoning tasks [ 1 , 2], but they remain brittle on constrained step-by-step decision-making tasks. In such problems, a locally plausible step may make the remaining problem infeasible or force a low-quality completion [ 3, 4 ]. This issue is especially visible in optimization-style tasks: there are often many feasible answers, but the goal is to construct a better answer under constraints, not just any feasible completion. A common way to improve reasoning is verifiable-reward training : given a question and an auto-matically checkable answer, the model samples candidate traces and reinforces those that lead to correct answers [ 5–11 ]. This recipe is especially effective for math and code, where correctness can often be verified through exact answers and many established benchmarks exist. However, scaling the idea to develop other forms of reasoning faces two obstacles. First, it is difficult to generate many tasks that reliably require nontrivial reasoning. Second, even when such tasks are available, obtaining supervision that identifies which intermediate steps are useful is often expensive. 
+
+Optimization as a source of step-by-step supervision. We study constrained optimization tasks as a scalable source for developing optimization-like reasoning. Optimization problems naturally contain the ingredients that verifiable training needs: many instances can be generated automatically; partial actions can often be checked for feasibility; complete solutions can be scored by an objective; and difficulty can be increased by enlarging the decision space. They also differ from standard answer-correctness settings. In many optimization problems, there are many feasible solutions, but only some are high value. Thus, the model must learn not only to produce a valid solution, but also to choose intermediate steps that lead toward a better final outcome.  
+
+> ∗Correspondence: nja46@cam.ac.uk
+> Preprint.
+> arXiv:2606.05464v1 [cs.AI] 3 Jun 2026 1
+> 2
+> 1
+> 23
+
+Figure 1: OPT ⋆ overview using a Traveling Salesman-style example. (a) Tasks can be instantiated by humans, programs, or LLM-assisted generators. (b1) Classical optimization problems naturally expose objectives and constraints, making them auto-verifiable. (b2) Difficulty can be scaled by changing a complexity parameter α, such as the number of customers or the structure of the instance. Increasing α enlarges the search space while feasibility and objective evaluation remain cheap. (c)   
+
+> We study two training recipes: solver-guided next-step supervision when a solver is available, and search-based discovery when only feasibility checks and terminal objective values are available. (d) A model action can correspond to fixing one or more structured decision variables.
+
+This perspective is useful both scientifically and practically. Scientifically, optimization tasks provide controlled environments for studying step-by-step decision making under constraints. Practically, many real workflows require optimization-like reasoning: assigning people to roles, scheduling jobs, routing deliveries, packing objects, selecting subsets under a budget, or coordinating multi-step plans. These tasks require models to balance hard constraints against soft preferences, local gains against future flexibility, and feasibility against objective value. 
+
+OPT ⋆ tasks. We formalize this setting as OPT ⋆: OPTimization-based Scalable Tasks for Auto-verifiable Reasoning . An OPT ⋆ task is generated by a procedure Build α(·), where α controls task complexity. Each instance exposes two inexpensive verification routines: a feasibility checker chk t(·)
+
+for partial actions and an outcome evaluator eval t(·) for complete solutions. Increasing α enlarges the number of possible solutions or feasible trajectories, but does not require new human labels. This decouples reasoning difficulty from annotation effort. 
+
+Key properties of OPT ⋆ tasks. (See Traveling Salesman Problem example in Figure 1) 
+
+1. Scalable generation. Task instances are sampled from a generator controlled by a complexity parameter α. Increasing α increases the size or structure of the search space (e.g., # of customers). 
+
+2. Cheap verification. A feasibility checker chk t(·) (e.g., enforcing load limits) validates partial actions, and an outcome evaluator eval t(·) (e.g., Euclidean distance ) scores complete solutions. These routines are much cheaper than searching for an optimal solution. 
+
+3. Step-level training signal. When a solver is available, it can score candidate next steps by their best possible completion. When no fast solver is available, search can still discover high-value trajectories using chk t(·) and eval t(·).
+
+Research objective: We study optimization-like reasoning over expanding search spaces as α
+
+grows, focusing on how performance is affected by search-space size and how to improve across different regimes. ▶ Empirically: we use the OPT ⋆ structure in two complementary settings. In the large-search-space regime, a fast solver is unavailable or too expensive to call at every state. We therefore use structure-aware search to identify high-value complete trajectories, then distill them into the model. Feasibility checks prune invalid actions, while duplicate-action merging avoids wasting search budget on distinct text outputs that correspond to the same structured move. In the small-search-space regime, a solver is available. We use it as a value oracle for partial states: candidate next steps are scored by the best completion reachable after taking that step, and the policy is updated with rank-shaped rewards. ▶ Theoretically: we analyze optimization-like reasoning capability and how its components are affected as the search space expands. 
+
+Why learn reasoning when solvers exist? Even when solvers can verify or solve some generated optimization problems, learning a policy is valuable: it distills reusable optimization heuristics into general-purpose models and can be applied when exact solvers are unavailable, too slow to call repeatedly, or not integrated into the deployment environment. 2Contributions                      
+
+> 1⃝(Conceptual) In §2, we formalize OPT ⋆as a family of auto-verifiable, scalable optimization tasks, specifying components for task generation, constraint checking, and outcome evaluation. In §2.1, we discuss what fits in OPT ⋆,highlighting task diversity and the reasoning challenge when αincreases.
+> 2⃝(Algorithmic) In §2.3, we identify the challenges of step-by-step reasoning on OPT ⋆. Based on this, we develop complementary offline RL (§3.1) and online RL (§3.2) procedures tailored to OPT ⋆.
+> 3⃝(Empirical) In Exp. a⃝–b⃝, we show that OPT ⋆improves step-by-step reasoning in optimization tasks. In offline RL, we examine how feasibility pruning via chk t(·), grouping equivalent actions, and reward shaping based on eval t(·)
+> guide search toward promising reasoning traces. In online RL, Exp. c⃝–e⃝show solver-guided improvements, transfer to related tasks, and curriculum effects as αincreases.
+
+2 OPTimization-based Scalable Tasks for Auto-verifiable Reasoning (OPT ⋆)
+
+Preliminaries. A task instance is a finite- or countable-horizon constrained decision process 
+
+t = ( S, A, P, s 0, τ, chk t, eval t), (1) with state space S, action space A, transition P (· | s, a ), initial state s0, and terminal predicate 
+
+τ : S → { 0, 1}. We write the terminal states as Term t := {s ∈ S : τ (s) = 1 }.
+
+Definition 2.1 (Task feasibility and admissibility) . An action a is admissible at state s for a task t
+
+if chk t(s, a ) = 1 . We define the set of admissible actions as At(s) := {a ∈ A | chk t(s, a ) = 1 }.A trajectory is feasible if it only uses admissible actions (from At(s)). 
+
+Definition 2.2 (Outcome evaluator) . An outcome evaluator eval t is a function that assigns a real-valued score to any terminal state: 
+
+eval t : Term t −→ R
+
+Without loss of generality, we assume this score is to be maximized. 
+
+Definition 2.3 (Auto-verifiable task) . A task t is auto-verifiable if there exist algorithms chk t and 
+
+eval t such that, for all state-action pairs (s, a ) and terminal states sT ∈ Term t, chk t(s, a ) and 
+
+eval t(sT ) can be computed in time polynomial in the input size. Thus, checking feasibility and evaluating a proposed solution are fast, even when finding a high-scoring solution may be hard. 
+
+Definition 2.4 (OPTimization-based Scalable Tasks for Auto-verifiable Reasoning) . For each com-plexity level α, let Θα be an instance-parameter space and let Dα be a polynomial-time sampleable distribution over Θα. Let Build α : Θ α → T construct an auto-verifiable task: 
+
+t = Build α(θ) = ( S, A, P, s 0, τ, chk t, eval t), θ ∼ D α.
+
+We write t ∼ T α for the induced task distribution. The family {T α} is scalable if there exist an unbounded nondecreasing function g and a small ϵ such that, with probability at least 1 − ϵ over 
+
+t ∼ T α, (i) a chosen search-complexity measure M (t) satisfies M (t) ≥ g(α), and (ii) at least one feasible terminal state is reachable from s0. Typical choices of M (t) include the logarithm of the number of feasible trajectories or the logarithm of the number of reachable terminal states. This definition captures the main design goal: as α increases, the model faces a larger reasoning problem, but the task remains automatically checkable and comparable through chk t and eval t.
+
+2.1 Why OPT ⋆?Motivation. As LLMs are used in more complex workflows, they will need skills beyond standard mathematical derivations and code generation. Optimization under constraints includes resource allocation, scheduling, routing, packing, subset selection, and multi-step coordination. In these settings, there is rarely a single correct answer. Instead, many completions are feasible, and the value of reasoning comes from consistently choosing better trade-offs while satisfying hard constraints. 
+
+Synthetic tasks. Any task family satisfying the auto-verifiability and scalability conditions in §2 can instantiate OPT ⋆. Such tasks can be designed to target specific reasoning skills—for example, grid-based navigation with obstacles for spatial planning, discrete resource-allocation puzzles for combinatorial trade-offs, or rule-satisfaction games where agents must construct sequences that obey logical constraints (see App. B). By exposing chk t and eval t and scaling a complexity parameter α
+
+(e.g., grid size or horizon), these simulators yield large, auto-verifiable curricula. In this paper, we focus on synthetic tasks motivated mainly from traditional optimization problems. 3Task family Scales in α Search space M (t) Objective & sample hard rule Reasoning Role assignment roles n; extra cands; conflict n! perms Max total fit; e.g. forbidden pairs or ≤ 1 per group. comb. matching 
+
+Task scheduling jobs n; precedence density n! job orders Min total weighted tardiness; e.g. release dates temporal planning 
+
+Max satisfiability vars n; clauses m; clause mix 2n assignments Max satisfied clause weight; e.g. budget P 
+
+> i
+
+xi ≤ B. logical reasoning 
+
+TSP cities n ≈ (n−1)! /2 tours Shortest tour visiting all cities; e.g. time windows. route planning 
+
+2D packing n pieces; bin size; rotations? super-exponential Feasible non-overlap packing (or max filled area). spatial reasoning 
+
+QAP facilities n; flow sparsity n! assignments Min flow ×distance; e.g. cluster/capacity limits. comb. optimization 8 9 10 11 12 13 14 15                                                                                  
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> # unique solutions  Role Assignment
+> 45678910 11 12
+> 0
+> 200
+> 400
+> 600
+> 800
+> Task scheduling
+> 345678910 11 12
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> MaxSat
+> 345678
+> 0
+> 200
+> 400
+> 600
+> 800
+> TSP
+> 2345678910
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 2D Packing
+> 2345678
+> 0
+> 100
+> 200
+> 300
+> QAP
+> 8910 11 12 13 14 15
+> (# roles)
+> 4
+> 6
+> 8
+> 10
+> M(t) (log)
+> 45678910 11 12
+> (# jobs)
+> 2
+> 4
+> 6
+> 345678910 11 12
+> (# clauses)
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 345678
+> (# cities)
+> 0
+> 1
+> 2
+> 3
+> 2345678910
+> (# pieces)
+> 20
+> 40
+> 60
+> 80
+> 2345678
+> (# locations)
+> 1
+> 2
+> 3
+> 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> top 5 unique / unique
+> # unique solutions top 5 unique / unique M(t)
+
+Figure 2: Traditional optimization tasks. Top : Task description detailing objectives, constraints, required reasoning, and scaling behavior with α. Bottom : Solver experimental results averaged over eight runs. Plots illustrate search space growth, the number of unique solutions, and the fraction representing the top-5 solutions as a function of complexity parameter α.
+
+Traditional optimization tasks. Mathematical optimization models are natural OPT ⋆ tasks: decision variables x are selected to maximize an objective f (x) subject to equality constraints hj (x) = 0 and inequality constraints gi(x) ≥ 0. Their explicit formulations enable direct feasibility checks and objective evaluations, satisfying OPT ⋆ conditions. The task-solving complexity M (t) is decoupled from the complexity parameter α: in the Traveling Salesman Problem (TSP, Fig. 1), for example, increasing the number of cities/nodes ( α) dramatically enlarges the set of possible routes ( M (t)), while route validity and length remain cheap to verify and compute. Here, a single action may fix one or more decision variables, i.e., choose a component or subset of x.
+
+Complexity and diversity. Different optimization families elicit different reasoning skills. Routing problems require spatial planning and global consistency. Assignment and matching problems require trade-offs under capacity, preference, and conflict constraints. Scheduling problems require temporal reasoning and coordination. These tasks can also be enriched with additional structure, such as time windows, precedence relations, fairness requirements, or logical clauses, so that the same base family can elicit different forms of reasoning. 
+
+Examples. Figure 2 illustrates classical optimization problems and the reasoning capabilities required to solve them. As the complexity parameter α increases, both the search space M (t) (blue line) and the number of unique solutions (teal line) grow, making the best solution (orange line) increasingly difficult to find and thereby necessitating more advanced reasoning strategies or heuristics if these tasks were solved by a reasoning model. 
+
+2.2 Reasoning on OPT ⋆ Tasks From environment dynamics to language reasoning. OPT ⋆ tasks are defined as Eq. 1. However, reasoning is performed by an LLM in natural language. To enable this, we expose a language interface that converts states into prompts and parses model outputs back into actions. 
+
+Language interface. Let Σ be the token alphabet and let Σ∗ denote the set of finite token strings. Let X ⊆ Σ∗ denote the set of well-formed prompt states containing the task description, constraints, and relevant history. Let ˜A ⊆ Σ∗ denote model outputs containing a reasoning trace and a parsable action. The interface consists of a promptization map ψα : Tα × S → X , implemented using a template family Ψα, and a deterministic parser ρ : ˜A → A≤K that extracts up to K structured actions from a model output ˜ai ∼ πϕ(· | xi). In short: 
+
+(t, s ) ψα
+
+−−−→ x ∈ X LLM 
+
+−−−−→ ˜a ∈ ˜A ρ
+
+−→ a ∈ A≤K .
+
+The prompt xi = ψα(t, s i) includes: (i) a natural-language task description, (ii) the constraints that must be respected (e.g., admissible actions), and (iii) any auxiliary instructions. When K = 1 the model acts step by step; for K > 1 it may emit a plan in one shot. Importantly, stating constraints in the prompt does not guarantee compliance, which motivates the method in the next section. 
+
+State trajectories. State updates follow the environment dynamics si+1 ∼ P (·| si, a i), with current state si and action ai = ρ(˜ ai). We then reuse ψα to construct the next instruction prompt, i.e., 4xi+1 = ψα(t, s i+1 ). The language-level evolution mirrors the environment-level trajectory: 
+
+x0˜a0
+
+−→ x1˜a1
+
+−→ · · · ˜aN −1
+
+−−−→ xN =⇒ s0
+
+> a0
+
+−→ s1
+
+> a1
+
+−→ · · · aN −1
+
+−−−→ sT . (2) where sT ∈ Term t is terminal. For simplicity, in what follows we assume that P is deterministic. 
+
+Theorem A.3: scaling difficulty without scaling annotation cost 
+
+Let Z⋆ = Z⋆(T ) be the canonical optimum of T ∼ T α, and suppose Z⋆ is spread over Nα
+
+effective optima. For any reasoner R, let Hj be its history after budget j, and let Yj be its output. Then 
+
+Pr[ Yj = Z⋆] ≤ (I(Z⋆; Hj ) + log 2) / log Nα.
+
+Thus, as α increases and the effective number of optima grows, a constant success rate requires either more budget or more information about Z⋆ per unit of budget. This bottleneck can be measured through the empirical effective branching factor. For an ϵ-good terminal set 
+
+Gϵ(t) = {sT : eval t(sT ) ≥ V ⋆t − ϵ},
+
+let phit ,R (t) be the probability that a budget-B search procedure R discovers some terminal state in Gϵ(t). Define 
+
+pϵ,R (t) = 1 − (1 − phit ,R (t)) 1/B , beff ,R (t) = 1 /p ϵ,R (t).
+
+Lower beff means that the same search budget places more effective mass on high-value terminal states. Therefore, OPT ⋆ makes the theorem testable: useful model capacity or better search should reduce beff as the task complexity grows. 
+
+2.3 What constitutes “better” step-by-step reasoning? 
+
+Let Term t(s) ⊆ Term t be the set of terminal states reachable from s by feasible trajectories with 
+
+chk t(·, a ) = 1 . For deterministic P , the optimal terminal value from any partial state s is given by 
+
+V ⋆t (s) := max sT ∈Term t(s) eval t(sT ). In general, we want to reinforce responses ˜a sampled from the model conditioned on prompt xi (representing si) that lead to a higher downstream value: 
+
+˜a⋆i = arg max  
+
+> ˜ai∈˜At(si)
+
+V ⋆t
+
+
+
+P (si, ρ (˜ ai)) 
+
+
+
+(3) where ˜At(si) := {˜ai,g }Gg=1 with ˜ai,g ∼ π(· | xi). Eq. 3 raises some practical challenges: • [P1] We note that an action ˜ai ∼ π(· | xi) does not necessarily imply that chk t(si, a i = ρ(˜ ai)) = 1 ,i.e., responses from the LLM can be invalid, failing to respect the dynamics of the problem. • [P2] Finding the best solution from a partial state si, i.e., computing V ⋆t (si), requires computing 
+
+max sT ∈Term t(s) over potentially large space. If these policies are LLM-based, the responses can be redundant, i.e., ˜ai,g 1̸ = ˜ ai,g 2 but ρ(˜ ai,g 1 ) = ρ(˜ ai,g 2 ).
+
+3 Offline and Online Reinforcement Learning with OPT ⋆
+
+In this section we instantiate the framework from §2 with practical algorithms that optimize Eq. 3. The idea is to turn the inexpensive terminal-only signal from the outcome evaluator eval t(·) into informative intermediate feedback that rewards partial decisions and steers subsequent actions. ▶
+
+Developed techniques: We explore two complementary modalities to improve step-by-step reasoning capabilities: offline and online RL. We use offline RL in the general case where a fast solver is unavailable (or too slow), so we rely on the model policy itself to generate many candidate complete solutions that are compared post hoc using eval t(·), and we reinforce the best-achieved trajectories. We use online RL when we have access to a solver that can compute, or tightly approximate within a fixed budget, the best completion value from a partial state, enabling fast feedback about which next action is best from a given intermediate state. Why offline and online RL? Offline training is broadly applicable because it only requires ranking completed solutions, whereas online methods can yield stronger improvements via on-policy updates when fast solver-based verification is available [ 12 ]. Our offline procedure is closest to search-guided rejection sampling and SFT on evaluator-selected trajectories. We use the term “offline RL” in a broad sense: trajectories are selected using programmatic rewards from eval t, and training is performed on an offline-sampled set of trajectories. 53.1 Offline RL: Search and bootstrapping top solutions with OPT ⋆
+
+Training . For offline RL, we simplify Eq. 3 by estimating V ⋆t (s0) := max sT ∈Term t(s0) eval t(sT )
+
+only at the root state s0, turning learning into a search problem over trajectories from the root. After search, we reinforce the best-achieved trajectory for each problem by supervised fine-tuning on each 
+
+(xi, ˜ai) along the trajectory attaining the highest eval t(·), using a rejection-sampling style objective. Other training objectives (e.g., DPO) are also compatible. This procedure distills search-time discoveries into πϕ, improving search performance at inference [ 13 , 14 ] and implicitly maximizing Eq. 3, while avoiding expensive data collection from all nodes in the search tree. 
+
+Search . To improve step-by-step reasoning, we approximate V ⋆t (s) := max sT ∈Term t(s) eval t(sT )
+
+using a finite set of LLM-generated solutions. In principle, any search method could be used; here we study MCTS and beam search, adapted to OPT ⋆ as νMCTS and νBeamSearch. We modify their procedures to better balance exploration and exploitation, focusing on child creation to address 
+
+[P1–2] . [C1] After expanding a node, we first prune any child with chk t(s, a ) = 0 (addressing [P1] ). 
+
+[C2] We then address [P2] by grouping children with different textual responses ˜ai,g 1̸ = ˜ ai,g 2 that map to the same structured action ρ(˜ ai,g 1 ) = ρ(˜ ai,g 2 ), retaining a single response chosen uniformly at random. Note that [C1–2] are plug-and-play methods that can be applied to any search method. We implement two MCTS variants and one beam-search variant, with details in App. F.1; relative to standard implementations, the main difference is that rewards are recomputed as new terminal scores are discovered. In App. A.5, Theorem A.10 explains why these components improve search. 
+
+3.2 Online RL: OPT ⋆ Solver-Guided Policy Optimization ( νPO)                                                                      
+
+> Algorithm 1: OPT ⋆-νPO: solver-guided PO 1: Input: base b∈ { GRPO ,GSPO ,PPO }, group size G, re-wards (rcmin , r min , r max )
+> 2: Collect dataset D
+> 3: for x∈ D do
+> 4: Sample ˜a1: G∼πϕold (· | x)
+> 5: Parse actions a1: Gand states x′
+> 1: G
+> 6: for j= 1 to Gdo
+> 7: Rj←VB(x′
+> j)
+> 8: if infeasible( x, a j)then
+> 9: Rj←rcmin
+> 10: end if
+> 11: end for
+> 12: Sort R↓; let k(j)be the rank of Rj
+> 13: τk←rmax −(k−1) rmax −rmin
+> max( G−1,1)
+> 14: ˜Rj←τk(j)
+> 15: Update ϕwith bon {(˜ aj,˜Rj)}Gj=1
+> 16: end for
+
+We propose solver-based online RL , which exploits optimization structure to convert hard-to-verify ac-tions into verifiable subproblems. Our general recipe, νPO, couples OPT ⋆’s feasibility checks and 
+
+solver with a base policy-gradient optimizer. For each prompt state xi, νPO samples a small set of candidate actions, evaluates each by the best com-pletion value reachable from its next state under a fixed solver budget, and updates the policy using any surrogate objective, such as GRPO [ 15 ], GSPO [ 16 ], or PPO [ 17 ]. We denote each instance by prefixing 
+
+ν to the base method, e.g., νGRPO. 
+
+Collecting dataset D. Let t ∼ T α be a task instance. We construct a training set D of intermediate prompt states by invoking the solver once to obtain a high-value solution and collecting the partial states along those trajectories. Addressing reward shaping. For each xi ∈ D , sample G continuations from πϕold (· | xi). Parsed actions a yield next states xi+1 . Invalid transitions receive penalty rcmin ;valid ones are scored as R ← VB (xi+1 ), where VB is the best completion value found by the solver under budget B. The returns Ri = {R(j)}Gj=1 are converted via a rank-based linspace transform into per-candidate targets for online policy optimization. 
+
+4 Related work 
+
+Recent work has made rapid progress on reasoning with verifiable feedback, including methods that optimize with verifiable rewards [ 15 , 18 ], automatically verifiable domains supported by com-pilers/solvers [ 19 – 29 ], benchmarks with automatic problem generation and verification [ 30 – 33 ], and improved search strategies for reasoning [ 34 – 46 ]. Our work contributes in three ways: 1) we identify the conditions under which optimization-like tasks admit automatic generation and verifica-tion, yielding a principled testbed for improving step-by-step reasoning; this theoretical perspective complements but differs from recently proposed benchmarks [ 30 , 47 ]; 2) empirically, we focus on learning structured, incremental solution construction in these optimization-like tasks, whereas many existing benchmarks primarily evaluate direct sampling of complete solutions rather than exploiting intermediate structure to search efficiently; 3) algorithmically, we introduce offline-RL techniques that can be applied on top of any search method to improve efficiency in structured domains, and for online RL we propose a novel solver-guided elicitation to improve reasoning. 6Table 1: Visual overview of OPT ⋆ task families studied.                                 
+
+> r1r2r3
+> !
+> Role assignment + conflicts
+> Scales: R; extras E
+> Feasible: 1 candidate/role; 1 role/candidate; conflicts
+> Objective: fit −conflicts
+> c1
+> c2
+> c3
+> t
+> w
+> max Psi
+> Constrained MaxSAT
+> Scales: tasks/workers; resources
+> Feasible: select tasks; assign workers; hard clauses
+> Objective: soft weight; tie-breaks
+> j1j2j3
+> dj
+> PwjTj
+> Single-machine scheduling
+> Scales: njobs; proc. range
+> Feasible: no-idle, non-preemptive, one machine
+> Objective: min P
+> jwjTj
+> Kpieces
+> Polyomino target cover
+> Scales: grid; budget K
+> Feasible: place/rotate ≤Kpieces; no overlap
+> Objective: covered targets
+
+5 Experiments 
+
+We study how expanding the search space, modulated by the complexity parameter αi, affects the model’s task-solving ability. Algorithmically, we investigate mitigation strategies via offline and online RL. For research purposes, we study offline RL in a regime where a solver can compute the optimal solution, allowing us to analyze: (1) search components [C1-2] that improve search, and (2) whether solver-based RL is consistently better. For online RL, we focus only on (2). We also study related questions, such as generalization and curriculum, in less depth. We organize the research as:                    
+
+> RL Topic Question
+> Offline Search Can structure enable efficient optimization search? a⃝
+> Offline Solver signal Can correct search match solver-guided step improvements? b⃝
+> Online Task design Should optimization reasoning be trained on optimization tasks? c⃝
+> Online Generalization Can decomposable spatial tasks capture diverse optimization skills? d⃝
+> Online Curriculum How do different αisequences affect learning? e⃝
+
+Data generation for training. For each task, in both Offline and Online RL, we generate 1,000 training instances for each αi across four complexity levels α1, . . . , α 4, where higher indices indicate greater reasoning difficulty. Both methods use curriculum training, but their data collection strategies differ. In Online RL , a solver collects trajectories [s0, . . . , s T ] that lead to the optimal response; we build the training set by sequentially concatenating all states visited by the solver for all instances at level αi, then proceeding to αi+1 without shuffling, so that difficulty increases over time. Conversely, 
+
+Offline RL operates in large batches, identifying the best trajectory via search from the root using 
+
+eval t(·) and applying SFT to all states and instances of αi before proceeding to αi+1 . Although there are always 1,000 unique instances, collecting all states along the best trajectory yields a final training dataset of 1,000 to 5,000 samples per αi, depending on the task and complexity. 
+
+Instantiation details. In the main text, as illustration, we instantiate Offline RL with νMCTS and Online RL with νGRPO. The techniques are general and can be applied to other search methods or on-policy algorithms for Offline and Online RL, respectively. Therefore, our objective is not to benchmark all possible instantiations, but to demonstrate the benefits of the general training recipes proposed in §3.1 and §3.2. For Online RL, we extend verl [48 ] with ranked reward shaping using 8 rollouts. For νMCTS, we use a custom implementation with 16 rollouts and 20 children per expansion. We report results for three instruction-tuned models: Qwen2.5-3B[ 49 ], Llama-3.2-3B[ 50 ], and Qwen2.5-7B. Appendix includes prompt examples, αi configurations, and data-generation details. 
+
+5.1 Offline RL on OPT ⋆
+
+For these experiments we use Llama-3.2-3B-Instruct and evaluate on classical optimization problems. We report aggregate search diagnostics in Table 2, highlight Knapsack in Fig. 3, and provide additional results in App. H.4. 
+
+a⃝ Exp 1: Efficient search on OPT ⋆. ▶ Motivation. (A) We first study the no-training regime, testing [C1-2] . This isolates the search plug-and-play components that generate offline trajectories before training. (B) Second, we validate our theoretical finding in Sec. A.10. ▶Setup. We evaluate 
+
+νMCTS and νBeamSearch (plus one method in App. F.1), with/without [C1-2] . A DFS solver serves as reference. Table 2 averages over Role Assig., MaxSat, Knapsack, and QAP. Metrics are the good-terminal mass pg , effective branching factor beff , estimated samples for 90% success k90 ,pass@16, terminal feasibility, and exact optimality. 
+
+Results. Table 2 shows that these two mechanisms are the main source of search efficiency. With both enabled, νMCTS has beff = 15 .04 and νBeamSearch has beff = 13 .04 ; removing either the 7Table 2: Search-only discovery metrics for offline RL data generation on OPT ⋆ (ϵrel = 0 .05 ). Arrows show direction of improvement; pg , pass@16, Feas., and Exact are percentages. 
+
+νMCTS νBeamSearch Method pg ↑ beff ↓ k90 ↓ pass@16 ↑ Feas. ↑ Exact ↑ pg ↑ beff ↓ k90 ↓ pass@16 ↑ Feas. ↑ Exact ↑
+
+check+de-duplication 12.2 15.04 56.5 88.9 72.8 10.9 7.2 13.04 43.0 93.8 53.3 7.8 no check/prune 4.0 25.70 73.8 84.8 16.4 3.7 1.4 53.07 180.7 65.4 10.2 2.0 no deduplication 5.1 25.26 74.3 84.6 19.8 4.8 2.5 82.88 329.9 50.9 12.8 2.7 sequential (outcome-based) 4.9 25.30 74.2 84.6 19.8 4.6 4.9 25.30 74.2 84.6 19.8 4.6 solver ref. 0.2 520.1 1776 18.7 2.3 0.5 0.2 499.4 1743 19.4 2.5 0.6 [2, 5] [6, 9] [10, 13] [14, 16]                    
+
+> objective
+> 0
+> 100
+> 200
+> 300
+> count
+> Knapsack Level 1
+> [6, 14] [15, 23] [24, 31] [32, 39]
+> objective
+> 0
+> 250
+> 500
+> 750
+> 1000
+> 1250
+> 1500
+> Knapsack Level 2
+> [6, 23] [24, 39] [40, 55] [56, 72]
+> objective
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> 2500
+> Knapsack Level 3
+> [7, 31] [32, 55] [56, 79] [80, 109]
+> objective
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> Knapsack Level 4
+> 1234
+> Level
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Knapsack Accuracy
+> MCTS Solver-based-policy Base Model
+
+Figure 3: Cols 1-4: Distribution of solution quality (histograms). Col 5: Accuracy on Knapsack problems across four αi.The νMCTS method (orange) approaches solver-guided performance (green), particularly at lower complexities. This suggests that verification-guided self-improvement can recover much of the gain from solver-guided supervision. 
+
+checker or duplicate merging increases the effective branching factor and sharply reduces terminal feasibility and exact optimality. This directly matches the information bottleneck in §2.2: as the terminal space expands with α, useful model capacity appears as lower beff , i.e., more search mass assigned to high-value terminals under the same budget. The solver reference illustrates the tradeoff: it is faster in wall-clock time when available, but as a generator assigns little mass to ϵ-good natural-language trajectories, with pass@16 below 20% versus 
+
+88 .9% for νMCTS and 93 .8% for νBeamSearch. QAP is clearest: νMCTS achieves beff = 24 .27 
+
+and pass@16 = 85 .1% , while the solver reference has beff = 727 .9 and pass@16 = 13 .3% . Thus, offline RL is useful when solver labels are unavailable or costly at partial states, whereas online RL uses the solver to rank candidate actions, not generate trajectories. Obs. This depends on solver cost: solvers may be much more efficient than LLMs, making LLMs useful mainly when solvers are unavailable and full enumeration DFS-style methods whose cost grows sharply with complexity. 
+
+b⃝ Exp 2: Improving models. ▶Motivation. We test whether (A) training on the best trajectory found by the model with [C1-2] improves over the base model and (B) solver-assisted training is consistently better. ▶Setup. For knapsack (task details in App. C.1), we report: (a) the cumulative number of distinct solution groups found over 16 MCTS rollouts on the test set for each model, and (b) the percentage of samples recovering the best solution. Since this is an optimization problem, multiple valid solutions may exist. ▶Results. Figure 3 shows difficulty increases with complexity. At higher complexity, νMCTS and solver-based MCTS substantially outperform the base model, especially at 
+
+α4, where they find more high-value solutions . Solver-based policy performs best, but νMCTS is close, suggesting that components [C1-2] largely recover the strongest model-improvement gains. 
+
+5.2 Online RL with OPT ⋆
+
+Metrics. At test time we evaluate every state on the path to the solver’s best trajectory. A prediction is correct if the LLM’s action ˜a is a valid step (under chk t) that leads to the best solution. We then report pass@ k under this metric.                             
+
+> Role Assignment (ID) MaxSAT (OOD) Scheduling (OOD) Method Type α1α2α3α4α1α2α3α4α1α2α3α4
+> Base Base 32.5 25.9 20.7 17.8 79.9 51.6 52.1 45.1 41.6 28.7 25.0 24.8 MATH-500 Domain 33.6 27.7 20.3 17.4 80.9 52.1 51.7 43.6 42.2 29.1 24.8 25.6 Code Domain 33.7 25.3 21.0 17.9 80.5 55.7 53.8 44.6 42.4 28.7 24.5 25.3 Trained Ours 44.5 40.0 35.2 31.1 91.2 67.4 68.3 62.9 47.9 32.5 27.8 28.3
+
+Table 3: Pass@1 (%) on optimization benchmarks with Qwen2.5-3B-Instruct. The Type column distinguishes the base model, domain-transfer comparisons, alternative method-ologies, and our trained model. Best results are bolded. 
+
+c⃝ Exp 3: Solver-based RL. 
+
+▶Motivation. We test whether on-line RL over partial actions is possible with solver-based RL . Because νPO uses solver-derived partial-state values, We make our comparison mainly against other domains also trained with online RL verifiable reward training. ▶Setup. 
+
+(Domain comparison) For math, we use MATH-500, a 500-problem subset of MATH used in process-supervision evaluation [ 33 , 51 ]; for code, we use MBPP [ 28 ]. We evaluate in and out of distribution: we train and test on Role Assignment, and test out of distribution on MaxSat and Machine Scheduling. We select these tasks for their similarity while ensuring they are distinct. Table 3 reports results for 8A B C D E F G H                                        
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Score
+> Pass@8 Diff 1 Trained (Polyomino synthetic task) vs Base by capability
+> Capabilities
+> A = Translate
+> B = Rotate & Place
+> C = Reflect & Place
+> D = Compose (A,B,C)
+> E = Equivalence
+> F = Symmetry
+> G = Overlap IoU
+> H = Coverage
+> Model
+> Trained
+> Base Training set Evaluation task Dist. Base
+> α1–α4
+> 1k each
+> α1only 4k
+> α4only 4k Polyomino α1ID 4.4 10.0 32.4 4.0 Polyomino α2ID 2.4 22.8 38.4 2.4 Polyomino α3ID 5.3 22.5 17.1 3.6 Polyomino α4ID 1.2 5.2 2.5 0.4 Spatial QA (diff 1) OOD 32.0 46.0 28.0 29.5 Spatial QA (diff 2) OOD 24.5 34.0 31.0 27.5
+
+Figure 4: 2D Spatial task. Many skills can be learned by solving optimization problems. Left: Solving polyomino tasks improves the capabilities required for the task. Right: Pass@ 8 accuracy (%) on polyomino and spatial capability tasks when training sets are generated using different strategies over αi. The mixed α1–α4 set contains 4k examples total, with 1k per difficulty; the α1-only and α4-only sets each contain 4k examples. Bold indicates the best result for each evaluation task. 
+
+Qwen2.5-3B-Inst. ▶Results. The results shows that training on other domains is not helpful, and consequently to develop optimization-like reasoning, we need to train on optimization tasks. We also note that training on Role Assignment enables models to generalize to similar optimization tasks, even on out-of-distribution. 
+
+d⃝ Exp 4: Generalization (spatial tasks). ▶Motivation. Optimization tasks can involve heteroge-neous constraints, and solving them can require a broad set of skills. We demonstrate this using a 2D polyomino task (Table 1), where models must select, rotate, and translate pieces to cover target cells. 
+
+▶Setup. Qwen2.5-7B was the only model with sufficient capacity to sample rewardable solutions and bootstrap RL in this task. We evaluate acquired capabilities on (1) the held-out polyomino test set and (2) auxiliary spatial QA tasks covering translation, rotation, reflection, symmetry, and coverage. These auxiliary tasks are QA pairs rather than optimization problems, with two difficulty levels based on grid size (details in App. C). ▶Results. Fig. 4 shows that the curriculum improves both in-distribution polyomino performance and out-of-distribution spatial QA, suggesting transfer to the underlying spatial operations. 
+
+Generalization (Math). Training on Role Assig.+MaxSAT improves pass@8 on math benchmarks [ 52 – 54 ] for most 3B models: Llama 3.2-3B rises 45.0 →57.5 on AMC'23, 10.0 →16.7 on AIME'24, and 3.3 →6.7 on AIME'25; Qwen2.5-3B rises 65.0 →70.0 on AMC'23 and 6.7 →16.7 on AIME'25. See App. G.2. 
+
+e⃝ Exp 5: How the αi curriculum affects learned skills. We study curriculum learning on the polyomino task by varying the complexity parameter αi. Using OPT ⋆ to generate data across complexity regimes, we compare three training strategies: easy-only ( α1), hard-only ( α4), and mixed curriculum training ( α1 → α4). Figure 4 (right) shows three trends. First, hard-only training underperforms, consistent with sparse rewards on hard tasks. Second, easy-only training is strong on 
+
+α1 and α2 but degrades as difficulty increases. Third, curriculum training gives the best performance on the harder ID levels and the strongest OOD Spatial QA results. These gains indicate that curriculum training improves the underlying spatial skills more reliably than single-level training. 
+
+6 Conclusion 
+
+We propose OPT ⋆ to elicit optimization-like reasoning. Our main goal is to understand how enlarging the search space affects such reasoning (Theorem A.3) and how training can compensate for the increased difficulty of finding high-value solutions. Motivated by this view, we introduce two 
+
+complementary methods: (1) plug-and-play search components [C1–2] , applicable to any search method and shown empirically and theoretically to improve search efficiency; and (2) solver-based RL , which exploits fast solvers that provide rewards for partial actions. As expected, this near-oracle signal outperforms weaker transfer and self-rewarding references. We also briefly explore curricula enabled by unlimited task data and generalization; both remain promising directions for future work. 
+
+Limitations and future work. This work studies, both empirically and theoretically, how expanding the search space of optimization-like problems affects optimization-like reasoning. A promising direction is to scale optimization reasoning tasks using LLM priors. Our setting is well suited to this because problem difficulty can be increased while evaluation remains simple. LLMs could automate the generation of substantially more complex and diverse tasks than those in our experiments. More broadly, although not our main focus, our results suggest that optimization tasks offer a useful testbed for studying generalization. Scaling both task generation and task complexity could therefore enable much broader studies of optimization-based generalization beyond the scope of this work. 9References 
+
+[1] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, brian ichter, Fei Xia, Ed Chi, Quoc V Le, and Denny Zhou. Chain-of-thought prompting elicits reasoning in large language models. In S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh, editors, Advances in Neural Information Processing Systems , volume 35, pages 24824–24837. Curran Associates, Inc., 2022. [2] Denny Zhou, Nathanael Schärli, Le Hou, Jason Wei, Nathan Scales, Xuezhi Wang, Dale Schuurmans, Claire Cui, Olivier Bousquet, Quoc Le, and Ed H. Chi. Least-to-most prompting enables complex reasoning in large language models. In International Conference on Learning Representations , 2023. URL 
+
+https://openreview.net/forum?id=WZH7099tgfM .[3] Brenden M Lake, Tomer D Ullman, Joshua B Tenenbaum, and Samuel J Gershman. Building machines that learn and think like people. Behavioral and brain sciences , 40:e253, 2017. [4] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. Re-act: Synergizing reasoning and acting in language models. In International Conference on Learning Representations (ICLR) , 2023. [5] Eric Zelikman, Yuhuai Wu, Jesse Mu, and Noah Goodman. Star: Bootstrapping reasoning with reasoning. 
+
+Advances in Neural Information Processing Systems , 35:15476–15488, 2022. [6] Zheng Yuan, Hongyi Yuan, Chengpeng Li, Guanting Dong, Keming Lu, Chuanqi Tan, Chang Zhou, and Jingren Zhou. Scaling relationship on learning mathematical reasoning with large language models. arXiv preprint arXiv:2308.01825 , 2023. URL https://arxiv.org/abs/2308.01825 .[7] Avi Singh, John D. Co-Reyes, Rishabh Agarwal, Ankesh Anand, Piyush Patil, Xavier Garcia, Peter J. Liu, James Harrison, Jaehoon Lee, Kelvin Xu, Aaron Parisi, Abhishek Kumar, Alex Alemi, Alex Rizkowsky, Azade Nova, Ben Adlam, Bernd Bohnet, Gamaleldin Elsayed, Hanie Sedghi, Igor Mordatch, Isabelle Simpson, Izzeddin Gur, Jasper Snoek, Jeffrey Pennington, Jiri Hron, Kathleen Kenealy, Kevin Swersky, Kshiteej Mahajan, Laura Culp, Lechao Xiao, Maxwell L. Bileschi, Noah Constant, Roman Novak, Rosanne Liu, Tris Warkentin, Yundi Qian, Yamini Bansal, Ethan Dyer, Behnam Neyshabur, Jascha Sohl-Dickstein, and Noah Fiedel. Beyond human data: Scaling self-training for problem-solving with language models. 
+
+arXiv preprint arXiv:2312.06585 , 2023. URL https://arxiv.org/abs/2312.06585 .[8] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. arXiv preprint arXiv:2304.05128 , 2023. [9] Eric Zelikman, Georges Raif Harik, Yijia Shao, Varuna Jayasiri, Nick Haber, and Noah D. Goodman. Quiet-STaR: Language models can teach themselves to think before speaking. In Conference on Language Modeling , 2024. URL https://openreview.net/forum?id=oRXPiSOGH9 .[10] Arian Hosseini, Xingdi Yuan, Nikolay Malkin, Aaron Courville, Alessandro Sordoni, and Rishabh Agarwal. V-STaR: Training verifiers for self-taught reasoners. In Conference on Language Modeling , 2024. URL 
+
+https://openreview.net/forum?id=stmqBSW2dV .[11] Liunian Harold Li, Jack Hessel, Youngjae Yu, Xiang Ren, Kai-Wei Chang, and Yejin Choi. Symbolic chain-of-thought distillation: Small models can also “think” step-by-step. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 2665– 2679. Association for Computational Linguistics, 2023. doi: 10.18653/v1/2023.acl-long.150. URL 
+
+https://aclanthology.org/2023.acl-long.150/ .[12] Jack Lanchantin, Angelica Chen, Janice Lan, Xian Li, Swarnadeep Saha, Tianlu Wang, Jing Xu, Ping Yu, Weizhe Yuan, Jason E Weston, et al. Bridging offline and online reinforcement learning for llms. arXiv preprint arXiv:2506.21495 , 2025. [13] David Silver, Aja Huang, Chris J Maddison, Arthur Guez, Laurent Sifre, George Van Den Driessche, Julian Schrittwieser, Ioannis Antonoglou, Veda Panneershelvam, Marc Lanctot, et al. Mastering the game of go with deep neural networks and tree search. nature , 529(7587):484–489, 2016. [14] David Silver, Julian Schrittwieser, Karen Simonyan, Ioannis Antonoglou, Aja Huang, Arthur Guez, Thomas Hubert, Lucas Baker, Matthew Lai, Adrian Bolton, et al. Mastering the game of go without human knowledge. nature , 550(7676):354–359, 2017. [15] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. 
+
+10 [16] Chujie Zheng, Shixuan Liu, Mingze Li, Xiong-Hui Chen, Bowen Yu, Chang Gao, Kai Dang, Yuqiong Liu, Rui Men, An Yang, Jingren Zhou, and Junyang Lin. Group sequence policy optimization, 2025. URL 
+
+https://arxiv.org/abs/2507.18071 .[17] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 , 2017. [18] Qiying Yu, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai, Tiantian Fan, Gaohong Liu, Lingjun Liu, et al. Dapo: An open-source llm reinforcement learning system at scale. arXiv preprint arXiv:2503.14476 , 2025. [19] Jiangjie Chen, Qianyu He, Siyu Yuan, Aili Chen, Zhicheng Cai, Weinan Dai, Hongli Yu, Qiying Yu, Xuefeng Li, Jiaze Chen, et al. Enigmata: Scaling logical reasoning in large language models with synthetic verifiable puzzles. arXiv preprint arXiv:2505.19914 , 2025. [20] Zhen Hao Wong, Jingwen Deng, Runming He, Zirong Chen, Qijie You, Hejun Dong, Hao Liang, Chengyu Shen, Bin Cui, and Wentao Zhang. Logicpuzzlerl: Cultivating robust mathematical reasoning in llms via reinforcement learning. arXiv preprint arXiv:2506.04821 , 2025. [21] Anjiang Wei, Yuheng Wu, Yingjia Wan, Tarun Suresh, Huanmi Tan, Zhanke Zhou, Sanmi Koyejo, Ke Wang, and Alex Aiken. Satbench: Benchmarking llms’ logical reasoning via automated puzzle generation from sat formulas. arXiv preprint arXiv:2505.14615 , 2025. [22] Qin Zhu, Fei Huang, Runyu Peng, Keming Lu, Bowen Yu, Qinyuan Cheng, Xipeng Qiu, Xuanjing Huang, and Junyang Lin. Autologi: Automated generation of logic puzzles for evaluating reasoning abilities of large language models. arXiv preprint arXiv:2502.16906 , 2025. [23] Trieu Trinh, Yuhuai Wu, Quoc Le, He He, and Thang Luong. Solving olympiad geometry without human demonstrations. Nature , 2024. doi: 10.1038/s41586-023-06747-5. [24] AlphaProof and AlphaGeometry teams. Ai achieves silver-medal standard solving in-ternational mathematical olympiad problems. https://deepmind.google/discover/blog/ ai-solves-imo-problems-at-silver-medal-level/ , July 2024. Accessed 2025-09-25. [25] Arkil Patel, Siva Reddy, and Dzmitry Bahdanau. How to get your llm to generate challenging problems for evaluation. arXiv preprint arXiv:2502.14678 , 2025. [26] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 , 2021. [27] Dan Hendrycks, Steven Basart, Saurav Kadavath, Mantas Mazeika, Akul Arora, Ethan Guo, Collin Burns, Samir Puranik, Horace He, Dawn Song, and Jacob Steinhardt. Measuring coding challenge competence with APPS. In Advances in Neural Information Processing Systems , 2021. arXiv:2105.09938. [28] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models. arXiv preprint arXiv:2108.07732 , 2021. [29] Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Ec-cles, James Keeling, Felix Gimeno, Agustin Dal Lago, Thomas Hubert, Peter Choy, Cyprien de Mas-son d’Autume, Igor Babuschkin, Xinyun Chen, Po-Sen Huang, Johannes Welbl, Sven Gowal, Alexey Cherepanov, James Molloy, Daniel J. Mankowitz, Esme Sutherland Robson, Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. Competition-level code generation with AlphaCode. 
+
+Science , 378(6624):1092–1097, 2022. doi: 10.1126/science.abq1158. arXiv:2203.07814. [30] Zafir Stojanovski, Oliver Stanley, Joe Sharratt, Richard Jones, Abdulhakeem Adefioye, Jean Kaddour, and Andreas Köpf. REASONING GYM: Reasoning environments for reinforcement learning with verifiable rewards, 2025. URL https://arxiv.org/abs/2505.24760 .
+
+11 [31] Peiji Li, Jiasheng Ye, Yongkang Chen, Yichuan Ma, Zijie Yu, Kedi Chen, Xiaozhe Li, Ganqu Cui, Haozhan Li, Jiacheng Chen, Chengqi Lyu, Wenwei Zhang, Linyang Li, Qipeng Guo, Dahua Lin, Bowen Zhou, and Kai Chen. InternBootcamp technical report: Boosting LLM reasoning with verifiable task scaling. arXiv preprint arXiv:2508.08636 , 2025. URL https://arxiv.org/abs/2508.08636 .[32] David Saxton, Edward Grefenstette, Felix Hill, and Pushmeet Kohli. Analysing mathematical reasoning abilities of neural models. In International Conference on Learning Representations (ICLR) , 2019. arXiv:1904.01557. [33] Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Jacob Steinhardt. Measuring mathematical problem solving with the MATH dataset. In Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks , 2021. [34] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Thomas L. Griffiths, Yuan Cao, and Karthik Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. In Advances in Neural Information Processing Systems , volume 36, 2023. [35] Xidong Feng, Ziyu Wan, Muning Wen, Stephen Marcus McAleer, Ying Wen, Weinan Zhang, and Jun Wang. Alphazero-like Tree-Search can Guide Large Language Model Decoding and Training. arXiv preprint arXiv:2309.17179 , 2023. URL https://arxiv.org/abs/2309.17179 .[36] Yuxi Xie, Anirudh Goyal, Wenyue Zheng, Min-Yen Kan, Timothy P Lillicrap, Kenji Kawaguchi, and Michael Shieh. Monte carlo tree search boosts reasoning via iterative preference learning. arXiv preprint arXiv:2405.00451 , 2024. [37] Guoxin Chen, Minpeng Liao, Chengxi Li, and Kai Fan. Alphamath almost zero: process supervision without process, 2024. URL https://arxiv.org/abs/2405.03553 .[38] Guoxin Chen, Minpeng Liao, Chengxi Li, and Kai Fan. Step-level value preference optimization for mathematical reasoning. In Findings of the Association for Computational Linguistics: EMNLP 2024 ,pages 7889–7903, Miami, Florida, USA, November 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.findings-emnlp.463. URL https://aclanthology.org/2024.findings-emnlp. 463/ .[39] Liangchen Luo, Yinxiao Liu, Rosanne Liu, Samrat Phatale, Meiqi Guo, Harsh Lara, Yunxuan Li, Lei Shu, Yun Zhu, Lei Meng, et al. Improve mathematical reasoning in language models by automated process supervision. arXiv preprint arXiv:2406.06592 , 2024. [40] Dan Zhang, Sining Zhoubian, Ziniu Hu, Yisong Yue, Yuxiao Dong, and Jie Tang. Rest-mcts*: Llm self-training via process reward guided tree search. arXiv preprint arXiv:2406.03816 , 2024. [41] Di Zhang, Xiaoshui Huang, Dongzhan Zhou, Yuqiang Li, and Wanli Ouyang. Accessing gpt-4 level mathematical olympiad solutions via monte carlo tree self-refine with llama-3 8b. arXiv preprint arXiv:2406.07394 , 2024. [42] Xinyu Guan, Li Lyna Zhang, Yifei Liu, Ning Shang, Youran Sun, Yi Zhu, Fan Yang, and Mao Yang. rstar-math: Small llms can master math reasoning with self-evolved deep thinking. arXiv preprint arXiv:2501.04519 , 2025. [43] Maciej Besta, Nils Blach, Ales Kubicek, Robert Gerstenberger, Michal Podstawski, Lukas Gianinazzi, Joanna Gajda, Tomasz Lehmann, Hubert Niewiadomski, Piotr Nyczyk, and Torsten Hoefler. Graph of thoughts: Solving elaborate problems with large language models. Proceedings of the AAAI Conference on Artificial Intelligence , 38(16):17682–17690, 2024. [44] Levente Kocsis and Csaba Szepesvári. Bandit based monte-carlo planning. In Machine Learning: ECML 2006 , pages 282–293. Springer, 2006. doi: 10.1007/11871842_29. [45] Rémi Coulom. Efficient selectivity and backup operators in Monte-Carlo tree search. In H. Jaap van den Herik, Paolo Ciancarini, and H. H. L. M. Donkers, editors, Computers and Games: CG 2006 , volume 4630 of Lecture Notes in Computer Science , pages 72–83. Springer, 2007. doi: 10.1007/978-3-540-75538-8_7. [46] Cameron B. Browne, Edward Powley, Daniel Whitehouse, Simon M. Lucas, Peter I. Cowling, Philipp Rohlfshagen, Stephen Tavener, Diego Perez, Spyridon Samothrakis, and Simon Colton. A survey of monte carlo tree search methods. IEEE Transactions on Computational Intelligence and AI in Games , 4(1):1–43, 2012. doi: 10.1109/TCIAIG.2012.2186810. 
+
+12 [47] Alon Albalak, Duy Phung, Nathan Lile, Rafael Rafailov, Kanishk Gandhi, Louis Castricato, Anikait Singh, Chase Blagden, Violet Xiang, Dakota Mahan, and Nick Haber. Big-math: A large-scale, high-quality math dataset for reinforcement learning in language models, 2025. URL https://arxiv.org/abs/2502. 17387 .[48] Guangming Sheng, Chi Zhang, Zilingfeng Ye, Xibin Wu, Wang Zhang, Ru Zhang, Yanghua Peng, Haibin Lin, and Chuan Wu. Hybridflow: A flexible and efficient RLHF framework. In Proceedings of the Twentieth European Conference on Computer Systems . ACM, 2025. doi: 10.1145/3689031.3696075. [49] Qwen Team. Qwen2.5 technical report, 2024. URL https://arxiv.org/abs/2412.15115 .[50] Meta. Llama 3.2 3b instruct model card. Hugging Face model card, 2024. URL https://huggingface. co/meta-llama/Llama-3.2-3B-Instruct .[51] Hunter Lightman, Vineet Kosaraju, Yuri Burda, Harrison Edwards, Bowen Baker, Teddy Lee, Jan Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. Let’s verify step by step. In The Twelfth International Con-ference on Learning Representations , 2024. URL https://openreview.net/forum?id=v8L0pN6EOi .[52] Mathematical Association of America. American mathematics competitions (AMC) 2023. Mathematical Association of America, 2023. URL https://maa.org/student-programs/amc/ . Accessed 2026-06-03. [53] Mathematical Association of America. American invitational mathematics examination (AIME) 2024. Mathematical Association of America, 2024. URL https://maa.org/ maa-invitational-competitions/ . Accessed 2026-06-03. [54] Mathematical Association of America. American invitational mathematics examination (AIME) 2025. Mathematical Association of America, 2025. URL https://maa.org/ maa-invitational-competitions/ . Accessed 2026-06-03. 
+
+13 Appendix Index 
+
+Quick guide to the appendix 
+
+Ref. Content A Information-theoretic formalization of reasoning on OPT ⋆
+
+A.1 Effective optima and scalable complexity A.2 Reasoners, histories, and success A.3 Core information-theoretic results A.4 Effective branching and empirical estimation A.5 Checking and redundancy removal 
+
+B Task examples B.1 Mathematical optimization tasks B.2 Logic puzzle tasks B.3 Simulator-based tasks 
+
+C Additional details on the generation process C.1 0–1 Knapsack C.2 Quadratic Assignment / CF–EU Manhattan C.3 Role Assignment with Conflicts C.4 MaxSat C.5 Single-machine scheduling C.6 Polyomino Target Cover C.7 Auxiliary Grid-Spatial tasks 
+
+D Prompt examples 
+
+E Polyomino examples 
+
+F Additional details and extra results F.1 Search ablations and additional details of νMCTS F.2 Policy training implementation for RFT F.3 Policy training GRPO 
+
+G Online RL results G.1 Spatial reasoning results G.2 Math benchmark results 
+
+H Optimization problem results H.1 Qwen2.5-3B results H.2 Qwen2.5-7B results H.3 Llama3.2-3B results H.4 Additional MCTS results 
+
+14 A Information-theoretic formalization of reasoning on OPT ⋆
+
+Scope and notation. All logarithms are natural, so information is measured in nats. We use the OPT ⋆ task definition from the main paper and add only the probabilistic notation needed for the theory. For a task t, let Term t(s) denote the set of terminal states reachable from state s by feasible trajectories. We write s0 for the initial state and use ξ for a complete rollout, with terminal state 
+
+sT (ξ).The results below are stated for finite effective solution spaces. This covers the finite combinatorial tasks used in our experiments. Countable or very large spaces can be handled by truncating the search space or by grouping terminal states into finitely many effective equivalence classes. 
+
+A.1 Effective optima and scalable complexity 
+
+For a realized task t, let 
+
+Zt := Term t(s0)
+
+be its reachable terminal set, or a finite quotient of that set into effective solution classes. Fix a deterministic tie-breaking rule tb( ·) that selects one element from any nonempty finite set. The canonical optimal terminal state is 
+
+Z⋆(t) := tb 
+
+
+
+arg max 
+
+> z∈Z t
+
+eval t(z)
+
+
+
+, V ⋆t := eval t(Z⋆(t)) .
+
+When T ∼ T α, the canonical optimum 
+
+Z⋆ := Z⋆(T )
+
+is a random variable. 
+
+Assumption A.1 (Effective uniform optimum) . For each complexity level α considered in the theorem statements, there exists a finite set Z⋆α of size Nα ≥ 2 such that 
+
+Z⋆ ∼ Unif( Z⋆α).
+
+Equivalently, 
+
+H(Z⋆) = log Nα.
+
+The same assumption can be applied after replacing terminal states by effective solution classes, for example after deterministic tie-breaking, symmetry reduction, or ϵ-optimal grouping. 
+
+A.2 Reasoners, histories, and success 
+
+A reasoner R may be an LLM policy, a search procedure using an LLM, or a hybrid method such as beam search, MCTS, feasibility-pruned search, or solver-guided search. After budget j, the reasoner has produced a history 
+
+Hj .
+
+This history may contain sampled text actions, parsed structured actions, checker outputs, duplicate-removal decisions, terminal candidates, terminal values, and internal search statistics. Let 
+
+ZR(t, j ) ⊆ Term t(s0)
+
+be the set of feasible terminal states discovered by R on task t by budget j. The reasoner’s output is denoted by Yj . When at least one terminal state has been found, we take 
+
+Yj := tb 
+
+
+
+arg max  
+
+> z∈Z R(t,j )
+
+eval t(z)
+
+
+
+.
+
+When no terminal state has been found, we set Yj = ⊥. In all cases, Yj is measurable with respect to 
+
+Hj .For ϵ ≥ 0, define the anytime success curve 
+
+SR(j; α, ϵ ) := Pr   
+
+> T∼T α,R
+
+[∃z ∈ Z R(T, j ) : eval T (z) ≥ V ⋆T − ϵ] .
+
+15 For exact optimality, take ϵ = 0 .The reasoning information accumulated by budget j is 
+
+IR(j; α) := I(Z⋆; Hj ).
+
+If the history is revealed incrementally as Hj = ( O1, . . . , O j ), define the per-step information gain 
+
+IG i := I(Z⋆; Oi | Hi−1).
+
+By the chain rule, 
+
+IR(j; α) = 
+
+> j
+
+X
+
+> i=1
+
+IG i. (4) 
+
+A.3 Core information-theoretic results Lemma A.2 (Fano-style bound for identifying the optimum) . Assume Assumption A.1. For any estimator Y of Z⋆,
+
+Pr[ Y = Z⋆] ≤ I(Z⋆; Y ) + log 2 log Nα
+
+.
+
+Equivalently, if 
+
+Pr[ Y = Z⋆] ≥ 1 − δ, 
+
+then 
+
+I(Z⋆; Y ) ≥ (1 − δ) log Nα − log 2 .
+
+Proof. Let 
+
+Pe := Pr[ Y̸ = Z⋆].
+
+Since Z⋆ is uniform on Nα possibilities, 
+
+H(Z⋆) = log Nα.
+
+Let E = 1{Y̸ = Z⋆}. Then 
+
+H(Z⋆ | Y ) ≤ H(E | Y ) + H(Z⋆ | Y, E ) ≤ log 2 + Pe log Nα.
+
+Therefore, 
+
+I(Z⋆; Y ) = H(Z⋆) − H(Z⋆ | Y ) ≥ log Nα − log 2 − Pe log Nα.
+
+Since 1 − Pe = Pr[ Y = Z⋆], rearranging gives 
+
+Pr[ Y = Z⋆] ≤ I(Z⋆; Y ) + log 2 log Nα
+
+.
+
+The second statement follows by rearranging the same inequality. 
+
+Theorem A.3 (Complexity–reasoning tradeoff for OPT ⋆). Assume Assumption A.1. Consider any reasoner R that, after budget j, outputs Yj measurable with respect to Hj . Then 
+
+Pr[ Yj = Z⋆] ≤ IR(j; α) + log 2 log Nα
+
+=
+
+Pji=1 IG i + log 2 log Nα
+
+.
+
+Consequently, maintaining any fixed positive probability of identifying the canonical optimum as Nα
+
+grows requires 
+
+IR(j; α) = Ω(log Nα).
+
+Thus, as the effective search space expands, a reasoner must either use more budget or extract more information per unit of budget. Proof. Apply Lemma A.2 with Y = Yj . Since Yj is measurable with respect to Hj , the data-processing inequality gives 
+
+I(Z⋆; Yj ) ≤ I(Z⋆; Hj ) = IR(j; α).
+
+Substituting this into Lemma A.2 yields 
+
+Pr[ Yj = Z⋆] ≤ IR(j; α) + log 2 log Nα
+
+.
+
+The equality with Pji=1 IG i follows from (4) . The asymptotic statement follows by rearranging the bound for any fixed nonzero target success probability. 16 Corollary A.4 (Budget lower bound) . Assume Assumption A.1. Suppose there exists κα > 0 such that, for all i ≤ j,
+
+IG i = I(Z⋆; Oi | Hi−1) ≤ κα.
+
+Then 
+
+Pr[ Yj = Z⋆] ≤ jκ α + log 2 log Nα
+
+.
+
+Equivalently, achieving 
+
+Pr[ Yj = Z⋆] ≥ 1 − δ
+
+requires 
+
+j ≥ (1 − δ) log Nα − log 2 
+
+κα
+
+,
+
+whenever the numerator is positive. Proof. By the chain rule, 
+
+IR(j; α) = 
+
+> j
+
+X
+
+> i=1
+
+IG i ≤ jκ α.
+
+Substituting this into Theorem A.3 gives the first claim. The budget lower bound follows by rearranging. 
+
+Approximate optimality. The same argument applies to ϵ-optimality by replacing Z⋆ with a finite effective class variable that indexes the relevant ϵ-good solution region. In that case, Nα should be read as the number of effective high-value regions the reasoner must distinguish. 
+
+A.4 Effective branching and empirical estimation 
+
+Theorem A.3 states that a harder effective search space requires more informative histories. We now connect this to the empirical quantities used in the experiments. 
+
+Definition A.5 (ϵ-good terminal set) . For a task instance t and tolerance ϵ ≥ 0, define 
+
+Gϵ(t) = {sT ∈ Term t(s0) : eval t(sT ) ≥ V ⋆t − ϵ} .
+
+When the exact optimum V ⋆t is unavailable, it can be replaced by a reference value obtained from the best solution found under a large search budget. The resulting quantity should then be interpreted as reference-good mass rather than true ϵ-optimal mass. 
+
+Definition A.6 (Budgeted hit probability) . Fix a search budget B. For a possibly adaptive search procedure R, define 
+
+phit ,R (t; B) = Pr  
+
+> R
+
+[ZR(t, B ) ∩ G ϵ(t)̸ = ∅ | t] .
+
+Equivalently, 
+
+phit ,R (t; B) = Pr 
+
+> R
+
+
+
+max  
+
+> z∈Z R(t,B )
+
+eval t(z) ≥ V ⋆t − ϵ | t
+
+
+
+,
+
+with the convention that the maximum over an empty discovered set is −∞ .
+
+Definition A.7 (Good-terminal mass and effective branching) . For fixed budget B, define the budget-normalized good-terminal mass 
+
+pϵ,R (t; B) = 1 − (1 − phit ,R (t; B)) 1/B .
+
+The empirical effective branching factor is 
+
+beff ,R (t; B) = 1
+
+pϵ,R (t; B) ,
+
+with the convention that beff ,R (t; B) = + ∞ when pϵ,R (t; B) = 0 . When B is fixed by the experiment, we omit B and write phit ,R (t), pϵ,R (t), and beff ,R (t).17 Interpretation. The quantity pϵ,R (t; B) is a calibration, not an independence assumption. It asks: what independent per-budget-unit success probability would yield the same budget-B hit probability? Thus it can compare plain rollouts, beam search, MCTS, feasibility-pruned search, and duplicate-aware search under a common scale. 
+
+Proposition A.8 (Independent restarts as a special case) . Suppose R consists of B independent rollouts, and a single rollout hits Gϵ(t) with probability p. Then 
+
+phit ,R (t; B) = 1 − (1 − p)B ,
+
+and therefore 
+
+pϵ,R (t; B) = p. 
+
+Proof. The probability that all B independent rollouts miss the ϵ-good set is (1 − p)B . Taking the complement gives phit ,R (t; B) = 1 − (1 − p)B . Substituting into Definition A.7 gives pϵ,R (t; B) = 
+
+p.
+
+Proposition A.9 (Hit curves equal anytime success) . For any possibly adaptive reasoner R,
+
+SR(B; α, ϵ ) = ET ∼T α [phit ,R (T ; B)] .
+
+Proof. Condition on T = t. By Definition A.6, phit ,R (t; B) is exactly the conditional probability that R discovers an ϵ-good terminal state by budget B. Taking expectation over T ∼ T α gives the result. 
+
+Empirical estimation. For each held-out task instance t, run R independently m times with budget 
+
+B. Let 
+
+ct =
+
+> m
+
+X
+
+> ℓ=1
+
+1
+
+h
+
+Z(ℓ) 
+
+> R
+
+(t, B ) ∩ G ϵ(t)̸ = ∅
+
+i
+
+.
+
+Then 
+
+bphit ,R (t; B) = ct
+
+m .
+
+The corresponding estimates are 
+
+bpϵ,R (t; B) = 1 − (1 − bphit ,R (t; B)) 1/B , bbeff ,R (t; B) = 1
+
+bpϵ,R (t; B) .
+
+For numerical stability when ct = 0 , one may use the smoothed estimate 
+
+ephit ,R (t; B) = ct + 1 /2
+
+m + 1 .
+
+Connection to the main theorem. Theorem A.3 applies to the full history HB of any search procedure, including adaptive methods such as MCTS or beam search. The empirical hit curve measures whether the search procedure places enough probability mass on high-value terminal states within the available budget. Thus, at fixed B, better search or a stronger learned policy should increase phit ,R , increase pϵ,R , and decrease beff ,R .
+
+A.5 Checking and redundancy removal 
+
+We now isolate the local effect of the two search components used in the paper: feasibility checking and duplicate structured-action removal. 
+
+Theorem A.10 (Checker and redundancy removal increase trace efficiency) . Consider a fixed state with feasible structured action classes 
+
+F, |F| = K ≥ 2.
+
+Let W be the structured action class whose continuation is optimal under a fixed tie-breaking rule, and assume 
+
+W ∼ Unif( F).
+
+A raw text action ˜Ai is parsed into a structured class 
+
+Ci = ρ( ˜Ai).
+
+The test succeeds when Ci = W .Compare two procedures with j ≤ K:
+
+18 • Baseline without P1/P2: draw j raw text actions from a fixed distribution independent of W . The parsed classes may be infeasible or repeated. 
+
+• P1+P2: use the checker to reject infeasible classes and the parser to reject repeated feasible classes, until j distinct feasible classes have been accepted. Let Hj denote the resulting transcript. For the baseline, let 
+
+Uj = |{ C1, . . . , C j } ∩ F| 
+
+be the number of distinct feasible classes tested. Then 
+
+Pr[ baseline hits W ] = E
+
+ Uj
+
+K
+
+
+
+≤ jK = Pr[ P1+P2 hits W ],
+
+and 
+
+I(W ; HP1+P2  
+
+> j
+
+) ≥ I(W ; Hbase  
+
+> j
+
+).
+
+The success inequality is strict whenever infeasible or repeated classes make E[Uj ] < j . The information inequality is strict whenever the baseline leaves at least two feasible classes untested with positive probability. Proof. Let 
+
+Sj := {C1, . . . , C j } ∩ F 
+
+be the set of distinct feasible classes tested by the baseline, and let Uj = |Sj |. Infeasible classes cannot equal W , and repeated classes retest the same event. 
+
+Success probability. Conditioned on Sj , the baseline succeeds if and only if W ∈ Sj . Since W is uniform over F,
+
+Pr[ baseline hits W | Sj ] = Uj
+
+K .
+
+Taking expectations gives 
+
+Pr[ baseline hits W ] = E
+
+ Uj
+
+K
+
+
+
+≤ jK .
+
+Under P1+P2, every accepted test is a new feasible class, so Uj = j deterministically. Therefore, 
+
+Pr[ P1+P2 hits W ] = jK .
+
+Mutual information. For 0 ≤ u ≤ K, define 
+
+ϕK (u) = 
+
+(  1 − uK
+
+ log( K − u), 0 ≤ u ≤ K − 1,
+
+0, u = K. 
+
+This function is nonincreasing on the integer set {0, . . . , K }. Conditioned on the tested set Sj , if a hit occurs then W is identified exactly. If no hit occurs, then W is uniform over the K − Uj feasible classes in F \ Sj . Hence 
+
+H(W | Hbase  
+
+> j
+
+) = E[ϕK (Uj )] .
+
+Since Uj ≤ j and ϕK is nonincreasing, 
+
+H(W | Hbase  
+
+> j
+
+) ≥ ϕK (j).
+
+Under P1+P2, Uj = j deterministically, so 
+
+H(W | HP1+P2  
+
+> j
+
+) = ϕK (j).
+
+Thus 
+
+H(W | Hbase  
+
+> j
+
+) ≥ H(W | HP1+P2  
+
+> j
+
+).
+
+Since H(W ) = log K, this is equivalent to 
+
+I(W ; HP1+P2  
+
+> j
+
+) ≥ I(W ; Hbase  
+
+> j
+
+).
+
+The strictness statements follow from the same inequalities. 19 Corollary A.11 (Non-redundant search dominates restart search) . Take F = {1, . . . , N }, so every structured class is feasible. A search procedure that tests j distinct previously untested classes has success probability j/N , which is at least the success probability of a restart sampler that may repeat classes. It also has at least as much mutual information about the optimal class. Proof. This is Theorem A.10 with no infeasible classes. Duplicate removal makes the accepted tests distinct; restart sampling may repeat classes, so its number of distinct tested classes is at most j.
+
+Remark A.12 (Fixed raw budgets) . Theorem A.10 counts accepted feasible structured tests. In the full search system, the raw generation budget is fixed. The theorem therefore gives a local explanation: P1 and P2 improve search when they convert raw generations into more distinct feasible tests. The empirical quantities phit ,R and beff ,R measure whether this local advantage translates into better budgeted search. 20 B Task examples 
+
+What fits OPT ⋆? Any multi-step task family with a fast step-checker and a fast final evaluator, whose difficulty scales with a parameter α; this spans optimization, logic/constraint puzzles, and simulator-backed domains. 
+
+B.1 Mathematical optimization tasks Task State / Actions D1: Checker (step) D2: Evaluator (final) D3: Stop D4: Scale ( α) Typical Solver Knapsack Subset of items; add/remove item Total weight ≤ C Total value (max) All items consid-ered / no improv. #items, C DP, ILP, B&B 
+
+Bin Packing Item →bin assignment; place/open bin Bin load ≤ cap. #bins (min) All items placed #items, capacity First/Best-Fit, ILP 
+
+TSP Partial tour; insert/swap city No repeats; valid edges Tour length (min) All cities visited #cities 2/3-opt, B&B, Held– Karp 
+
+VRP Vehicle routes; insert cus-tomer Cap./time-window checks Total route cost (min) All customers routed #cust., vehicles Clarke–Wright, B&C, meta-heur. 
+
+Job Shop (job,machine,time) place-ments No machine overlap; precedence Makespan (min) All ops scheduled #jobs, machines ILP, CP, local search 
+
+Flow Shop Job permutation; shared ma-chine order Feasible start/finish times Makespan / flow time (min) All jobs sequenced #jobs, machines Johnson (2-mach), ILP, heur. 
+
+Open Shop Assign (job, machine, start) No overlaps on ma-chines Makespan (min) All ops assigned #jobs, machines CP, ILP, meta-heur. 
+
+Cutting Stock Patterns; assign demand to patterns Pattern length ≤ stock; demand track #stocks used (min) Demands satisfied Demands, piece types Column gen., ILP 
+
+Facility Location Open facilities; assign cus-tomers Capacity per open site Open+service cost (min) All customers as-signed Sites, customers ILP, B&B, heuristics 
+
+Max Coverage Choose up to k sets Feasible |S| ≤ k Covered elements (max) 
+
+k used / no improv. #sets, k Greedy, ILP, local search 
+
+Set Cover Choose sets covering uni-verse Coverage tracking #sets or weight (min) Universe covered #sets, elements Greedy, ILP, B&B 
+
+Max Flow / Min Cut 
+
+Edge flows; augment path Capacity & conserva-tion 
+
+s–t flow (max) / cut (min) No augmenting path Nodes, edges Edmonds–Karp, Dinic 
+
+Assignment Agent ↔task matching One-to-one constraint Total cost (min) n pairs formed n Hungarian, ILP 
+
+Quadratic Assignment 
+
+Permutation; swap facili-ties/locations Valid permutation P 
+
+> i,j
+
+flow ·dist (min) All n placed n, sparsity B&B, tabu, meta-heur. 
+
+21 B.2 Logic puzzle tasks Task State / Actions D1: Checker (step) D2: Evaluator (final) D3: Stop D4: Scale ( α) Typical Solver Sudoku Grid; place/remove digit Row/col/box con-straints Valid completion (boolean) Grid full and valid Grid size, givens Backtracking + CP 
+
+Kakuro Runs; fill digits 1–9 Run sum and no re-peats All runs match sums All cells filled, all sums met Grid size, runs CP, DFS/backtracking 
+
+KenKen Grid; satisfy cages Row/col uniqueness; cage op All cages and rows/-cols valid Full valid grid Grid size, cage ops CP, backtracking 
+
+Nonogram (Picross) 
+
+Grid; shade/clear cells Row/col run confor-mity All run patterns satis-fied All rows/cols con-sistent Grid size, run com-plexity Line-solver, CP, SAT 
+
+Futoshiki Grid with </> Row/col uniqueness; inequalities All inequalities satis-fied Full valid grid Grid size, inequality density CP, backtracking 
+
+Slitherlink Edges on lattice; toggle edge Cell numbers match incident edges; degree 
+
+≤ 2
+
+Single loop satisfies all clues Single simple cy-cle formed Grid size, clue density Loop logic, SAT/ILP 
+
+Hashiwokakero (Bridges) 
+
+Bridges between islands No crossings; degree 
+
+≤ label; ≤ 2 parallel All island degrees match; connected Degrees matched and single compo-nent #islands, labels Graph heur., CP 
+
+Nurikabe Shade/clear cells No 2 ×2 black; island size ≤ label Island sizes exact; sea connected All labels satisfied Grid size, label layout CP, BFS/DFS logic 
+
+Logic Grid (Ze-bra) 
+
+Attribute matrix; mark yes/no No-clash and one-of per category; apply clues All clues satisfied; bi-jective assignment All entities fully assigned #entities, attributes CP, SAT, tableaux 
+
+Mastermind Color code; propose guess Score guess with pegs; consistency with his-tory Min guesses to exact match Code guessed or guess limit Code length, colors Knuth strategy, search 
+
+Hitori Cells; black/white decisions No orthogonal black adjacency; track row/-col duplicates No duplicates; white cells connected All constraints met Grid size, digit range CP, DFS/backtracking 
+
+Battleships Place fleet; mark water Row/col ship counts; no adjacency; ship shapes Fleet placed; counts match All ships placed and valid Grid size, fleet mix CP, ILP/backtracking 
+
+Hidato Place 1.. N consecutively Each k adjacent to k±1 Full 1.. N chain All numbers placed Grid size, holes Pathfinding + CP 
+
+Tents & Trees Place tents near trees Tent next to a tree; no tent-tent adjacency; row/col counts Each tree has 1 tent; counts satisfied All constraints met Grid size, tree density CP, logical heuristics 
+
+Abbrev.: CP = constraint programming; SAT = satisfiability; ILP = integer linear programming; DFS = depth-first search. 
+
+B.3 Simulator-based tasks Task State / Actions D1: Checker (step) D2: Evaluator (final) D3: Stop D4: Scale ( α) Typical Solver Comb. circuit de-bug/synth. 
+
+Netlist; add/remove gate; rewire; change cell Width/type compat.; one driver/net; no floating pins; no comb. cycles Verilog TB sim; score=#tests passed / pass–fail All tests pass / no improv. #gates/#nets; depth; #vectors Verilator / Icarus +static checks 
+
+Sequential cir-cuit (bounded) 
+
+Netlist with FFs; edit regs/wires/modules As left + single-clock; reset well-formed; no multiply-driven state Simulate T cycles; compare trace vs. spec Spec satisfied / cy-cle budget #FFs+#gates; T ; #vec-tors Verilator (+ STA) 
+
+FSM synthesis (DFA/Mealy/-Moore) 
+
+Add states/transitions; label start/accept Determinism per sym-bol; well-typed I/O; reachable start Run labeled traces; score=acc./coverage All traces satisfied / budget #states; alphabet; #traces ×len Automata simulator 
+
+Sorting network (bounded) 
+
+Append comparators (i, j )
+
+on n wires Indices in range; level constraints; well-formed net Poly test suite; score=#inputs sorted Suite fully sorted / budget #wires; #comparators; suite size SN simulator / PBT harness 
+
+CA target syn-thesis (Life) 
+
+Toggle seed cells; optional pieces In-bounds; edit budget Evolve T ;score= −dist( target ) /exact Exact match / step budget Grid size; T CA engine 
+
+Grid-world robot plan 
+
+Append primitives (move/pick/drop) Parseable; preconds (in-bounds; no colli-sion) Replay sim; re-ward=goal − path cost Goal or horizon Map size/obstacles; horizon 2-D grid sim 
+
+Compiler pass ordering (IR) 
+
+Sequence optimization passes Pass applicability; IR verifies/compiles Run tests; obj.=runtime/size with correct outputs Tests pass & no further gain / pass limit IR size; #tests; pass budget LLVM opt + inter-preter 
+
+Network routing (bounded DES) 
+
+Add/assign routes; flow splits No simple cycles; link caps. Simulate T ; through-put/delay/feas. All flows delivered or T
+
+#nodes/#edges/#flows; 
+
+T
+
+Lightweight ns-3– style 
+
+22 C Additional details on the generation process 
+
+This appendix describes the instance-generation and prompt-generation pipeline used by the experi-ments. Each generated example is stored as a JSON object with an id , a category , a natural-language 
+
+instruction , a structured state , and an answer . For the optimization domains, the state is the Markovian state used by the rollout code; the answer is the scalar optimum or target value when it is available from the generator. During search, the model never directly edits the full solution object. Instead, it emits a JSON action under the key answer ; the parser extracts this action, the domain checker validates it, and the domain transition function applies it to produce the next state. 
+
+Common rollout interface All task families are implemented through the same plan-based inter-face. A domain specification defines: 1. a prompt function that converts the current structured state into a natural-language prompt; 2. a JSON action schema, specified by the required action keys; 3. a step validator, which implements chk t(s, a );4. a state-transition rule, which applies a valid action to the current state; 5. a terminal-state predicate; 6. an objective function, which implements eval t(·) on terminal states. The model is asked to provide a short reasoning trace and then exactly one action. In the default experiments, the action is parsed from 
+
+{"answer": [{...}]} .
+
+The parser also records whether the response was valid JSON, whether it contained the required keys, and whether the parsed action was domain-feasible. 
+
+Curriculum and levels For each task family, the generator exposes four main complexity levels, denoted α1, . . . , α 4. Higher levels increase the number of variables, the number of choices per step, the amount of clutter or constraints, or the horizon length. The experiments generate 1,000 training instances per level. For online RL, the solver is used to construct optimal partial-state trajectories, and the resulting training prompts are ordered by level, from α1 to α4. For offline RL, search is run from the root of each instance, the best discovered trajectory is selected using the outcome evaluator, and SFT examples are collected from the states along that trajectory. 
+
+Search-time variants For the offline ablation, the same generated instances are evaluated under several search configurations. The full configuration uses both feasibility pruning and duplicate-action merging. The no-pruning configuration permits infeasible intermediate actions to remain in the tree until terminal checking. The no-deduplication configuration keeps duplicate textual proposals even when they parse to the same structured action. The sequential baseline samples rollouts without tree reuse. The solver-reference configuration is an enumerative structural baseline: it enumerates broad next-step candidates directly from the state, rather than using LLM proposals, and is used as a reference trajectory generator in the search diagnostics. 
+
+C.1 0–1 Knapsack Problem description The knapsack task is an add-only 0–1 knapsack problem. The state contains a capacity, item weights, item values, and the currently selected item set. At each step the model chooses one previously unselected item to add. A step is feasible if the new total weight does not exceed the capacity. The rollout terminates when no remaining item can be legally added. 
+
+Action schema The required action key is 
+
+item_index .
+
+The transition appends this item to selected and sorts the selected set. The canonical solution key is the sorted tuple of selected item indices. 23 Objective and oracle The objective is the total value of the selected items, which is maximized. The generator stores an exact optimum when available. For a partial state, the oracle can compute the best completion value using the knapsack solver, while the offline search setting only uses terminal objective values discovered by rollouts. 
+
+C.2 Quadratic Assignment / CF–EU Manhattan Problem description The QAP instances use a Manhattan grid. Facilities are assigned one-to-one to grid cells. Facilities have cluster labels, and the pairwise flow between two facilities is high when they are in the same cluster and low otherwise. The objective is 
+
+X
+
+> i<j
+
+flow( i, j ) ∥loc( i) − loc( j)∥1,
+
+which is minimized. 
+
+Action schema The required action keys are 
+
+facility , location .
+
+At each step, the model places exactly one currently unassigned facility into one free grid cell. The transition appends the pair 
+
+{"facility": f, "location": [r,c]} 
+
+to the assignment and sorts the assignment by facility id. The canonical solution key is the ordered list of facility-location pairs. 
+
+Generation process For each instance, the generator samples the number of facilities, grid size, cluster map, and a small partial assignment. The remaining unassigned facilities and unoccupied grid cells define the search space. The oracle computes the exact optimal completion by enumerating bijective assignments of the remaining facilities to free cells. 
+
+Complexity levels The QAP levels used in the experiments increase the grid size and the number of facilities: Level facilities n grid size clusters preassigned fraction 
+
+α1 3 4 × 4 2 0.25 
+
+α2 3 5 × 5 2 0.25 
+
+α3 4 5 × 5 2 0.25 
+
+α4 4 6 × 6 2 0.25 
+
+C.3 Role Assignment with Conflicts Problem description The role-assignment task assigns R roles to C = R + E candidates. Each candidate-role pair has an integer fit score. Some candidate pairs have conflict penalties. A complete assignment must use each role exactly once and each candidate at most once. Conflicts are allowed, but their penalties are subtracted from the final score. 
+
+Action schema The required action keys are 
+
+role , candidate .
+
+At each step, the model assigns one unfilled role to one unused candidate. The transition appends the pair 
+
+{"role": r, "candidate": c} 
+
+to the assignment. The canonical solution key is the sorted tuple of role-candidate pairs. 
+
+Objective and tie-break The raw objective is 
+
+X
+
+> (r,c )
+
+fit( c, r ) − X 
+
+> {ci,c j}⊆ S
+
+penalty( ci, c j ),
+
+where S is the set of selected candidates. Ties are resolved by preferring the complete assignment with the largest minimum individual fit among its selected role-candidate pairs. 24 Generation process For each level, the generator samples a fit matrix, injects high-fit standouts and near-ties, samples structured conflicts, and rejects or resamples instances whose global optimum is not positive. The oracle enumerates all feasible one-to-one role-candidate assignments and selects the best assignment under the objective and tie-break. 
+
+Complexity levels 
+
+Level roles R extras E candidates C conflict density penalty range structure 
+
+α1 3 1 4 0.15 [1,5] chain 
+
+α2 4 1 5 0.20 [2,5] random 
+
+α3 5 1 6 0.25 [2,6] chain overlaps 
+
+α4 6 1 7 0.35 [3,6] clique-biased 
+
+C.4 MaxSat Problem description The MaxSat task combines constrained task selection with worker assignment. The model must choose a subset of tasks and assign each selected task to a distinct eligible worker. The state contains task costs, resource budgets, eligible workers, hard Boolean clauses, and weighted soft clauses. 
+
+Action schema The required action keys are 
+
+task_index , worker_index .
+
+At each step, the model selects one currently unselected task and assigns it to one unused eligible worker. The transition adds the task to selected and appends 
+
+{"task": t, "worker": w} 
+
+to the assignment list. 
+
+Feasibility A step is feasible only if: 1. the task has not already been selected; 2. the worker has not already been used; 3. the worker is eligible for the task; 4. all resource budgets remain satisfied; 5. all hard Boolean clauses remain satisfied. The rollout terminates when no additional task-worker pair can be added without violating these conditions. 
+
+Objective and tie-break The learning objective is to maximize the total weight of satisfied soft clauses. For oracle reporting, ties are broken lexicographically: first minimize resource usage in the fixed resource order, then prefer fewer selected tasks. 
+
+Generation process The generator samples task costs, budgets, worker eligibility, hard clauses, and soft clauses. Hard clauses include implications, anti-pairs, and small at-most-one groups. Soft clauses include units, implications, anti-pairs, and at-least-one clauses with small integer weights. The oracle enumerates task subsets, checks budget and hard-clause feasibility, verifies that a matching to workers exists, and then scores the solution by the soft-clause objective and tie-breaks. 
+
+Complexity levels 
+
+Level tasks workers resources budget factor eligibility hard density soft density 
+
+α1 4 2 1 0.50 random 0.30 1.20 
+
+α2 5 3 1 0.55 random 0.60 1.60 
+
+α3 6 3 2 0.55 random 0.60 1.70 
+
+α4 7 4 2 0.55 role-patterned 0.70 2.00 25 C.5 Single-machine weighted tardiness scheduling Problem description The scheduling task is a single-machine sequencing problem. Each job j has processing time pj , due date dj , and weight wj . The model builds a schedule one job at a time. The machine starts at time 0, runs without idle time, and jobs are non-preemptive. 
+
+Action schema The required action key is 
+
+job_index .
+
+At each step, the model appends exactly one unscheduled job to the current prefix. The transition appends this job index to the order. The rollout terminates when all jobs have been scheduled. 
+
+Objective For a complete order, the objective is total weighted tardiness: 
+
+min X
+
+> j
+
+wj Tj , Tj = max {0, C j − dj }.
+
+The domain uses a minimization objective, while the generic search code internally converts objectives into maximization form when needed. 
+
+Generation process For each instance, the generator samples the number of jobs, processing times, due dates, and weights. Due dates are sampled using a tardiness-factor and relative-due-date-range recipe. The oracle solves the optimal suffix exactly from a partial prefix and emits a step-by-step path of next jobs. 
+
+Complexity levels 
+
+Level jobs n processing range TF RDD max weight 
+
+α1 5 [1,7] 0.30 0.60 3
+
+α2 6 [1,7] 0.50 0.60 5
+
+α3 7 [2,8] 0.70 0.60 10 
+
+α4 7 [1,15] 0.60 0.60 6
+
+C.6 Polyomino Target Cover Problem description The Polyomino Target Cover task is a spatial optimization problem. The board contains target cells t, optional obstacles #, and possibly pre-placed example pieces. The model has a pool of labeled pieces and a move budget K. At each step, it chooses an unused piece, rotates it by 0◦, 90 ◦, 180 ◦, or 270 ◦, and places it at a top-left anchor. The goal is to maximize the number of newly covered targets within the move budget. 
+
+Action schema The action contains: 
+
+piece_id , anchor , rotation , grid_after .
+
+The anchor is the global row-column coordinate of the top-left cell of the transformed piece’s tight bounding box. The grid_after field is included so that the parser and checker can compare the declared placement with the resulting board. 
+
+Feasibility A placement is feasible only if all occupied cells lie inside the board and do not overlap obstacles or existing letters. A piece may be used at most once. Reflections are not used in this task. 
+
+Generation process The generator first samples a board size, target clusters, singleton target cells, and obstacles. It then samples a piece pool from a level-dependent piece library. Some levels include pre-placed example pieces, which do not count against the move budget. The oracle uses an exact bitboard branch-and-bound search over legal placements and returns the optimal additional target coverage and a decorated path of placements. 26 Complexity levels 
+
+Level grid K pool size piece set examples obstacles 
+
+α1 4 × 4 1 3 domino-only 2 0
+
+α2 5 × 5 1 3 domino/square 2 0–1 
+
+α3 5 × 5 2 4 full 2 0–1 
+
+α4 6 × 6 3 5 full 1 0–1 
+
+C.7 Auxiliary Grid-Spatial tasks Purpose The Grid-Spatial tasks are auxiliary held-out spatial QA tasks used to test whether training on the Polyomino Target Cover optimization task transfers to more elementary spatial reasoning skills. Unlike Polyomino Target Cover, these tasks are not multi-step optimization problems. They are mostly one-step questions about moving, rotating, reflecting, comparing, or placing small shapes on a grid. We use them as diagnostic probes for the spatial abilities that are implicitly required by the polyomino optimization task. 
+
+General format Each instance contains a small rectangular canvas represented as a Python-style list of lists. Cells may be empty, blocked, or marked as targets: 
+
+"." = empty , "#" = obstacle , "t" = target .
+
+Some instances also contain pre-placed uppercase letters, which act as occupied cells. The shape is given as a small list-of-lists using a letter such as "A" for occupied cells and "." for empty cells inside the shape’s bounding box. Coordinates are always row-column coordinates, with rows and columns indexed from 0. An anchor [r, c ] denotes the top-left position of the transformed shape’s tight bounding box after rotation or reflection. A typical input therefore looks like: 
+
+canvas = [ [".", ".", ".", ".", "."], [".", "#", ".", ".", "."], [".", ".", ".", "t", "."], [".", ".", ".", ".", "."], [".", ".", ".", ".", "."] ]shape = [ ["A", "."], ["A", "A"] ]anchor = [2, 1] operation = rotate 90 degrees clockwise 
+
+The model must reason about the transformed coordinates of the occupied cells, check whether the placement is legal, and return the requested answer in JSON form. 
+
+Tasks selected for testing The held-out Spatial QA evaluation is organized into the following capability categories. These are the categories reported in the spatial capability tables. 27 Capability What the test instance asks Translate Move a given shape from one anchor to another without changing its orienta-tion. The model must compute the final occupied cells and usually return the resulting grid or final anchor. 
+
+Rotate & Place Rotate a shape by a specified angle in {0◦, 90 ◦, 180 ◦, 270 ◦} and place it at a specified anchor. The model must update the shape coordinates after rotation and check whether the placement fits on the canvas. 
+
+Reflect & Place Reflect a shape horizontally, vertically, or diagonally, then place it at a specified anchor. This tests whether the model understands mirror transformations on a discrete grid. 
+
+Compose Apply a short composition of transformations, such as rotation followed by reflection followed by translation. These examples test whether the model can keep track of multiple spatial operations in order. 
+
+Equivalence Given two shapes, decide whether they are the same up to rotation and, when allowed, reflection. If they are equivalent, the model returns a transformation explaining how one shape maps to the other. 
+
+Symmetry Given one shape, report which symmetries it has, such as 90 ◦ rotation sym-metry, 180 ◦ rotation symmetry, horizontal mirror symmetry, vertical mirror symmetry, or diagonal mirror symmetry. 
+
+Overlap / IoU Place two transformed shapes on the same empty canvas and compute their intersection cells, intersection count, and union count. This is a small discrete analogue of intersection-over-union reasoning. 
+
+Coverage Given a target cell and a transformed shape, list the anchors for which the shape would cover that target cell. This tests inverse spatial reasoning: instead of asking where a shape lands after an anchor is chosen, the task asks which anchors could have produced coverage of a specific cell. 
+
+Examples of what the selected tasks look like Below are simplified examples illustrating the style of the held-out Spatial QA tasks. 
+
+Translate. The prompt gives a shape and an initial/final anchor. The model must shift all occupied cells by the anchor displacement. 
+
+shape = [ ["A", "."], ["A", "A"] ]old_anchor = [0, 1] new_anchor = [2, 3] 
+
+The expected reasoning is that the occupied local cells of the shape are 
+
+(0 , 0) , (1 , 0) , (1 , 1) .
+
+At anchor [2 , 3] , these become global cells 
+
+(2 , 3) , (3 , 3) , (3 , 4) .
+
+Rotate & Place. The prompt gives a shape, a rotation angle, and an anchor. 
+
+shape = [ ["A", "."], ["A", "A"] ]rotation = 90 anchor = [1, 2] 
+
+The model must rotate the shape clockwise, normalize the rotated shape to its tight bounding box, then place that bounding box with top-left cell at [1 , 2] . It must also check that no occupied cell lands outside the board or on an obstacle. 
+
+Reflect & Place. The prompt gives a reflection mode such as horizontal or vertical. 28 shape = [ ["A", "A", "."], [".", "A", "A"] ]reflection = vertical anchor = [0, 1] 
+
+The model must mirror the shape across the requested axis and then place the reflected shape at the anchor. 
+
+Compose. A compose instance asks the model to apply several transformations in sequence: 
+
+shape = [ ["A", "."], ["A", "A"] ]operations = rotate 90, then reflect horizontal, then place at [2, 1] 
+
+These examples are harder because an error in the first operation changes all later coordinates. 
+
+Equivalence. An equivalence instance gives two shapes: 
+
+shape_1 = [ ["A", "."], ["A", "A"] ]shape_2 = [ ["B", "B"], ["B", "."] ]
+
+The model must decide whether shape_2 can be obtained from shape_1 by rotation, and possibly reflection. The answer may specify a rotation angle and whether reflection is needed. 
+
+Symmetry. A symmetry instance gives one shape: 
+
+shape = [ ["A", "A"], ["A", "A"] ]
+
+The model must report the transformations that leave the shape unchanged. For the square above, several rotations and mirror symmetries are valid. 
+
+Overlap / IoU. An overlap instance gives two shapes with their own transformations and anchors: 
+
+shape_1 anchor = [1, 1], rotation = 0 shape_2 anchor = [1, 2], rotation = 90 
+
+The model must compute the cells occupied by each placed shape, then return the intersection count and union count. This probes whether the model can compare two transformed coordinate sets. 
+
+Coverage. A coverage instance gives a target cell and asks which anchors would make a shape cover that cell: 
+
+target_cell = [2, 3] shape = [ ["A", "."], ["A", "A"] ]rotation = 0 
+
+29 The model must reason backward from the target cell to possible anchors. For every occupied local cell (u, v ) in the shape, an anchor candidate is 
+
+[r, c ] = [2 − u, 3 − v].
+
+The legal anchors are those whose resulting placement stays inside the grid and avoids obstacles. 
+
+Difficulty levels used for testing The Spatial QA tests use two main held-out difficulty settings. Both use the same task types above, but the second setting increases the grid size, the shape size, and the amount of clutter. 
+
+Difficulty Canvas Shape sizes Obstacles Decoy letters Transform variety 
+
+Diff. 1 about 5 × 5 mostly 2–3 cells 0–1 0 simpler rotations/reflections Diff. 2 about 6 × 6 mostly 3–4 cells 1–2 0–1 full rotations and more reflections 
+
+Why these tasks are useful These tasks are designed to isolate the low-level spatial operations needed for the optimization task. Polyomino Target Cover requires the model to choose pieces, rotate them, place them legally, avoid collisions, and reason about target coverage. The auxiliary Grid-Spatial tests separate these abilities into simpler questions. Thus, improved performance on these tests suggests that optimization training is not only teaching the model to imitate a specific polyomino solver, but also improving reusable spatial operations such as coordinate tracking, rotation, reflection, overlap computation, and coverage reasoning. 30 D Prompts (examples) 
+
+This section gives representative prompts produced by the task promptization functions. The examples show the user-facing prompt, not the hidden checker. In every optimization prompt below, the model is expected to give brief reasoning and then return exactly one JSON action under answer . The action keys shown here match the keys validated by the domain specifications. 
+
+0–1 Knapsack (example) 
+
+You are solving a 0–1 knapsack problem incrementally .
+
+Objective 
+
+Build a high-value feasible set of items. You may only add items. Stop only when no remaining item can be legally added without exceeding capacity. 
+
+State 
+
+Capacity = 45 Weights = [ {"0": 4}, {"1": 18}, {"2": 1}, {"3": 8}, {"4": 12}, {"5": 22}, {"6": 6}, {"7": 22}, {"8": 17}, {"9": 19}, {"10": 4}, {"11": 19}, {"12": 19}, {"13": 16}, {"14": 18}, {"15": 3} ]Values = [ {"0": 1}, {"1": 15}, {"2": 1}, {"3": 10}, {"4": 10}, {"5": 8}, {"6": 5}, {"7": 37}, {"8": 25}, {"9": 27}, {"10": 5}, {"11": 17}, {"12": 21}, {"13": 6}, {"14": 15}, {"15": 1} ]Currently selected item indices = [] Current total weight = 0 Current total value = 0 
+
+Rules 
+
+• Add exactly one item at this step. • Do not add an item that is already selected. • The new total weight must be at most the capacity. Briefly explain the trade-off you are using, such as remaining capacity, value, and value/weight ratio. Then propose the next item to add. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"item_index": <int> }]}
+
+CF–EU Manhattan / QAP (example) 
+
+You are solving an incremental facility placement problem. 
+
+Grid 
+
+31 [[".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", "1", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."] ]
+
+Legend 
+
+"." means a free cell. A number means that the corresponding facility is already assigned to that cell. 
+
+Assigned facilities 
+
+[{"facility": 1, "location": [2, 1]} ]
+
+Unassigned facilities 
+
+[0, 2, 3] 
+
+Cluster map 
+
+{"0": 0, "1": 1, "2": 1, "3": 1} 
+
+Flow rule 
+
+Facilities in the same cluster have flow H = 10 ; facilities in different clusters have flow L = 1 .
+
+Distance metric 
+
+Manhattan distance. 
+
+Objective 
+
+Complete the assignment while minimizing 
+
+X
+
+> i<j
+
+flow( i, j ) × Manhattan(location( i), location( j)) .
+
+Rules 
+
+• Add exactly one unassigned facility. • Place it in a currently free grid cell. • A grid cell may contain at most one facility. Briefly explain the placement reasoning, especially cluster and flow effects. Then propose the next placement. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"facility": <int>, "location": [<row>, <col>] }]}
+
+Role Assignment with Conflicts (example) 
+
+You are solving a role assignment with conflicts problem incrementally .
+
+Objective 
+
+32 1. Assign exactly one candidate to each role. 2. Each candidate can be used at most once. 3. Maximize 
+
+ X chosen fit scores 
+
+
+
+−
+
+ X conflict penalties among selected candidates 
+
+
+
+.
+
+4. Tie-breaker: among equal total scores, prefer the assignment with the highest minimum individual fit. 
+
+Current state 
+
+• Number of roles: 6
+
+• Number of candidates: 7
+
+• Already assigned role-candidate pairs: [] 
+
+Fit matrix 
+
+Rows are candidates and columns are roles. 
+
+candidate 0: role scores {0: 9, 1: 9, 2: 1, 3: 3, 4: 8, 5: 3} candidate 1: role scores {0: 6, 1: 4, 2: 3, 3: 1, 4: 8, 5: 1} candidate 2: role scores {0: 1, 1: 0, 2: 1, 3: 7, 4: 9, 5: 5} candidate 3: role scores {0: 3, 1: 8, 2: 5, 3: 3, 4: 1, 5: 3} candidate 4: role scores {0: 6, 1: 2, 2: 6, 3: 8, 4: 1, 5: 0} candidate 5: role scores {0: 8, 1: 7, 2: 4, 3: 1, 4: 8, 5: 3} candidate 6: role scores {0: 4, 1: 6, 2: 8, 3: 9, 4: 1, 5: 1} 
+
+Conflict penalties 
+
+(0,6): 3 (0,5): 4 (0,2): 6 (0,1): 5 (4,5): 4 (5,6): 3 (1,5): 5 
+
+Rules 
+
+• Add exactly one new role-candidate assignment. • The role must be currently unfilled. • The candidate must be currently unused. • Conflicts are allowed, but their penalties are subtracted in the objective. Briefly explain the fit-vs-conflict trade-off and the tie-breaker. Then propose the next assign-ment. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"role": <int>, "candidate": <int> }]}
+
+33 Wished Assignments / Constrained MaxSAT (example) 
+
+You are solving a Wished Assignments puzzle incrementally . This is a constrained task-selection and worker-assignment problem. 
+
+Objective 
+
+1. Maximize the total weight of satisfied soft clauses, subject to budgets, worker eligibil-ity, and hard logic. 2. Tie-breaker A: among equal soft-clause scores, minimize resource usage lexicographi-cally. 3. Tie-breaker B: among remaining ties, prefer fewer selected tasks. 
+
+Budgets 
+
+Money = 12 , Time = 11 .
+
+Workers 
+
+worker_index 0: W1 worker_index 1: W2 worker_index 2: W3 worker_index 3: W4 
+
+Tasks 
+
+task_index 0, A: costs {Money: 2, Time: 1}, eligible workers [2] task_index 1, B: costs {Money: 2, Time: 4}, eligible workers [1] task_index 2, C: costs {Money: 4, Time: 3}, eligible workers [0] task_index 3, D: costs {Money: 5, Time: 4}, eligible workers [1, 3] task_index 4, E: costs {Money: 1, Time: 2}, eligible workers [0, 2] task_index 5, F: costs {Money: 5, Time: 3}, eligible workers [1, 3] task_index 6, G: costs {Money: 2, Time: 3}, eligible workers [0, 2] 
+
+Hard clauses 
+
+Here ¬ means negation. • ¬A ∨ ¬ C
+
+• ¬A ∨ G
+
+• ¬C ∨ ¬ D
+
+• ¬C ∨ ¬ F
+
+• ¬D ∨ ¬ F
+
+Soft clauses 
+
+1. D ∨ ¬ F (w = 1) 
+
+2. C ∨ G (w = 1) 
+
+3. ¬B (w = 1) 
+
+4. ¬D ∨ ¬ F (w = 1) 
+
+5. ¬C ∨ F (w = 1) 
+
+6. ¬A ∨ ¬ E (w = 2) 
+
+7. B ∨ C (w = 2) 
+
+8. ¬B ∨ C (w = 1) 
+
+9. ¬B ∨ G (w = 2) 
+
+10. ¬D ∨ ¬ F (w = 1) 
+
+11. ¬D ∨ E (w = 1) 
+
+12. G ∨ C (w = 2) 
+
+13. ¬C ∨ B (w = 2) 
+
+34 14. B (w = 2) 
+
+Current state 
+
+Selected tasks = [] Assigned task-worker pairs = [] 
+
+Rules 
+
+• Add exactly one task and assign it to exactly one worker. • The task must be currently unselected. • The worker must be currently unused. • The worker must be eligible for the task. • The new selected set must satisfy all hard clauses. • The new resource usage must not exceed the budgets. Briefly explain budget feasibility, hard-clause feasibility, worker eligibility, and the soft-clause effect. Then propose the next task-worker assignment. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"task_index": <int>, "worker_index": <int> }]}
+
+Single-machine Weighted Tardiness Scheduling (example) 
+
+You are solving a single-machine weighted tardiness scheduling problem incrementally .
+
+Objective 
+
+min X
+
+> j
+
+wj · max(0 , C j − dj ).
+
+Rules 
+
+• The machine starts at time 0.• There is no inserted idle time. • Jobs are non-preemptive. • At this step, append exactly one unscheduled job to the current prefix. 
+
+Jobs 
+
+Id job_index p d w
+
+A 0 3 9 4B 1 8 29 4C 2 11 22 5D 3 6 14 1E 4 15 28 2F 5 7 30 2G 6 7 19 5
+
+Current state 
+
+Current partial order = [] 
+
+35 Current partial order indices = [] Time elapsed so far = 0 Remaining job indices = [0, 1, 2, 3, 4, 5, 6] 
+
+Briefly explain your scheduling rationale, such as due dates, processing times, weights, and whether a job risks becoming tardy. Then choose the next job to append. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"job_index": <int> }]}
+
+Polyomino Target Cover (example) 
+
+You are playing a Polyomino Target Cover puzzle incrementally .
+
+Objective 
+
+Maximize the number of target cells covered by placed pieces within the move budget. 
+
+Constraints 
+
+• Choose an unused piece. • Rotate it by 0◦, 90 ◦, 180 ◦, or 270 ◦ clockwise. • Place the transformed shape using the top-left anchor of its tight bounding box. • All occupied cells must lie inside the board. • Occupied cells may not overlap "#" or existing piece letters. 
+
+Budget 
+
+K = 3 moves total; current round 0.
+
+Board before example placement 
+
+initial_grid = [ [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."] ]
+
+Target locations 
+
+[(0,0), (0,1), (1,0), (1,1), (0,2), (1,2), (2,2), (0,3), (1,3), (1,4), (2,3)] 
+
+Current board after example piece placement 
+
+current_grid = [ [".", ".", ".", ".", "A", "A"], [".", ".", ".", ".", "A", "A"], [".", ".", ".", ".", "A", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", "."] ]
+
+Piece pool 
+
+36 A (P5), already placed at anchor [0,4], rotation 0: [["A", "A"], ["A", "A"], ["A", "."] ]B (L4), unused: [["B", "."], ["B", "."], ["B", "B"] ]C (Z4), unused: [["C", "C", "."], [".", "C", "C"] ]D (O), unused: [["D", "D"], ["D", "D"] ]E (R6), unused: [["E", "E", "E"], ["E", "E", "E"] ]
+
+Briefly explain the placement reasoning, including feasibility and newly covered targets. Then return exactly one placement. Immediately after reasoning within <think> your reasoning here </think> , propose 1 action with the following format: 
+
+> {"answer": [{"piece_id": "<ID>", "anchor": [<row>, <col>], "rotation": <0|90|180|270>, "grid_after": [ [".", ".", "..."], ["...", "...", "..."] ]}]}
+
+Auxiliary Grid-Spatial QA (example) 
+
+You are solving a single-step grid-spatial reasoning task. 
+
+Task name 
+
+rotate_place 
+
+Canvas 
+
+37 [[".", ".", ".", ".", "."], [".", "#", ".", ".", "."], [".", ".", ".", "t", "."], [".", ".", ".", ".", "."], [".", ".", ".", ".", "."] ]
+
+Shape 
+
+[["A", "."], ["A", "A"] ]
+
+Operation 
+
+Rotate the shape by 90 ◦ clockwise and place it with global anchor [2, 1] .
+
+Rules 
+
+• The anchor is the top-left coordinate of the transformed shape’s tight bounding box. • The placement must stay inside the canvas. • The placement must avoid "#" and existing letters. Return the transformed placement and the resulting grid. Immediately after reasoning within <think> your reasoning here </think> , propose the answer with the following format: 
+
+> {"answer": [{"anchor": [<row>, <col>], "rotation": 90, "legal": <true|false>, "solution_grid": [ [".", ".", "..."], ["...", "...", "..."] ]}]}
+
+38 E Polyomino examples     
+
+> (a) Level 1 (b) Level 1
+> (c) Level 2 (d) Level 2
+> (e) Level 3 (f) Level 3
+> (g) Level 4 (h) Level 4
+
+Figure 5: Polyomino target cover examples. This shows the optimal solution found by the solver. The first three levels have two randomly positioned pieces that serve as examples. The last level has only one example. 39 F Additional Details 
+
+F.1 Search Ablations Task representation. We evaluate search methods for structured combinatorial optimization prob-lems. The experiments use four task families: qap , knapsack , MaxSat, and role_assignment .For each family, we evaluate difficulty levels 1–4. Each instance is treated as a partial construction problem: a node in the search tree stores the current partial state, and a child node corresponds to one proposed next action. The language model proposes actions in a structured format, which is then parsed into a domain state. The domain checker verifies whether the output is valid JSON, whether it is structurally valid for the task, whether the partial path is feasible, and whether the node is a terminal answer. Terminal feasible answers are scored by their normalized objective value, with all objectives converted to a maximization convention. 
+
+Expansion and filtering. When a model-based search node is expanded, the language model proposes 16 candidate next actions. Each candidate receives an edge log-probability from the model. We use the average token log-probability both as an edge score and, after exponentiation, as the prior Pi. Invalid parses are discarded. Depending on the strategy, domain-infeasible partial actions may either be pruned immediately or allowed to remain in the tree until terminal checking. When redundancy removal is enabled, children with the same canonical solution/state key are merged so that duplicate proposals do not occupy multiple search slots. Terminal feasibility is always enforced in these ablations: infeasible final answers receive a negative reward rather than being counted as successful solutions. 
+
+Standard MCTS. The main method is Monte Carlo Tree Search (MCTS). Each MCTS rollout starts at the root, repeatedly selects a child, expands an unexpanded node, and backpropagates the terminal reward. Child selection uses a PUCT-style rule: 
+
+score( i) = Qblend  
+
+> i
+
++ cpuct Pi
+
+pNparent 
+
+1 + Ni + N bad 
+
+> i
+
+,
+
+where Qblend  
+
+> i
+
+is the value used for selection, Pi is the model prior, Ni is the child visit count, and N bad  
+
+> i
+
+counts visits through incorrect or infeasible partial paths. The exploration coefficient is 
+
+cpuct = 5 . Feasible terminal solutions contribute objective-based rewards to the path. Incorrect or invalid final states receive reward −1. Depth-limited non-answer rollouts receive reward 0 and are down-weighted in the value estimate by the depth-discount factor 0.25 .
+
+Parent-initial-value MCTS. The parent-initial-value variant uses the same search procedure as the standard MCTS ablation: it still performs rollouts, uses the PUCT selection formula, maintains visit counts, and backpropagates rewards. The difference is only in the value term used by PUCT before enough rewards have been observed. After a node is expanded, each child receives an initial value 
+
+Ii from the model score of that child. The default source is the average token log-probability. The parent also stores the average initial value of its children. The value term becomes 
+
+Qblend  
+
+> i
+
+= λQ i + (1 − λ)Ii.
+
+In the standard MCTS ablation, λ = 1 .0, so the initial value is ignored and PUCT uses the observed MCTS value Qi. In the parent-initial-value ablation, λ = 0 .5, so the selection value is an equal blend of the observed MCTS value and the model-derived initial value. The scale parameter is μ = 1 .0,meaning the stored initial value is used directly. This variant is therefore best understood as MCTS with a model-score warm start, not as beam search. 
+
+Beam search ablation. Beam search is different from the parent-initial-value MCTS run. Instead of running PUCT rollouts and backpropagating rewards, beam search proceeds layer by layer. At each depth, it expands every node currently in the beam, collects all non-terminal children, ranks them by cumulative path log-probability, and keeps only the top 4 nodes for the next depth. The beam score is simply the path log-probability, i.e., the sum of edge average log-probabilities along the partial solution. The beam run still uses the same parsing, feasibility-pruning, redundancy-removal, and terminal-feasibility options as the corresponding strategy preset, but it does not use PUCT visit counts, PUCT backpropagation, or the parent-initial-value blend. Unlike MCTS, the beam computation is controlled by maximum depth and beam width rather than by a rollout budget. 40 Ablation setting Search mode Main behavior Standard ablation MCTS, sequential base-line, solver reference Uses the full strategy set. S1 –S3 are MCTS variants, S4 is a sequential non-MCTS baseline, and S5 is the solver-reference run. MCTS uses PUCT and reward backpropagation. Parent-initial-value abla-tion MCTS with parent initial values Uses S1 –S3 and S5 . The search is still MCTS. The only algorithmic change is that PUCT uses a 0.5/0.5 blend of observed value and model-derived initial value. Beam-search ablation Beam search plus solver reference Uses S1 –S3 and S5 . Search is layer-based: ex-pand the current beam, rank by cumulative log-probability, and keep the top 4 partial solutions. It does not use MCTS visit counts or reward backpropagation for selection. Table 4: Difference between the standard MCTS run, the parent-initial-value MCTS run, and the beam-search ablation. Strategy Configuration 
+
+S1 Full search variant: expansion-time feasibility pruning, redundancy removal, and terminal feasibility enforcement. 
+
+S2 No expansion-time feasibility pruning; infeasible partial paths may continue until terminal checking; redundancy removal remains enabled. 
+
+S3 No expansion-time feasibility pruning and no redundancy removal; infeasible partial paths may continue until terminal checking. 
+
+S4 Sequential non-MCTS baseline used only in the standard ablation. It samples one path at a time without PUCT tree selection. 
+
+S5 Solver-reference search with a depth-first frontier. This run enumerates solver-generated actions rather than sampling language-model actions, and is used mainly to provide reference solutions for evaluation. Table 5: Strategy presets used in the ablations. 
+
+Strategy presets. The strategy names define the ablation axis. The same names are reused across MCTS and beam search so that the effect of pruning and duplicate removal can be compared under different search modes. 
+
+Default hyperparameters. The default experimental settings are summarized below. Unless otherwise stated, these values are shared across the ablations. 
+
+Hyperparameter Default value Base language model meta-llama/Llama-3.2-3B-Instruct 
+
+Problem families qap , knapsack , MaxSat, role_assignment 
+
+Difficulty levels 1–4 Maximum search depth 6 for all difficulty levels MCTS rollout budget 16 rollouts per instance and strategy Solver-reference budget 500 solver-reference rollouts per instance Children per expansion 20 PUCT coefficient cpuct 5 for MCTS variants Beam width 4 for the beam-search ablation Generation settings temperature 0.7, top-p = 0 .95 , maximum 768 new tokens Repeats and seeds one repeat with seed list {0}
+
+Terminal handling terminal feasibility enforced; incorrect or invalid final rewards set to −1
+
+Depth-limited rollouts non-answer depth-limit reward 0, with depth-based value discount 0.25 Parallelism GPUs 0–3 with 4 workers per GPU; solver reference uses 4 CPU workers Table 6: Default hyperparameters used by the ablation experiments. 
+
+41 Reporting and smartness metrics. All smartness quantities are computed as post-processing from the saved ablation metrics; this step does not rerun search. The same reporting procedure is applied to the standard MCTS ablation, the parent-initial-value MCTS ablation, and the beam-search ablation. The report forms reference pools of unique terminal solutions. solverref contains solutions found by S5 , while unionref contains all unique terminal solutions found by any strategy. The primary report setting uses unionref , relative-gap threshold ϵ = 0 .05 , and δ = 0 .10 , so the target success probability is 1 − δ = 0 .90 . A solution is counted as ϵ-good if it is feasible and within 5% relative gap of the best-known normalized objective for that instance. For each problem and difficulty level, the report estimates an effective difficulty Dα,ϵ from the fraction of reference-pool solutions that are ϵ-good. It then estimates τ , the rollout budget or wall-clock time required for a strategy to reach the target success probability. The main smartness score is 
+
+smartness = Dα,ϵ 
+
+τ ,
+
+so larger values mean that a strategy makes more progress per rollout or per second. The enhanced re-port also exports pass@ {8, 16 , 32 , 64 }, an effective-branching proxy, invalid proposal rates, duplicate proposal rates, feasible-terminal rates, and exact-optimal rates. 
+
+F.2 Policy Training Implementation for RFT Training objective. Policy training is performed as supervised fine-tuning of the base causal language model. The goal is to teach the model to produce the next search action from a partial problem state. Each training example contains a system prompt, a user prompt describing the current partial state, and an assistant target containing the next action and its accompanying reasoning. The model is trained with the standard autoregressive next-token objective on the chat-formatted sequence. Padding tokens are masked from the loss. 
+
+Constructing supervision from search. Training data are generated from successful search tra-jectories. For each problem instance, search first builds a tree of partial solutions. Terminal nodes are filtered to keep valid terminal answers, and the best terminal node is selected according to the task objective. The path from the root to this terminal node is then decomposed into one supervised example per edge. If a trajectory contains d actions, it contributes d training examples. For an edge 
+
+st → st+1 , the input prompt is built from the partial state st, and the target is the exact action text stored at st+1 . This turns a complete discovered solution into step-level imitation data. Only terminal answer trajectories are used for the default next-step policy data. If a search run does not find a valid terminal solution for an instance, that instance does not contribute a supervised trajectory. When multiple terminal solutions are available, the selected trajectory is the one with the best objective value, with ties broken randomly. The saved examples also contain metadata such as node depth, visit count, and value estimates, but the policy fine-tuning objective uses only the system prompt, user prompt, and next-step target text. 
+
+Training variants. We use the same fine-tuning procedure for the MCTS-generated and solver-style datasets. In the MCTS-generated setting, the demonstrations come from the best terminal paths found by the MCTS search policy. In the solver-style setting, the demonstrations come from a more direct solver-guided trajectory generator. A no-training baseline is also evaluated by running the base model directly under the same evaluation procedure. Thus, the training comparison isolates whether policy fine-tuning on search-generated trajectories improves subsequent search and solution quality. 
+
+Tokenization and formatting. Examples are formatted with the chat template of the base model tokenizer. The formatted conversation contains a system message, a user message, and an assistant message. The assistant message is filled with the selected next-step target during training. Sequences are padded or truncated to a maximum length of 2048 tokens. The tokenizer uses the end-of-sequence token as the padding token when no dedicated padding token is available. 
+
+Optimization. Fine-tuning is implemented with the Hugging Face causal language-model training stack. The default runs fine-tune the base model directly rather than using parameter-efficient adapters. Mixed precision is selected automatically: bfloat16 is used when supported by the GPU, otherwise 42 Training setting Default value Base model meta-llama/Llama-3.2-3B-Instruct                 
+
+> Training objective causal language-model supervised fine-tuning Training examples one next-step target per edge on a selected successful trajectory Trajectory selection best valid terminal solution found by search Learning rate 5×10 −6
+> Epochs 3Per-device batch size 4Gradient accumulation 16 steps Maximum sequence length 2048 tokens Optimizer AdamW Learning-rate schedule linear schedule with 0.05 warmup ratio Weight decay 0.01 Precision bfloat16 when available; otherwise float16 on CUDA Checkpointing final checkpoint only Evaluation during training once per epoch when a validation set is provided Table 7: Default supervised fine-tuning settings for the policy model.
+
+float16 is used on CUDA. The optimizer is AdamW with a linear learning-rate schedule, warmup ratio 0.05, and weight decay 0.01. Intermediate checkpoints are not saved; the final model and tokenizer are saved after training. 
+
+Evaluation protocol. When validation data are provided, the model is evaluated before fine-tuning, at the end of each epoch, and once more after training. After fine-tuning, the resulting policy is used as the proposal model in the same search procedure used for data generation and evaluation. This keeps the comparison focused on the effect of the learned proposal policy rather than changes in the downstream search algorithm. 
+
+Optional adapter path. The training code also supports an optional low-rank adapter mode. When enabled, LoRA adapters are attached to the query and value projection matrices with rank r = 8 ,scaling α = 32 , dropout 0.05, and no bias terms. This path is useful for memory-constrained runs, but the default training configuration uses direct fine-tuning of the base causal language model. 43 F.3 Policy training GRPO 
+
+Training setting Value Base model Qwen/Qwen2.5-3B-Instruct by default; task wrappers also support Qwen/Qwen2.5-7B-Instruct 
+
+Training algorithm GRPO in VERL; DAPO-style runs use the GRPO estimator with asymmetric clipping Validation file level-1 test Parquet during training; full level 1–4 evaluation after merging Train batch size 128 prompts Rollouts per prompt 8 responses Maximum prompt length 1256 tokens for Role Assignment, MaxSat, and Polyomino Target Cover Maximum response length 2048 tokens Epochs 1 for the main task runs Data order data.shuffle=false 
+
+Actor learning rate 1 × 10 −6
+
+Optimizer backend VERL actor optimizer with FSDP training PPO mini-batch size 128 PPO micro-batch size 4 per GPU KL loss enabled, coefficient 0.001 , low_var_kl 
+
+KL controller coefficient 0.001 
+
+Gradient checkpointing enabled Remove padding optimization enabled Rollout engine vLLM Rollout tensor parallelism 2 during training Rollout GPU memory utilization 0.4 Hardware configuration 1 node, 4 GPUs per node (4A100) Checkpoint saving effectively final checkpoint only; latest FSDP actor check-point is merged for inference Table 8: Main RL training hyperparameters for the synthetic reasoning tasks. 
+
+44 G Online RL results 
+
+G.1 Spatial reasoning Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.006 0.015 0.003 0.038 0.008 0.051 0.002 0.009 
+
+Pass@2 0.013 0.030 0.006 0.073 0.015 0.093 0.003 0.017 
+
+Pass@3 0.018 0.044 0.009 0.105 0.022 0.126 0.004 0.024 
+
+Pass@4 0.024 0.056 0.012 0.134 0.028 0.154 0.006 0.031 
+
+Pass@5 0.029 0.068 0.015 0.161 0.035 0.177 0.007 0.037 
+
+Pass@6 0.034 0.079 0.018 0.185 0.041 0.196 0.009 0.042 
+
+Pass@7 0.039 0.090 0.021 0.207 0.047 0.212 0.011 0.047 
+
+Pass@8 0.044 0.100 0.024 0.228 0.053 0.225 0.012 0.052 
+
+Table 9: Polyomino (Base vs Trained) — Progressive training L1–L4. 
+
+Level 1 Level 2 Capability Base L1–L4 L1 Only L4 Only Base L1–L4 L1 Only L4 Only Translate 0.520 0.680 0.320 0.360 0.240 0.320 0.280 0.240 
+
+Rotate & Place 0.200 0.280 0.080 0.120 0.160 0.280 0.240 0.240 
+
+Reflect & Place 0.360 0.440 0.320 0.360 0.160 0.280 0.200 0.200 
+
+Compose (A,B,C) 0.080 0.200 0.040 0.040 0.040 0.120 0.040 0.160 
+
+Equivalence 0.520 0.960 0.760 0.520 0.440 0.840 0.880 0.440 
+
+Symmetry 0.520 0.760 0.400 0.600 0.600 0.600 0.520 0.560 
+
+Overlap IoU 0.200 0.120 0.120 0.120 0.120 0.040 0.040 0.080 
+
+Coverage 0.160 0.240 0.200 0.240 0.200 0.240 0.280 0.280 
+
+Table 10: Spatial 2D capabilities — Pass@8 at Level 1 and Level 2. 
+
+Level 1 Level 2 Capability Base L1–L4 L1 Only L4 Only Base L1–L4 L1 Only L4 Only Translate 0.140 0.205 0.070 0.090 0.090 0.125 0.085 0.095 
+
+Rotate & Place 0.050 0.085 0.010 0.035 0.075 0.070 0.080 0.085 
+
+Reflect & Place 0.190 0.190 0.145 0.165 0.055 0.075 0.045 0.045 
+
+Compose (A,B,C) 0.020 0.035 0.005 0.005 0.015 0.035 0.010 0.030 
+
+Equivalence 0.295 0.605 0.630 0.325 0.325 0.505 0.680 0.315 
+
+Symmetry 0.100 0.180 0.125 0.100 0.190 0.170 0.175 0.130 
+
+Overlap IoU 0.025 0.020 0.015 0.015 0.015 0.005 0.010 0.015 
+
+Coverage 0.040 0.055 0.035 0.060 0.065 0.065 0.065 0.065 
+
+Table 11: Spatial 2D capabilities — Pass@1 at Level 1 and Level 2. 
+
+45 G.2 Math problems 
+
+Llama 3.2 3B Qwen2.5 3B Qwen2.5 7B pass@k Base Trained Base Trained Base Trained pass@1 0.163 0.197 0.344 0.378 0.481 0.503 
+
+pass@2 0.252 0.296 0.456 0.487 0.605 0.609 
+
+pass@3 0.312 0.367 0.523 0.553 0.671 0.662 
+
+pass@4 0.357 0.425 0.567 0.597 0.713 0.696 
+
+pass@5 0.390 0.473 0.598 0.629 0.741 0.721 
+
+pass@6 0.415 0.513 0.621 0.655 0.758 0.742 
+
+pass@7 0.434 0.547 0.637 0.678 0.769 0.759 
+
+pass@8 0.450 0.575 0.650 0.700 0.775 0.775 Table 12: AMC’23: pass@k for each model ( Base vs Trained ), k ∈ { 1, . . . , 8}. Model was trained on the joint dataset of Role Assignment and Constrained MaxSAT. The results dataset still follows a sequential order (Level 1 to 4, but each level shuffled). 
+
+Llama 3.2 3B Qwen2.5 3B Qwen2.5 7B pass@k Base Trained Base Trained Base Trained pass@1 0.025 0.042 0.058 0.046 0.096 0.113 
+
+pass@2 0.046 0.075 0.102 0.076 0.131 0.144 
+
+pass@3 0.064 0.101 0.136 0.098 0.150 0.165 
+
+pass@4 0.079 0.121 0.161 0.114 0.164 0.178 
+
+pass@5 0.089 0.137 0.182 0.129 0.174 0.186 
+
+pass@6 0.096 0.149 0.200 0.142 0.183 0.192 
+
+pass@7 0.100 0.158 0.217 0.154 0.192 0.196 
+
+pass@8 0.100 0.167 0.233 0.167 0.200 0.200 Table 13: AIME’24: pass@k for each model ( Base vs Trained ), k ∈ { 1, . . . , 8}. Model was trained on the joint dataset of Role Assignment and Constrained MaxSAT. The results dataset still follows a sequential order (Level 1 to 4, but each level shuffled). 
+
+46 Llama 3.2 3B Qwen2.5 3B Qwen2.5 7B pass@k Base Trained Base Trained Base Trained pass@1 0.004 0.013 0.021 0.037 0.079 0.087 
+
+pass@2 0.008 0.024 0.035 0.068 0.120 0.126 
+
+pass@3 0.013 0.034 0.043 0.092 0.147 0.153 
+
+pass@4 0.017 0.043 0.050 0.112 0.169 0.171 
+
+pass@5 0.021 0.051 0.054 0.128 0.189 0.183 
+
+pass@6 0.025 0.057 0.058 0.142 0.206 0.190 
+
+pass@7 0.029 0.062 0.062 0.154 0.221 0.196 
+
+pass@8 0.033 0.067 0.067 0.167 0.233 0.200 Table 14: AIME’25: pass@k for each model ( Base vs Trained ), k ∈ { 1, . . . , 8}. Model was trained on the joint dataset of Role Assignment and Constrained MaxSAT. The results dataset still follows a sequential order (Level 1 to 4, but each level shuffled). 
+
+47 H Optimization problems 
+
+Figure 6: (a) Qwen2.5-3B-Instruct 
+
+Figure 7: (b) Qwen2.5-7B-Instruct 
+
+Figure 8: (c) Llama3.2-3B-Instruct Figure 9: Test-set pass@1 accuracy on Role Assignment, Constrained MaxSAT, and Machine Scheduling, for models fine-tuned on Role Assignment. Each panel reports results for a different instruction-tuned base model. 48 H.1 Qwen2.5-3B 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.325 0.445 0.259 0.400 0.207 0.352 0.178 0.311 
+
+Pass@2 0.529 0.651 0.440 0.598 0.361 0.535 0.317 0.491 
+
+Pass@3 0.661 0.765 0.569 0.713 0.479 0.646 0.427 0.607 
+
+Pass@4 0.749 0.834 0.665 0.786 0.569 0.721 0.516 0.686 
+
+Pass@5 0.809 0.879 0.736 0.835 0.641 0.774 0.588 0.743 
+
+Pass@6 0.852 0.910 0.791 0.871 0.699 0.813 0.649 0.786 
+
+Pass@7 0.883 0.931 0.833 0.897 0.746 0.844 0.699 0.819 
+
+Pass@8 0.907 0.947 0.867 0.917 0.785 0.869 0.741 0.844 Table 15: Role Assignment: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}. Training used Qwen2.5-3B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.799 0.912 0.516 0.674 0.521 0.683 0.451 0.629 
+
+Pass@2 0.908 0.965 0.720 0.825 0.713 0.824 0.649 0.780 
+
+Pass@3 0.943 0.982 0.815 0.884 0.800 0.884 0.752 0.848 
+
+Pass@4 0.961 0.990 0.866 0.915 0.847 0.917 0.812 0.888 
+
+Pass@5 0.972 0.994 0.898 0.934 0.876 0.938 0.851 0.914 
+
+Pass@6 0.980 0.997 0.919 0.947 0.896 0.951 0.877 0.932 
+
+Pass@7 0.985 0.999 0.935 0.956 0.910 0.960 0.895 0.945 
+
+Pass@8 0.989 1.000 0.948 0.962 0.922 0.966 0.908 0.956 Table 16: Constrained MaxSAT: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Qwen2.5-3B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.416 0.479 0.287 0.325 0.250 0.278 0.248 0.283 
+
+Pass@2 0.629 0.659 0.465 0.491 0.413 0.428 0.412 0.434 
+
+Pass@3 0.749 0.746 0.582 0.586 0.525 0.518 0.526 0.525 
+
+Pass@4 0.820 0.797 0.662 0.647 0.606 0.579 0.608 0.586 
+
+Pass@5 0.866 0.832 0.718 0.691 0.667 0.622 0.669 0.631 
+
+Pass@6 0.897 0.858 0.760 0.724 0.714 0.657 0.716 0.666 
+
+Pass@7 0.918 0.879 0.793 0.749 0.751 0.684 0.751 0.695 
+
+Pass@8 0.934 0.896 0.819 0.770 0.781 0.708 0.780 0.718 Table 17: Machine Scheduling: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Qwen2.5-3B-Instruct. 
+
+49 H.2 Qwen2.5-7B 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.564 0.751 0.463 0.704 0.400 0.660 0.334 0.599 
+
+Pass@2 0.756 0.777 0.671 0.744 0.608 0.704 0.528 0.659 
+
+Pass@3 0.845 0.786 0.780 0.761 0.727 0.723 0.651 0.686 
+
+Pass@4 0.893 0.792 0.843 0.771 0.802 0.737 0.734 0.704 
+
+Pass@5 0.923 0.799 0.884 0.779 0.852 0.747 0.792 0.718 
+
+Pass@6 0.943 0.804 0.911 0.786 0.885 0.755 0.835 0.729 
+
+Pass@7 0.957 0.809 0.930 0.792 0.908 0.761 0.866 0.738 
+
+Pass@8 0.967 0.813 0.943 0.797 0.925 0.767 0.890 0.747 Table 18: Role Assignment: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}. Training used Qwen2.5-7B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.849 0.961 0.614 0.808 0.620 0.813 0.498 0.793 
+
+Pass@2 0.936 0.986 0.772 0.890 0.793 0.905 0.688 0.902 
+
+Pass@3 0.961 0.993 0.837 0.923 0.869 0.937 0.783 0.941 
+
+Pass@4 0.972 0.996 0.872 0.942 0.911 0.953 0.837 0.962 
+
+Pass@5 0.978 0.998 0.892 0.954 0.936 0.963 0.871 0.973 
+
+Pass@6 0.982 0.999 0.906 0.963 0.952 0.969 0.895 0.981 
+
+Pass@7 0.984 1.000 0.916 0.970 0.962 0.973 0.912 0.986 
+
+Pass@8 0.986 1.000 0.924 0.976 0.968 0.976 0.925 0.989 Table 19: Constrained MaxSAT: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Qwen2.5-7B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.575 0.585 0.474 0.510 0.357 0.352 0.418 0.427 
+
+Pass@2 0.780 0.769 0.680 0.698 0.538 0.521 0.623 0.613 
+
+Pass@3 0.872 0.851 0.785 0.787 0.645 0.620 0.736 0.714 
+
+Pass@4 0.919 0.895 0.845 0.837 0.714 0.684 0.805 0.775 
+
+Pass@5 0.946 0.921 0.884 0.869 0.762 0.728 0.849 0.815 
+
+Pass@6 0.963 0.939 0.911 0.890 0.798 0.761 0.879 0.844 
+
+Pass@7 0.974 0.952 0.930 0.906 0.824 0.786 0.900 0.865 
+
+Pass@8 0.982 0.962 0.945 0.917 0.845 0.806 0.915 0.882 Table 20: Machine Scheduling: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Qwen2.5-7B-Instruct. 
+
+50 H.3 Llama3.2-3B 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.287 0.435 0.251 0.514 0.228 0.494 0.207 0.441 
+
+Pass@2 0.482 0.468 0.424 0.553 0.392 0.533 0.359 0.492 
+
+Pass@3 0.616 0.484 0.548 0.572 0.513 0.554 0.474 0.520 
+
+Pass@4 0.711 0.495 0.639 0.585 0.605 0.567 0.563 0.538 
+
+Pass@5 0.778 0.502 0.706 0.595 0.675 0.576 0.634 0.552 
+
+Pass@6 0.825 0.508 0.757 0.603 0.730 0.583 0.690 0.562 
+
+Pass@7 0.860 0.513 0.796 0.609 0.773 0.589 0.736 0.571 
+
+Pass@8 0.884 0.517 0.825 0.614 0.806 0.594 0.774 0.577 Table 21: Role Assignment: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}. Training used Llama-3.2-3B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.796 0.946 0.568 0.755 0.550 0.737 0.362 0.710 
+
+Pass@2 0.912 0.972 0.766 0.825 0.738 0.809 0.540 0.784 
+
+Pass@3 0.946 0.982 0.849 0.858 0.819 0.841 0.640 0.816 
+
+Pass@4 0.963 0.986 0.893 0.881 0.863 0.860 0.702 0.837 
+
+Pass@5 0.973 0.989 0.918 0.898 0.889 0.874 0.745 0.853 
+
+Pass@6 0.980 0.991 0.935 0.911 0.906 0.885 0.776 0.866 
+
+Pass@7 0.985 0.992 0.947 0.922 0.918 0.895 0.802 0.877 
+
+Pass@8 0.989 0.993 0.955 0.931 0.927 0.902 0.824 0.886 Table 22: Constrained MaxSAT: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Llama-3.2-3B-Instruct. 
+
+Level 1 Level 2 Level 3 Level 4 pass@k Base Trained Base Trained Base Trained Base Trained Pass@1 0.426 0.537 0.329 0.430 0.273 0.367 0.275 0.360 
+
+Pass@2 0.621 0.590 0.511 0.482 0.435 0.422 0.440 0.415 
+
+Pass@3 0.726 0.610 0.622 0.501 0.540 0.444 0.549 0.436 
+
+Pass@4 0.789 0.623 0.694 0.516 0.613 0.461 0.624 0.451 
+
+Pass@5 0.831 0.635 0.744 0.528 0.667 0.475 0.680 0.464 
+
+Pass@6 0.860 0.645 0.780 0.540 0.709 0.488 0.722 0.476 
+
+Pass@7 0.881 0.654 0.808 0.550 0.742 0.499 0.755 0.487 
+
+Pass@8 0.897 0.662 0.829 0.560 0.769 0.510 0.782 0.497 Table 23: Machine Scheduling: Results by Level and Setting (Base/Trained) for pass@k, k ∈ { 1, . . . , 8}.Training used Llama-3.2-3B-Instruct. 
+
+51 H.4 Additional results MCTS [0, 2] [3, 5] [6, 8] [9, 10]                                                            
+
+> objective
+> 0
+> 100
+> 200
+> 300
+> 400
+> count
+> Constrained MaxSAT Level 1
+> [1, 4] [5, 8] [9, 12] [13, 16]
+> objective
+> 0
+> 200
+> 400
+> 600
+> Constrained MaxSAT Level 2
+> [0, 4] [5, 9] [10, 14] [15, 19]
+> objective
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> Constrained MaxSAT Level 3
+> [4, 9] [10, 14] [15, 19] [20, 24]
+> objective
+> 0
+> 200
+> 400
+> 600
+> Constrained MaxSAT Level 4
+> 1234
+> Level
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Constrained MaxSAT Accuracy
+> [120, 57] [55, 39] [37, 26] [24, 13]
+> objective
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> count
+> QAP Level 1
+> [160, 68] [66, 46] [44, 30] [28, 13]
+> objective
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> QAP Level 2
+> [300, 148] [147, 106] [105, 69] [68, 26]
+> objective
+> 0
+> 2000
+> 4000
+> 6000
+> 8000
+> 10000
+> QAP Level 3
+> [370, 175] [174, 125] [124, 79] [78, 26]
+> objective
+> 0
+> 2000
+> 4000
+> 6000
+> 8000
+> QAP Level 4
+> 1234
+> Level
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> QAP Accuracy
+> [2, 5] [6, 9] [10, 13] [14, 16]
+> objective
+> 0
+> 100
+> 200
+> 300
+> count
+> Knapsack Level 1
+> [6, 14] [15, 23] [24, 31] [32, 39]
+> objective
+> 0
+> 250
+> 500
+> 750
+> 1000
+> 1250
+> 1500
+> Knapsack Level 2
+> [6, 23] [24, 39] [40, 55] [56, 72]
+> objective
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> 2500
+> Knapsack Level 3
+> [7, 31] [32, 55] [56, 79] [80, 109]
+> objective
+> 0
+> 1000
+> 2000
+> 3000
+> 4000
+> Knapsack Level 4
+> 1234
+> Level
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Knapsack Accuracy
+> MCTS Solver-based-policy Base Model
+
+Figure 10: Accuracy and solution-quality histograms for baseline, pure MCTS, and solver-guided MCTS on QAP, 0/1 Knapsack, and Constrained MaxSAT tasks as complexity (Level 1 → 4) increases. 
+
+H.5 Additional search-only diagnostics for Exp. 1 on OPT ⋆
+
+Setup. This appendix provides additional search-only diagnostics for Exp. 1. All results use the same no-training setting as in the main text, with the union reference pool, relative tolerance 
+
+ϵrel = 0 .05 , and target failure probability δ = 0 .10 for the sample-complexity estimates. We compare the full search configuration (S1: feasibility checking/pruning with duplicate merging), the no-check/pruning ablation (S2), the no-deduplication ablation (S3), the sequential baseline when available (S4), and the solver-reference trajectory generator (S5). We use the same component labels for νMCTS, the parent-initialized νMCTS variant, and νBeamSearch as in the main text. 
+
+Metric definitions. For a task instance t, let V ⋆t denote the best value found in the reference pool. A terminal trajectory is counted as good if its task-normalized relative gap from V ⋆t is at most ϵrel .This definition applies to both maximization tasks and minimization tasks such as QAP. We denote the rollout-level probability mass of good terminal trajectories by pg .Our main branching diagnostic is the effective branching proxy 
+
+beff = 1
+
+epg
+
+, (5) where epg is the smoothed good-terminal mass used only to make derived quantities stable. Lower values of beff indicate that a fixed search budget places more probability mass on high-value terminal solutions. Figure 11 plots beff directly against the OPT ⋆ difficulty level, separately for each task. This is the diagnostic most directly tied to the difficulty-dependent branching behavior predicted by the theorem. We also report the sample-complexity estimate 
+
+k90 =
+
+ log(0 .10) log(1 − epg )
+
+
+
+, (6) which is the number of independent samples needed to obtain at least one good terminal with probability at least 0.90 under the calibrated restart model. More generally, pass@ k is defined as 
+
+pass@ k = 1 − (1 − epg )k, (7) where k is set to the search-sampling budget used in the report. In addition, we report terminal feasibility, exact optimality, and the crossover ratio ρ = beff /b uniform . Values of ρ < 1 indicate that the search policy concentrates more probability mass on good terminals than uniform sampling from the reference pool. 52 10 1                   
+
+> 10 2
+> 10 3
+> MCTS
+> beff
+> QAP Knapsack MaxSat Role assignment
+> 10 1
+> 10 2
+> 10 3
+> MCTS-parent
+> beff
+> 1234
+> Difficulty level
+> 10 1
+> 10 2
+> 10 3
+> BeamSearch
+> beff
+> 1234
+> Difficulty level
+> 1234
+> Difficulty level
+> 1234
+> Difficulty level
+> Theorem-facing readout: effective branching factor vs difficulty by task
+> S1 check + dedup S2 no check S3 no dedup S4 sequential S5 solver ref.
+
+Figure 11: Effective branching factor versus OPT ⋆ difficulty level, separated by task and search family. Each column is a task, and each row is a search family. The y-axis is logarithmic, with lower values indicating better search concentration. Across tasks, the full S1 configuration achieves the lowest or near-lowest beff among model-based generators, while removing checking/pruning or duplicate merging increases the difficulty-dependent branching burden. 
+
+QAP. The Quadratic Assignment Problem (QAP) instances in OPT ⋆ are minimization tasks. Each instance assigns facilities bijectively to grid locations, with objective equal to the sum of flow-weighted Manhattan distances over facility pairs. QAP is a useful stress test because the number of possible terminal assignments grows factorially with the number of unassigned facilities. As a result, even small changes in good-terminal mass can lead to large changes in beff and pass@ k.
+
+Discussion. The task-separated branching curves support the main-text claim that feasibility check-ing/pruning and duplicate merging reduce the effective branching burden before training. On the branching readout, S1 achieves lower beff curves than the no-check and no-deduplication ablations across the tested difficulty levels. By contrast, the solver-reference trajectory generator has high beff ,reflecting that it is not a calibrated stochastic search policy over all good terminals. The aggregate and QAP-specific results show the same component effect through pass@ k, terminal feasibility, and k90 . It is important to distinguish pass@ k from exact optimality: pass@ k uses the ϵrel -good threshold, so a method can often reach near-optimal terminals even when its exact-optimality rate is lower. For this reason, the solver-reference rows should be interpreted as a trajectory-generation baseline, not as a statement about solver optimality itself. 53 check  
+
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+10 2
+
+> lower is better
+
+Effective branching beff  
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+> %
+
+pass@k  
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+50 
+
+60 
+
+70 
+
+> %
+
+Terminal feasibility  
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+0
+
+2
+
+4
+
+6
+
+8
+
+10 
+
+> %
+
+Exact optimality 
+
+Exp. 1 global search-only discovery metrics 
+
+MCTS MCTS-parent BeamSearch Figure 12: Global search-only metrics across the OPT ⋆ tasks. Among model-based generators, S1 consistently yields the smallest effective branching factor and the strongest pass@ k. Removing the checker/pruner or duplicate merging increases the effective search space and reduces terminal quality. check  
+
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+10 2
+
+> lower is better
+
+QAP beff  
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+> %
+
+QAP pass@k  
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+0
+
+2
+
+4
+
+6
+
+8
+
+> %
+
+QAP good-terminal mass pg 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+> seq. solver
+> ref.
+
+10 2
+
+10 3
+
+> lower is better
+
+QAP k90 
+
+Exp. 1 QAP-focused search diagnostics 
+
+MCTS MCTS-parent BeamSearch 
+
+Figure 13: QAP-focused search metrics. QAP follows the same component pattern as the global aggregate, but the separation from the solver-reference generator is sharper under the trajectory-mass readout. Among the attached reports, the parent-initialized νMCTS variant achieves the lowest QAP 
+
+beff .54 check 
+
+> +dedup
+> no
+> check
+> no
+> dedup
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+50 
+
+> %
+
+Domain-invalid proposals 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+50 
+
+> %
+
+Duplicate proposals 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+> %
+
+Kept-child rate 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> %
+
+Path-valid terminal attempts 
+
+Exp. 1 proposal-level component diagnostics 
+
+MCTS MCTS-parent BeamSearch Figure 14: Proposal-level component diagnostics. The full S1 configuration retains fewer raw proposals, but the retained proposals are substantially more likely to remain path-valid and terminal-feasible. S2 exposes the search to invalid actions, while S3 retains many duplicate proposals; both effects reduce search efficiency. check 
+
+> +dedup
+> no
+> check
+> no
+> dedup
+
+10 2
+
+4 × 10 1
+
+6 × 10 1
+
+2 × 10 2
+
+3 × 10 2
+
+> lower is better
+
+Global k90 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+10 1
+
+10 0
+
+> lower is better
+
+Global = beff /buniform 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+10 2
+
+2 × 10 2
+
+> lower is better
+
+QAP k90 
+
+> check
+> +dedup
+> no
+> check
+> no
+> dedup
+
+10 1
+
+10 0
+
+> lower is better
+
+QAP = beff /buniform 
+
+Sample-complexity and crossover diagnostics 
+
+MCTS MCTS-parent BeamSearch 
+
+Figure 15: Sample-complexity and crossover readouts. Lower k90 means fewer samples are needed to observe an ϵrel -good terminal with high probability. Lower ρ = beff /b uniform means the search procedure is more efficient than the uniform reference-pool proxy. 55

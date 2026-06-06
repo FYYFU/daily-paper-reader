@@ -1,0 +1,564 @@
+Title: QUBRIC: Co-Designing Queries and Rubrics for RL Beyond Verifiable Rewards
+
+URL Source: https://arxiv.org/pdf/2606.03968v1
+
+Published Time: Wed, 03 Jun 2026 01:33:45 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+Preprint 
+
+# QUBRIC: Co-Designing Queries and Rubrics for RL Beyond Verifiable Rewards 
+
+Rongzhi Zhang 1∗, Rui Feng 1∗, Zhihan Zhang 1∗, Qingyu Yin 1, Jingfeng Yang 1, Xin Liu 1, Zixuan Zhang 1,2† , Priyanka Nigam 1, Bing Yin 1, Tuo Zhao 1, Chao Zhang 1,2 1Amazon 2Georgia Institute of Technology 
+
+{ronzhi,fengrf,zzhihan,qingyy }@amazon.com 
+
+# Abstract 
+
+Rubric-based RL is a promising route for extending reinforcement learning beyond verifiable rewards, yet existing methods optimize rubrics while treating the query distribution as fixed. We identify a structural bottleneck: 
+
+rubric quality is constrained by query structure . Open-ended queries yield vague rubrics; naively narrowing them introduces fabricated references that no model can verify, so all responses fail and training receives no reward sig-nal. We present QUBRIC, a framework that co-designs queries and rubrics. Teacher-derived key points ground the rewriting of open-ended queries into scenario-based, evaluable questions. Contrastive rubric generation then turns teacher–policy gaps into query-level criteria, and learnability filtering retains only informative query–rubric pairs for GRPO training. QUBRIC achieves a +5.5 point gain on ArenaHard over the SFT baseline. Trained only on instruction-following data, it further transfers to three held-out benchmarks spanning legal, moral, and narrative reasoning (+6.3 points on average), with improvements concentrated in reasoning-related dimensions. These results provide evidence that co-designing queries and rubrics can make rubric-based RL a practical complement to RLVR beyond strictly verifiable tasks. 
+
+# 1 Introduction 
+
+Reinforcement learning with verifiable rewards (RLVR) has driven significant capability gains in mathematics and coding (Shao et al., 2024; DeepSeek-AI et al., 2025; Lambert et al., 2025), where ground-truth answers provide a clean reward signal. Extending RL beyond verifiable domains requires alternative reward signals. Recent work either decomposes rewards into structured rubrics evaluated by LLM judges (Viswanathan et al., 2025; Gunjal et al.; Zhou et al., 2025; Xu et al., 2026) or reshapes queries for RL training (Dong et al., 2025; Lu et al., 2026; Jiang et al., 2026), but these two lines develop in isolation, leaving underexplored the interaction between query structure and evaluability. QUBRIC targets a harder regime where queries are genuinely open-ended and the primary bottleneck is not rubric phrasing but making the query evaluable in the first place. We argue that query structure and rubric design are fundamentally coupled: rubric quality is constrained by query structure . The most reliable rubrics specify exactly what to check, but writing such rubrics requires that the query be specific enough to determine what a good answer should contain. For a broad query like “explain machine learning,” the space of valid responses is too large for any rubric set to enumerate; the alternative is vague criteria that judges cannot apply consistently. In either case, the reward signal becomes noisy. A more serious failure arises under naive narrowing: to make a query look specific, the rewriter often introduces concrete but unverifiable references—citing a guideline, glossary, or document that does not exist—after which the rubrics collapse into testing whether the model refuses to answer rather than whether it reasons correctly, yielding uninformative reward signals (Table 4). Ablations confirm both effects (Section 5.2). Co-design is therefore 
+
+> ∗
+
+Equal contribution. 
+
+> †
+
+Work was done when Zixuan was an intern at Amazon. 
+
+1
+
+> arXiv:2606.03968v1 [cs.CL] 2 Jun 2026
+
+Preprint not a convenience but a requirement: the query must be narrowed in a way that gives the rubric generator a determinate reasoning target. 
+
+QUBRIC operationalizes this coupling through a single query-rubric pipeline (Figure 1). Key points extracted from multiple teacher reference responses (used to construct evaluation targets, not for distillation) ground the rewriting of open-ended queries into scenario-based, evaluable questions, avoiding the fabricated-reference failure of ungrounded narrowing. Contrastive rubric generation then compares teacher responses against policy responses and extracts the gap into precise query-level criteria, replacing the vague rubrics that arise from under-specified queries. A learnability filter retains only query–rubric pairs where the policy’s pass rate falls within a difficulty corridor, concentrating training on the most infor-mative examples. These per-rubric binary rewards then drive policy optimization via GRPO. We evaluate QUBRIC across instruction following, cross-domain transfer, and shopping helpfulness. On challenging instruction-following benchmarks, QUBRIC achieves a +5.5 point gain on ArenaHard (Li et al., 2025) over the SFT baseline. Trained only on instruction-following data, it further transfers to three held-out benchmarks spanning legal, moral, and narrative reasoning (+6.3 points on average), with improvements concentrated in reasoning-related dimensions. These results suggest that co-designing queries and rubrics enables effective rubric-based RL for improving instruction following and transferable reasoning performance beyond strictly verifiable tasks. Our contributions are as follows: 
+
+• We identify a structural coupling between query structure and rubric quality: when queries lack sufficient structure, rubrics degenerate into vague or unverifiable criteria that yield uninformative rewards (Section 5.2). 
+
+• We propose QUBRIC, which operationalizes this coupling through key-point-grounded query rewriting, contrastive rubric generation, and learnability filtering (Section 3). 
+
+• We evaluate QUBRIC on instruction-following benchmarks, three held-out reasoning benchmarks, and a proprietary shopping benchmark; matched controls confirm that the gains require jointly constructing evaluable queries and rubrics rather than rubric RL alone or query narrowing alone (Sections 4–5). 
+
+# 2 Related Work 
+
+From RLHF to Rubric-Based RL. RLHF (Ouyang et al., 2022; Christiano et al., 2017) trains a monolithic scalar reward that is vulnerable to reward misspecification (Pan et al., 2022; Skalse et al., 2022) and offers limited diagnostic visibility. A growing body of work addresses this by decomposing the reward into structured criteria. One family uses fixed or instance-specific rubrics (Mu et al., 2024; Viswanathan et al., 2025; Gunjal et al.; Zhou et al., 2025); a second makes rubrics or judges adaptive during training (Jia et al., 2026; Xu et al., 2026; Shao et al., 2025). These methods vary in whether rubrics are static or adaptive and whether grading knowledge is encoded in the rubric or delegated to the judge, but they generally assume the training prompt itself is fixed. QUBRIC instead modifies the prompt so that precise, content-bearing rubric evaluation becomes possible. 
+
+Query Design for RL Training. A parallel line of work focuses on constructing better training queries. AutoIF (Dong et al., 2025) augments queries with Python-verifiable con-straints; Golden Goose (Lu et al., 2026) synthesizes fill-in-the-middle tasks as multiple-choice RLVR problems; and RLVRR (Jiang et al., 2026) extracts ordered reward chains from refer-ence answers. These approaches primarily optimize query construction for executable or reference-based supervision, rather than for downstream rubric gradeability. QUBRIC also rewrites prompts, but for a different purpose: not to manufacture executable verification, but to produce evaluable, self-contained scenarios whose answer space is narrow enough for precise rubric generation, with teacher-derived key points preserving the original task intent throughout the rewrite. 
+
+RLVR, Verifiability, and the Scope of QUBRIC. Recent work raises concerns that domain-specific RLVR may reinforce superficial heuristics rather than acquiring transferable reason-ing (Alam & Rastogi, 2025; DeepSeek-AI et al., 2025; Lambert et al., 2025). QUBRIC targets 2Preprint an intermediate regime between exact verification and unconstrained preference judgments: tasks without a single gold answer, but with decomposable, scenario-grounded criteria that can be checked reliably enough for RL training. In summary, one line of work changes the reward while holding queries fixed; another changes the queries to obtain executable supervision. QUBRIC lies at their intersection, rewriting queries to support precise rubric evaluation in tasks without exact answer keys. 
+
+# 3 Method: QUBRIC 
+
+QUBRIC is a three-stage pipeline that jointly designs queries and rubrics for RL training (Figure 1). We first rewrite open-ended queries into scenario-grounded queries with nar-rower answer spaces (§3.1). We then generate query-level rubrics offline by contrasting teacher responses with policy responses (§3.2). Finally, we combine these query-level rubrics with global rubrics and optimize the policy with GRPO (§3.3). All query rewriting and rubric construction happen offline before training; rubrics remain fixed during RL. T1                 
+
+> Tk
+> …
+> …
+> Open -ended
+> Query
+> (e.g. ‘explain ML’)
+> Reference
+> Responses
+> Key Point
+> Extraction
+> Implicit
+> Reasoning
+> Rewritten Query
+> (e.g., ‘cat/dog classifier’)
+> Module 2: Contrastive Rubric Generation Module 1: Query Rewriting
+> Teacher
+> Response
+> Student
+> Response Comparison Query -level Rubrics
+> Query -level Rubrics
+> Global Rubrics
+> Module 3: Reinforcement Learning with Rubrics
+> LLM -as -a-Judge
+> Reward
+> Calculation
+> Rq,y=α⋅Rglobal y
+> +β⋅Rquery (q,y)
+> Policy Model
+> GRPO
+> Safety Factuality Formatting
+> …
+
+Figure 1: Overview of QUBRIC. Module 1: Open-ended queries are rewritten into scenario-grounded, evaluable questions via key-point extraction from multiple teacher responses and implicit-reasoning scenario construction. Module 2: Contrastive rubric generation compares teacher and student (policy) responses to extract query-level criteria. Module 3: 
+
+An LLM judge grades each rollout against both query-level and global rubrics (e.g., safety, factuality, formatting), producing per-rubric binary rewards that drive policy updates. 
+
+3.1 Key-Point-Grounded Query Rewriting 
+
+Open-ended queries admit broad answer spaces that make it difficult to write rubrics specifying exactly what to check. 
+
+Why naive narrowing fails. Without grounding in what the answer should contain, naive narrowing systematically introduces unverifiable references—citing guidelines, glossaries, or documents that do not exist—after which the rubric generator defaults to testing whether the model refuses to answer, yielding uninformative reward signals (Table 4). 
+
+Key-point extraction. We generate reference responses from four teacher models and extract the core key points —atomic knowledge components that a comprehensive answer should contain. Queries whose teacher responses exhibit high cross-model disagreement are prioritized for rewriting, as their answer space is broadest. We enforce a uniqueness requirement : the selected key points must form the determinate core answer of the rewritten query, giving the rubric generator an unambiguous evaluation target. 
+
+Scenario construction. The rewriting prompt selects one or two key points and constructs a scenario-based question where those key points emerge as the answer through reason-ing, not direct recall. The rewrite embeds realistic context—a professional role, specific constraints, concrete data—that makes the query self-contained. Implicit constraints and plausible alternatives further narrow the answer space; an answer-format constraint (e.g., “Answer in 2–3 sentences”) prevents hedging through verbosity. 3Preprint 
+
+Validation. A prompt-based validation stage checks that (i) the selected key points still correctly answer the rewritten query, (ii) the scenario does not leak the answer, (iii) con-straints are internally consistent, and (iv) the item falls within the target complexity level. Queries that fail any check are discarded. This validation is prompt-based rather than human-verified; we discuss its limitations in Section 6. Full prompts are in Appendix A.3. 
+
+Learnability filtering. A final filter retains only query–rubric pairs where the initialization policy’s pass rate, estimated under the same judge and rubric set, falls in a 20–50% corridor (applied after rubric generation). This pragmatic heuristic selects informative training items; we ablate its effect in Section 5.2. 
+
+3.2 Contrastive Query-Level Rubric Design 
+
+Given a rewritten query from Section 3.1, this stage generates query-level rubrics by con-trasting a stronger teacher response against a weaker policy response. The goal is to produce rubrics that are constitutive : a judge can evaluate them using only the rubric text and the response, without external knowledge. For example, “the response explains that water expands when freezing due to hydrogen bonding” is constitutive—the judge only verifies presence. A rubric like “the response provides a scientifically accurate explanation of why water expands when freezing” is presupposing—it delegates the hard judgment (what counts as scientifically accurate) entirely to the judge. In practice this is a spectrum; we design rubrics to be as constitutive as possible, because embedding grading knowledge in the rubric reduces the judge’s burden (Section 5.3). We enforce four design principles: atomicity (one criterion per rubric), unambiguity (crite-rion text contains the content needed for grading), non-hackability (criterion targets sub-stance rather than format proxies), and orthogonality (criteria should not be near-duplicates or logical consequences of one another). Rubrics are weighted by importance: Critical 
+
+(w=3) captures core content requirements; Optional (w=1) captures supplementary quality dimensions. The shopping domain uses a three-tier scheme (Critical/Important/Optional, 
+
+w ∈ { 3, 2, 1 }); details are in Appendix B.1. 
+
+Contrastive generation. For each validated rewritten query, we generate query-level rubrics offline. The generator follows four steps: (1) extract explicit constraints from the query as Critical rubrics; (2) identify content present in the teacher response but absent from the policy response; (3) note content shared by both responses, which may represent core requirements; and (4) decompose holistic criteria into atomic sub-rubrics following the design principles above. This produces a static rubric set R(q) for each rewritten query, used unchanged during RL training. Full prompts are in Appendix A.3.2. 
+
+3.3 Reward Formulation and Training 
+
+We fine-tune a pretrained policy πθ to maximize expected reward R(q, y) over queries q ∼ Q 
+
+and responses y ∼ πθ (· | q). Rather than using a monolithic reward model, we decompose the reward into binary rubric judgments: 
+
+R(q, y) = α∑
+
+> g∈G
+
+wg · rg(y) + β ∑
+
+> r∈R (q)
+
+wr · rr (q, y), (1) where each r(·) ∈ { 0, 1 } is a binary rubric judgment from an LLM judge. Global rubrics G
+
+enforce behavioral constraints (safety, factuality, formatting) that apply uniformly across queries; query-level rubrics R(q) capture task-specific reasoning criteria. Each component is a weighted sum normalized by total rubric weight, so reward scale is comparable across queries with different numbers of rubrics. The weight α/β controls the relative influence: global rubrics provide stable guardrails, while query-level rubrics provide higher-entropy, content-discriminative signal. 
+
+Grading and optimization. Each rubric is graded independently by an LLM judge via a separate call, reducing cross-rubric interference. Judging is concept-tolerant, accepting semantically equivalent formulations (Appendix A.3.3). We train the policy using Group Relative Policy Optimization (GRPO) (Shao et al., 2024). GRPO samples from the filtered dataset D = {(q, R(q)) } of rewritten queries and their static rubric sets: for each query, 
+
+K rollout responses are generated, graded against global and query-level rubrics, and used 4Preprint to update the policy via group-relative advantages. The full training procedure is given as Algorithm 1 in Appendix A. 
+
+# 4 Experiments 
+
+We evaluate QUBRIC in three settings of increasing evidence strength: (i) challeng-ing instruction-following benchmarks, where we have the most controlled comparisons; (ii) transfer to three held-out benchmarks spanning unseen domains; and (iii) a proprietary shopping-assistant setting as application-focused evidence. Our experiments probe set-tings where the primary challenge is constructing evaluable rewards, not merely grading responses with rubrics. 
+
+4.1 Experimental Setup Models and initialization. All main experiments use the same Qwen2.5-32B policy (post-SFT) with Qwen3-235B as both the training-time reward judge and the rubric generator. Reference responses for key-point extraction are generated by four teacher models in thinking mode (GPT-OSS, Qwen3-235B, DeepSeek-V3.1, Claude 3.7 Sonnet). We use GRPO with K=8 (IF) or K=32 (Shopping) rollouts and α/β=0.3 / 0.7 for global/query-level rubric weights. Full hyperparameters are in Table 12 (Appendix A). 
+
+Training data. For instruction following, we select queries from ShareGPT and apply the key-point-grounded rewriting and learnability filtering described in Section 3.1, producing 8,000 training instances. For shopping, we synthesize 3,000 queries from a small set of human-authored seed examples. A 200-query shopping evaluation benchmark is manually authored and shares no instances with the training set. 
+
+Benchmarks and metrics. We evaluate instruction following on four benchmarks: IFE-val (Zhou et al., 2023) for strict format compliance, MultiChallenge (Deshpande et al., 2025) and AdvancedIF (He et al., 2025) for complex conversational quality, and ArenaHard (Li et al., 2025) for response quality on challenging prompts. On IFEval, MultiChallenge, and ArenaHard we report the average score over four sampled responses (avg@4); on AdvancedIF we report rubric-level pass@1. For cross-domain transfer, we evaluate on MoReBench (Chiu et al., 2025), PLawBench (Shi et al., 2026), and MuSR (Sprague et al., 2024). Shopping helpfulness is measured by three metrics on a proprietary 200-query benchmark whose evaluation rubrics were curated and cross-validated by domain experts: Helpfulness-implicit (holistic LLM judgment guided by an expert-written guideline, rescaled to 0–100), Helpfulness-explicit (weighted average over independently scored rubric), and Helpfulness-editorial (percentage of turns scoring ≥4). 
+
+Evaluation protocol. Qwen3-235B is used as the training-time reward judge. Evalua-tion uses separate judges: Claude Sonnet 4 for LLM-as-a-judge benchmarks (MoReBench, PLawBench, shopping helpfulness), while IFEval uses rule-based checking, ArenaHard uses LLM-based pairwise comparison, AdvancedIF and MultiChallenge use their official evaluation pipelines, and MuSR uses deterministic exact matching. 
+
+4.2 Main Results on Instruction Following 
+
+Table 1 reports instruction-following results. The most pronounced improvements are on 
+
+ArenaHard , which stress-tests response quality on difficult prompts: QUBRIC improves hard-prompt score from 71.0 to 76.5 (+5.5) and creative-writing score from 51.6 to 58.9 (+7.3). AdvancedIF also improves to 84.2 rubric-level accuracy. We observe a modest decrease on IFEval ( −1.7pp), indicating a trade-off between strict format compliance and answer quality, consistent with findings by Huang et al. (2025). Comparing baselines, AutoIF-RLVR excels at format compliance (IFEval 89.4) but degrades on ArenaHard, suggesting that verifiable-constraint training does not transfer to open-ended quality. Rubric-RL with original (unrewritten) queries falls short of QUBRIC on ArenaHard (68.6 vs. 76.5), supporting the contribution of key-point-grounded query rewriting. We further ablate rewriting strategies in Section 5.2. We also compare our model with an RM-based RLHF baseline using Skywork-RM-V2 (Liu et al., 2026). However, this baseline proved unstable in our setup due to rapid response 5Preprint Table 1: Results on instruction-following benchmarks. Gains are concentrated on challenging quality-oriented benchmarks (ArenaHard, AdvancedIF), while IFEval shows a modest decrease in strict format compliance.                                     
+
+> Configuration IFEval MultiChallenge AdvancedIF ArenaHard
+> (avg@4) (avg@4) Rubric-Level pass@1 Hard-Prompt avg@4 Creative-Writing avg@4 SFT Baseline 84.0 40.2 82.2 71.0 51.6 AutoIF-RLVR 89.4 45.4 81.7 63.8 42.5 RM-RLHF (no LP) 78.7 45.7 84.1 25.8 21.4 RM-RLHF (LP=1.0) 79.6 41.8 83.1 71.4 42.3 Rubric-RL (Original Query) 80.4 44.5 81.2 68.6 51.2
+> QUBRIC 82.3 44.5 84.2 76.5 58.9
+
+length growth that exceeded benchmark limits, even with the inclusion of a length penalty during training. 
+
+4.3 Transfer to Held-Out Benchmarks 
+
+Despite being trained exclusively on instruction-following data, QUBRIC improves on all three held-out benchmarks, achieving an average gain of +6.31pp over the SFT baseline (Table 2). The largest improvement is on PLawBench (+8.85pp), a Chinese legal reasoning benchmark requiring structured argumentation–capabilities not directly targeted by training. We analyze the transfer pattern below. Table 2: Transfer results on three held-out benchmarks. All IF-domain models (first four rows) are trained on instruction-following data only; Math-RLVR is included as a domain-specific RLVR reference. MoReBench and PLawBench use LLM-as-a-judge evaluation; MuSR uses exact matching. All results are single-run. 
+
+Configuration MoReBench PLawBench MuSR Average 
+
+SFT Baseline 50.74 53.97 64.51 56.41 AutoIF-RLVR (IF-domain) 52.31 52.56 65.36 56.74 Rubric-RL (Original Query) 53.10 56.41 64.73 58.08 Math-RLVR (no LP) 53.01 50.96 52.10 52.02 Math-RLVR (LP=0.5) 48.74 54.01 65.46 56.07 
+
+QUBRIC 56.59 62.82 68.76 62.72 
+
+Critically, two IF-domain baselines also fail to match QUBRIC on these held-out benchmarks. AutoIF-RLVR, which trains on verifiable format constraints over the same ShareGPT queries, averages 56.74–barely above SFT (56.41) and well below QUBRIC (62.72). Rubric-RL with original (unrewritten) queries averages 58.08, improving over SFT but still falling short by 4.64pp. Under our setup, outperforming two IF-domain baselines is consistent with the value of co-designed query-rubric training rather than IF-domain RL alone. Math-RLVR does not outperform the SFT baseline on these benchmarks. Without a length penalty, excessive thinking chains (averaging 62K characters) cause 66% of MuSR outputs to be truncated, dropping the average to 52.02. Adding a length penalty recovers to near-SFT levels (56.07), still showing little evidence of improving generalization. The benchmarks where QUBRIC achieves the largest gains all require nontrivial structured reasoning, such as weighing multiple considerations, grounding legal arguments, or carrying out multi-step narrative inference. 
+
+4.4 Application Evidence: Shopping Helpfulness 
+
+Table 3 presents a reward-granularity comparison on our internal shopping benchmark. Even global-only rubrics yield meaningful gains over verifiable-reward training (implicit helpfulness 55.11 → 58.65), confirming that rubric-grounded rewards provide a valid training signal. The largest improvement comes from query-level rubrics, which raise implicit helpfulness to 67.64 and editorial pass rate to 65.03, substantially outperforming global-only rubrics in this setting. 6Preprint Combining global and query-level rubrics (last row) performs comparably on the three helpfulness metrics. Query-level rubrics improve helpfulness but introduce side effects (e.g., duplicate recommendations, ID hallucination) that global rubrics largely resolve (Appendix C.4). Table 3: Results on a proprietary shopping benchmark (200 multi-turn queries). Helpfulness-implicit: holistic LLM judgment guided by an expert-written guideline; Helpfulness-explicit: weighted average over independently scored rubric; Helpfulness-editorial: percentage of turns scoring ≥4.                
+
+> Reward Setting Helpfulness -implicit Helpfulness -explicit Helpfulness -editorial
+> Verifiable rewards only 55.11 70.73 38.67 Global-only rubrics 58.65 73.88 47.80 Query-level rubrics 67.64 76.50 65.03
+> Global + query-level rubrics 67.81 75.28 63.40
+
+# 5 Analysis 
+
+We next analyze why QUBRIC works. We provide three main analyses: case-level and corpus-level evidence that query structure changes rubric quality (§5.1), matched ablations isolating each pipeline component (§5.2), and cross-judge agreement analysis (§5.3). Unless otherwise noted, the controlled analyses use the instruction-following setup, where matched query variants allow comparison under the same base model, judge, and RL algorithm. 
+
+5.1 How Query Structure Changes Rubric Quality 
+
+To isolate the effect of query structure, we hold the original query and contrastive rubric generator fixed and compare the rubric sets produced after naive rewriting (without key-point grounding) versus co-designed rewriting (with key-point grounding). Table 4: Rubric case study: same original query, same rubric generator, different rewrite strategy. Two representative rubrics are shown per strategy; summary counts refer to the full rubric set. Two additional cases are in Appendix B.3.                    
+
+> Naive Rewrite (no key points) Co-Designed Rewrite Original: “how much testosterone level are safe in mens”
+> Rewritten query “What is the upper limit of the normal total testosterone range for adult men aged 20–50 according to the Endocrine Society’s 2018 guideline ?” “As a sports medicine consultant re-viewing an Olympic powerlifter’s an-nual health assessment, you note his morning testosterone is 1,450 ng/dL. . . ”
+> Rubrics • “Must state the Endocrine Society’s 2018 guideline specifies 916 ng/dL”
+> →[0,0,0,0]
+> • “Must explicitly attribute the value to the 2018 guideline” →[0,0,0,0]
+> 0/6 rubrics discriminate.
+> • “Must include ruling out natural causes of elevated testosterone” →
+> [1,0,1,0] • “Must include evaluating exoge-nous sources” →[0,1,1,1]
+> 10/13 rubrics discriminate.
+
+Each rubric is accompanied by a score vector of binary pass/fail judgments across four sampled policy responses, e.g., [1,0,1,0] indicates that responses 1 and 3 satisfy the rubric while 2 and 4 do not. A rubric is discriminative if its score vector contains both passes and failures. Under naive rewriting, 0/6 rubrics discriminate—all responses uniformly fail because they attempt to answer rather than refuse. Under co-designed rewriting, 10/13 rubrics discriminate, providing the varied reward signal needed for RL training. The pattern is consistent across this and two additional cases (Appendix B.3): naive narrow-ing achieves specificity by citing a concrete reference (a guideline, glossary, or complaint email) that is not grounded in the original task. The rubric generator then has no fac-tual content to embed, defaulting to refusal-oriented criteria. All responses fail because they attempt to help rather than refuse, producing no discriminative reward signal. With key-point-grounded rewriting, the query embeds a realistic scenario containing the infor-mation needed to answer, enabling the rubric generator to write constitutive criteria that test reasoning about the scenario. 7Preprint At the corpus level, co-designed queries shift rubric composition from specific-fact checks (66.6% → 37.7%) toward reasoning-chain criteria (5.9% → 24.6%) and reduce scope-boundary rubrics from 7.3% to 1.6% (Table 13 in Appendix C.2). 
+
+5.2 Ablations of Query-Rubric Co-Design 
+
+We compare matched variants under the same base model, judge, RL algorithm, and training budget, changing only the query and rubric construction strategy. Table 5: Ablation of query-rubric co-design components on instruction-following bench-marks. All variants use the same rubric annotation and LLM-as-a-judge reward. 
+
+Configuration IFEval MultiChallenge ArenaHard 
+
+Hard-Prompt Creative-Writing 
+
+QUBRIC (ours) 82.3 44.5 76.5 58.9 
+
+Surface rewrite only 82.3 44.6 67.1 51.6 Scenario rewrite without key points 78.5 42.9 73.6 57.4 No learnability filter 82.8 43.2 69.7 56.1 Non-contrastive rubric generation 82.7 44.2 71.1 53.9 
+
+Query rewriting strategy. Surface rewriting (editing phrasing and clarity without nar-rowing) falls well short of QUBRIC on ArenaHard (67.1 vs. 76.5), confirming that gains stem from structured narrowing, not better prompt wording. Scenario rewriting without key-point grounding also lags behind (73.6): without grounding, the rewriter produces unanchored queries that reference inaccessible documents, causing rubrics to hallucinate facts or test refusal rather than reasoning (the fabricated-reference failure mode of Table 4). 
+
+Learnability filtering. Removing the filter causes a notable drop on ArenaHard ( −6.8pp hard prompts, −2.8pp creative writing). Without filtering, the training set retains overly easy, overly hard, and low-signal pairs. We treat the 20–50% corridor as a pragmatic heuristic for informative training items rather than an optimized threshold. 
+
+Contrastive rubric generation. Generating rubrics from the teacher response alone, without comparing against the policy response, leads to a clear drop on ArenaHard ( −5.4pp hard prompts, −5.0pp creative writing). Contrastive generation uses the teacher–policy gap to produce criteria more targeted to the current policy’s weaknesses. 10 20 30 40 50 60 70 80 90         
+
+> Training Step
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> Reward
+> Training vs. Validation Reward
+> Original
+> Naive rewrite
+> Co-designed (ours)
+> 10 20 30 40 50 60 70 80 90
+> Training Step
+> −0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Train  − Val Reward
+> Reward
+> overfitting
+> Healthy
+> training
+> Generalization Gap
+> Original
+> Naive rewrite
+> Co-designed (ours)
+
+Figure 2: Training dynamics under three query-rubric strategies. Left: Training (solid) and validation (dashed) reward. Co-designed rewrites show steadily rising validation reward; original queries and naive rewrites decline or plateau. Right: Train–validation gap. Co-designed rewrites stay near zero; others widen to 0.25–0.30, consistent with reward overfitting. Figure 2 compares training dynamics across the three query-rubric strategies. Co-designed rewrites maintain the smallest train–validation gap (0.07), while original queries and naive rewrites show widening gaps (0.28–0.31) with declining validation reward, consistent with reward overfitting rather than genuine capability improvement. Across all ablations, simpler alternatives do not recover QUBRIC’s gains; matched ablations are reported only in the IF setup, where the same source queries admit controlled rewrite comparisons under a common protocol. 8Preprint 
+
+5.3 LLM-as-a-Judge Analysis 
+
+We evaluate whether rubrics designed to be more constitutive are also more consistently graded across judges. We compare four judges from three model families against Claude Sonnet 4 as the reference, selected because it achieves the highest agreement with reference-model annotation (86% accuracy, κ=0.70 on 100 stratified samples). We report Cohen’s κ
+
+rather than raw agreement because rubric types have different base rates—presupposing rubrics are predominantly all-fail, inflating raw agreement while masking lower measure-ment quality. Table 6: Judge κ vs. Sonnet 4. C = constitutive; P = presupposing.                   
+
+> Judge C (5327) P (59) All (5395)
+> DeepSeek-V3.1 0.63 0.54 0.63 DeepSeek-R1 0.70 0.66 0.70 Qwen3-235B 0.73 0.59 0.72 Sonnet 4.6 0.83 0.67 0.83
+> Avg. 0.72 0.61 0.72
+
+Table 6 shows a consistent constitutive ad-vantage: constitutive rubrics achieve avg. 
+
+κ=0.72, while presupposing rubrics drop to κ=0.61. The gradient holds across all four judges, including within the Claude family (Sonnet 4.6 vs. Sonnet 4: κ=0.83 constitutive, 0.67 presupposing). The presupposing sample is small ( N=59), but the directional consistency across all judges strengthens the finding. To further validate, we conducted areference-model annotation study on 100 stratified rubric judgments using a carefully prompted strong LLM as the reference annotator. Table 7 reports each judge’s accuracy. Table 7: Judge accuracy vs. reference-model annotation (100 samples). FP/FN = false pos./neg.                         
+
+> Judge Acc. κFP FN
+> Sonnet 4 86% 0.70 113 Qwen3-235B 83% 0.67 16 1Sonnet 4.6 81% 0.59 118 DeepSeek-R1 78% 0.67 15 2DeepSeek-V3.1 75% 0.53 25 0
+
+The error patterns reveal systematic biases: DeepSeek-V3.1 is the most lenient (25 false positives, zero false negatives), while the Claude models are the strictest (almost zero false positives but 13–18 false negatives). Query openness also predicts grading vari-ance: using response diversity (measured as Jaccard distance across four sampled re-sponses) as a proxy, grading disagreement increases from Q1 (most closed, 12.1%) to Q4 (most open, 17.6%; Spearman ρ=0.104, p=0.001). This supports the motivation for query rewriting: more open queries are harder to grade consistently, and narrowing them through rewriting is a plausible way to improve grading reliability. These results support the feasibility of rubric-based grading in our setting. The reference-model annotation validates that LLM judges achieve 75–86% accuracy on rubric judgments, with constitutive rubrics producing substantially more agreement across judge families. Human agreement validation remains an important direction for future work (Section 6). Additional rubric learnability diagnostics are in Appendix C.5. Taken together, these analyses support the central mechanism claim of the paper: query rewriting changes what rubrics can check, which in turn determines the usefulness of rubric-based RL rewards. 
+
+# 6 Conclusion 
+
+QUBRIC provides evidence that query-rubric co-design can make rubric-based RL a practical complement to RLVR beyond strictly verifiable tasks. The core insight is that query structure constrains rubric quality: naive narrowing collapses rubrics into refusal checks, while key-point-grounded rewriting produces scenario-based queries that support constitutive, reasoning-oriented rubrics. Across our evaluated settings, QUBRIC achieves a +5.5 point gain on ArenaHard and transfers to three held-out reasoning benchmarks (+6.3 points on average), outperforming both IF-domain baselines on the transfer benchmarks. Matched controls support that the gains come from co-designing queries and rubrics, rather than from rubric-based RL alone or query narrowing alone. 9Preprint 
+
+# References 
+
+Md Tanvirul Alam and Nidhi Rastogi. Limits of generalization in rlvr: Two case studies in mathematical reasoning. arXiv preprint arXiv:2510.27044 , 2025. Yu Ying Chiu, Michael S. Lee, Rachel Calcott, Brandon Handoko, Paul de Font-Reaulx, Paula Rodriguez, Chen Bo Calvin Zhang, Ziwen Han, Udari Madhushani Sehwag, Yash Maurya, et al. MoReBench: Evaluating procedural and pluralistic moral reasoning in language models, more than outcomes. arXiv preprint arXiv:2510.16380 , 2025. Paul F. Christiano, Jan Leike, Tom Brown, Miljan Martic, Shane Legg, and Dario Amodei. Deep reinforcement learning from human preferences. In Advances in Neural Information Processing Systems , volume 30, 2017. DeepSeek-AI, Daya Guo, Dejian Yang, Haowei Zhang, et al. DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning. arXiv preprint arXiv:2501.12948 ,2025. Kaustubh Deshpande, Ved Sirdeshmukh, Johannes Baptist Mols, Lifeng Jin, Ed-Yeremai Hernandez-Cardona, Dean Lee, Jeremy Kritz, Willow E Primack, Summer Yue, and Chen Xing. Multichallenge: A realistic multi-turn conversation evaluation benchmark challenging to frontier llms. In Findings of the Association for Computational Linguistics: ACL 2025 , pp. 18632–18702, 2025. Guanting Dong, Keming Lu, Chengpeng Li, Tingyu Xia, Bowen Yu, Chang Zhou, and Jingren Zhou. Self-play with execution feedback: Improving instruction-following capa-bilities of large language models. In The Thirteenth International Conference on Learning Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net, 2025. URL 
+
+https://openreview.net/forum?id=cRR0oDFEBC .Anisha Gunjal, Anthony Wang, Elaine Lau, Vaskar Nath, Yunzhong He, Bing Liu, and Sean M Hendryx. Rubrics as rewards: Reinforcement learning beyond verifiable domains. In NeurIPS 2025 Workshop on Efficient Reasoning .Yun He, Wenzhe Li, Hejia Zhang, Songlin Li, Karishma Mandyam, Sopan Khosla, Yuanhao Xiong, Nanshu Wang, Xiaoliang Peng, Beibin Li, et al. AdvancedIF: Rubric-based bench-marking and reinforcement learning for advancing LLM instruction following. arXiv preprint arXiv:2511.10507 , 2025. Zenan Huang, Yihong Zhuang, Guoshan Lu, Zeyu Qin, Haokai Xu, Tianyu Zhao, Ru Peng, Jiaqi Hu, Zhanming Shen, Xiaomeng Hu, et al. Reinforcement learning with rubric anchors. arXiv preprint arXiv:2508.12790 , 2025. Ruipeng Jia, Yunyi Yang, Yuxin Wu, Yongbo Gai, Siyuan Tao, Mengyu Zhou, Jianhe Lin, Xiaoxi Jiang, and Guanjun Jiang. Open rubric system: Scaling reinforcement learning with pairwise adaptive rubric. arXiv preprint arXiv:2602.14069 , 2026. Yuxin Jiang, Yufei Wang, Qiyuan Zhang, Xingshan Zeng, Liangyou Li, Jierun Chen, Chaofan Tao, Haoli Bai, and Lifeng Shang. From verifiable dot to reward chain: Harnessing verifiable reference-based rewards for reinforcement learning of open-ended generation. 
+
+arXiv preprint arXiv:2601.18533 , 2026. Nathan Lambert, Jacob Morrison, Valentina Pyatkin, Shengyi Huang, Hamish Ivison, Faeze Brahman, Lester James Validad Miranda, Alisa Liu, Nouha Dziri, Xinxi Lyu, Yuling Gu, Saumya Malik, Victoria Graf, Jena D. Hwang, Jiangjiang Yang, Ronan Le Bras, Oyvind Tafjord, Christopher Wilhelm, Luca Soldaini, Noah A. Smith, Yizhong Wang, Pradeep Dasigi, and Hannaneh Hajishirzi. Tulu 3: Pushing frontiers in open language model post-training. In Second Conference on Language Modeling , 2025. URL https://openreview. net/forum?id=i1uGbfHHpH .Tianle Li, Wei-Lin Chiang, Evan Frick, Lisa Dunlap, Tianhao Wu, Banghua Zhu, Joseph E. Gonzalez, and Ion Stoica. From crowdsourced data to high-quality benchmarks: Arena-hard and benchbuilder pipeline. In Aarti Singh, Maryam Fazel, Daniel Hsu, Simon 10 Preprint Lacoste-Julien, Felix Berkenkamp, Tegan Maharaj, Kiri Wagstaff, and Jerry Zhu (eds.), 
+
+Forty-second International Conference on Machine Learning, ICML 2025, Vancouver, BC, Canada, July 13-19, 2025 , Proceedings of Machine Learning Research. PMLR / OpenReview.net, 2025. URL https://proceedings.mlr.press/v267/li25h.html .Chris Yuhao Liu, Liang Zeng, Yuzhen Xiao, Jujie He, Jiacai Liu, Chaojie Wang, Rui Yan, Wei Shen, Fuxiang Zhang, Jiacheng Xu, and Yang Liu. Skywork-reward-v2: Scaling preference data curation via human-ai synergy. In The Fourteenth International Conference on Learning Representations , 2026. URL https://openreview.net/forum?id=ofgxkMLqic .Ximing Lu, David Acuna, Jaehun Jung, Jian Hu, Di Zhang, Shizhe Diao, Yunheng Zou, Shaokun Zhang, Brandon Cui, Mingjie Liu, et al. Golden goose: A simple trick to synthe-size unlimited rlvr tasks from unverifiable internet text. arXiv preprint arXiv:2601.22975 ,2026. Tong Mu, Alec Helyar, Johannes Heidecke, Joshua Achiam, Andrea Vallone, Ian Kivlichan, Molly Lin, Alex Beutel, John Schulman, and Lilian Weng. Rule based rewards for language model safety. Advances in Neural Information Processing Systems , 37:108877–108901, 2024. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to follow instructions with human feedback. In Advances in Neural Information Processing Systems , volume 35, 2022. Alexander Pan, Kush Bhatia, and Jacob Steinhardt. The effects of reward misspecification: Mapping and mitigating misaligned models. In International Conference on Learning Representations , 2022. URL https://openreview.net/forum?id=JYtwGwIL7ye .Rulin Shao, Akari Asai, Shannon Zejiang Shen, Hamish Ivison, Varsha Kishore, Jing-ming Zhuo, Xinran Zhao, Molly Park, Samuel G Finlayson, David Sontag, et al. Dr tulu: Reinforcement learning with evolving rubrics for deep research. arXiv preprint arXiv:2511.19399 , 2025. Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y.K. Li, Yang Wu, and Daya Gao. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 ,2024. Yuzhen Shi, Huanghai Liu, Yiran Hu, Gaojie Song, Xinran Xu, et al. PLawBench: A rubric-based benchmark for evaluating LLMs in real-world legal practice. arXiv preprint arXiv:2601.16669 , 2026. Joar Skalse, Nikolaus Howe, Dmitrii Krasheninnikov, and David Krueger. Defining and characterizing reward hacking. In Advances in Neural Information Processing Systems ,volume 35, 2022. Zayne Sprague, Xi Ye, Kaj Bostrom, Swarat Chaudhuri, and Greg Durrett. MuSR: Testing the limits of chain-of-thought with multistep soft reasoning. In International Conference on Learning Representations , 2024. Vijay Viswanathan, Yanchao Sun, Shuang Ma, Xiang Kong, Meng Cao, Graham Neubig, and Tongshuang Wu. Checklists are better than reward models for aligning language models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems ,2025. URL https://openreview.net/forum?id=RPRqKhjrr6 .Ran Xu, Tianci Liu, Zihan Dong, Tony Yu, Ilgee Hong, Carl Yang, Linjun Zhang, Tuo Zhao, and Haoyu Wang. Alternating reinforcement learning for rubric-based reward modeling in non-verifiable LLM post-training. arXiv preprint arXiv:2602.01511 , 2026. Jeffrey Zhou, Tianjian Lu, Swaroop Mishra, Siddhartha Brahma, Sujoy Basu, Yi Luan, Denny Zhou, and Le Hou. Instruction-following evaluation for large language models. arXiv preprint arXiv:2311.07911 , 2023. 11 Preprint Yang Zhou, Sunzhu Li, Shunyu Liu, Wenkai Fang, Kongcheng Zhang, Jiale Zhao, Jingwen Yang, Yihe Zhou, Jianwei Lv, Tongya Zheng, et al. Breaking the exploration bottle-neck: Rubric-scaffolded reinforcement learning for general llm reasoning. arXiv preprint arXiv:2508.16949 , 2025. 12 Preprint 
+
+# A Method Details 
+
+A.1 Training Algorithm Algorithm 1 QUBRIC Training Procedure 
+
+Require: Filtered dataset D = {(q, R(q)) }, global rubrics G, judge J, rollouts K 
+
+> 1:
+
+for each iteration do  
+
+> 2:
+
+Sample queries {q1, . . . , qB} ∼ D  
+
+> 3:
+
+for each qi do  
+
+> 4:
+
+Generate K responses {y(k) 
+
+> i
+
+} ∼ πθ (· | qi) 
+
+> 5:
+
+Grade each y(k) 
+
+> i
+
+against G and R(qi) using J 
+
+> 6:
+
+Compute R(k) 
+
+> i
+
+= α · ¯Rglobal (y(k) 
+
+> i
+
+) + β · ¯Rquery (qi, y(k) 
+
+> i
+
+) 
+
+> 7:
+
+end for  
+
+> 8:
+
+Update πθ via GRPO with rewards {R(k) 
+
+> i
+
+} 
+
+> 9:
+
+end for A.2 Query Enhancement Details 
+
+The query enhancement pipeline transforms open-ended queries into evaluable, scenario-based questions suitable for constitutive rubric generation. Given a raw query–answer pair and extracted key points, an LLM call identifies a core reasoning insight, constructs a scenario-based question testing that insight, and enforces answer-format constraints. The enhancement applies the following operations: • Implicit constraints: Embed constraints in the scenario that require inference to identify (e.g., a role, environment, or possession that restricts the answer space without being stated as an explicit requirement). • Elimination structure: Introduce 2–4 competing hypotheses with specific defeaters, so that the correct answer requires ruling out plausible alternatives. • Scenario framing: Embed the question in a realistic professional context (e.g., a clinician reviewing lab results, an engineer debugging a system) that provides the grounding for constitutive rubrics. • Answer format constraint: Calibrate a length constraint to the expected answer (e.g., “Answer in 2–3 sentences” for 50–80 word answers), preventing hedging through verbosity. A prompt-based validation stage then checks that the enhanced question preserves the original answer’s correctness, does not leak hints, maintains internal constraint consistency, and achieves the target difficulty (see Section 3.1 for details). The full enhancement prompt is available in the supplementary code. 
+
+A.3 Pipeline Prompts 
+
+We provide the core prompts used in the QUBRIC pipeline. Full prompts are available in the supplementary code. 
+
+A.3.1 Query Rewriting Prompt (Key-Point-Based) 
+
+The query rewriting prompt takes as input the original query, a reference answer, and a list of key points extracted from teacher responses. It outputs a rewritten query with a narrower answer space, the selected key points, and an ideal focused answer.               
+
+> You are a query rewriting assistant. Your job is to narrow the scope of a user’s original query based on: (1) the original query, (2) a reference answer, and (3) a complete key point list describing what an ideal answer may contain. You must transform the original query into anew, narrower query such that:
+> •The new query is created by adding constraints (not replacing the topic). The scope must be a strict subset.
+
+13 Preprint 
+
+• Choose at most 2 key points from the list. Each must be sufficiently specific and atomic. 
+
+• The new query must be answerable using only the selected key points. 
+
+• The selected key points must form the only valid core answer to the new query (uniqueness requirement). 
+
+• Output an ideal focused answer (<200 words), strictly scoped to the selected key points. 
+
+The uniqueness requirement is critical: it ensures the rewritten query has a determinate core answer, making constitutive rubric generation feasible. Without it, the query may admit multiple valid answers, forcing the rubric generator to either guess or produce presupposing criteria. 
+
+A.3.2 Contrastive Rubric Generation Prompt 
+
+The rubric generator receives a query, a stronger response (from the teacher), and a weaker response (from the policy), and produces rubrics via contrastive analysis. 
+
+Your task is to write rubrics for a given query by comparing a better response and a worse response. Rubrics summarize the core contents that the ideal response should contain. Principles: 
+
+1. Extract explicit constraints from the query : word limits, format requirements, scope restrictions, persona requirements. Each becomes a Critical rubric. 
+
+2. Identify what the better response does well that the worse response lacks : these become Critical rubrics. 
+
+3. Identify common content in both responses : this is likely essential and becomes Critical. 
+
+4. Identify flaws in the worse response : create rubrics capturing correct behavior. Rubric Writing Principles: 
+
+• Grounded to concrete content : Do not write abstract rubrics requiring the grader’s own knowledge. The rubric itself must contain all specific details needed for evaluation. 
+
+• Atomic : Each rubric tests exactly ONE indivisible aspect. Split compound criteria. 
+
+A.3.3 LLM-as-a-Judge Grading Prompt 
+
+The judge evaluates each rubric independently with concept-tolerant scoring. 
+
+You are a meticulous but fair grader for rubric-based evaluation. Scoring Rules: 
+
+1. Read the ENTIRE response before scoring. Do not score as you read. 
+
+2. Score CONCEPTS, not exact terms. A rubric is satisfied if the response conveys the required concept, even with different terminology. E.g., ‘‘surface-area-to-volume ratio’’ accepts ‘‘SA/V ratio,’’ ‘‘smaller objects have proportionally more surface.’’ 
+
+3. Consistent inference policy : Concepts must be explicitly stated or directly implied. Do not give credit for concepts requiring the grader to fill gaps. 
+
+4. Score each rubric independently. One rubric’s score must not influence another. 
+
+5. Completeness over verbosity. Response length is irrelevant to scoring. 
+
+A.3.4 Naive Rewrite Prompt (Baseline) 
+
+For comparison, the naive rewrite prompt narrows queries without key points or reference answers: 
+
+You are a query rewriting assistant. Rewrite the given query into anarrower, more focused version. 
+
+14 Preprint                    
+
+> Requirements: (1) Focus on asmaller, more specific scope. (2) Have adeterminate core answer not open to interpretation. (3) Be self-contained. (4) Maintain the same topic but add constraints to narrow it down. Example: ‘‘What are the health benefits of exercise?’’
+
+→ ‘‘What is the recommended minimum weekly duration of moderate aerobic exercise for adults according to WHO guidelines?’’ 
+
+Without key points to anchor the narrowing, this prompt often produces queries referencing specific documents or editions that no model can verify, leading to the fabricated-reference failure mode described in the main text. 
+
+# B Examples 
+
+B.1 Rubric Design Examples 
+
+Table 8 illustrates the hierarchical rubric system for a shopping query. Global rubrics enforce behavioral constraints that apply uniformly across queries, while query-level rubrics capture task-specific criteria with importance-weighted priorities. Table 8: Example rubrics for the query: “I’m looking for a lightweight laptop for college that’s under $800.” Global rubrics enforce general behavioral constraints; query-level rubrics capture task-specific criteria.                   
+
+> Level Priority Rubric
+> Global Critical The response must not recommend any products that are fabri-cated or do not exist. Global Important The response should use clear formatting with headers or bullet points for readability. Query Critical The response must only recommend laptops priced under $800. Query Critical The response must recommend laptops that weigh under 4 lbs (lightweight). Query Important The response should explain why each recommended laptop is suitable for a college student (e.g., battery life, portability). Query Important The response should include at least 2–3 distinct product recom-mendations for comparison. Query Optional The response should mention any current deals or discounts avail-able for the recommended products.
+
+B.2 Query Rewriting Examples 
+
+Table 9 illustrates the query rewriting process for instruction following. The original open-ended query is transformed into an evaluable, scenario-based question that requires implicit reasoning, and a contrastive rubric is generated from the selected key point. 
+
+B.3 Additional Rubric Case Studies 
+
+Table 10 presents two additional rubric case studies complementing the main-text example (Table 4). The same pattern holds: naive rewriting introduces fabricated references, collaps-ing rubrics into refusal checks; co-designed rewriting produces discriminative reasoning rubrics. 
+
+B.4 Three-Way Case Study 
+
+Table 11 shows the same original query processed by all three rewriting strategies, illustrat-ing how query structure changes what the rubric generator can write. The same contrastive rubric generator is used in all cases. 
+
+Original rubrics test exact implementation details (interface fields, method names)—the generator envisions one ideal Angular implementation and checks for its features. Naive rewrite narrows to a boilerplate question—3 rubrics all-fail because models use constructor injection (a valid alternative), 2 all-pass (trivial), yielding little discriminative signal. Co-designed rewrites embed a security-reasoning scenario—rubrics test whether the model reasons about HIPAA compliance, not whether it uses specific syntax. 15 Preprint Table 9: Example of key-point-grounded query rewriting with contrastive rubric generation. The rewritten query embeds a realistic scenario where the selected key point emerges as the determinate core answer. 
+
+Component Content 
+
+Original Query “Explain how can I do machine learning trading.” Key Points (1) Preventing look-ahead bias in backtesting; (2) Modeling transaction costs; (3) Feature engineering from market data; (4) Overfitting to historical pat-terns. Selected Key Point Preventing look-ahead bias in backtesting. Rewritten Query “A quantitative trader has built an ML model that shows 95% accuracy in backtesting but loses money in live trading. The model uses a rolling window of daily closing prices as features, and the training pipeline processes all historical data at once before splitting into train/test sets. What is the most likely methodological flaw, and how should the pipeline be restructured?” Contrastive Rubric The response must identify look-ahead bias (or data leakage) as the primary methodological flaw, explaining that processing all data before splitting allows future information to leak into training features. 
+
+Table 10: Additional rubric case studies (same format as Table 4). Scores show four sampled policy responses [resp. 1, 2, 3, 4]. 
+
+Naive Rewrite (no key points) Co-Designed Rewrite Original: “Create Automation QA testing introduction PPT” 
+
+Rewritten query “What is the exact definition of ‘test automation’ as specified in the ISTQB Glossary version 4.0 ?” “You’re leading a distributed team of manual QA engineers transitioning to automation for a React/Node.js e-commerce platform. . . ” 
+
+Rubrics • “Must state it does not have ac-cess to the ISTQB Glossary v4.0” →
+
+[0,0,0,0] 
+
+• “Must include actionable instruc-tion for obtaining the definition from ISTQB” → [0,0,0,0] 
+
+0/6 rubrics discriminate. 
+
+• “Must propose hybrid tool strat-egy using Cypress and Selenium” →
+
+[1,1,1,1] • “Must describe pairing junior QA with experienced devs” → [1,0,0,1] 
+
+5/7 rubrics discriminate. 
+
+Original: “Act as a customer support assistant. . . ” (Luffy Films scenario) 
+
+Rewritten query “What specific resolution does the cus-tomer explicitly demand in the com-plaint email sent to Luffy Films by Zoro?” “You’re a senior customer experi-ence manager at Luffy Films handling Zoro’s escalated complaint about blurry footage, terrible sound qual-ity. . . ” 
+
+Rubrics • “Must state it does not have access to the complaint email” → [0,0,0,0] 
+
+• “Must not specify any resolution de-tails” → [0,0,0,0] 
+
+0/4 rubrics discriminate. 
+
+• “Must offer full refund plus compen-sation for revenue losses” → [1,0,0,1] • “Must share implemented process improvements” → [1,1,0,1] 
+
+7/9 rubrics discriminate. 
+
+# C Experimental Details 
+
+C.1 Training Hyperparameters 
+
+Table 12 lists the hyperparameters used for RL training in the instruction-following and shopping settings. 
+
+C.2 Rubric Composition Under Different Query Structures 
+
+We manually classified rubrics from 50 randomly sampled training records for each strategy by reading the rubric text. Classification is based on 422 (Original) and 244 (Co-designed, excluding 3 standard format rubrics) rubric texts. Results are shown in Table 13. 16 Preprint Table 11: Three-way case study: the same original query (“Create an Angular component for editing a user profile”) produces qualitatively different rubrics under different rewriting strategies, all from the same rubric generator. 
+
+Strategy Rewritten Query Representative Rubrics Original 
+
+(12 rubrics, score 0.53) “Create an Angular component displaying a form using material components. In this form a user profile should be edited.” • “Must define a UserProfile interface with firstName, lastName, email, phone, dateOf-Birth, address” • “Must implement validation using Val-idators.required, Validators.email, Valida-tors.minLength” • “Must include a getErrorMessage() method” 
+
+Naive rewrite 
+
+(7 rubrics) “What is the exact TypeScript code to initialize a FormGroup named ‘profileForm’ using Form-Builder with ‘name’ and ‘email’ fields with validation?” • “Must import OnInit from @angular/core” →
+
+[0,0,0,0] • “Must initialize profileForm in ngOnInit” →
+
+[0,0,0,0] • “Must define ‘name’ with Validators.required” 
+
+→ [1,1,1,1] 
+
+Co-designed 
+
+(9 rubrics) “You’re implementing a user profile editor for a HIPAA-compliant healthcare application using Angular 17 with stan-dalone components. During se-curity audit. . . ” • “Must leverage Angular 17 signals for form state management” → [0,1,0,0] • “Must include client-side encryption for sen-sitive fields” • “Must include HIPAA audit logging that san-itizes field names” 
+
+Table 12: Training hyperparameters for GRPO-based RL training. 
+
+Parameter IF Shopping 
+
+Policy model Qwen2.5-32B (post-SFT) Judge model Qwen3-235B-A22B Rubric generator Qwen3-235B-A22B Teacher models GPT-OSS, Qwen3-235B, DeepSeek-V3.1, Claude 3.7 Sonnet RL algorithm GRPO Learning rate 1e-6 KL penalty coefficient 0.001 Global/query weight ( α/β) 0.3 / 0.7 Rollouts per query ( K) 8 32 Batch size 128 8Training steps 60 400 Training queries 8,000 3,000 
+
+Table 13: Rubric composition under different query strategies, from the same contrastive rubric generator. Original queries produce rubrics dominated by specific-fact checks; co-designed queries shift toward reasoning chains and best-practice recommendations. Pass% denotes the initialization policy’s average rubric pass rate on rubrics of that type. 
+
+Rubric Type Original Co-designed Pass% (Orig) Pass% (Co-designed) 
+
+Specific fact 66.6% 37.7% 45.2 44.9 Reasoning chain 5.9% 24.6% 52.0 57.9 Best practice — 13.9% — 61.3 Structural requirement 5.9% 13.5% 56.0 100.0 Scope boundary 7.3% 1.6% 32.3 0.0 Completeness 8.5% 4.5% 58.3 90.9 Meta / style 5.7% 3.7% 66.7 55.6 Query-specific 91.2% 86.1% 
+
+17 Preprint 
+
+C.3 Training Dynamics Analysis 
+
+The training curve divergence (Figure 2) is explained by rubric composition interacting with the RL optimizer: 
+
+Original queries. With 67% specific-fact rubrics, the model memorizes training-specific answer patterns. On validation, scope-boundary rubrics decline by 30 percentage points (the model stops respecting “must not” constraints) while reasoning rubrics improve by 91pp (more elaboration). These are in tension at similar weights (both w=2.0): more elaboration helps reasoning but violates scope constraints, resulting in declining validation reward. 
+
+Co-designed queries. With 25% reasoning-chain rubrics at higher weight ( w=3.0 for content, 
+
+w=1.0 for format), the weight hierarchy resolves the elaboration–constraint tension. All rubric categories improve on validation: specific facts +13%, reasoning +55%, format +20%. The model preferentially learns the high-weight rubrics (learned rubrics average weight 2.35, unlearned 1.65). 
+
+Response behavior. Over training, original-query responses grow 56% longer (14K →22K chars) with 114% more hedging language and declining structural density per character— consistent with reward overfitting through padding. Co-designed responses stay concise (3K →5K chars, 4 × shorter) with stable density. 
+
+C.4 Supplementary Quality Dimensions in Shopping 
+
+While Table 3 shows that query-level rubrics alone produce the highest helpfulness scores, they also introduce notable side effects. Table 14 reports four supplementary quality dimen-sions measured on the same proprietary shopping benchmark. Table 14: Supplementary quality dimensions on the proprietary shopping benchmark. Helpfulness-avg is the mean of the three helpfulness metrics in Table 3. The remaining columns are error rates (%, lower is better): Duplicate Recs measures repeated product rec-ommendations; ID Hallucination measures hallucinated product identifiers; ID Mismatch 
+
+measures identifiers referring to a different product than described; Miscategorization 
+
+measures recommending products from the wrong category. Core global rubrics are a subset of five rubrics targeting these side effects; the full set includes 13 additional rubrics covering communication quality, content accuracy, and recommendation quality.                          
+
+> Reward Setting Helpful.-avg Dup. Recs ↓ID Halluc. ↓ID Mismatch ↓Miscateg. ↓
+> Verifiable rewards only 54.84 2.82 11.30 4.04 0.58 Query-level rubrics 69.72 13.16 29.48 3.91 3.50 Global (core) + query-level 68.83 1.56 7.67 4.07 1.98 Global (all) + query-level —1.25 5.47 3.18 0.51
+
+Query-level rubrics alone raise helpfulness from 54.84 to 69.72 but simultaneously increase duplicate recommendations from 2.82% to 13.16% and product ID hallucination from 11.30% to 29.48%. The policy partially satisfies content-oriented rubric facets by repeating products and hallucinating product identifiers, producing higher helpfulness at the cost of reliability. Adding core global rubrics largely resolves these side effects while maintaining competitive helpfulness (68.83 vs. 69.72): duplicate recommendations drop to 1.56% and ID hallucination to 7.67%. Expanding to the full global rubric set further reduces ID hallucination to 5.47% and miscategorization to 0.51%, both below the verifiable-rewards-only baseline. These results clarify the complementary roles of the two rubric types: query-level rubrics drive helpfulness improvement, while global rubrics act as regularizers that suppress failure modes introduced by aggressive query-level optimization. Although the full global rubric set yields the best supplementary metrics, each rubric requires a separate LLM judge call per rollout, so the main shopping experiments in Table 3 use only the five core global rubrics. 
+
+C.5 Pass Rate Analysis 
+
+Table 15 presents the pass rate analysis across different models on the shopping rubric set. The gap between the teacher model and the base policy confirms that rubrics target qualities present in stronger models but lacking in the base policy; the increase from pass@1 18 Preprint to pass@8 suggests these behaviors exist within the policy’s search space, making them plausible RL targets. Table 15: Pass@ k rates (%) for different models on the shopping rubric set. The gap between teacher and base models confirms that rubrics target learnable but challenging qualities. 
+
+Model pass@1 pass@4 pass@8 
+
+Teacher Model 84.6 92.1 95.3 Proprietary Base Model 53.1 71.5 82.4 Qwen2.5-32B 60.4 78.2 87.8 19
