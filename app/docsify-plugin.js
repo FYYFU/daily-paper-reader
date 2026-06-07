@@ -1398,7 +1398,12 @@ window.$docsify = {
 
         items.forEach((li) => {
           const childUl = li.querySelector(':scope > ul');
-          const directLink = li.querySelector(':scope > a');
+          const reportSourceLink = li.querySelector(
+            ':scope > a.dpr-sidebar-day-report-source[href]',
+          );
+          const directLink = li.querySelector(
+            ':scope > a:not(.dpr-sidebar-day-report-source)',
+          );
           if (!childUl || directLink) return;
 
           // 取日期文本：
@@ -1427,6 +1432,9 @@ window.$docsify = {
           if (hiddenDays.has(dayKey)) return;
 
           dayItems.push({ li, text: rawText, firstTextNode, dayKey });
+          dayItems[dayItems.length - 1].reportHref = reportSourceLink
+            ? normalizeHashHref(reportSourceLink.getAttribute('href'))
+            : '';
           if (!latestDay || dayKey > latestDay) {
             latestDay = dayKey;
           }
@@ -1625,10 +1633,13 @@ window.$docsify = {
         };
 
         // 第二遍：真正安装折叠行为
-        dayItems.forEach(({ li, text: rawText, firstTextNode, dayKey }) => {
+        dayItems.forEach(({ li, text: rawText, firstTextNode, dayKey, reportHref }) => {
           const childUl = li.querySelector(':scope > ul');
           if (childUl) childUl.classList.add('sidebar-day-content');
           const key = dayKey || rawText;
+          const reportSourceLink = li.querySelector(
+            ':scope > a.dpr-sidebar-day-report-source[href]',
+          );
 
           // 复用或创建 wrapper（包含日期文字和小箭头）
           let wrapper = li.querySelector(':scope > .sidebar-day-toggle');
@@ -1636,8 +1647,14 @@ window.$docsify = {
             wrapper = document.createElement('div');
             wrapper.className = 'sidebar-day-toggle';
 
-            const labelSpan = document.createElement('span');
+            const labelSpan = document.createElement(reportHref ? 'a' : 'span');
             labelSpan.className = 'sidebar-day-toggle-label';
+            if (reportHref) {
+              labelSpan.classList.add('sidebar-day-report-link');
+              labelSpan.href = reportHref;
+              labelSpan.title = '打开日报';
+              labelSpan.setAttribute('aria-label', `打开 ${rawText} 日报`);
+            }
             labelSpan.textContent = rawText;
 
             const menuTrigger = document.createElement('button');
@@ -1676,8 +1693,19 @@ window.$docsify = {
             }
           }
 
+          if (reportSourceLink) {
+            reportSourceLink.remove();
+          }
+
           const labelSpan = wrapper.querySelector('.sidebar-day-toggle-label');
-          if (labelSpan) labelSpan.textContent = rawText;
+          if (labelSpan) {
+            labelSpan.textContent = rawText;
+            if (reportHref && labelSpan.tagName === 'A') {
+              labelSpan.href = reportHref;
+              labelSpan.title = '打开日报';
+              labelSpan.setAttribute('aria-label', `打开 ${rawText} 日报`);
+            }
+          }
           const arrowSpan = wrapper.querySelector('.sidebar-day-toggle-arrow');
           const menuTrigger = wrapper.querySelector('.sidebar-day-menu-trigger');
           const menu = wrapper.querySelector('.sidebar-day-menu');
@@ -1764,7 +1792,7 @@ window.$docsify = {
                 try {
                   const target = e && e.target && e.target.closest
                     ? e.target.closest(
-                        '.sidebar-day-menu-trigger,.sidebar-day-menu,.sidebar-day-menu-item',
+                        '.sidebar-day-report-link,.sidebar-day-menu-trigger,.sidebar-day-menu,.sidebar-day-menu-item',
                       )
                     : null;
                   if (target) return;

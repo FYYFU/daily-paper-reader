@@ -990,6 +990,19 @@ def build_docsify_id_href(path_no_ext: str) -> str:
     return f"/{p}"
 
 
+def build_docsify_hash_href(path_no_ext: str) -> str:
+    return "#" + build_docsify_id_href(path_no_ext)
+
+
+def build_day_report_route(date_str: str) -> str:
+    s = str(date_str or "").strip()
+    if RANGE_DATE_RE.match(s):
+        return f"{s}/README"
+    if len(s) >= 8:
+        return f"{s[:6]}/{s[6:8]}/README"
+    return "README"
+
+
 def build_latest_report_section(
     date_str: str,
     date_label: str | None,
@@ -1021,12 +1034,7 @@ def build_latest_report_section(
         lines.append("")
         lines.append("### 今日简报（AI）")
         lines.append(summary)
-    if RANGE_DATE_RE.match(date_str):
-        report_href = build_docsify_id_href(f"{date_str}/README")
-    else:
-        ym = date_str[:6]
-        day = date_str[6:]
-        report_href = build_docsify_id_href(f"{ym}/{day}/README")
+    report_href = build_docsify_id_href(build_day_report_route(date_str))
     lines.append(f"- 详情：[{report_href}]({report_href})")
     lines.append("")
     lines.append("### 精读区论文标签")
@@ -1720,13 +1728,29 @@ def update_sidebar(
     effective_label = (date_label or "").strip() or format_date_str(date_str)
     # 用隐藏 marker 做稳定定位，避免“展示标题”变更导致无法覆盖更新
     marker = f"<!--dpr-date:{date_str}-->"
-    day_heading = f"  * {effective_label} {marker}\n"
+    report_href = build_docsify_hash_href(build_day_report_route(date_str))
+    day_heading = (
+        f'  * {html.escape(effective_label)} '
+        f'<a class="dpr-sidebar-day-report-source" href="{report_href}">日报</a> '
+        f"{marker}\n"
+    )
     legacy_day_heading = f"  * {format_date_str(date_str)}\n"
 
     lines: List[str] = []
     if os.path.exists(sidebar_path):
         with open(sidebar_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
+
+    daily_center_href = build_docsify_hash_href("daily/README")
+    if not any(daily_center_href in line for line in lines):
+        insert_idx = next(
+            (idx for idx, line in enumerate(lines) if line.strip().startswith("* Daily Papers")),
+            len(lines),
+        )
+        lines.insert(
+            insert_idx,
+            f'* <a class="dpr-sidebar-root-link" href="{daily_center_href}">日报中心</a>\n',
+        )
 
     daily_idx = -1
     for i, line in enumerate(lines):
@@ -1925,6 +1949,174 @@ def list_day_report_links(docs_dir: str) -> List[Tuple[str, str]]:
     return out
 
 
+def _parse_day_report_readme(readme_path: str, fallback_label: str) -> Dict[str, Any]:
+    text = ""
+    try:
+        with open(readme_path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except Exception:
+        text = ""
+
+    label = fallback_label
+    generated_at = ""
+    total_count: int | None = None
+    deep_count: int | None = None
+    quick_count: int | None = None
+    summary = ""
+
+    lines = text.splitlines()
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("# 日报"):
+            m = re.match(r"^#\s*日报\s*[·:：-]\s*(.+)$", stripped)
+            if m:
+                label = m.group(1).strip() or label
+        elif stripped.startswith("- 生成时间："):
+            generated_at = stripped.split("：", 1)[1].strip()
+        elif stripped.startswith("- 当次推荐总数："):
+            m = re.search(r"(\d+)", stripped)
+            if m:
+                total_count = int(m.group(1))
+        elif stripped.startswith("- 论文数量："):
+            m = re.search(r"(\d+)", stripped)
+            if m:
+                total_count = int(m.group(1))
+        elif stripped.startswith("- 精读区："):
+            m = re.search(r"(\d+)", stripped)
+            if m:
+                deep_count = int(m.group(1))
+        elif stripped.startswith("- 速读区："):
+            m = re.search(r"(\d+)", stripped)
+            if m:
+                quick_count = int(m.group(1))
+        elif stripped == "## 今日简报（AI）":
+            for next_line in lines[idx + 1 :]:
+                candidate = next_line.strip()
+                if not candidate:
+                    continue
+                if candidate.startswith("#"):
+                    break
+                summary = candidate
+                break
+
+    return {
+        "label": label,
+        "generated_at": generated_at,
+        "total_count": total_count,
+        "deep_count": deep_count,
+        "quick_count": quick_count,
+        "summary": summary,
+    }
+
+
+def collect_day_report_index_items(docs_dir: str) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    if not os.path.isdir(docs_dir):
+        return items
+
+    range_dirs = sorted(
+        [d for d in os.listdir(docs_dir) if RANGE_DATE_RE.fullmatch(d)],
+        reverse=True,
+    )
+    for rd in range_dirs:
+        readme = os.path.join(docs_dir, rd, "README.md")
+        if not os.path.exists(readme):
+            continue
+        m = RANGE_DATE_RE.match(rd)
+        sort_key = m.group(2) if m else rd
+        meta = _parse_day_report_readme(readme, format_date_str(rd))
+        items.append(
+            {
+                **meta,
+                "date_key": sort_key,
+                "group_key": "区间日报",
+                "href": build_docsify_id_href(build_day_report_route(rd)),
+            }
+        )
+
+    ym_dirs = sorted([d for d in os.listdir(docs_dir) if re.fullmatch(r"\d{6}", d)], reverse=True)
+    for ym in ym_dirs:
+        ym_path = os.path.join(docs_dir, ym)
+        if not os.path.isdir(ym_path):
+            continue
+        day_dirs = sorted([d for d in os.listdir(ym_path) if re.fullmatch(r"\d{2}", d)], reverse=True)
+        for day in day_dirs:
+            readme = os.path.join(ym_path, day, "README.md")
+            if not os.path.exists(readme):
+                continue
+            date8 = f"{ym}{day}"
+            meta = _parse_day_report_readme(readme, format_date_str(date8))
+            items.append(
+                {
+                    **meta,
+                    "date_key": date8,
+                    "group_key": f"{date8[:4]}-{date8[4:6]}",
+                    "href": build_docsify_id_href(build_day_report_route(date8)),
+                }
+            )
+
+    return sorted(items, key=lambda item: str(item.get("date_key") or ""), reverse=True)
+
+
+def _count_text(value: Any) -> str:
+    return "-" if value is None else str(value)
+
+
+def build_daily_index_markdown(items: List[Dict[str, Any]]) -> str:
+    lines: List[str] = ["# 日报中心", ""]
+    if not items:
+        lines.append("暂无日报。")
+        lines.append("")
+        return "\n".join(lines)
+
+    latest = items[0]
+    latest_label = str(latest.get("label") or latest.get("date_key") or "最新日报")
+    latest_href = str(latest.get("href") or "/")
+    lines.append(f"- 最新日报：[{latest_label}]({latest_href})")
+    lines.append(f"- 日报数量：{len(items)}")
+    lines.append("")
+
+    grouped_items: List[Tuple[str, List[Dict[str, Any]]]] = []
+    group_map: Dict[str, List[Dict[str, Any]]] = {}
+    for item in items:
+        group_key = str(item.get("group_key") or "其他日报")
+        if group_key not in group_map:
+            group_map[group_key] = []
+            grouped_items.append((group_key, group_map[group_key]))
+        group_map[group_key].append(item)
+
+    for group_key, group_items in grouped_items:
+        lines.append(f"## {group_key}")
+        lines.append("")
+        lines.append("| 日期 | 推荐 | 精读 | 速读 | 生成时间 |")
+        lines.append("| --- | ---: | ---: | ---: | --- |")
+
+        for item in group_items:
+            label = str(item.get("label") or item.get("date_key") or "日报")
+            href = str(item.get("href") or "/")
+            generated_at = str(item.get("generated_at") or "-")
+            lines.append(
+                f"| [{label}]({href}) | "
+                f"{_count_text(item.get('total_count'))} | "
+                f"{_count_text(item.get('deep_count'))} | "
+                f"{_count_text(item.get('quick_count'))} | "
+                f"{generated_at} |"
+            )
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def write_daily_index_readme(docs_dir: str) -> str:
+    index_dir = os.path.join(docs_dir, "daily")
+    os.makedirs(index_dir, exist_ok=True)
+    out_path = os.path.join(index_dir, "README.md")
+    content = build_daily_index_markdown(collect_day_report_index_items(docs_dir))
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return out_path
+
+
 def build_home_readme_content(
     docs_dir: str,
     date_str: str,
@@ -1952,6 +2144,9 @@ def build_home_readme_content(
     lines.append(notice_md or "（公告模块为空）")
     lines.append("")
     lines.append("## 每次日报")
+    daily_index_href = build_docsify_id_href("daily/README")
+    lines.append(f"- [日报中心]({daily_index_href})")
+    lines.append("")
     lines.append(latest_report_md)
     lines.append("")
     lines.append(promo_md or "（宣传模块为空）")
@@ -2663,6 +2858,11 @@ def main() -> None:
     )
     log(f"[OK] day report saved: {day_readme}")
     log(f"[OK] home README synced: {home_readme}")
+    try:
+        daily_index = write_daily_index_readme(docs_dir)
+        log(f"[OK] daily index saved: {daily_index}")
+    except Exception as e:
+        log(f"[WARN] 生成日报中心失败：{e}")
     log_substep("6.4", "生成当日日报并同步首页 README", "END")
 
     sidebar_path = os.path.join(docs_dir, "_sidebar.md")

@@ -232,6 +232,81 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertIn("问题背景→核心方法→关键结果→贡献意义", prompt)
         self.assertNotIn("每个字段一句话概括", prompt)
 
+    def test_write_daily_index_readme_collects_report_pages(self):
+        with tempfile.TemporaryDirectory() as d:
+            docs_dir = Path(d)
+            day_dir = docs_dir / "202606" / "07"
+            day_dir.mkdir(parents=True)
+            (day_dir / "README.md").write_text(
+                "\n".join(
+                    [
+                        "# 日报 · 2026-06-07",
+                        "",
+                        "- 生成时间：2026-06-07 21:18:47 UTC",
+                        "- 当次推荐总数：15",
+                        "- 精读区：9",
+                        "- 速读区：6",
+                        "",
+                        "## 今日简报（AI）",
+                        "今日精选论文覆盖强化学习与安全。",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            older_dir = docs_dir / "202606" / "06"
+            older_dir.mkdir(parents=True)
+            (older_dir / "README.md").write_text(
+                "\n".join(
+                    [
+                        "# 日报 · 2026-06-06",
+                        "",
+                        "- 生成时间：2026-06-06 21:00:00 UTC",
+                        "- 当次推荐总数：3",
+                        "- 精读区：1",
+                        "- 速读区：2",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            out_path = Path(self.mod.write_daily_index_readme(str(docs_dir)))
+            content = out_path.read_text(encoding="utf-8")
+
+            self.assertEqual(out_path, docs_dir / "daily" / "README.md")
+            self.assertIn("# 日报中心", content)
+            self.assertIn("- 最新日报：[2026-06-07](/202606/07/README)", content)
+            self.assertIn("| [2026-06-07](/202606/07/README) | 15 | 9 | 6 | 2026-06-07 21:18:47 UTC |", content)
+            self.assertIn("| [2026-06-06](/202606/06/README) | 3 | 1 | 2 | 2026-06-06 21:00:00 UTC |", content)
+
+    def test_update_sidebar_adds_daily_center_and_report_link(self):
+        with tempfile.TemporaryDirectory() as d:
+            sidebar_path = Path(d) / "_sidebar.md"
+            sidebar_path.write_text(
+                "\n".join(
+                    [
+                        '* <a class="dpr-sidebar-root-link" href="#/">首页</a>',
+                        "* Daily Papers",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            self.mod.update_sidebar(
+                str(sidebar_path),
+                "20260607",
+                [("202606/07/2606.01476v1-test-paper", "Test Paper", [("score", "8.0")])],
+                [],
+                {"202606/07/2606.01476v1-test-paper": "relevant evidence"},
+            )
+
+            content = sidebar_path.read_text(encoding="utf-8")
+            self.assertIn('href="#/daily/README">日报中心</a>', content)
+            self.assertIn('class="dpr-sidebar-day-report-source" href="#/202606/07/README"', content)
+            self.assertIn("<!--dpr-date:20260607-->", content)
+            self.assertIn("Test Paper", content)
+
 
 if __name__ == "__main__":
     unittest.main()
