@@ -6,67 +6,69 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-06
-- 运行时间：2026-06-06 21:13:35 UTC
+- 最新运行日期：2026-06-07
+- 运行时间：2026-06-07 21:18:47 UTC
 - 运行状态：成功
 - 本次总论文数：15
-- 精读区：6
-- 速读区：9
+- 精读区：9
+- 速读区：6
 
 ### 今日简报（AI）
-今日推荐15篇论文，重点聚焦LLM定理证明对齐与强化学习加速两大方向。  
-最值得精读《Distilling LLM Feedback for Lean Theorem Proving》与《Dialectics of Alignment》两篇9分工作，分别提升证明效率与动态安全路由能力。  
-建议优先研读这两篇，掌握LLM在形式化推理与安全对齐上的前沿突破。
-- 详情：[/202606/06/README](/202606/06/README)
+今天共审读15篇论文，重点精读了《OmniOPD》和《COP-Q》这两篇高分工作。
+
+最值得关注的是：无logit在线策略蒸馏通过推测验证避免分布偏移，以及Cholesky安全投影方法确保机器人控制中的安全约束。
+
+建议优先阅读这两篇高分论文，前者适合强化学习效率优化，后者适合安全关键控制领域。
+- 详情：[/202606/07/README](/202606/07/README)
 
 ### 精读区论文标签
-1. [Distilling LLM Feedback for Lean Theorem Proving](/202606/06/2605.30861v1-distilling-llm-feedback-for-lean-theorem-proving)  
-   标签：评分：9.0/10、query:opd
-   evidence：提出反馈蒸馏方法，将语言模型反馈蒸馏到推理模型，使用GRPO（on-policy RL）
-2. [Dialectics of Alignment: Harnessing Unsafe Knowledge for Dynamic Safety Routing](/202606/06/2606.00686v1-dialectics-of-alignment-harnessing-unsafe-knowledge-for-dynamic-safety-routing)  
+1. [OmniOPD: Logit-Free On-Policy Distillation via Speculative Verification](/202606/07/2606.01476v1-omniopd-logit-free-on-policy-distillation-via-speculative-verification)  
+   标签：评分：10.0/10、query:opd
+   evidence：提出基于推测验证的无logits在线策略蒸馏
+2. [COP-Q: Safety-First Reinforcement Learning for Robot Control via Cholesky-Ordered Projection](/202606/07/2606.04749v1-cop-q-safety-first-reinforcement-learning-for-robot-control-via-cholesky-ordered-projection)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：通过重用不安全知识实现细致生成，解决LLM安全问题
-3. [BraveGuard: From Open-World Threats to Safer Computer-Use Agents](/202606/06/2606.01166v2-braveguard-from-open-world-threats-to-safer-computer-use-agents)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：面向计算机使用代理的安全防御框架
-4. [Constitutional On-Policy Safe Distillation](/202606/06/2606.03089v1-constitutional-on-policy-safe-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：面向安全对齐的on-policy自蒸馏
-5. [ROGUE: Misaligned Agent Behavior Arising from Ordinary Computer Use](/202606/06/2606.00341v1-rogue-misaligned-agent-behavior-arising-from-ordinary-computer-use)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：智能体安全与可纠正性基准
-6. [Streaming Communication in Multi-Agent Reasoning](/202606/06/2606.05158v1-streaming-communication-in-multi-agent-reasoning)  
+   evidence：安全优先的机器人控制强化学习
+3. [SPARQLe: Sub-Precision Activation Representation for Quantized LLM Inference](/202606/07/2606.00365v1-sparqle-sub-precision-activation-representation-for-quantized-llm-inference)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：流式通信提高多智能体推理效率
+   evidence：通过子精度激活的硬件-软件协同设计实现高效LLM推理
+4. [BraveGuard: From Open-World Threats to Safer Computer-Use Agents](/202606/07/2606.01166v2-braveguard-from-open-world-threats-to-safer-computer-use-agents)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：面向计算机使用智能体的自进化防御
+5. [Post-Hoc Robustness for Model-Based Reinforcement Learning](/202606/07/2606.03521v1-post-hoc-robustness-for-model-based-reinforcement-learning)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：基于模型的强化学习事后鲁棒性提升
+6. [Physics-Guided Policy Optimization with Self-Distillation](/202606/07/2606.03620v1-physics-guided-policy-optimization-with-self-distillation)  
+   标签：评分：8.0/10、query:opd
+   evidence：基于物理启发的自蒸馏策略优化
+7. [Reproducing, Analyzing, and Detecting Reward Hacking in Rubric-Based Reinforcement Learning](/202606/07/2606.04923v1-reproducing-analyzing-and-detecting-reward-hacking-in-rubric-based-reinforcement-learning)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：检测基于评分的强化学习中的奖励黑客行为，关乎安全性
+8. [Streaming Communication in Multi-Agent Reasoning](/202606/07/2606.05158v1-streaming-communication-in-multi-agent-reasoning)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：流式通信减少多智能体推理中的延迟
+9. [Policy-Conditioned Counterfactual Credit for Verifiable Reinforcement Learning of Long-Horizon Language Agents](/202606/07/2606.05263v1-policy-conditioned-counterfactual-credit-for-verifiable-reinforcement-learning-of-long-horizon-language-agents)  
+   标签：评分：8.0/10、query:l-context-rl
+   evidence：面向长程语言智能体的强化学习与信用分配
 
 ### 速读区论文标签
-1. [DARTS: Distribution-Aware Active Rollout Trajectory Shaping for Accelerating LLM Reinforcement Learning](/202606/06/2605.30859v1-darts-distribution-aware-active-rollout-trajectory-shaping-for-accelerating-llm-reinforcement-learning)  
+1. [Faster Synchronous On-Policy RL via Straggler-Aware Group Sizing](/202606/07/2606.02218v1-faster-synchronous-on-policy-rl-via-straggler-aware-group-sizing)  
+   标签：评分：7.0/10、query:opd
+   evidence：通过延迟感知分组加速同步同策略RL
+2. [Right Makes Might: Aligning Verified Hidden States Empowers RL Reasoning](/202606/07/2606.03234v1-right-makes-might-aligning-verified-hidden-states-empowers-rl-reasoning)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：展开效率、长尾分布、LLM强化学习
-2. [Unlocking the Black Box of Latent Reasoning: An Interpretability-Guided Approach to Intervention](/202606/06/2606.01243v1-unlocking-the-black-box-of-latent-reasoning-an-interpretability-guided-approach-to-intervention)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：可解释性指导的潜在推理效率干预
-3. [Policy-Conditioned Counterfactual Credit for Verifiable Reinforcement Learning of Long-Horizon Language Agents](/202606/06/2606.05263v1-policy-conditioned-counterfactual-credit-for-verifiable-reinforcement-learning-of-long-horizon-language-agents)  
-   标签：评分：7.0/10、query:l-context-rl
-   evidence：用于长周期语言智能体的可验证奖励强化学习
-4. [Step-by-Step Optimization-like Reasoning in LLMs over Expanding Search Spaces](/202606/06/2606.05464v1-step-by-step-optimization-like-reasoning-in-llms-over-expanding-search-spaces)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：提出了优化式任务，通过求解器引导训练LLM逐步推理
-5. [Libra: Efficient Resource Management for Agentic RL Post-Training](/202606/06/2606.03077v1-libra-efficient-resource-management-for-agentic-rl-post-training)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：处理代理RL中的长尾和非平稳工作负载，包括长序列长度
-6. [QUBRIC: Co-Designing Queries and Rubrics for RL Beyond Verifiable Rewards](/202606/06/2606.03968v1-qubric-co-designing-queries-and-rubrics-for-rl-beyond-verifiable-rewards)  
+   evidence：对齐隐藏状态以改进RLVR推理
+3. [Policy and World Modeling Co-Training for Language Agents](/202606/07/2606.02388v1-policy-and-world-modeling-co-training-for-language-agents)  
    标签：评分：6.0/10、query:opd
-   evidence：基于评分的RL、教师策略差距、查询协同设计
-7. [Scaling Self-Evolving Agents via Parametric Memory](/202606/06/2606.04536v1-scaling-self-evolving-agents-via-parametric-memory)  
-   标签：评分：6.0/10、query:opd
-   evidence：通过在线更新将蒸馏监督吸收到快速LoRA权重中
-8. [Reinforcement Learning from Rich Feedback with Distributional DAgger](/202606/06/2606.05152v1-reinforcement-learning-from-rich-feedback-with-distributional-dagger)  
-   标签：评分：6.0/10、query:opd
-   evidence：使用分布化DAgger进行模仿学习与丰富反馈，与RL中师生蒸馏相关
-9. [TARPO: Token-Wise Latent-Explicit Reasoning via Action-Routing Policy Optimization](/202606/06/2606.05859v1-tarpo-token-wise-latent-explicit-reasoning-via-action-routing-policy-optimization)  
+   evidence：利用同策略RL回滚进行世界模型与策略共训练，类似蒸馏中的知识迁移
+4. [Tool-Aware Optimization with Entropy Guidance for Efficient Agentic Reinforcement Learning](/202606/07/2606.03762v1-tool-aware-optimization-with-entropy-guidance-for-efficient-agentic-reinforcement-learning)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：基于RL策略优化的逐词元隐式-显式推理方法
+   evidence：熵引导的优化用于高效代理强化学习
+5. [Stepwise Reasoning Enhancement for LLMs via External Subgraph Generation](/202606/07/2606.04454v1-stepwise-reasoning-enhancement-for-llms-via-external-subgraph-generation)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：通过子图生成增强推理
+6. [Selective-Advantage Entropy-Adaptive Horizon GRPO: Asymmetric Token-Level Discounting for Efficient Reinforcement Learning of Language Models](/202606/07/2606.05434v1-selective-advantage-entropy-adaptive-horizon-grpo-asymmetric-token-level-discounting-for-efficient-reinforcement-learning-of-language-models)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：通过熵自适应步长和选择性优势提高强化学习效率
 
 
 <div class="dpr-home-promo-card">
