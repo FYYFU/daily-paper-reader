@@ -1647,14 +1647,8 @@ window.$docsify = {
             wrapper = document.createElement('div');
             wrapper.className = 'sidebar-day-toggle';
 
-            const labelSpan = document.createElement(reportHref ? 'a' : 'span');
+            const labelSpan = document.createElement('span');
             labelSpan.className = 'sidebar-day-toggle-label';
-            if (reportHref) {
-              labelSpan.classList.add('sidebar-day-report-link');
-              labelSpan.href = reportHref;
-              labelSpan.title = '打开日报';
-              labelSpan.setAttribute('aria-label', `打开 ${rawText} 日报`);
-            }
             labelSpan.textContent = rawText;
 
             const menuTrigger = document.createElement('button');
@@ -1697,19 +1691,40 @@ window.$docsify = {
             reportSourceLink.remove();
           }
 
-          const labelSpan = wrapper.querySelector('.sidebar-day-toggle-label');
+          let labelSpan = wrapper.querySelector('.sidebar-day-toggle-label');
+          if (labelSpan && labelSpan.tagName === 'A') {
+            const replacement = document.createElement('span');
+            replacement.className = labelSpan.className;
+            replacement.classList.remove('sidebar-day-report-link');
+            replacement.textContent = labelSpan.textContent || '';
+            labelSpan.replaceWith(replacement);
+            labelSpan = replacement;
+          }
           if (labelSpan) {
             labelSpan.textContent = rawText;
-            if (reportHref && labelSpan.tagName === 'A') {
-              labelSpan.href = reportHref;
-              labelSpan.title = '打开日报';
-              labelSpan.setAttribute('aria-label', `打开 ${rawText} 日报`);
-            }
+            labelSpan.classList.remove('sidebar-day-report-link');
           }
           const arrowSpan = wrapper.querySelector('.sidebar-day-toggle-arrow');
+          const actions = wrapper.querySelector('.sidebar-day-toggle-actions');
           const menuTrigger = wrapper.querySelector('.sidebar-day-menu-trigger');
           const menu = wrapper.querySelector('.sidebar-day-menu');
           const downloadBtn = wrapper.querySelector('.sidebar-day-menu-item-download');
+          let reportAction = actions
+            ? actions.querySelector('.sidebar-day-report-action')
+            : null;
+          if (actions && reportHref) {
+            if (!reportAction) {
+              reportAction = document.createElement('a');
+              reportAction.className = 'sidebar-day-report-action';
+              reportAction.textContent = '日报';
+              actions.insertBefore(reportAction, actions.firstChild);
+            }
+            reportAction.href = reportHref;
+            reportAction.title = `打开 ${rawText} 日报`;
+            reportAction.setAttribute('aria-label', `打开 ${rawText} 日报`);
+          } else if (reportAction) {
+            reportAction.remove();
+          }
 
           if (menuTrigger && !menuTrigger.dataset.dprDayMenuTriggerBound) {
             menuTrigger.dataset.dprDayMenuTriggerBound = '1';
@@ -1792,7 +1807,7 @@ window.$docsify = {
                 try {
                   const target = e && e.target && e.target.closest
                     ? e.target.closest(
-                        '.sidebar-day-report-link,.sidebar-day-menu-trigger,.sidebar-day-menu,.sidebar-day-menu-item',
+                        '.sidebar-day-report-action,.sidebar-day-menu-trigger,.sidebar-day-menu,.sidebar-day-menu-item',
                       )
                     : null;
                   if (target) return;
@@ -2509,6 +2524,32 @@ window.$docsify = {
           }
         };
 
+        const isSidebarPaperRoute = (route) => {
+          const cleanRoute = String(route || '')
+            .replace(/\.md$/i, '')
+            .replace(/\/$/, '');
+          return (
+            /^(\d{6}\/\d{2}|\d{8}(?:-\d{8}))\/(?!README$).+/i.test(cleanRoute) &&
+            /^(\d{6}\/\d{2}|\d{8}(?:-\d{8}))\/[^/]+$/i.test(cleanRoute)
+          );
+        };
+
+        const cleanupDayGroupPaperControls = (li) => {
+          if (!li || !li.querySelector(':scope > .sidebar-day-toggle')) return;
+          li.classList.remove(
+            'sidebar-paper-item',
+            'sidebar-paper-read',
+            'sidebar-paper-good',
+            'sidebar-paper-bad',
+            'sidebar-paper-blue',
+            'sidebar-paper-orange',
+          );
+          li.querySelectorAll(
+            ':scope > .sidebar-day-toggle .sidebar-paper-left-actions,' +
+              ':scope > .sidebar-day-toggle .sidebar-paper-rating-icons',
+          ).forEach((el) => el.remove());
+        };
+
 	        const links = nav.querySelectorAll('a[href*="#/"]');
 	        links.forEach((a) => {
 	          const href = a.getAttribute('href') || '';
@@ -2517,6 +2558,10 @@ window.$docsify = {
 	          const paperIdFromHref = m[1].replace(/\/$/, '');
 	          const li = a.closest('li');
 	          if (!li) return;
+            if (!isSidebarPaperRoute(paperIdFromHref)) {
+              cleanupDayGroupPaperControls(li);
+              return;
+            }
 	          // 标记这是一个具体论文条目，方便样式细化（避免整天标题一起高亮）
 	          li.classList.add('sidebar-paper-item');
 
