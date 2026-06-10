@@ -74,6 +74,25 @@ class MainPipelineTest(unittest.TestCase):
         self.assertEqual(env["LLM_PRIMARY_BASE_URL"], "https://summary.example.com/v1")
         self.assertEqual(env["DEEPSEEK_MODEL"], "deepseek-v4-flash")
 
+    def test_resolve_run_date_token_prefers_explicit_day(self):
+        self.assertEqual(
+            self.mod.resolve_run_date_token(fetch_days=10, run_date="2026-06-09"),
+            "20260609",
+        )
+
+    def test_resolve_sidebar_date_label_for_explicit_range(self):
+        self.assertEqual(
+            self.mod.resolve_sidebar_date_label(
+                fetch_days=1,
+                run_date="20260601-20260609",
+            ),
+            "2026-06-01 ~ 2026-06-09",
+        )
+
+    def test_resolve_run_date_token_rejects_invalid_explicit_date(self):
+        with self.assertRaises(ValueError):
+            self.mod.resolve_run_date_token(fetch_days=None, run_date="20260699")
+
     def test_main_runs_local_rerank_without_remote_rerank_base(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

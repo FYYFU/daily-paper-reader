@@ -66,6 +66,18 @@ def get_run_date_token(end_date: datetime) -> str:
     return end_date.strftime("%Y%m%d")
 
 
+def resolve_effective_end_date(default_end_date: datetime) -> datetime:
+    token = str(os.getenv("DPR_RUN_DATE") or "").strip()
+    if re.match(r"^\d{8}$", token):
+        day = datetime.strptime(token, "%Y%m%d").replace(tzinfo=timezone.utc)
+        return day + timedelta(days=1)
+    if RANGE_TOKEN_RE.match(token):
+        end_text = token.split("-", 1)[1]
+        end_day = datetime.strptime(end_text, "%Y%m%d").replace(tzinfo=timezone.utc)
+        return end_day + timedelta(days=1)
+    return default_end_date
+
+
 def resolve_supabase_time_window(
     *,
     end_date: datetime,
@@ -82,10 +94,11 @@ def resolve_supabase_time_window(
         # 关键修复：
         # main.py 在小窗口（<=7天）下会使用单日 token（如 20260208）作为目录标识，
         # 但这不应强制 Supabase 只查“单天”。
-        # 当 days>1 时，仍按滚动窗口拉取，避免 fetch-days=4 却只查 1 天。
+        # 当 days>1 时，仍按以该自然日结束的滚动窗口拉取，避免 fetch-days=4 却只查 1 天。
         safe_days = max(int(days or 1), 1)
         if safe_days > 1:
-            return end_date - timedelta(days=safe_days), end_date, f"rolling:{safe_days}d(token={token})"
+            day_end = datetime.strptime(token, "%Y%m%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+            return day_end - timedelta(days=safe_days), day_end, f"rolling:{safe_days}d(token={token})"
         day = datetime.strptime(token, "%Y%m%d").replace(tzinfo=timezone.utc)
         return day, day + timedelta(days=1), f"single-day:{token}"
 
@@ -404,7 +417,7 @@ def fetch_all_domains_metadata_robust(
     config = load_config()
 
     # 1. 计算时间窗口（优先使用上次抓取时间）
-    end_date = datetime.now(timezone.utc)
+    end_date = resolve_effective_end_date(datetime.now(timezone.utc))
     if days is None:
         days = resolve_days_window(1)
 

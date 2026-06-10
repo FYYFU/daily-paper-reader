@@ -1833,6 +1833,7 @@ def build_day_report_markdown(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     recommend_exists: bool,
+    paper_evidence_by_id: Dict[str, str] | None = None,
 ) -> str:
     effective_label = (date_label or "").strip() or format_date_str(date_str)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -1872,7 +1873,10 @@ def build_day_report_markdown(
             safe_title = (title or "").strip() or paper_id
             score = _entry_score_text(_tags)
             suffix = f"（{score}）" if score else ""
+            evidence = str((paper_evidence_by_id or {}).get(str(paper_id).strip(), "") or "").strip()
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)}) {suffix}")
+            if evidence:
+                lines.append(f"   evidence：{evidence}")
     else:
         lines.append("- 本次无精读推荐。")
     lines.append("")
@@ -1883,7 +1887,10 @@ def build_day_report_markdown(
             safe_title = (title or "").strip() or paper_id
             score = _entry_score_text(_tags)
             suffix = f"（{score}）" if score else ""
+            evidence = str((paper_evidence_by_id or {}).get(str(paper_id).strip(), "") or "").strip()
             lines.append(f"{idx}. [{safe_title}]({build_docsify_id_href(paper_id)}) {suffix}")
+            if evidence:
+                lines.append(f"   evidence：{evidence}")
     else:
         lines.append("- 本次无速读推荐。")
     lines.append("")
@@ -1901,6 +1908,7 @@ def write_day_report_readme(
     deep_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     quick_entries: List[Tuple[str, str, List[Tuple[str, str]]]],
     recommend_exists: bool,
+    paper_evidence_by_id: Dict[str, str] | None = None,
 ) -> str:
     day_dir, day_readme = prepare_day_report_paths(docs_dir, date_str)
     os.makedirs(day_dir, exist_ok=True)
@@ -1910,6 +1918,7 @@ def write_day_report_readme(
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         recommend_exists=recommend_exists,
+        paper_evidence_by_id=paper_evidence_by_id,
     )
     with open(day_readme, "w", encoding="utf-8") as f:
         f.write(content)
@@ -2845,6 +2854,7 @@ def main() -> None:
         deep_entries=deep_entries,
         quick_entries=quick_entries,
         recommend_exists=recommend_exists,
+        paper_evidence_by_id=sidebar_evidence_by_id,
     )
     home_readme = sync_home_readme_from_day_report(
         docs_dir=docs_dir,

@@ -279,6 +279,22 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.assertIn("| [2026-06-07](/202606/07/README) | 15 | 9 | 6 | 2026-06-07 21:18:47 UTC |", content)
             self.assertIn("| [2026-06-06](/202606/06/README) | 3 | 1 | 2 | 2026-06-06 21:00:00 UTC |", content)
 
+    def test_build_day_report_markdown_includes_evidence(self):
+        content = self.mod.build_day_report_markdown(
+            "20260607",
+            None,
+            [("202606/07/2606.01476v1-test-paper", "Test Paper", [("score", "8.0")])],
+            [("202606/07/2606.00001v1-quick-paper", "Quick Paper", [("score", "6.0")])],
+            True,
+            {
+                "202606/07/2606.01476v1-test-paper": "deep evidence",
+                "202606/07/2606.00001v1-quick-paper": "quick evidence",
+            },
+        )
+
+        self.assertIn("evidence：deep evidence", content)
+        self.assertIn("evidence：quick evidence", content)
+
     def test_update_sidebar_adds_daily_center_and_report_link(self):
         with tempfile.TemporaryDirectory() as d:
             sidebar_path = Path(d) / "_sidebar.md"

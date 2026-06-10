@@ -25,6 +25,7 @@ CONFIG_FILE = os.getenv("DPR_CONFIG_FILE") or os.path.join(ROOT_DIR, "config.yam
 LONG_RANGE_DAYS_THRESHOLD = 10
 MAIN_DEFAULT_DAYS = 9
 SKIMS_FETCH_DAYS_THRESHOLD = 11
+RUN_DATE_TOKEN_RE = re.compile(r"^\d{8}(?:-\d{8})?$")
 
 
 def run_step(label: str, args: list[str], env: dict[str, str] | None = None) -> None:
@@ -81,12 +82,53 @@ def build_run_date_token(days: int) -> str:
     return f"{start_date:%Y%m%d}-{end_date:%Y%m%d}"
 
 
-def resolve_run_date_token(fetch_days: int | None) -> str:
+def normalize_run_date_token(run_date: str | None) -> str:
+    raw = str(run_date or "").strip()
+    parts = re.findall(r"\d{4}-?\d{2}-?\d{2}", raw)
+    if len(parts) == 1:
+        token = parts[0].replace("-", "")
+    elif len(parts) == 2:
+        token = f"{parts[0].replace('-', '')}-{parts[1].replace('-', '')}"
+    else:
+        token = re.sub(r"[^0-9-]", "", raw)
+    if not token:
+        return ""
+    if not RUN_DATE_TOKEN_RE.fullmatch(token):
+        raise ValueError("run_date must be YYYYMMDD or YYYYMMDD-YYYYMMDD")
+    if "-" in token:
+        start_text, end_text = token.split("-", 1)
+        start_day = datetime.strptime(start_text, "%Y%m%d").date()
+        end_day = datetime.strptime(end_text, "%Y%m%d").date()
+        if end_day < start_day:
+            raise ValueError("run_date range end must be on or after start")
+    else:
+        datetime.strptime(token, "%Y%m%d")
+    return token
+
+
+def format_run_date_label(run_date_token: str) -> str | None:
+    token = normalize_run_date_token(run_date_token)
+    if not token:
+        return None
+    if "-" not in token:
+        return None
+    start_text, end_text = token.split("-", 1)
+    start_label = datetime.strptime(start_text, "%Y%m%d").strftime("%Y-%m-%d")
+    end_label = datetime.strptime(end_text, "%Y%m%d").strftime("%Y-%m-%d")
+    return f"{start_label} ~ {end_label}"
+
+
+def resolve_run_date_token(fetch_days: int | None, run_date: str | None = None) -> str:
     """
     统一运行日期标识：
+    - 显式 --run-date 优先，用于补跑历史日期
     - 大窗口（>=阈值）使用区间 token：YYYYMMDD-YYYYMMDD
     - 其它情况使用单日 token：YYYYMMDD
     """
+    explicit_token = normalize_run_date_token(run_date)
+    if explicit_token:
+        return explicit_token
+
     if fetch_days is not None:
         if fetch_days >= LONG_RANGE_DAYS_THRESHOLD:
             return build_run_date_token(fetch_days)
@@ -102,7 +144,11 @@ def resolve_run_date_token(fetch_days: int | None) -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%d")
 
 
-def resolve_sidebar_date_label(fetch_days: int | None) -> str | None:
+def resolve_sidebar_date_label(fetch_days: int | None, run_date: str | None = None) -> str | None:
+    explicit_label = format_run_date_label(run_date or "")
+    if explicit_label:
+        return explicit_label
+
     # 1) 显式传 --fetch-days 时，仅在大窗口模式下显示日期范围。
     if fetch_days is not None:
         if fetch_days >= LONG_RANGE_DAYS_THRESHOLD:
@@ -536,6 +582,11 @@ def main() -> None:
         help="Pass --days to Step1 (fetch arxiv). Default: use config.yaml/state logic.",
     )
     parser.add_argument(
+        "--run-date",
+        default="",
+        help="Override DPR_RUN_DATE for historical backfill. Format: YYYYMMDD or YYYYMMDD-YYYYMMDD.",
+    )
+    parser.add_argument(
         "--fetch-mode",
         default="auto",
         choices=("auto", "standard", "skims"),
@@ -569,8 +620,11 @@ def main() -> None:
 
     python = sys.executable
 
-    sidebar_date_label = resolve_sidebar_date_label(args.fetch_days)
-    run_date_token = resolve_run_date_token(args.fetch_days)
+    try:
+        run_date_token = resolve_run_date_token(args.fetch_days, args.run_date)
+        sidebar_date_label = resolve_sidebar_date_label(args.fetch_days, args.run_date)
+    except ValueError as exc:
+        parser.error(str(exc))
     os.environ["DPR_RUN_DATE"] = run_date_token
     print(f"[INFO] DPR_RUN_DATE={run_date_token}", flush=True)
     profile_tag = str(args.profile_tag or os.getenv("DPR_FILTER_PROFILE_TAG") or "").strip()
