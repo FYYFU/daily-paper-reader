@@ -3,6 +3,9 @@ name: daily-paper-reader
 on:
   schedule:
     - cron: "30 18 * * *" # 北京时间次日 02:30（UTC 18:30）
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       run_enrich:
@@ -39,6 +42,7 @@ concurrency:
 
 jobs:
   run:
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-daily:')
     runs-on: ubuntu-latest
     timeout-minutes: 240
     env:
@@ -177,6 +181,7 @@ jobs:
           HF_HOME: ${{ github.workspace }}/hf_cache
           HUGGINGFACE_HUB_CACHE: ${{ github.workspace }}/hf_cache
           HF_HUB_DISABLE_SYMLINKS: "1"
+          DPR_PUSH_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           echo "Cleaning any previous local cache..."
           rm -rf ${{ github.workspace }}/hf_cache
@@ -237,6 +242,17 @@ jobs:
           FETCH_MODE="${{ github.event.inputs.fetch_mode }}"
           PROFILE_TAG="${{ github.event.inputs.profile_tag }}"
           RERANKER_PROFILE_INPUT="${{ github.event.inputs.reranker_profile }}"
+          if [ -z "$RUN_DATE" ] && [ "${{ github.event_name }}" = "push" ]; then
+            RUN_DATE="$(python - <<'PY'
+          import os
+          import re
+
+          message = os.environ.get("DPR_PUSH_COMMIT_MESSAGE", "")
+          m = re.search(r"\[run-daily:([0-9]{8}(?:-[0-9]{8})?)\]", message)
+          print(m.group(1) if m else "")
+          PY
+          )"
+          fi
           if [ -n "$RERANKER_PROFILE_INPUT" ]; then
             export RERANK_PROFILE="$RERANKER_PROFILE_INPUT"
           fi
