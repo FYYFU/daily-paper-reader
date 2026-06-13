@@ -1,0 +1,1156 @@
+Title: From Holistic Evaluation to Structured Criteria: Rubrics Across the Evolving LLM Landscape
+
+URL Source: https://arxiv.org/pdf/2606.08625v1
+
+Published Time: Tue, 09 Jun 2026 01:35:05 GMT
+
+Number of Pages: 49
+
+Markdown Content:
+# From Holistic Evaluation to Structured Criteria: Rubrics Across the Evolving LLM Landscape 
+
+Hao Chen 1 Ziyu Han 1 Yukun Yan 2, # Qingfu Zhu 1 Maosong Sun 2 Wanxiang Che 1, #
+
+> 1
+
+Research Center for Social Computing and Interactive Robotics, Harbin Institute of Technology 
+
+> 2
+
+Department of Computer Science and Technology, Institute for AI, Tsinghua University 
+
+Abstract: As Large Language Models (LLMs) advance from task-specific systems toward open-ended autonomous agents, the mechanisms used to evaluate and guide their behavior must evolve accordingly. This work introduces the rubric as a unifying framework that systematically captures this evolution, characterizing rubrics as a dynamic response to successive LLM paradigm shifts, which recurs across otherwise independent efforts in evaluation, reinforcement learning, and safety alignment. We define rubrics as explicit sets of criteria that transform complex quality judgments into structured and actionable standards, and demonstrate that their recurrence across these diverse research threads is not coincidental. We systematically organize and categorize existing rubric designs, examine their construction and optimization, and analyze their role across both evaluation and training. Rubrics manifest at three progressively deeper levels of impact. At the evaluative level, they decompose holistic judgments into verifiable dimensions, enabling reliable and interpretable assessment. At the training level, they serve as dense feedback signals that provide process-level guidance where scalar reward models and outcome-based approaches fall short. At the intrinsic level, they emerge dynamically from model training behaviors, driving self-improvement rather than remaining externally imposed constraints. We further assess rubric reliability from multiple perspectives, covering generation quality, execution fidelity, theoretical constraints, and security threats, before overviewing rubric-based benchmarks and applications across diverse domains. By rendering assessment transparent and decomposable, rubrics serve as a consistent grounding mechanism that translates human value expectations into machine-learnable signals. We argue that as models grow more capable and autonomous, rubrics will serve as the enduring bridge between human intentions and machine behavior, underpinning the next generation of reliable and aligned AI systems. 
+
+# Corresponding Authors 
+
+z Date: May 31, 2026 
+
+§ GitHub: https://github.com/AI9Stars/LLM-Rubrics-Survey 
+
+1
+
+> arXiv:2606.08625v1 [cs.CL] 7 Jun 2026
+
+## Contents 
+
+1 Introduction 42 What Is a Rubric? Definitions, Taxonomy, and Paradigm Shifts 5
+
+2.1 Definition . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52.2 Taxonomy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 62.2.1 Structural Taxonomy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 62.2.2 Content Taxonomy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 72.3 Rubrics and LLM Paradigm Shifts: A Co-evolutionary Perspective . . . . . . . . . . . 7
+
+3 How Are Rubrics Constructed and Optimized? 11 
+
+3.1 Construction: How Rubrics Are Built . . . . . . . . . . . . . . . . . . . . . . . . . . 11 3.1.1 Human Expert Construction . . . . . . . . . . . . . . . . . . . . . . . . . . . 11 3.1.2 Automated LLM Construction . . . . . . . . . . . . . . . . . . . . . . . . . . 11 3.1.3 Human-in-the-Loop Construction . . . . . . . . . . . . . . . . . . . . . . . 13 3.2 Optimization: How Rubrics Improve . . . . . . . . . . . . . . . . . . . . . . . . . . 13 3.2.1 Passive Optimization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13 3.2.2 Active Evolution . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 
+
+4 How Do Rubrics Power Evaluation? 15 
+
+4.1 Explicit Evaluation: Deconstruction and Representation of Criteria . . . . . . . . . . 15 4.1.1 Structural Decomposition . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 4.1.2 Format Discretization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 4.2 Faithful Evaluation: Reliability Reinforcement of Judgment . . . . . . . . . . . . . . 16 4.2.1 Objective Evidence Anchoring . . . . . . . . . . . . . . . . . . . . . . . . . 16 4.2.2 Subjective Bias Suppression . . . . . . . . . . . . . . . . . . . . . . . . . . . 17 4.3 Beyond Evaluation: Capabilities Extension via Test-Time Scaling . . . . . . . . . . . 17 4.3.1 Iterative Self-Refinement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17 4.3.2 Parallel Path Selection . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+
+5 How Do Rubrics Power Training? 19 
+
+5.1 Theoretical Grounding: Why Rubrics Outperform Scalar Rewards . . . . . . . . . . 19 5.2 Rubric Reward Modeling: Designing the Signal . . . . . . . . . . . . . . . . . . . . 19 5.2.1 Output-Level Reward . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 5.2.2 Process-Level Reward . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 5.3 Rubric-Grounded Online Training: Driving RL Optimization . . . . . . . . . . . . . . 21 5.3.1 Extending RL to Non-Verifiable Domains . . . . . . . . . . . . . . . . . . . . 21 5.3.2 Adapting RL to Efficient Training Dynamics . . . . . . . . . . . . . . . . . 22 5.3.3 Scaling RL to Complex Tasks . . . . . . . . . . . . . . . . . . . . . . . . . 23 5.4 Rubric-Guided Offline Training: Supervised Policy Improvement . . . . . . . . . . . 23 5.4.1 Preference Optimization . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 5.4.2 Rejection Sampling . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24 25.5 Beyond Supervision: Rubric as Endogenous Mechanism . . . . . . . . . . . . . . . 24 5.5.1 Intra-Model Evolution Loop . . . . . . . . . . . . . . . . . . . . . . . . . . 24 5.5.2 Inter-Training Evolution Loop . . . . . . . . . . . . . . . . . . . . . . . . . 25 
+
+6 How Reliable Are Rubrics? 26 
+
+6.1 Generation Quality: Are Rubrics Well-Constructed? . . . . . . . . . . . . . . . . . . . 27 6.2 Execution Fidelity: Are Rubrics Faithfully Executed? . . . . . . . . . . . . . . . . . . 27 6.3 Theoretical Constraints: Does the Rubric Paradigm Have Fundamental Limits? . . . 28 6.4 Security Threats: Can Rubrics Be Weaponized? . . . . . . . . . . . . . . . . . . . . 29 6.5 Boundaries and Alternatives: When Should We Look Beyond Rubrics? . . . . . . . 29 
+
+7 Where Are Rubrics Applied? 30 
+
+7.1 Benchmark . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 7.2 Downstream Applications . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 
+
+8 Where Does Rubric Research Head? 34 
+
+8.1 Reliability of Rubric Generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35 8.2 Beyond Static Rubric Design . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35 8.3 Multimodal Extension and Cross-Modal Unification . . . . . . . . . . . . . . . . . . 35 8.4 From External Criteria to Internalized Mechanisms . . . . . . . . . . . . . . . . . . 36 
+
+9 Conclusion 37 
+
+31 Introduction 
+
+The rapid evolution of Large Language Models (LLMs) (Guo et al., 2025; Singh et al., 2025) has fundamentally expanded the scope of machine autonomy, moving beyond simple text generation toward complex autonomous reasoning and long-horizon agentic tasks (Guo et al., 2024; Wu et al., 2025a). As these models become integrated into increasingly open-ended domains, the role of evaluation and supervision mechanisms has transitioned from a mere benchmarking tool to a critical component for ensuring reliability and alignment (Kinniment et al., 2024). However, this expansion of capability has exposed a critical gap in the current ecosystem, where the development of such mechanisms consistently trails behind the models they are intended to monitor (Yehudai et al., 2026). Existing approaches to model evaluation typically rely on scalar reward models or holistic LLM-as-a-judge frameworks (Bai et al., 2022b; Ouyang et al., 2022; Zheng et al., 2023). These methods often collapse multifaceted qualitative judgments into coarse signals, failing to provide the granular feedback or interpretable reasoning necessary for targeted refinement (Kim et al., 2024). Such limitations become particularly severe in scenarios lacking deterministic ground truths, where traditional programmatic verification is unfeasible and outcome-oriented rewards remain blind to spurious intermediate logic (Lightman et al., 2023; Yuan et al., 2026). As model complexity grows, this gap becomes increasingly difficult to bridge. The central challenge for the field lies in deriving robust, fine-grained feedback signals for intricate behaviors that defy simple correctness metrics. In response to these limitations, independent efforts in open-ended evaluation, reinforcement learning, and safety alignment have gradually converged on a shared design principle of making quality criteria explicit and structured (Gunjal et al., 2025; Hashemi et al., 2024; Mu et al., 2024). Recent methodologies have shifted toward decomposing high-level alignment into interpretable principles and pairing qualitative dimensions with structured reasoning paths to enhance reliability (Lambert et al., 2024; Li et al., 2026e; Rezaei et al., 2025). Furthermore, both theoretical insights and empirical evidence suggest that decomposing instructions into independently verifiable checklist items consistently outperforms scalar reward models (Viswanathan et al., 2025; Zhang et al., 2026c). These diverse efforts, while varying in application, point toward the unified concept of a rubric, defined as an explicit and fine-grained set of criteria that transforms complex quality judgments into structured and actionable standards. By rendering the basis of evaluation transparent and decomposable, rubrics facilitate both reliable assessment and targeted model improvement across increasingly sophisticated tasks. Nonetheless, the significance of the rubric extends well beyond its role as a mere evaluation instrument. As LLMs evolve through successive paradigm shifts, the rubric manifests at three progressively deeper levels of impact. At the evaluative level, it transforms subjective, holistic judgments into fine-grained and verifiable criteria, enabling reliable and interpretable assessment (Akyürek et al., 2025; Arora et al., 2025). Moving to the supervisory level, the rubric functions as a dense training signal that overcomes the inherent limitations of verifiable rewards in open-ended domains, providing the process-level guidance that outcome-based approaches often lack (Huang et al., 2025; Mahmoud et al., 2026). At its most profound as an intrinsic level, the rubric emerges dynamically from the model’s own training behaviors, co-evolving with model capability to drive self-improvement rather than remaining an externally imposed constraint (Li et al., 2026f). This progression reveals that the recurrence of the rubric is not coincidental, reflecting its role as an evolving anchor that translates human value expectations into machine-learnable signals (Bai et al., 2022a). As LLM capabilities expand, the rubric remains the consistent grounding mechanism across the full trajectory of LLM evolution. To this end, this work provides a comprehensive and unified perspective on the systematic role of rubrics in governing and steering Large Language Model behavior. Our main contributions are summarized as follows: 
+
+• We systematically categorize existing rubric designs and introduce the first co-evolutionary perspective that situates rubric development within successive LLM paradigm shifts, showing how 42 Definitions, Taxonomy, and Development  
+
+> What is
+> a Rubric?
+> Rubric Taxonomy
+> Structural Content
+
+Rubrics and LLM Paradigm Shifts: A Co-evolu tionary Perspective    
+
+> I. Emergence
+> （≦2023 ）
+> II. Alignment
+> （2023 - 2024 ）
+> III. Enrichment
+> （2024 - 2025 ）
+> IV. Reinforcement
+> （2025 - 2026 ）
+> V. Co-evolution
+> （2026 -）
+
+Part I
+
+Foundation 
+
+> (Chapter 2)
+
+Part II 
+
+Core 
+
+Framework 
+
+> (Chapter 3-6)
+
+3 Construction and Optimization of Rubrics   
+
+> Construction Optimization
+> Human Expert
+> Automated LLM
+> Human-in-the -loop
+> Passive Optimization
+> Active Evolution
+
+Rubric 
+
+4 Rubrics for Evaluation 
+
+> Explicit
+> Evaluation
+> Faithful
+> Evaluation
+> Beyond
+> Evaluation
+> Structural Decomposition
+> Format Discretization
+> Objective
+> Subjective
+> Iterative
+> Parallel
+
+5 Rubrics for Training  
+
+> Reward
+> Modeling
+> Online
+> Training
+> Offline
+> Training
+> Output-level reward
+> Process-level reward
+> Non-Verifiable
+> Efficient Training
+> Complex Tasks
+> Preference Optimization
+> Rejection Sampling
+> Beyond
+> Supervision
+> Intra-Model Evolution
+> Inter-Training Evolution
+
+6 Reliability of Rubrics 
+
+> Generation
+> Quality
+> Execution
+> Fidelity
+> Theoretical
+> Constraints
+> Security
+> Threats
+> Explicit, fine-grained criteria
+> that transform complex
+> judgements into structured
+> actionable standards
+
+Part III 
+
+Impact & 
+
+Outlook 
+
+> (Chapter 7-8)
+
+7 Benchmarks and Application s          
+
+> Rubric-Based Benchmarks Downstream Applications
+> •General Domain
+> •Professional Domain
+> •Multi-modal Domain
+> •...
+> •Healthcare
+> •Law
+> •Education
+> •...
+
+8 Future Directions 
+
+> Reliable
+> Generation
+> Dynamic
+> Rubrics
+> Multimodal
+> Rubrics
+> Internalized
+> Mechanisms
+
+Figure 1: Conceptual Organization of This Paper. rubrics progressively evolve from evaluation instruments to supervisory signals and eventually endogenous mechanisms for self-improvement. 
+
+• We systematically examine rubrics across their full lifecycle, from construction to deployment, while rigorously analyzing their reliability from multiple perspectives, ranging from practical failure modes to fundamental theoretical constraints. 
+
+• We systematically synthesize rubric-based benchmarks and real-world applications to date, synthesizing emerging trends across diverse domains and outlining a research roadmap toward scalable supervision and self-evolving intelligent systems. As illustrated in Figure 1, this work is organized into three interconnected parts. Part I (§ 2) establishes the conceptual foundations of rubrics by introducing their definitions, taxonomy, and developmental trajectories. Part II (§ 3–§ 6) presents the core methodological framework of rubric research, covering rubric construction and optimization, rubric-based evaluation, rubric-driven training, and reliability analysis from multiple perspectives. Part III (§ 7–§ 8) highlights rubric-based benchmarks and downstream applications, and concludes by discussing challenges and future research directions. 
+
+## 2 What Is a Rubric? Definitions, Taxonomy, and Paradigm Shifts 
+
+LLM evaluation demands criteria that are simultaneously explicit, decomposable, and reproducible, properties that neither scalar reward models nor unstructured human feedback can provide. Rubrics address this gap by operationalizing implicit quality judgments into structured, independently verifiable standards that can be systematically applied and consistently reproduced across evaluators. This chapter formalizes the concept of rubrics in the LLM context through three lenses: a definitional framework grounded in four core properties (§ 2.1), a two-dimensional taxonomy organizing rubrics by structural form and evaluative content (§ 2.2), and a historical analysis offering a co-evolutionary perspective on how successive LLM paradigm shifts have shaped the development of rubrics (§ 2.3). 
+
+2.1 Definition 
+
+The concept of rubric, originating from educational measurement, serves to operationalize implicit quality judgments into structured, reproducible, and interpretable evaluation criteria (Brookhart, 2013). 5In the LLM landscape, while the objects of evaluation have expanded to model-generated text, code, and reasoning chains , and evaluators have transitioned to LLM-as-Judge systems , the core logic remains constant: transforming implicit intent into explicit and operationalized protocols. We define a rubric in the LLM context as a structured set of explicit criteria for assessing model outputs, characterized by four core properties: explicitness (criteria are articulated in natural language), 
+
+structuredness (criteria are organized through explicit relationships), decomposability (criteria are partitioned into mutually independent units), and verifiability (criteria are designed for independent and reproducible evaluation). These properties collectively distinguish rubrics from holistic scalar rewards and unstructured natural language feedback. 
+
+2.2 Taxonomy 
+
+Rubrics vary considerably in both form and evaluative foundation, which we organize along two complementary axes: structural taxonomy and content taxonomy. 
+
+2.2.1 Structural Taxonomy 
+
+Rubrics exhibit structural variations across two orthogonal dimensions: the evaluation level and the evaluation granularity. The former defines the stage of the model’s output being assessed, while the latter determines the resolution of the scoring criteria. These dimensions are detailed below and summarized in Table 1. 
+
+Evaluation level. The divergence in evaluation levels aligns with the ongoing debate between Outcome Reward Models (ORM) and Process Reward Models (PRM) (Lightman et al., 2023). Output-level rubrics direct assessment toward the model’s final response (Arora et al., 2025; Liu et al., 2023). Conversely, process-level rubrics delve into intermediate reasoning steps, evaluating the quality of each individual derivation or action (Chen et al., 2026b; Jia et al., 2025a). The motivation for process-level rubrics lies in detecting “spurious reasoning”, where a model arrive at a correct answer through a logically flawed trajectory (Yuan et al., 2026). Table 1: Structural taxonomy of rubrics.     
+
+> Holistic Analytic Atomic Output-level MT-Bench (2023), AlpacaE-val (2025), etc. G-Eval (2023), PRBench (2025), CDRRM (2026a), etc. RBR (2024), TICK (2024), HealthBench (2025), RLCF (2025), etc.
+> Process-level Let’s Verify Step by Step (2023), Math-Shepherd (2024), etc. RM-R1 (2026b), AdaRubric (2026), Critic Rubrics (2026), etc. AutoRubric-R1V (2025a), RLCER (2026), CaRR (2026b), etc.
+
+Evaluation granularity. Drawing on three granularity levels from educational assessment (Brookhart, 2018; Hunter et al., 1996), we extend and adapt this continuum to the LLM setting. Holistic rubrics 
+
+yield a single overall judgment without decomposing quality into sub-dimensions (Zheng et al., 2023). 
+
+Analytic rubrics decompose quality into independently scored dimensions, enabling dimension-level diagnosis and interpretable feedback (Fan et al., 2025; Liu et al., 2023). Atomic rubrics reduce each criterion to a minimal binary proposition, where the evaluator answers “whether” rather than “how much”, a level that emerges naturally where instruction-following and factual accuracy admit objective per-item verification (Viswanathan et al., 2025). Although holistic, analytic, and atomic approaches are both traditionally regarded as rubric forms in educational assessment, this work primarily focuses on the latter two levels. We view holistic rubrics as a conceptual precursor to rubric-based evaluation rather than a fully structured set of assessment criteria. 62.2.2 Content Taxonomy 
+
+While structural coordinates define the form of a rubric, they do not distinguish their evaluative foundations. G-Eval , CDRRM , and PRBench are all Output × Analytic , yet they ground their criteria in task instructions, model outputs, and external knowledge, respectively. We therefore complement the structural taxonomy with a content taxonomy organizing rubrics by their evaluative anchor into three classes: Task-Grounded, Behavior-Grounded and Knowledge-Grounded. 
+
+Task-Grounded rubrics are grounded in the requirements of the task itself, directly verifiable against the current task, and valid within its scope. Representative types include task-constraint rubrics, which extract explicitly verifiable constraints from instructions (Cook et al., 2024; Mu et al., 2024; Viswanathan et al., 2025); quality-dimension rubrics, which assess multiple quality facets of task outputs on graded scales (Fan et al., 2025; Hashemi et al., 2024; Liu et al., 2023), and implicit-expectation 
+
+rubrics capturing evaluation dimensions users expect but never explicitly state (Sharma et al., 2025; Wadhwa et al., 2025). 
+
+Behavior-Grounded rubrics are constructed from or applied to the model’s existing outputs and behaviors, with their validity depending on external observation or verification. Representative types include process-critical rubrics that diagnose reasoning trajectories (Fan et al., 2026a; Wang et al., 2026), error-inductive rubrics distilled from historical failure patterns (Sanders et al., 2026; Wan et al., 2026), and comparative-discriminative rubrics designed to distinguish differences between candidate responses (Liu et al., 2026a; Xie et al., 2026a). 
+
+Knowledge-Grounded rubrics anchor their criteria in human-predefined principles and domain-specific sources that remain consistent across diverse tasks. Representative types include fact-checking 
+
+rubrics cross-referencing response content against external knowledge bases (Ma et al., 2025; Zhang et al., 2026b), and domain-norm rubrics derived from established professional standards such as legal statutes or financial guidelines (Akyürek et al., 2025; Lee et al., 2026). 
+
+2.3 Rubrics and LLM Paradigm Shifts: A Co-evolutionary Perspective 
+
+The growing prominence of rubrics in the LLM era is closely intertwined with successive paradigm shifts in model development. As LLMs evolved from fluent generation to alignment, reasoning, agency, and self-evolution, the demands placed on evaluation and supervision expanded accordingly, driving rubrics to evolve from holistic assessment tools into structured criteria, interpretable reward signals, and eventually endogenous mechanisms for self-improvement. As illustrated in Figure 2, this trajectory reflects a co-evolutionary process in which advances in model capability continuously reshape the role of rubrics, while increasingly sophisticated rubrics, in turn, provide the evaluative and supervisory foundations that enable further progress. 
+
+Phase I (Up to 2023): From Holistic Judgments to Explicit Criteria. Early LLM evaluation primarily relied on holistic judgments and scalar rewards, where quality was assessed as an indivisible outcome. Although RLHF (Ouyang et al., 2022) demonstrated that human preferences could effectively steer model behavior, scalar rewards often failed to capture the multifaceted nature of quality. Meanwhile, the emergence of chain-of-thought reasoning (Wei et al., 2023) and increasingly capable evaluators such as GPT-4 (Achiam et al., 2023) exposed the limitations of coarse-grained assessment and created both the need and the means for structured evaluation. Consequently, rubrics began to evolve from implicit human standards into explicit and interpretable criteria. Representative efforts, including Constitutional AI (Bai et al., 2022b), G-Eval (Liu et al., 2023), and MT-Bench (Zheng et al., 2023), formalized previously tacit notions of quality into structured evaluation dimensions. In this phase, rubrics primarily functioned as evaluative instruments that revealed alignment gaps and established the first systematic foundation for LLM assessment. 
+
+Phase II (2023–2024): Rubrics as Guides for Reliable Alignment. As instruction-following models became increasingly capable, the challenge shifted from generating fluent outputs toward reliably aligning model behavior with human expectations. RLVR (Shao et al., 2024) demonstrated the 7I. Emergence 
+
+（≦ 2023 ）
+
+II. Alignment 
+
+（2023 - 2024 ）
+
+III. Enrichment 
+
+（2024 - 2025 ）
+
+IV. Reinforcement 
+
+（2025 - 2026 ）
+
+V. Co-evolution 
+
+（2026 - ）
+
+> Core Goal
+> Holistic
+> Judgement
+
+Rubrics 
+
+Interaction 
+
+LLMs      
+
+> Implicit Feedback
+> Alignment
+> Reveal Gaps
+> Overall criteria,
+> limited evaluation
+> Fluent text,
+> lacks interpretability
+> LLM s need more
+> granular feedbac k
+> Build a Consistent
+> Evaluation Foundation
+> Explicit
+> Criteria
+> Decompose quality
+> into criteria
+> Better task following,
+> improved faithfulness
+> Structured
+> Evaluation
+> Capture reasoning, context
+> and multiple dimensions
+> Alignment with
+> Standards & Tasks
+> Guide Alignment
+> Rubrics guide LLM
+> alignment and evaluation
+> Achieve Reliable
+> Alignment and Evaluation
+> Reasoning &
+> Contextual Depth
+> Mutual Enrichment
+> Stronger reasoning and
+> context understandings
+> LLMs structure rubric richness,
+> rubric s enhance LLM reasoning
+> Standardized Rubrics
+> for Deeper Feedback
+> Reward
+> Signal
+> Agentic Deployment &
+> Multimodal Expansion
+> Transform evaluation criteria
+> into structured supervision
+> Demand adaptive supervision
+> for open-ended tasks
+> Robust Supervision
+> Rubrics enable learning
+> beyond verifiable rewards
+
+Rubrics and LLM Paradigm Shifts: A Co-evolutionary Perspective 
+
+> Endogenous
+> Mechanism
+> Self-Evolving
+> System
+> Co-creat e Value
+> Co-design, co-op timize,
+> and co-evolve
+> Continuous self-improvement
+> through iterative feedback loops
+> Self-generate within
+> the model lifecycle
+> Establish Scalable and
+> Verifiable Supervision
+> Realize Co-evolution and
+> Adaptive improvement
+
+Figure 2: A co-evolutionary framework illustrating the reciprocal development of rubrics and LLMs. effectiveness of verifiable rewards in domains such as mathematics and coding, while simultaneously exposing a verification gap in open-ended tasks where correctness could not be easily determined. This limitation elevated rubrics from evaluation conveniences to alignment scaffolds capable of decomposing complex objectives into interpretable standards. Structured criteria became increasingly important for both test-time scaling (Jaech et al., 2024) and agentic workflows requiring fine-grained behavioral constraints (Ma et al., 2024). Concurrently, Gupta et al. showed that fixed criteria possess intrinsic limitations when approximating complex reward functions, motivating richer and more adaptive rubric formulations. At the same time, analytic rubric frameworks demonstrated that multidimensional criteria could reliably approximate human judgments (Hashemi et al., 2024). During this stage, rubrics evolved into alignment guides that translated abstract human values into actionable supervisory signals. 
+
+Phase III (2024–2025): Mutual Enrichment Between Rubrics and Reasoning. The rise of reasoning-centric LLMs fundamentally expanded the scope of evaluation beyond final-answer correctness. The industrialization of GRPO and reasoning models (Guo et al., 2025) increased demand for supervision capable of assessing reasoning processes, contextual understanding, and intermediate decisions. Consequently, rubrics evolved into structured evaluation frameworks that capture multiple cognitive dimensions and provide interpretable feedback throughout the reasoning process (Galvan-Sosa et al., 2025). Simultaneously, stronger reasoning capabilities enabled the generation and refinement of increasingly sophisticated rubrics, creating a mutually reinforcing cycle between evaluation and reasoning. Representative benchmarks such as HealthBench (Arora et al., 2025) modeled expert reasoning in specialized domains, while rubric-guided agents extended evaluation into structured writing and long-form generation (Wadhwa et al., 2025). In parallel, systematic investigations of scoring bias (Dineen et al., 2025; Li et al., 2025b) highlighted the importance of robust and trustworthy rubric design. This phase marked the emergence of a feedback-rich ecosystem in which rubrics enriched reasoning and reasoning enriched rubrics. 
+
+Phase IV (2025–2026): Rubrics as Reward Signals for Scalable Supervision. The emergence of autonomous agents transformed rubrics from static evaluators into dynamic reward mechanisms. As LLMs increasingly operated in open-ended environments where outcomes were difficult to verify, rubric-based supervision became a practical alternative to conventional reward modeling. To mitigate reward hacking, Checklist-as-Reward (Viswanathan et al., 2025) decomposed complex objectives into verifiable criteria, while Rubicon (Huang et al., 2025) scaled this paradigm through large repositories 8of reusable rubric-based rewards. Meanwhile, online rubric engineering frameworks enabled automatic extraction and continuous refinement of criteria from preference data (Rezaei et al., 2025). The rapid emergence of multimodal foundation models further expanded the scope of supervision beyond text-only settings (Bai et al., 2025). The growing complexity of multimodal evaluation exposed the limitations of outcome-based rewards and coarse-grained metrics. Consequently, rubrics increasingly served as structured reward interfaces that decompose multimodal capabilities into interpretable dimensions, enabling fine-grained supervision across modalities (Li et al., 2026a). These advances facilitated deployment in multimodal reasoning (Jia et al., 2025a), scientific discovery (Goel et al., 2025), and other agentic domains. In this phase, rubrics became interpretable reward signals that enabled scalable and robust supervision beyond traditionally verifiable tasks. 
+
+Phase V (2026–): Endogenous Mechanisms and Self-Evolving Systems. The latest frontier moves beyond externally designed evaluation frameworks toward endogenous rubric generation within the model lifecycle itself. Rather than being manually specified, rubrics increasingly emerge through interactions among generation, evaluation, optimization, and deployment processes. Recent work has extended this paradigm to unified cross-modal alignment (Kong et al., 2026), while simultaneously revealing severe challenges in machine-generated criteria, including substantial degradation in rubric quality and evaluator consistency (Zhang et al., 2026d). To address these issues, research is increasingly focused on generator–evaluator co-evolution (Xu et al., 2026a), dynamic rubric adaptation, and autonomous governance mechanisms. Furthermore, the identification of intrinsic rubric failures (Qi et al., 2026) and self-preference biases (Pombal et al., 2026) has highlighted the necessity of trustworthy self-supervision. These developments suggest a future in which rubrics become endogenous components of intelligent systems, continuously co-evolving with model capabilities to support autonomous improvement. Together, these phases reveal that the evolution of rubrics is not merely a consequence of LLM progress, but an integral component of it. Each paradigm shift introduces new challenges in evaluation, alignment, and supervision, motivating increasingly sophisticated rubrics that provide the structured foundations for subsequent advances in reasoning, agency, and self-improvement. Through this co-evolutionary process, rubrics have evolved from external evaluation tools into endogenous mechanisms that increasingly shape the future trajectory of intelligent systems. 
+
+> Summary
+> This chapter establishes the conceptual foundations of rubrics along three dimensions, from which three core conclusions can be drawn.
+> Formally, a rubric is defined by four core properties, explicitness, structuredness, decomposability, and verifiability.
+> Taxonomically, rubrics vary along two structural dimensions and three content anchors, forming a unified framework for understanding the diversity of rubric designs in practice.
+> Historically, the evolution of rubrics is not coincidental but structurally necessary: each leap in model capability exposes an alignment gap that existing mechanisms cannot bridge, compelling rubrics to become progressively more structured, adaptive, and endogenous, and laying the foundation for their transition from evaluation tools to self-improving mechanisms.
+
+Having established the conceptual foundations of rubrics, we next turn to the core research framework that defines how rubrics are constructed, utilized, and analyzed in practice. As shown in Figure 3, existing rubric research can be organized into four closely connected dimensions: rubric construction and optimization, rubric-powered evaluation, rubric-powered training, and rubric reliability. Together, these dimensions constitute the central methodological framework of the rubric paradigm and form the foundation for the discussions in the following sections. 9HealthBench (2025); PRBench (2025); ProfBench (2025b); XpertBench (2026d); ExpertLong-Bench (2025); AesRM (2026b), etc. 
+
+TICK (2024); RLCF (2025); RubricHub (2026e); Qworld (2026); AutoRubric-R1V (2025a); Auto-Rubric (2026a); OpenRubrics (2026c); CDRRM (2026a); C2 (2026); ROPD (2026), etc. 
+
+RaR (2025); ResearchQA (2025); LEGIT (2026); EvalAgent (2025); QuRL (2026); TechImage-Bench (2026); RubricRAG (2026); CARMO (2025); Think-with-Rubrics (2026a); AdaRubric (2026); DR Tulu (2025a); HITL-PatchEval (2025); ARCANE (2025); CLR-voyance (2026); ReviewGrounder (2026h), etc. 
+
+OptimSyn (2026b); CARO (2026b); RRD (2026); SibylSense (2026d); AMARIS (2026); Proxy-GRM (2026); Reflect-and-Revise (2025), etc. 
+
+iRULER (2026); CoReflect (2026g); OnlineRubrics (2025); InfiMed-ORBIT (2025a); DR Tulu (2025a); EvoLM (2026f); Rubric-ARM (2026a); RLCER (2026); Self-rewarding Rubri-cRL (2025); RLAC (2025b), etc. 
+
+G-Eval (2023); LLM-RUBRIC (2024); Autorubric (2026); AesRM (2026b); MTalk-Bench (2025); ExpertLongBench (2025); Beyond Holistic Scores scoring (2026); Rubric is all you need (2025); Rethinking Atomic Decomposition (2026), etc. 
+
+Adaptive Precise Boolean rubrics (2026); HealthBench (2025); SedarEval (2025), etc. 
+
+RULERS (2026); DeCE (2025); Reliability-aware evaluation framework (2026); Rubric-Mod (2026); RubricEval (2026); Criterion validity (2026a), etc. 
+
+Evaluating Scoring Bias (2026c); Revealing Position Bias (2026c); Self-preference bias (2026); Sage (2025b); Curse of Knowledge (2025a); Beyond Accuracy (2026); TRACE (2026); FairJudge (2026a); GUIDE (2026a); Rubric-Conditioned LLM Grad-ing (2025), etc. 
+
+TICK (2024); iRULER (2026); Think-with-Rubrics (2026a); ReviewGrounder (2026h); Deep-Verifier (2026), etc. 
+
+Agentic Rubrics (2026); Ctx2Skill (2026); RubricRefine (2026), etc. 
+
+Chasing the Tail (2026c); CARMO (2025); OpenRubrics (2026c); CDRRM (2026a); SyncPL (2025), etc. 
+
+RaR (2025); RLCF (2025); RBR (2024); OpenRS (2026); PAPO (2026); CROME (2025); Rubicon (2025); Rubric-Grounded RL (2026), etc. 
+
+RM-R1 (2026b); AutoRubric-R1V (2025a); SRaR (2026b); DeepSeekMath-V2 (2025b); RTT (2026b); Critic Rubrics (2026); SWE-TRACE (2026a), etc. 
+
+SciRubric-Guided RL (2026e); RRM (2026); RaR (2025); RLCF (2025); Writing-Zero (2025b); ACE-RL (2025); QuRL (2026), etc. 
+
+RGR-GRPO (2025); RuscaRL (2026); SRaR (2026b); RTT (2026b); Critic Rubrics (2026); AdvancedIF (2025); DR Tulu (2025a); StitchCUDA (2026d), etc. 
+
+RubricEM (2026b); CaRR (2026b); AI Co-Scientists (2025); Kardia-R1 (2025); InfiMed-ORBIT (2025a); JudgeR1 (2026); WaferSAGE (2026); ATLAS (2026); AskBench (2026a); Omni-RRM (2026); DeltaRubric (2026b); ARR (2026); RubricRL (2025a); RuCL (2026d), etc. 
+
+rDPO (2026b); C2 (2026); CPT (2025); POP (2026a), etc. 
+
+Beyond Verifiable Rewards (2026b); ROPD (2026), etc. 
+
+EvoLM (2026f); RLCER (2026); Self-rewarding RubricRL (2025); Rubric-ARM (2026a); RLAC (2025b), etc. 
+
+OnlineRubrics (2025); CaT (2026); DR Tulu (2025a); InfiMed-ORBIT (2025a); RuCL (2026d); AMARIS (2026); SibylSense (2026d), etc. 
+
+RubricBench (2026d); GER-Eval (2026); RIFT (2026); RRD (2026), etc. 
+
+Self-preference bias (2026); Sage (2025b); Evaluating Scoring Bias (2026c); Revealing Posi-tion Bias (2026c); Curse of Knowledge (2025a); Beyond Accuracy (2026), etc. 
+
+CARMO (2025); Chasing the Tail (2026c); Criterion validity (2026a); Concept-based Rubrics (2025); Explicit Reasoning (2026), etc. 
+
+RIPD (2026), etc. 
+
+When Rubrics Fail (2026); JADE (2026), etc. 
+
+Construction (§ 3.1) 
+
+Optimization (§ 3.2) 
+
+Explicit Eval-uation (§ 4.1) 
+
+Faithful Eval-uation (§ 4.2) 
+
+Beyond Evaluation (§ 4.3) 
+
+Theoretical Grounding (§ 5.1) 
+
+Rubric Reward Modeling (§ 5.2) 
+
+Rubric-Grounded Online Training (§ 5.3) 
+
+Rubric-Guided Of-fline Training (§ 5.4) 
+
+Beyond Super-vision (§ 5.5) 
+
+Generation Quality (§ 6.1) 
+
+Execution Fidelity (§ 6.2) 
+
+Theoretical Con-straints (§ 6.3) 
+
+Security Threats (§ 6.4) 
+
+Boundaries and Al-ternatives (§ 6.5) 
+
+How Are Rubrics Constructed and Optimized? (§ 3) 
+
+How Do Rubrics Power Evaluation? (§ 4) 
+
+How Do Rubrics Power Training? (§ 5) 
+
+How Reliable Are Rubrics? (§ 6) 
+
+> Taxonomy
+
+Figure 3: Taxonomy of rubric research across construction and optimization, evaluation, training, and reliability. Citation year links point to the bibliography entries in this paper. 10 3 How Are Rubrics Constructed and Optimized? 
+
+Rubric construction and optimization constitute the foundation of the entire rubric lifecycle: a rubric must first be built and maintained at sufficient quality before it can serve evaluation or alignment purposes. This prerequisite is non-trivial, as empirical evidence demonstrates that low-quality rubrics do not merely fail to provide useful signals but can actively mislead reward models and degrade evaluation accuracy (Shen et al., 2026). This chapter addresses this across two layers: rubric construction (§ 3.1), covering how human intent is translated into structured criteria across varying degrees of automation; and rubric optimization (§ 3.2), covering how rubrics improve from passive refinement driven by external signals to active co-evolution with model capabilities. 
+
+3.1 Construction: How Rubrics Are Built 
+
+Rubric construction is fundamentally a process of knowledge externalization, transforming implicit evaluation standards into explicit, actionable criteria. As illustrated in Figure 4, existing approaches can be broadly categorized into three paradigms according to the degree of human involvement: human expert construction, automated LLM construction, and human-in-the-loop construction, each reflecting a different trade-off between rubric quality and scalability. 
+
+3.1.1 Human Expert Construction 
+
+Human expert construction provides irreplaceable domain priors and value alignment, and has been most systematically deployed in high-stakes professional domains. HealthBench (Arora et al., 2025) engaged 262 physicians to write 48,562 criteria for 5,000 medical dialogues. In the legal and financial domains, PRBench (Akyürek et al., 2025) and ProfBench (Wang et al., 2025b) provide large-scale expert-written criteria without LLM assistance. For broader professional coverage, XpertBench (Liu et al., 2026d) provides weighted checkpoints per task across seven domains, and ExpertLongBench (Ruan et al., 2025) supplies task-specific rubrics for long-form generation tasks in law, clinical care and so on. Beyond task-level annotation, Han et al. (2026b) manually defines three orthogonal video aesthetics dimensions with 15 fine-grained criteria, transforming subjective aesthetic judgment into a programmatically verifiable framework. The fundamental limitation of this pathway is its prohibitive cost, which directly motivates the automated construction methods. 
+
+3.1.2 Automated LLM Construction 
+
+Automated construction methods aim to leverage LLMs’ language understanding and generation capabilities to automatically extract or generate structured rubric, without large-scale human annotation. In this section, we organize existing work into five sub-pathways based on their underlying knowledge source and generation strategy. 
+
+Deductive: Generating from Task Descriptions. Deductive methods decompose task descriptions or meta-rules into fine-grained criteria through logical inference, differing primarily in the granularity and structure of decomposition. At the coarsest level, Cook et al. (2024) and Viswanathan et al. (2025) directly extract flat checklists from user instructions, binding criteria naturally to each instruction. Going deeper, RubricHub (Li et al., 2026e) introduces multi-model aggregation and a difficulty evolution mechanism to capture the fine-grained gap between good and excellent responses. Taking this to the extreme, Qworld (Gao et al., 2026) recursively expands each question into a hierarchical tree of binary criteria, ensuring every leaf node is an unambiguous judgment. 
+
+Inductive: Extracting from Samples. Inductive methods distill criteria from existing samples rather than task descriptions, and can be further grouped by their data source. In the trajectory aggregation direction, AutoRubric-R1V (Jia et al., 2025a) extracts common reasoning steps from 11 1 Human Expert 
+
+Construction 
+
+> High Quality
+> High Cost
+> Domain Expertise
+> Human Values
+> Professional
+> Standards
+
+Automated LLM Construction 2
+
+> (a) Deductive
+> (Top-down)
+> (b) Inductive
+> (Bottom-up)
+> (c) Transfer-based
+> (Knowledge Transfer)
+> (d) On-the-fly
+> (Just-in-time)
+> (e) Query-adaptive
+> (Personalized)
+> Task Description
+> Rule Decomposition
+> Rubrics
+> Existing Samples
+> Pattern Mining
+> Rubrics
+> External Knowledge
+> (DB / Web / Guidelines)
+> Knowledge Extraction
+> Rubrics
+> Query
+> Generate Rubric
+> Evaluate
+> No Pre-
+> construction
+> Needed
+> Query
+> Personalized Rubric
+> Task-specific
+> Evaluation
+
+3 Human-in-the-Loop Construction  
+
+> Human Input LLM Generation
+> Guide /
+> Constrain
+> Domain Knowledge
+> Preference
+> Experience
+> Draft Rubric
+> Expand Criteria
+> Organize Structure
+> Feedback
+> Human Review
+> Validate
+> Edit / Refine
+> Add / Remove
+> Improved Rubric
+> Clearer
+> More Aligned
+> More Reliable
+> Iterate Until Satisfied
+> Update
+
+Positioning on 
+
+the Quality-Scalability 
+
+Spectrum   
+
+> Quality (High)
+> Scalability (Low)
+> Best for domains requiring
+> high reliability and strong
+> human values.
+> Human Expert
+> Construction
+> Scalability (High)
+> Quality (Variable)
+> Best for large-scale, fast-
+> paced, and diverse task
+> scenarios.
+> Automated LLM
+> Construction
+> Balance Quality
+> and Scalability
+> Best trade-off between
+> human judgement and
+> model efficiency.
+> Human-in-the-Loop
+> Construction
+
+Figure 4: Rubric Construction Paradigms and Their Positioning on the Quality–Scalability Spectrum. multiple successful trajectories, naturally filtering out coincidental paths without human annotation; In the contrast-driven direction, Auto-Rubric (Xie et al., 2026a), OpenRubrics (Liu et al., 2026c), CDRRM (Liu et al., 2026a), C2 (Kawabata and Sugawara, 2026), and ROPD (Fang et al., 2026) each analyze differences between preferred and rejected responses to distill discriminative criteria, differing in whether they frame this as constrained optimization, contrastive generation, or closed-loop quality control. In the failure-reflection direction, Sanders et al. (2026) and Wan et al. (2026) take the opposite stance, building negative error pattern libraries from historical failures rather than characterizing what good responses should contain. Additionally, RaR (Gunjal et al., 2025) derives multi-category rubrics directly from reference answers , externalizing implicit evaluation information for use as RL reward signals. 
+
+Transfer-based: Migrating from External Knowledge. Transfer-based methods mine implicit evaluation standards from existing external knowledge structures rather than task descriptions or sample data. From structured repositories , ResearchQA (Yifei et al., 2025) extracts rubric entries from academic survey papers, while Lee et al. (2026) converts court judgment structures into hierarchical rubric checkpoints with built-in legal authority. From unstructured sources , EvalAgent (Wadhwa et al., 2025), QuRL (Wei et al., 2026), and TechImage-Bench (Ni et al., 2026) mine task-specific criteria from web documents, public resources, and multimodal context respectively. RubricRAG (Dhole and Agichtein, 2026) further takes a retrieval-augmented approach, using existing rubrics from related queries as few-shot guidance for generating new criteria. 
+
+On-the-fly Generation: Generating Without Pre-construction. Unlike the methods above that pre-build rubric libraries, on-the-fly generation produces task-specific criteria instantaneously at evaluation or training time. Some methods generate rubrics before scoring, using them as explicit reasoning anchors: Chen et al. (2026b) generates sample-level rubrics prior to judgment, while CARMO (Gupta et al., 2025) dynamically generates context-aware criteria for each query to ground the scoring process, and Think-with-Rubrics (Yu et al., 2026a) internalizes rubric generation into the reasoning chain itself, having the model generate task-specific rubrics before producing a response so that quality standards become prior constraints on generation. Others generate rubrics as self-proposed verification standards: CaT (Jayalath et al., 2026) derives binary auditable criteria from pseudo-reference answers, and Feng et al. (2025b) locks generated rubrics as fixed standards across all answer pairs to mitigate context preference bias. DeltaRubric (Liu et al., 2026b) extends this paradigm to multimodal settings, dynamically generating instance-specific rubrics that capture visual differences in spatial 12 position and object attributes before verifying each criterion step by step. Dineen et al. (2025) takes a more structured approach, generating hierarchically gated evaluation programs from constitutional principles. 
+
+Query-adaptive Generation: Input-specific Criterion Generation. Query-adaptive methods occupy a middle ground between pre-construction and on-the-fly generation, customizing rubrics for each individual query rather than applying generic static standards. AdaRubric (Ding, 2026) dynamically generates orthogonal scoring dimensions for each agent task, converting them into reliable trajectory evaluation signals. Lv et al. (2026) trains a query-specific rubric generator via GRPO, demonstrating that generic rubrics are insufficient for complex tasks such as DeepResearch and that RL is necessary for effective rubric generation. DR Tulu (Shao et al., 2025a) further generates and dynamically updates rubrics during online RL training, using variance filtering to prevent rubric proliferation. Huang et al. (2026a) conditions rubric generation on pre-training text to simultaneously reduce reward hacking and prevent mode collapse. 
+
+3.1.3 Human-in-the-Loop Construction 
+
+Human-in-the-loop construction seeks a balance between the quality of manual construction and the efficiency of automated methods, focusing human input on the highest-value steps while delegating scalable execution to LLMs. The most direct instantiation is the “expert refinement, model scaling” paradigm: Shi et al. (2025) propose LLMs generate draft rubrics that human experts refine once into gold standards, after which LLM judges scale up evaluation, finding that shared rubrics significantly improve inter-human agreement. Beyond one-time refinement, human-in-the-loop methods vary in how they integrate human judgment. ARCANE (Masters et al., 2025) elicits implicit stakeholder preferences through dialogue and converts them into dynamically updatable rubrics, avoiding retraining when preferences shift. Shah et al. (2026) take a validation-oriented approach, having clinicians author rubrics that are then verified by LLM scoring agents, achieving clinician-level agreement at a fraction of the cost. CLR-voyance (Nagar et al., 2026) takes a data-driven stance, inducting rubric criteria directly from real patient outcome data rather than expert priors, ensuring each criterion is anchored to clinically meaningful outcome indicators. ReviewGrounder (Li et al., 2026h) instead diversifies the human input itself, synthesizing rubrics from official guidelines, paper content, and human review comments to balance authority, relevance, and practical experience. 
+
+3.2 Optimization: How Rubrics Improve 
+
+Once a rubric has been constructed, continuously improving its quality is another central challenge. Existing optimization work falls into two categories: passive optimization and active evolution. 
+
+3.2.1 Passive Optimization 
+
+Passive optimization methods treat rubrics as optimization targets, driving rubric improvement by introducing external quality signals. Some methods approach this from the generation perspective :OptimSyn (Fan et al., 2026b) uses each synthetic sample’s causal contribution to model improvement as a reward signal for rubric generation, transforming rubric design into a mathematically optimizable objective. Others focus on diagnosing and repairing structural defects in existing rubrics: Chu et al. (2026b) treats scoring errors as directional clusters rather than random noise, identifying dominant patterns via confusion matrices and generating pattern-specific repair patches; Shen et al. (2026) recursively decompose overly coarse rubrics into finer sub-criteria while filtering out misdirected and redundant ones; SibylSense (Xu et al., 2026d) further tackles the problem of rubric saturation by maintaining a memory bank that continuously replaces exhausted criteria, coupled with adversarial policy updates that actively probe for new quality dimensions; AMARIS (Wu et al., 2026) extends this 13 memory-augmented paradigm by maintaining a persistent memory bank that accumulates diagnostic information across the entire training history, driving rubric evolution toward identifying the most critical unresolved failure patterns. A third line of work targets human preference alignment : Qiu et al. (2026) train a lightweight proxy to predict preference rankings from rubrics alone, using prediction accuracy as a direct quality signal, while Harada et al. (2025) iteratively revise rubrics against human scoring mismatches, finding that even a minimal initial rubric converges to match manually written ones. 
+
+3.2.2 Active Evolution 
+
+Active evolution fundamentally redefines the role of rubrics from static external standards to dynamic mechanisms deeply coupled with the training process, falling into two forms: rubric self-evolution and rubric-model co-evolution. 
+
+Rubric Self-evolution. In this direction, rubrics emerge from actual model or user behavior rather than pre-specified designs, with works differing in what drives the evolution. iRULER (Bai et al., 2026) grounds evolution in user writing practice, recursively applying rubrics to evaluate and refine rubrics themselves. CoReflect (Li et al., 2026g) and OnlineRubrics (Rezaei et al., 2025) instead derive evolution from model behavior: the former closes a bidirectional loop between dialogue generation and rubric refinement, while the latter distills new rubric entries by analyzing differences between current and reference policy outputs at each training step. Taking a more controlled stance, InfiMed-ORBIT (Wang et al., 2025a) incrementally increases rubric difficulty throughout training to prevent early collapse, and DR Tulu (Shao et al., 2025a) maintains a dynamic balance by generating both positive and negative rules online to simultaneously encourage exploration and suppress reward hacking. 
+
+Rubric-Model Co-evolution. In this direction, rubric quality and model capability reinforce each other under a shared optimization objective, with works differing in how tightly the two sides are coupled. EvoLM (Li et al., 2026f) establishes the core loop: a rubric generator and a response generator share parameters within a single model, where better rubrics elicit better responses, which in turn demand more discriminative rubrics. Rubric-ARM (Xu et al., 2026a) formalizes this intuition within a reinforcement learning framework, showing theoretically that alternating the two optimization targets reduces gradient variance compared to joint updates. While these works maintain a generator-judge separation, RLCER (Sheng et al., 2026) and Ye et al. (2025) collapse the distinction entirely, having a single policy model act simultaneously as rubric generator and scorer so that generation and evaluation capabilities improve together. RLAC (Wu et al., 2025b) takes the most adversarial stance: rather than cooperative co-training, the judge is explicitly trained to expose weaknesses in generated content, forcing improvement through competition rather than collaboration. 
+
+> Summary
+> This chapter organizes existing work along two dimensions: how rubrics are constructed across varying degrees of human involvement, and how they are subsequently improved from passive refinement to active evolution, from which three core conclusions can be drawn.
+> Human expertise remains the gold standard for rubric quality, but its prohibitive cost makes it impractical as a routine approach, pushing the field toward increasingly automated paradigms.
+> Automated construction has diversified rapidly, yet the core risk has shifted from rubric absence to rubric harm: low-quality rubrics can actively degrade model judgment, making quality control an integral part of the construction pipeline.
+> The boundary between rubric and model is increasingly dissolving: rather than being imposed as static external standards, rubrics are progressively generated, refined, and evolved through model behavior itself, foreshadowing their emergence as endogenous components of intelligent systems.
+
+14 4 How Do Rubrics Power Evaluation? 
+
+Traditional evaluation pipelines rely on holistic scoring that suffers from three fundamental limitations: interpretive opacity, which collapses multidimensional quality into a single undifferentiated score with no articulable rationale; inconsistent execution, where judges are susceptible to systematic biases driven by non-semantic cues rather than actual quality; and static passivity, where evaluation signals terminate at scoring rather than feeding back into model improvement. Rubrics address all three simultaneously. By decomposing quality into explicit, independently verifiable criteria, rubrics make evaluation interpretable, harder to distort, and actionable beyond the scoring step itself. This chapter traces how rubrics restructure the evaluation process: from establishing explicit criteria through structural and format-level decomposition (§ 4.1), to enforcing faithful and unbiased execution through objective traceability and subjective bias suppression (§ 4.2), concluding with the most consequential extension where rubric-based evaluation signals transcend passive assessment to drive active inference-time refinement and candidate selection (§ 4.3). 
+
+4.1 Explicit Evaluation: Deconstruction and Representation of Criteria 
+
+LLM evaluation has long relied on single scalar scores. While G-Eval (Liu et al., 2023) demonstrated the promise of criterion-guided LLM judging, it also exposed the fundamental limitations of holistic scoring: a single scalar cannot explain its own rationale or support fine-grained diagnosis. To address this limitation, rubric-based evaluation progressively shifts from holistic judgments toward more explicit and interpretable assessment processes. As illustrated in Figure 5, this section examines two complementary directions toward this goal: structurally decomposing holistic judgments into assessable analytic dimensions, and discretizing the scoring format within each dimension from continuous scales into verifiable checks. 
+
+4.1.1 Structural Decomposition 
+
+Analytic evaluation converts implicit quality judgments into explicit, independently assessable dimen-sions, along two complementary strategies. 
+
+Fixed-dimension decomposition establishes a fixed set of orthogonal dimensions applicable across instances. LLM-RUBRIC (Hashemi et al., 2024) is the foundational work: rather than chasing a single ground-truth score, it models each rater’s individualized judgment by aggregating per-dimension distributions through a calibration network, capturing inter-rater subjectivity rather than discarding it as noise. Rao and Callison-Burch (2026) further operationalizes this paradigm as a unified toolchain supporting binary, scalar, and categorical rubric types with built-in bias mitigations. The same principle extends to specialized domains: AesRM (Han et al., 2026b) decomposes video aesthetics into three orthogonal dimensions to prevent inter-dimensional contamination, while MTalk-Bench (Du et al., 2025) applies dimension-level scoring across semantic, paralinguistic, and environmental axes in speech dialogue evaluation. 
+
+Instance-adaptive decomposition decomposition tailors evaluation criteria to the specific task or domain at hand, enabling more targeted diagnosis. ExpertLongBench (Ruan et al., 2025) structures long-form evaluation as a three-step process, moving from rubric to checklist to comparison against reference outputs, converting subjective judgment into structured information extraction. In educational assessment, Favero et al. (2026) evaluate writing-specific trait dimensions such as content organization and argumentative quality independently, substantially improving diagnostic value. In code evaluation, Pathak et al. (2025) demonstrates that evaluating against question-specific rubrics far outperforms generic criteria, as task-tailored standards capture the precise decision boundaries that domain-agnostic dimensions miss. However, decomposition is not universally superior. Zhang (2026) finds that on tasks requiring high completeness, holistic judges equipped with detailed rubrics outperform atomic judges, as fine-grained 15 Traditional Evaluation 
+
+> Response
+> .... This answer
+> provides a good
+> explanation of
+> the concept.
+
+8.5 / 10     
+
+> Opaque Not
+> Diagnostic
+> Rubric-based Evaluation
+> (a) Structural Decomposition
+> Overall Quality
+> Accuracy
+> 4 / 5
+> Relevance
+> 5 / 5
+> Completeness
+> 4 / 5
+> Coherence
+> 4 / 5
+> Safety
+> 5 / 5
+> Aggregated Judgment
+> 4.4 / 5
+> (b) Format Discretization
+> Likert Scale (1-5)
+> 12345
+> Boolean / Checklist
+> Contains factual information
+> Follows instructions
+> No hallucination
+> ...
+> Interpretable
+> Understand how the score is formed
+> Auditable
+> Each dimension is verifiable
+> Diagnostic
+> Identify strengths and weaknesses
+
+Figure 5: Rubric-Based Evaluation through Structural Decomposition and Format Discretization. decomposition can fragment completeness reasoning and make global omissions harder to detect. Therefore, the appropriate granularity must be chosen with respect to the task at hand. 
+
+4.1.2 Format Discretization 
+
+Beyond dimensional structure, the scoring format within each dimension critically shapes evalua-tion consistency. Likert scales are the most common choice, but their inherent subjectivity limits reproducibility, motivating a transformation toward discrete, verifiable checks along two strategies. 
+
+Boolean verification converts ambiguous degree judgments into binary yes/no checks, eliminating interpretive ambiguity at its root. Mallinar et al. (2026) decompose multi-dimensional Likert rubrics into fine-grained binary criteria and dynamically retains the most relevant subset per query, significantly improving inter-rater agreement. At a larger scale, HealthBench (Arora et al., 2025) deploys this approach across 48,562 physician-authored binary criteria spanning medical dialogue, demonstrating its scalability in high-stakes settings where ambiguity carries impact. 
+
+Dual-track scoring goes further by distinguishing positive and negative evidence separately. SedarEval (Fan et al., 2025) structures evaluation as addition items (rewarding correct behaviors) and deduction items (penalizing errors), mimicking human exam grading logic and enabling diagnosis beyond what binary verification allows: distinguishing “answered correctly but penalized” from “answered incorrectly but partially credited”, two failure modes requiring different remediation. 
+
+4.2 Faithful Evaluation: Reliability Reinforcement of Judgment 
+
+Having established explicit criteria, this section turns to whether judge models can reliably execute them. Reliable rubric execution faces two distinct challenges: whether scoring decisions are objectively traceable and auditable, and whether judge behavior remains free from subjective distortions introduced by non-semantic cues. 
+
+4.2.1 Objective Evidence Anchoring 
+
+Scoring decisions should be objectively traceable and auditable, verifiable by external parties independent of the judge’s reasoning. Two lines of work address this from complementary angles. 
+
+Structural locking and evidence enforcement make scoring decisions auditable by design. RULERS (Hong et al., 2026) compiles criteria into versioned immutable bundles, requires judges to cite auditable evidence for every scoring decision, and applies post-hoc calibration to align score distributions with human annotations. DeCE (Yu et al., 2025) takes a complementary approach, splitting evaluation into orthogonal precision and recall workflows to prevent inter-criteria interference, outperforming pointwise LLM scoring in expert alignment. 
+
+Reliability measurement and validity testing move from execution to verification. Amin et al. (2026) propose a six-dimensional reliability protocol, substantially more informative than conventional 16 single-metric approaches, while Huynh et al. (2026) show that rubric design choices have asymmetric effects: representative examples improve human-autorater consistency, whereas excessive complexity reduces it. RubricEval (Pan et al., 2026) goes further as the first criterion-level meta-evaluation benchmark, directly verifying judge accuracy at the granularity of individual rubric items. Chen et al. (2026a) raise a deeper question: even faithful execution may not suffice if scores fail to predict their intended outcomes, finding that criteria tied to user trust predict real-world conversion rates while technical capability dimensions do not. 
+
+4.2.2 Subjective Bias Suppression 
+
+Even when scoring decisions are traceable, judge behavior may still be distorted by subjective biases, where non-semantic cues are internalized as spurious preference signals. Research has identified multiple such bias sources, each requiring targeted mitigation. 
+
+Bias identification has produced a growing taxonomy. On scoring format biases , Li et al. (2026c) identifies rubric order bias, score ID bias, and reference score bias, each showing that superficial prompt-level features systematically distort scores; position bias in score selection, where judges favor options at particular list positions, has also been documented Xu et al. (2026c). On self-referential biases ,judges have been found to favor outputs from their own model family even under fully objective criteria, marking wrong answers as satisfying at rates up to 50% Pombal et al. (2026). On contextual instability ,Sage (Feng et al., 2025b) documents systematic criterion drift across answer combinations, Curse of Knowledge (Li et al., 2025a) identifies criterion gap and entanglement biases finding paradoxically that larger reasoning models are more vulnerable, and Weng et al. (2026) reveals that safety judge verdicts drift with minor rubric wording changes independently of actual behavior. Beyond these instance-level biases, TRACE (Mittal et al., 2026) takes a structural perspective , mapping LLM-human misalignment across coding modalities and identifying 35 significant misalignment sources that aggregate accuracy metrics conceal. 
+
+Bias mitigation operates at two levels. At the training level , FairJudge (Yang et al., 2026a) addresses all three bias classes through a curriculum paradigm where SFT instills criterion compliance, DPO optimizes against non-semantic sensitivity, and GRPO enforces cross-mode consistency. At the inference level , rubric-locking reduces inconsistency with no training required (Feng et al., 2025b); boundary-focused exemplar selection narrows adjacent-level confusion (Chu et al., 2026a); and consensus-voting deferral handles low-confidence predictions (Deng et al., 2025). More broadly, Li et al. (2025b) reveal that rubric granularity must match task type, as detailed rubrics benefit reasoning tasks but hurt coding tasks when irrelevant criteria are introduced. 
+
+4.3 Beyond Evaluation: Capabilities Extension via Test-Time Scaling 
+
+This section examines how rubric-based evaluation signals transcend their traditional scoring role and become active drivers of inference-time improvement. As illustrated in Figure 6, rubrics can support capability extension through two complementary mechanisms: iterative self-refinement driven by structured feedback, and parallel path selection that uses rubrics as lightweight verifiers to identify higher-quality reasoning trajectories. 
+
+4.3.1 Iterative Self-Refinement 
+
+Rubric signals can drive output improvement without additional training. By injecting structured evaluation feedback into the generation loop, models use self-generated criteria to iteratively refine outputs at inference time. 
+
+Single-model self-evaluation uses rubric-based self-assessment to drive iterative refinement without external supervision. TICK (Cook et al., 2024) decomposes each instruction into a yes/no checklist and uses the resulting signal to drive iterative refinement, with the added finding that providing the checklists 17 Iterative Self-Refinement           
+
+> Initial
+> Answer
+> Generate
+> Rubric Self-Evaluate Revise
+> Answer v1 Answer v2 Answer v3 Improved
+> Answer
+> Repeat until all rubric criteria are satisfied or no further improvement.
+> Parallel Path Selection
+> Query Candidate A
+> Candidate D
+> Candidate B
+> Candidate C
+> 4.8 / 5
+> 4.4 / 5
+> 4.2 / 5
+> 4.0 / 5 Ranking
+> Candidate B
+> Candidate C
+> Candidate D
+> Candidate A
+> Rubric Score
+> Best
+> Candidate
+> Explore multiple reasoning paths and select the best one using rubric scores.
+> Drives
+> Refinement
+> Guides
+> Selection
+> Evaluation ➡Optimization
+> Rubrics transform evaluation
+> from passive scoring to active
+> capability improvement.
+
+Beyond Evaluation: Capabilities Extension via Test-Time Scaling Figure 6: Rubric-Guided Test-Time Scaling via Iterative Refinement and Path Selection. to human evaluators substantially improves inter-annotator agreement, confirming that rubric structure standardizes evaluation cognition for both humans and models. iRULER (Bai et al., 2026) extends this with three-dimensional feedback and applies the mechanism recursively via a rubric-of-rubrics meta-evaluation, enabling rubrics to co-evolve with writing practice. Think-with-Rubrics (Yu et al., 2026a) takes this further by integrating rubric generation into the reasoning context itself: the model first generates task-specific rubrics as prior constraints and produces responses guided by them, internalizing quality standards as part of the reasoning process rather than treating them as external signals. 
+
+Multi-agent rubric-guided grounding applies structured criteria to coordinate specialized agents toward substantive outputs. ReviewGrounder (Li et al., 2026h) decomposes peer review into drafting and grounding stages, where rubrics guide literature retrieval and evidence integration, demonstrating that rubric-structured guidance can compensate for model scale. DeepVerifier (Wan et al., 2026) extends this to deep research agents, inductively deriving rubrics from historical failure trajectories and deploying a three-agent pipeline comprising decomposition, verification, and judgment to iteratively refine outputs, yielding consistent accuracy gains on deep research benchmarks. 
+
+4.3.2 Parallel Path Selection 
+
+Rubrics can simultaneously score multiple candidates to select the best, exploiting the asymmetry that verification is cheaper than regeneration. Raghavendra et al. (2026) generate repository-context-aware rubrics and score candidate patches without code execution, with rubric scores highly aligned with actual test outcomes. Ctx2Skill (Si et al., 2026) applies rubrics as lightweight inference-time probes in a three-role self-play cycle to autonomously discover and refine context-specific skills, with no parameter updates required. RubricRefine (LeVine et al., 2026) extends this to tool-use agents, generating rubrics from task requirements and tool documentation to perform pre-execution compliance checking, intercepting semantic defects before execution. 
+
+Summary 
+
+This chapter organizes existing work along three dimensions, explicit criteria construction, faithful execution, and inference-time extension, from which three core conclusions can be drawn. 
+
+The shift from holistic to analytic evaluation is not merely a formatting choice: explicit, verifiable criteria fundamentally change what evaluation can diagnose, enabling fine-grained attribution that scalar scores cannot provide. 
+
+Faithful execution cannot be assumed. Judge models exhibit systematic biases across format, self-reference, and contextual instability, and reliability depends as much on how criteria are executed as on how they are designed. 
+
+Evaluation signals are no longer terminal outputs. As rubric-based judgments are increasingly incorporated into inference-time refinement and decision-making loops, evaluation itself begins to function as an active supervisory mechanism rather than a passive measurement process. 
+
+18 5 How Do Rubrics Power Training? 
+
+Traditional alignment pipelines rely on scalar reward models that suffer from three fundamental limita-tions: informational sparsity, which collapses multidimensional quality into a single undifferentiated score; expressive limitation, which cannot capture the complex multi-constraint nature of open-ended tasks; and vulnerability to reward hacking, which actively misleads optimization once a model learns to exploit the reward model’s blind spots. Rubrics address all three simultaneously. By decomposing quality into explicit, independently verifiable criteria, rubrics provide high-resolution supervision, make evaluation harder to game, and enable practitioners to diagnose failure modes rather than merely observe them. This chapter traces how rubrics have entered the LLM training pipeline: from theoretical foundations (§ 5.1) to reward signal design at output and process levels (§ 5.2), through online RL training across open-ended, long-horizon, and multimodal tasks (§ 5.3), to offline training via preference optimization and rejection sampling (§ 5.4), concluding with the most consequential shift where rubrics evolve from externally imposed standards into endogenous mechanisms that co-evolve with the model itself (§ 5.5). 
+
+5.1 Theoretical Grounding: Why Rubrics Outperform Scalar Rewards 
+
+Before examining how rubrics are deployed in practice, it is worth establishing why they constitute a theoretically superior training signal. Several independent lines of work converge on the conclusion that scalar rewards are not merely suboptimal but structurally inadequate for the demands of modern LLM training. Figure 7 illustrates this distinction: while scalar rewards collapse multiple evaluation dimensions into a single score, rubric rewards preserve dimension-level feedback, yielding richer learning signals and more effective credit assignment. 
+
+Why scalar rewards fail. Zhang et al. (2026c) prove that reward over-optimization originates specifically in the high-reward tail: scalar reward models cannot reliably distinguish excellent responses from merely good ones, causing policies to overfit to distributional artifacts rather than genuine quality. Errors concentrated in this region cause win rates to collapse as KL divergence increases, a structural failure rather than an incidental one. Gupta et al. (2025) provides the mathematical confirmation: for any finite fixed set of evaluation criteria, there always exists a true reward function the rubric completely fails to capture. No matter how carefully a scalar reward is constructed, there will always be quality dimensions it structurally cannot express. Together, these results establish that scalar rewards fail in practice precisely because they must fail in theory. 
+
+Why rubrics are better. OpenRubrics (Liu et al., 2026c) and CDRRM (Liu et al., 2026a) argue for a fundamental reframing: traditional RLHF trains models to learn a ranking, whereas rubric-based training trains models to learn the evaluative basis for that ranking, a distinction that matters because learned rankings are opaque and brittle while learned criteria are interpretable and compositional. OpenRubrics operationalizes this through contrastive rubric generation, extracting discriminative constraints directly from preference pairs. CDRRM instantiates the same idea by mining high-discriminability differences between strong and weak responses and codifying them as rubric rules. Beyond reframing the learning target, rubrics also enforce structural properties that scalar rewards cannot. Liang et al. (2025) demonstrate that a rubric-conditioned preference tree, where each branch corresponds to an independent criterion, compels logically grounded justifications: responses that score correctly through flawed reasoning are penalized because every branch must be independently verifiable. This anti-hacking property emerges from the rubric’s decomposed structure itself, requiring no additional training objective. 
+
+5.2 Rubric Reward Modeling: Designing the Signal 
+
+Given the theoretical motivation, the practical question becomes: how should rubric-based reward signals be designed and operationalized? We distinguish two complementary levels at which rubrics 19 Scalar Reward RL  
+
+> Task
+> Write a
+> Research Review
+> Task
+> Write a
+> Research Review
+> Model Generates
+> Answer
+> Model Generates
+> Answer
+> Reward Model
+> 7.8 / 10
+> RL Update
+> Reward = 7.8
+> Many Dimensions
+> Collapsed into
+> One Scalar
+> Sparse Signal
+> Poor Credit Assignment
+> Hard to Know What to Improve
+> Rubric Judge
+> Accuracy
+> Coverage
+> Novelty
+> Logic
+> Citation -1
+> -1
+> 0
+> +1
+> +1
+> ...
+> Rubric Reward RL
+> Per-dimension
+> Feedback
+> RL Update
+> Reward Vector
+> [+1, -1, +1, 0, -1...]
+> Dense Feedback
+> Richer Learning Signal
+> Better Credit Assignment
+> Know What to Improve
+> More Efficient RL
+> Faster Convergence
+
+Figure 7: Scalar Reward RL and Rubric Reward RL as Training Signals for LLM Optimization. intervene in the training signal: output-level rewards, which evaluate the final response as a whole, and process-level rewards, which penetrate the intermediate reasoning steps that produce it. Within each level, we organize the discussion along a consistent axis of increasing granularity, moving from coarse holistic judgments toward finer-grained, more targeted signals. 
+
+5.2.1 Output-Level Reward 
+
+Output-level rubric rewards evaluate the final response against explicit criteria. The discussion follows increasing granularity from holistic scoring to decomposed aggregation, pairwise comparison, and finally causal grounding. 
+
+From holistic to decomposed scoring. Holistic LLM scoring collapses all quality dimensions into one undifferentiated signal, providing no information about which aspects of the response are strong or weak. The most direct remedy is explicit decomposition: RaR (Gunjal et al., 2025) categorizes rubric types into mandatory, important, bonus, and penalty items with importance weights; RLCF (Viswanathan et al., 2025) decomposes per-instruction quality into checklists combining AI-judged and programmatically verifiable constraints; and RBR (Mu et al., 2024) represents safety behaviors as fine-grained combinable propositions, substantially reducing over-refusal while maintaining helpfulness. 
+
+From independent scoring to pairwise comparison. Decomposed scoring still evaluates each response in isolation, which limits its ability to identify genuinely discriminative quality differences. Jia et al. (2026) address this by conditioning criteria on the semantic differences between two candidates rather than the properties of one, with ablations confirming that the comparison mechanism rather than rubric content drives the gains. 
+
+From multi-dimensional aggregation to stability. Combining multiple rubric dimensions introduces a new problem: reward instability during RL training. PAPO (Tan et al., 2026) traces this to GRPO’s joint normalization across all dimensions and resolves it through decoupled advantage normalization, performing within-group normalization independently per dimension before aggregation. 
+
+From surface features to causal grounding. Even well-designed rubric rewards remain vulnerable if the reward model latches onto spurious correlates rather than genuine quality drivers. CROME (Sri-vastava et al., 2025) addresses this by using rubrics as causal intervention variables, generating samples that enforce sensitivity to causal dimensions and invariance to spurious ones. Rubicon (Huang et al., 2025) tackles the same problem at scale through a library of over 10,000 criteria with veto mechanisms and dedicated defense rubrics, while a structural approach conditions the judge on source documents inaccessible to the policy (Bhattarai et al., 2026). 20 5.2.2 Process-Level Reward 
+
+Output-level rewards evaluate whether the final response is good, but say nothing about how it was produced: a model that arrives at a correct answer through flawed reasoning receives the same reward as one whose reasoning is sound. Process-level rubric rewards address this by supervising the intermediate steps themselves, progressing from response-level decoupling through step-level attribution to token-level allocation and trajectory evaluation. 
+
+From output scoring to response-level decoupling. The first step is to ensure that evaluation criteria are grounded in the specific instance rather than imposed externally. RM-R1 (Chen et al., 2026b) proposes Chain-of-Rubrics: the model generates a sample-specific rubric conditioned on the task type before evaluating the response against each criterion, transforming opaque scalar scoring into a structured reasoning process. 
+
+From response-level to step-level attribution. Decoupling at the response level still assigns a single reward to the entire output, leaving individual reasoning steps without targeted feedback. AutoRubric-R1V (Jia et al., 2025a) pushes supervision into individual steps by extracting common reasoning patterns from successful trajectories as ordered problem-specific rubrics. SRaR (Xie et al., 2026b) formalizes this further by mapping each criterion to the specific step responsible for satisfying it, revealing that response-level rewards systematically misattribute credit in both directions. DeepSeekMath-V2 (Shao et al., 2025b) extends the same logic to mathematical reasoning, evaluating whether the verifier’s logical feedback is itself rubric-justified rather than rewarding answer correctness alone. 
+
+From step-level to token-level allocation. Even at the step level, a rubric constraint may pertain to only a small fraction of tokens yet its score is amortized across all of them. RTT (Xu et al., 2026b) resolves this by training a token-level relevance discriminator to identify which tokens satisfy each constraint, combining token-level and response-level signals through a unified GRPO objective. 
+
+From single-response to trajectory-level evaluation. For long-horizon agentic tasks, the evaluation unit must extend to cover entire multi-step trajectories. Critic Rubrics (Wang et al., 2026) extracts behavioral rubric features from agent interaction trajectories and jointly models them with sparse outcomes to train a trajectory-level critic. SWE-TRACE (Han et al., 2026a) similarly decomposes SWE task quality into observable rubric checkpoints, converting binary test outcomes into dense trajectory-level rewards that supervise the full execution sequence. 
+
+5.3 Rubric-Grounded Online Training: Driving RL Optimization 
+
+With the signal design established, we turn to how rubric-grounded rewards drive online RL training. The central challenge is domain coverage: standard RLVR works well for verifiable tasks with ground-truth answers, but fails for the vast majority of real-world tasks where correctness cannot be programmatically verified. The following subsections trace how rubric-grounded RL progressively expands its reach, adapting training dynamics to make rubric rewards more effective, and scaling to complex tasks where additional structural challenges arise. 
+
+5.3.1 Extending RL to Non-Verifiable Domains 
+
+Rubric-grounded RL extends the reach of reinforcement learning in two complementary directions: strengthening the reward signal in verifiable domains, and enabling RL in domains where verifiable rewards are unavailable. 
+
+Complementing verifiable rewards. Rubric-grounded RL strengthen verifiable reward signals even when ground-truth answers exist. Binary outcome rewards capture only whether the final answer is correct, saying nothing about the reasoning quality that produced it. Chen et al. (2026e) combine verifiable rewards for closed-form problems with rubric rewards for open-ended questions, finding the mixed approach outperforms either signal alone. Yuan et al. (2026) introduce rubrics that explicitly 21 penalize spurious reasoning steps in mathematical reasoning that binary rewards would accept without question. These results establish a foundational point: rubric rewards complement rather than merely substitute for verifiable signals. 
+
+Foundational demonstrations. The more demanding challenge is extending RL to tasks where no verifiable signal exists. RaR (Gunjal et al., 2025) addresses settings where reference answers exist but binary correctness cannot capture the full quality spectrum, inducing rubric criteria from references and using weighted aggregation to replace holistic scoring. RLCF (Viswanathan et al., 2025) targets the harder case where no reference exists, extracting per-instruction checklists from task descriptions combining AI-judged and programmatically verifiable constraints, finding it the only method to improve consistently across all evaluated benchmarks. 
+
+Non-Verifiable domain extensions. The same principle extends to settings where the source of non-verifiability differs. For writing tasks, quality is either inherently subjective or constrained by multiple simultaneous requirements that binary matching cannot decompose: Writing-Zero (Jia et al., 2025b) trains a pairwise generative reward model conditioned on writing principles for creative writing, while ACE-RL (Chen et al., 2025) dynamically generates adaptive constraint criteria per instruction for long-form generation. For open-ended question answering, responses are too diverse for binary matching: QuRL (Wei et al., 2026) mines case-wise rubrics from web resources as GRPO reward signals. In each case, rubric decomposition makes quality verification tractable precisely because verifiable rewards are structurally unavailable. 
+
+5.3.2 Adapting RL to Efficient Training Dynamics 
+
+Having a rubric-based reward signal is necessary but not sufficient for effective training. Even with well-designed rubric rewards, three interrelated problems can limit how effectively that signal drives learning. 
+
+Exploration bottlenecks. Models can only explore within the boundaries of their current capabilities, creating a circular dependency: generating high-quality training samples requires capabilities the model has not yet acquired. RGR-GRPO (Bi et al., 2025) assigns rubrics a dual role as both dense reward signals and offline guidance signals, using rubric-constrained trajectory refinement to produce off-policy samples that expand the solution space beyond online rollouts. RuscaRL (Zhou et al., 2026) takes a complementary approach, injecting rubrics into task instructions during exploration and gradually decaying this injection as training progresses, so that the model internalizes quality standards rather than depending on external scaffolding. Where RGR-GRPO expands the solution space through offline refinement, RuscaRL does so through online guidance. 
+
+Reward sparsity. Assigning a single aggregated score to an entire response leaves intermediate reasoning steps without targeted feedback. SRaR (Xie et al., 2026b) addresses this by attributing each rubric criterion to the specific reasoning step responsible for satisfying it, normalizing per-step scores so that only steps with genuine quality variance generate a learning signal; RTT (Xu et al., 2026b) pushes granularity further, training a token-level relevance discriminator to convert response-level rubric scores into token-level reward signals, providing targeted feedback precisely where the model’s reasoning requires it; and Critic Rubrics (Wang et al., 2026) decomposes agent trajectories into behavioral rubric features, transforming sparse execution outcomes into dense process-level signals. 
+
+Reward hacking. When a policy learns to satisfy rubric criteria superficially, the reward signal actively misleads optimization. Several works address this from distinct angles. AdvancedIF (He et al., 2025) replaces general-purpose LLM judges with a dedicated rubric verifier fine-tuned on human-annotated data, making it substantially harder for the policy to exploit the judge’s blind spots. DR Tulu (Shao et al., 2025a) takes a proactive approach, continuously generating negative rules that explicitly capture emerging reward hacking behaviors detected during training, so that the rubric set evolves to close loopholes as the policy discovers them. StitchCUDA (Li et al., 2026d) addresses hacking through signal combination, pairing rubric rewards with execution-based rewards so that each 22 type of signal constrains the other: satisfying rubric criteria superficially without genuine functional correctness yields no net reward. 
+
+5.3.3 Scaling RL to Complex Tasks 
+
+As tasks grow in structural complexity, two additional challenges emerge: credit assignment becomes harder when a single rubric score must cover long sequences or multi-step decisions, and modality heterogeneity requires criteria beyond what text-based rubrics can express. 
+
+Long-horizon and agentic tasks. For deep research , rubrics enable multi-stage credit assignment by decomposing long trajectories into phase-specific evaluation criteria, with each phase conditioned on self-generated or retrieved rubrics that capture the quality requirements specific to that stage. Representative works include DR Tulu (Shao et al., 2025a), RubricEM (Li et al., 2026b), and CaRR (Zhang et al., 2026b), which address complementary challenges: rubric evolution across dynamic content, memory-augmented trajectory distillation, and citation-grounded evidence verification respectively. The same decomposition principle extends to research planning (Goel et al., 2025), emotional support (Yuan et al., 2025), medical consultation (Wang et al., 2025a), legal judgment (Su et al., 2026), and specialized technical analysis (Xu and Lian, 2026). For agentic systems , ATLAS (Gupta et al., 2026) applies rubric-based reward decomposition to long-chain tool-use tasks, AskBench (Zhao et al., 2026a) uses rubric-guided RLVR to separate clarification-seeking from response generation, while Wang et al. (2026) extracts 24 behavioral rubric features directly from agent interaction trajectories to jointly model intermediate behavior quality and final success probability. 
+
+Multimodal tasks. Text-based rubrics are structurally insufficient for visual tasks where quality depends on spatial relationships and object attributes. Omni-RRM (Kong et al., 2026) addresses this through a two-layer structure spanning text, image, video, and audio, combining globally shared criteria with modality-specific dimensions. Within vision-language tasks , AutoRubric-R1V (Jia et al., 2025a) extends process-level rubric supervision to counter spurious reasoning, and RuCL (Chen et al., 2026d) introduces stratified curriculum learning that adjusts rubric reward weights as model capability advances. For generative visual tasks , DeltaRubric (Liu et al., 2026b) dynamically generates instance-specific visual rubrics before independently verifying each criterion, ARR (Tian et al., 2026) externalizes vision-language model preference knowledge as prompt-specific rubrics before pairwise comparison, and RubricRL (Feng et al., 2025a) applies prompt-adaptive rubric generation with automatic dimension weighting. 
+
+5.4 Rubric-Guided Offline Training: Supervised Policy Improvement 
+
+A parallel line of work leverages rubrics in offline settings, operating on fixed datasets constructed before training begins. Rubrics intervene in two distinct ways: guiding optimization through DPO-style preference learning, and selecting high-quality trajectories through rejection sampling. Both replace coarse outcome signals with fine-grained rubric-based judgments, differing only in how the training signal is consumed. 
+
+5.4.1 Preference Optimization 
+
+Unlike online RL, where rubrics directly define reward signals, preference optimization leverages rubrics indirectly through the construction and selection of preference pairs. Existing work mainly focuses on improving preference quality and synthesizing controllable preference data. 
+
+Rubric-based quality control. The quality of preference pairs is as decisive as their quantity for DPO training. rDPO (Yu et al., 2026b) provides the clearest empirical demonstration: rubric-based filtering achieves substantially higher scores on multimodal benchmarks, while outcome-based filtering actually degrades the baseline, directly demonstrating that the filtering mechanism rather than data 23 volume is decisive. C2 (Kawabata and Sugawara, 2026) identifies a subtler failure mode where low-quality rubrics actively mislead the reward model, resolving this by learning rubric quality automatically from binary preference data through a cooperative rubric generator paired with a critical verifier. 
+
+Rubric-conditioned preference synthesis. Beyond filtering existing data, rubrics enable systematic synthesis of preference pairs with controllable quality gradients. CPT (Gallego, 2025) uses structured rubrics as conditions for synthesizing preference pairs at different satisfaction levels, training the model to dynamically adjust outputs based on rubric configurations at inference time without retraining. POP (Huang et al., 2026a) extends this to a self-contained self-play pipeline where a single LLM simultaneously acts as proposer, solver, and verifier, using pre-training text as the rubric conditioning source to ensure a generation-verification gap that prevents reward hacking. 
+
+5.4.2 Rejection Sampling 
+
+Rejection sampling fine-tuning selects the highest-quality candidates from a pool of model-generated responses for supervised training. Rubrics transform this selection from a binary judgment into a multi-dimensional behavioral assessment. 
+
+Rubric-guided trajectory selection. Huang et al. (2026b) applie rubric-based rejection sampling to agentic SWE tasks, using rubrics encoding desired behavioral patterns to score and select trajectories for fine-tuning, significantly outperforming pure terminal-score rejection sampling by capturing richer behavioral signals that binary test outcomes cannot express. 
+
+Rubric-based knowledge distillation. A related offline path is knowledge distillation from strong teacher models, where rubrics replace the need for teacher logits or parameter access. ROPD (Fang et al., 2026) induces prompt-specific rubrics by contrasting teacher and student text outputs, identifying the quality dimensions on which the teacher outperforms the student and using these rubrics to drive policy gradient updates on student rollouts, achieving full black-box compatibility with proprietary models while demonstrating that explicit rubric signals carry no less information than implicit logits. 
+
+5.5 Beyond Supervision: Rubric as Endogenous Mechanism 
+
+The approaches overviewed so far share a common assumption: rubrics are externally specified and statically applied throughout training. This section examines the most consequential departure from this assumption, where rubrics are no longer passively consumed as supervision signals but actively generated, applied, and refined by the model itself. As illustrated in Figure 8, the evolution loop closes as rubrics and model capabilities progressively co-evolve, reducing reliance on external supervisory sources and transforming rubrics from evaluation criteria into endogenous learning mechanisms. We distinguish two levels at which this evolution operates: within a model, where generator and judge roles are jointly internalized and mutually reinforced, and across training iterations, where rubric criteria continuously adapt to the model’s evolving capability frontier. 
+
+5.5.1 Intra-Model Evolution Loop 
+
+The most direct form of rubric endogenization is to train a single model to simultaneously generate responses and the rubrics used to evaluate them. Rather than relying on externally supplied criteria, the model develops its own evaluative standards alongside its generative capabilities, with the two reinforcing each other through training. This section traces three realizations of this loop, ordered by the degree of coupling between the generator and judge roles: from fully unified optimization where both roles share parameters, to coordinated alternating optimization where they share objectives but not parameters, to competitive adversarial dynamics where they drive each other through opposition. 
+
+Cooperative: Unified Optimization. In this approach, generator and judge share the same set of parameters, so improving one directly improves the other through backpropagation. EvoLM (Li et al., 2026f) formalizes this as a co-evolutionary framework where a rubric generator produces 24 Intra-Model Evolution Loop         
+
+> 1Model v1
+> Answer v1 Answer v3
+> (Improved)
+> 3Model v3 2Model v2
+> Answer v2
+> Accuracy
+> Logic
+> Coverage
+> Citation
+> Writing
+> Accuracy
+> Logic
+> Coverage
+> Citation
+> Writing
+> Accuracy
+> Logic
+> Coverage
+> Citation
+> Writing
+> Evaluate &
+> Provides
+> Feedback
+> Evaluate &
+> Provides
+> Feedback
+> Rubric Rubric
+> Rubrics provide fine-grained feedback that guides the model to iteratively refine its responses.
+> Generate Evaluate
+> (with Rubric) Improve Repeat Until
+> Satisfactory
+
+Inter-Training Evolution Loop   
+
+> Iteration t Iteration t+1 Iteration t+2
+> Accuracy
+> Logic
+> Coverage
+> ...
+> Generate
+> Rubric t
+> Accuracy
+> Logic
+> Coverage
+> Citation
+> ...
+> Generate
+> Rubric t+1
+> Accuracy
+> Logic
+> Coverage
+> Citation
+> Novelty
+> Generate
+> Rubric t+2
+
+## ... 
+
+Train Train Train     
+
+> Better Model ➡️Better Rubric ➡️Better Model ...
+> Co-evolving in a virtuous cycle
+
+The Evolution 
+
+of Rubrics 
+
+in LLMs     
+
+> 1External Supervision Era 23Rubric-Guided Learning Era Endogenous Mechanism Era
+> Human define criteria and evaluate.
+> Models follow external rules.
+> Rubrics serve as intermediaries,
+> providing guidance and feedback for learning.
+> Rubrics and models co-evolve.
+> Criteria emerge and improve autonomously.
+> Continuous Self-Improvement
+> Aligned with Core Values
+> Adaptive to Capabilities
+> Self-Evolving Criteria
+> Toward Endogenous Mechanism
+> (Self-Evolving Criteria)
+> From External Supervision
+> (Human Labels)
+
+Beyond Supervision: Rubric as Endogenous Mechanism Figure 8: The Evolution of Rubrics from External Supervision to Endogenous Mechanisms. instance-specific criteria optimized for discriminative power, and a response generator uses these rubrics as guidance, with both roles sharing parameters and reinforcing each other without external supervision. RLCER (Sheng et al., 2026) implements a similar architecture, additionally filtering criteria based on their correlation with answer correctness and using the refined set as inference-time prompts. Ye et al. (2025) demonstrate the same principle at scale, using the model itself as both generator and scorer so that both capabilities improve together. 
+
+Coordinated: Alternating Optimization. In this approach, generator and judge have independent parameters but share a single optimization objective, updated in alternation rather than jointly to avoid gradient interference. Rubric-ARM (Xu et al., 2026a) instantiates this by alternating between two phases. When the rubric generator is fixed, the judge is trained to maximize preference alignment. When the judge is fixed, the rubric generator is trained to produce criteria that maximize the judge’s discriminative power. Alternating updates are proven to significantly reduce gradient variance and stabilize training compared to joint optimization. 
+
+Competitive: Adversarial Optimization. In this approach, generator and judge are trained against each other, with the judge actively seeking weaknesses in the generator’s outputs and the generator learning to close those gaps. RLAC (Wu et al., 2025b) instantiates this by training the judge to identify the most suspicious weaknesses in generated content and calling external verifiers only for these targeted points, while the generator is trained via RL using verification results as rewards. This competitive pressure drives both capabilities forward without any external guidance. 
+
+5.5.2 Inter-Training Evolution Loop 
+
+The inter-training loop operates at a longer timescale than the intra-model loop: rubric criteria themselves evolve across training steps, adapting to the model’s shifting capability frontier. Static rubric sets inevitably become non-discriminative as training progresses, degrading the reward signal to noise. 25 We distinguish two strategies: short-term evolution that responds to the model’s current state, and long-term evolution that accumulates diagnostic knowledge across the full training history. 
+
+Short-term Rubric Evolution. The most immediate response to rubric saturation is to regenerate criteria at each training step based on the model’s current behavior. OnlineRubrics (Rezaei et al., 2025) does this by dynamically constructing criteria through pairwise comparison of current and reference policy responses, ensuring generated criteria remain genuinely discriminative. CaT (Jayalath et al., 2026) derives rubrics from the model’s own parallel rollouts through a frozen anchor model. DR Tulu (Shao et al., 2025a) extends this to deep research by continuously generating positive rules capturing newly explored knowledge and negative rules detecting emerging reward hacking behaviors, with variance-based filtering to prevent rubric proliferation. InfiMed-ORBIT (Wang et al., 2025a) and RuCL (Chen et al., 2026d) apply curriculum scheduling, progressively increasing rubric difficulty as model capability advances so that criteria remain at the model’s current learning frontier. 
+
+Long-term Rubric Evolution. Short-term adaptation responds to the current state but discards diagnostic information immediately, preventing accumulation of evaluation knowledge across training. AMARIS (Wu et al., 2026) addresses this by maintaining a persistent memory repository that accumulates diagnostic information from each training round, tracking which criteria lose discriminative power and which dimensions the policy persistently fails, grounding rubric modifications in the complete training history rather than just the current state. SibylSense (Xu et al., 2026d) takes a complementary approach, dynamically updating the rubric generator through a tunable memory repository that retains discriminative criteria and replaces saturated ones, while the policy model is adversarially updated to shrink the discriminative gap and trigger exploration of new quality dimensions. 
+
+> Summary
+> This chapter organizes existing work along five dimensions: theoretical grounding, reward signal design, online RL training, offline training, and endogenous evolution, from which three core conclusions can be drawn.
+> Scalar rewards fail not because they are poorly designed but because they are an insufficient formalism: the finite criteria failure theorem and reward over-optimization results establish that rubrics are not a fallback but a structurally superior interface between human values and machine optimization.
+> Rubric rewards operate across multiple granularities and training paradigms: rubricRubric supervision provides targeted feedback where scalar rewards are blind, rubric-grounded RL extends reinforcement learning from verifiable to non-verifiable domains and from text to multimodal settings, and offline rubric intervention improves preference data quality while enabling black-box knowledge distillation.
+> The most consequential shift is rubric endogenization: when rubrics co-evolve with the model through intra-model generator-judge loops and inter-training adaptive evolution, they transition from externally imposed constraints into self-sustaining training mechanisms that require no external supervisory source.
+
+## 6 How Reliable Are Rubrics? 
+
+Rubrics promise to enhance the reliability of LLM evaluation and alignment by making implicit criteria explicit and structured. However, the assumption that rubrics are inherently reliable deserves scrutiny in its own right. This section demonstrates that rubric reliability is not monolithic but distributed across four mutually independent yet progressively deepening dimensions: quality failures in generation, systematic biases in execution, fundamental constraints at the theoretical level, and security vulnerabilities arising from rubrics’ role as a high-level interface. When these failure modes converge, we must confront the existence of boundary scenarios where rubrics are fundamentally ill-suited, and explore alternative paths beyond the rubric paradigm. 26 6.1 Generation Quality: Are Rubrics Well-Constructed? 
+
+LLM-generated rubrics exhibit systematic cognitive misalignment that cannot be resolved by scaling inference compute, and whose harm may in fact exceed that of using no rubric at all. In current practice, rubrics are predominantly generated automatically by LLMs, a process that introduces systematic quality risks. Zhang et al. (2026d) quantify this risk through 1,147 carefully curated hard-instance comparison pairs: replacing model-generated rubrics with human-annotated counterparts improves judgment accuracy by an average of 27% across state-of-the-art models. 
+
+Cognitive misalignment as the root cause. The gap stems not from insufficient generative capacity but from value misalignment: model-generated rubrics gravitate toward surface features such as format and length while systematically neglecting core implicit constraints such as task feasibility and safety boundaries, a gap that scaling inference compute cannot close (Zhang et al., 2026d). GER-Eval (Siro et al., 2026)further reveals that this misalignment carries a model-specificity property: LLM-generated rubrics remain internally consistent within a given model but fragment significantly across models, rendering the widespread practice of “generate rubrics once, apply to all models” methodologically flawed. 
+
+From diagnosis to quantified harm. RIFT (Qi et al., 2026) provides the first systematic diagnostic framework, inducting eight failure modes under three high-level categories: reliability failures, content validity failures, and consequential validity failures, with automated diagnostic signals achieving up to 0.86 F1 against expert annotations. The severity of these failures is further quantified: naively generated rubrics reduce GPT-4o’s accuracy on JudgeBench from 55.6% to 42.9%, which is 13 percentage points below the no-rubric baseline (Shen et al., 2026). This establishes a critical threshold: below a certain quality level, rubrics are not merely unhelpful but actively harmful. Taken together, these findings establish that rubric quality is not an inherent property but a prerequisite that must be actively ensured, and that quality control alone is insufficient to guarantee reliable evaluation. 
+
+6.2 Execution Fidelity: Are Rubrics Faithfully Executed? 
+
+While Section 4.2.2 catalogs the types of biases that affect LLM judges and overviews mitigation strategies, a distinct question remains: what do these biases collectively imply for rubric reliability as a paradigm? This section reframes the same evidence from a reliability perspective, arguing that execution-stage biases constitute a systemic threat through two independent mechanisms whose interaction effects are unique to the rubric setting. 
+
+Two independent sources of fidelity failure. Execution biases arise from two mutually independent sources: the intrinsic behavioral characteristics of judge models, and the structural design of scoring prompts. The heterogeneity of these sources carries a structural implication that goes beyond taxonomy: because the two classes of bias are rooted in fundamentally different mechanisms, no single mitigation strategy can address both simultaneously. Biases rooted in judge behavior, such as self-preference bias (Pombal et al., 2026) and contextual criterion drift (Feng et al., 2025b), originate in how models represent and process their own outputs relative to others; they persist across prompt redesigns because the prompt is not their source. Conversely, biases rooted in prompt structure, such as rubric ordering bias, score ID bias, and reference score bias (Li et al., 2026c), as well as position bias in score selection (Xu et al., 2026c), are insensitive to judge model substitution because they are encoded in the evaluation interface itself rather than in the model. A rubric-based evaluation system must therefore contend with two orthogonal failure channels simultaneously, and improving along one dimension leaves the other entirely unaddressed. 
+
+Rubric structure as an amplifier of distortion. More critically, rubric’s multi-dimensional structure does not merely co-exist with these biases but actively amplifies them. Li et al. (2025a) identify criteria gap bias and criteria entanglement bias as structurally inevitable consequences of explicit dimension enumeration. By defining what judges attend to, rubrics simultaneously license them 27 to ignore everything else, and the more dimensions a rubric specifies, the more interference pathways are created between them. The empirical manifestation of this tension is directional: rubrics improve evaluation accuracy on standard samples but reduce it on adversarial ones, a reversal that would not occur in holistic evaluation where no explicit dimensional structure exists to be targeted. At a more fundamental level, Weng et al. (2026) demonstrate that this structural instability extends to rubric interpretation itself, finding that judge verdicts are systematically sensitive to rubric wording variations and that existing judges broadly fail semantic invariance, threshold invariance, and ambiguity-aware calibration. Rubric structure therefore not only creates exploitable blind spots but renders the mapping from rubric text to judge behavior inherently variable, such that execution fidelity cannot be fully guaranteed even when known biases are controlled for. 
+
+6.3 Theoretical Constraints: Does the Rubric Paradigm Have Fundamental Limits? 
+
+The preceding two sections addressed failures that are in principle amenable to engineering solutions: better generation methods can improve rubric quality, and better training or prompt design can reduce execution bias. This section confronts a deeper class of constraints, ones that are not implementation deficiencies but intrinsic to the theoretical structure of the rubric paradigm itself. 
+
+The Cross-Task Failure Theorem. CARMO (Gupta et al., 2025) establishes through formal proof that for any finite fixed set of criteria, there always exists a true reward function under which the rubric yields zero predictive correlation. The intuition is fundamental: the space of possible true reward functions is unbounded, while any finite rubric spans only a fixed-dimensional subspace within it. As task diversity grows, the probability that a fixed rubric remains aligned with the true reward function approaches zero regardless of how carefully it is designed. This is not an engineering deficiency that better rubric design can overcome, but a mathematical property of the fixed-criteria paradigm itself. It also provides theoretical grounding for why dynamically generated criteria are a principled necessity rather than a practical convenience: only by allowing criteria to vary with the task can alignment between rubric and true reward function be maintained across the unbounded space of possible tasks. 
+
+The High-Reward Discrimination Bottleneck. Even within a fixed task, a structurally distinct failure emerges at the high-reward tail. Rubrics assess whether criteria are met, this binary orientation provides adequate signal for distinguishing poor responses from acceptable ones, but loses resolution at the boundary between good and excellent. Related research formalizes this intuition: under Pareto-optimal conditions in reinforcement fine-tuning, errors concentrated at the high-reward tail are disproportionately costly, as a rubric that cannot reliably rank top responses forces the model to optimize noise rather than genuine quality differences, causing win rates to collapse as KL divergence grows (Zhang et al., 2026c). The deeper implication is that rubric-based reward signals are structurally front-loaded, providing dense signal in the low-to-mid reward range but becoming progressively less informative as response quality approaches the ceiling of what rubric criteria can distinguish. 
+
+Dimensional Misalignment with True Objectives. Even when rubric dimensions are internally consistent and faithfully executed, they may remain structurally misaligned with the outcomes they purport to predict. This failure is not a consequence of poor rubric design in any conventional sense. It arises because rubric dimensions are typically selected based on domain expert intuition about what constitutes quality, while human intuition about which dimensions actually predict downstream outcomes is systematically unreliable. Chen et al. (2026a) using business conversion rates as an external criterion, provides direct empirical evidence: some rubric dimensions correlate strongly with true outcomes while others show near-zero correlation. Critically, the presence of uninformative dimensions does not merely add noise but actively dilutes the predictive signal of informative ones through aggregation. This failure mode is particularly insidious because it is invisible to standard evaluation metrics: a rubric can achieve high inter-annotator agreement and strong judge consistency while remaining entirely disconnected from the outcomes it is meant to serve. 
+
+The Model Capability Prerequisite. All three constraints discussed above presuppose that models 28 can interpret and reason over rubric criteria, yet this presupposition is not always warranted. Wei et al. (2025) demonstrates that rubric effectiveness requires a minimum level of conceptual reasoning capacity: rubrics prove effective for LLMs capable of criterion-driven reasoning but entirely ineffective for pre-trained language models, whose apparent responsiveness to rubric instructions reflects surface-level text conditioning rather than genuine criterion comprehension. Jayarao et al. (2026) further find that rubric guidance yields only marginal improvement at more than eight times the computational cost, while thinking models outperform non-thinking counterparts by approximately 10 percentage points in accuracy. Together, these findings establish that the capability prerequisite functions as the logical precondition for the entire rubric paradigm. Without sufficient reasoning capacity, rubric design loses its relevance, and advances in model reasoning capacity become the more fundamental requirement. 
+
+6.4 Security Threats: Can Rubrics Be Weaponized? 
+
+The failure modes discussed in the preceding sections all arise under normal operating conditions. This section identifies a qualitatively different class of risk: rubrics’ role as a high-level decision interface makes them an active attack surface, one whose exploitation is both difficult to detect and capable of producing irreversible downstream consequences. 
+
+Preference Drift via Subtle Rubric Edits. RIPD (Ding et al., 2026) demonstrates that subtle edits to rubrics, edits that appear natural and preserve the original criteria, can induce systematic, directional preference drift on target domains. The defining feature of this attack is its covertness: the induced drift is nearly invisible on aggregated benchmark metrics, with the most effective attacks reducing target-domain accuracy by up to 27.9% while maintaining benchmark performance. This reveals a fundamental blind spot in current validation practices: strong benchmark performance no longer implies that the evaluation system is trustworthy, because the attack operates precisely in the gap between what benchmarks measure and what actually matters. 
+
+Irreversibility Through the Training Pipeline. The more consequential threat is not the attack itself but its persistence. When contaminated rubrics are used to generate preference labels for downstream post-training, the induced bias propagates through the alignment pipeline and becomes internalized in trained model parameters, producing behavioral drift that cannot be reversed by subsequently replacing the rubric (Ding et al., 2026). This elevates rubric manipulation from a localized evaluation problem to a systemic alignment risk, transforming the rubric from an evaluation tool into a permanent bias injection mechanism. This elevates rubric manipulation from a localized evaluation problem to a systemic alignment risk, as by the time contamination is detected, the damage to model behavior may already be permanent. 
+
+6.5 Boundaries and Alternatives: When Should We Look Beyond Rubrics? 
+
+Rubric failures are not uniformly addressable. While some stem from implementation deficiencies amenable to engineering solutions, others reflect boundaries intrinsic to the rubric paradigm where no amount of refinement renders rubrics adequate. This section identifies one such boundary and maps the alternatives it admits, ranging from complete paradigm inversion to partial structural preservation. 
+
+Complete abandonment: inverting the evaluation paradigm. When tasks admit multiple valid outputs and lack a single correct answer, rubric generation has no anchor, as it is impossible to define what criteria should be satisfied without a unique reference point. Ikezogwo et al. (2026) addresses this through Implicit Error Counting (IEC), inverting the evaluation paradigm by shifting the reward signal from checking what the model got right to enumerating what the model got wrong. The key insight is that even when correct answers are not unique, error patterns tend to be more constrained and enumerable, making negative criteria more tractable than positive ones. 
+
+Partial preservation: hybrid frameworks as an intermediate path. Not all task-structural boundary cases demand complete rubric abandonment. When correct answers are not unique 29 but response quality still varies along identifiable dimensions, rubric structure retains value as an organizational scaffold even when its execution logic proves inadequate. JADE (Lin et al., 2026) demonstrates that a hybrid approach can be viable: the first layer retains a predefined set of evaluation skills that inherit rubrics’ stability and reproducibility, while the second layer replaces rubrics’ item-by-item verification with claim-level dynamic evaluation through an evidence dependency gating mechanism. The task-structural boundary therefore does not demand a binary choice between rubrics and their alternatives. Rubric structure can remain useful as an organizational scaffold even in scenarios where response quality cannot be reduced to criterion satisfaction, as long as its execution logic is replaced by a more flexible evaluation mechanism. 
+
+> Summary
+> This chapter examines rubric reliability across four progressively deepening dimensions: generation quality, execution fidelity, theoretical constraints, and security vulnerabilities, from which three core conclusions can be drawn.
+> Rubric reliability is not a single property but a stratified one spanning multiple independent dimensions, each of which must be adequately addressed for evaluation to be trustworthy as a whole.
+> The theoretical limits of rubrics are not engineering deficiencies but intrinsic features of the paradigm, as fixed rubrics are mathematically guaranteed to fail across tasks and lose discriminative capacity precisely where training signal matters most.
+> Rubrics face both security vulnerabilities that can propagate irreversibly through training pipelines and structural boundaries where no amount of refinement renders them suitable. How to detect these limits in practice, defend against exploitation, and select appropriate alternatives remains an open challenge for the field.
+
+## 7 Where Are Rubrics Applied? 
+
+The preceding chapters have examined how rubrics are constructed, optimized, and deployed as reward signals, this chapter shifts focus to where these methods have been put to use. § 7.1 overviews representative rubric-based benchmarks, identifying systematic patterns in construction choices and scoring designs; § 7.2 examines downstream applications across six domains, showing how rubric-based approaches have been adapted to the specific constraints of healthcare, law, education, finance, society, and scientific research. 
+
+7.1 Benchmark 
+
+The proliferation of rubric-based benchmarks over recent years reflects a broader dissatisfaction with holistic evaluation metrics. As rubric-based evaluation has matured, a growing number of benchmarks have adopted structured criteria as their primary assessment mechanism. Table 2 overviews 19 representative benchmarks across five categories, characterizing each along construction source, scoring granularity, and content grounding following the taxonomy established in § 2. Each category inherits the unresolved tensions of the previous one and introduces new constraints that push the field forward. General benchmarks establish the methodological baseline for rubric-based evaluation, targeting general-purpose instruction-following and natural language generation tasks rather than any specific professional domain. SedarEval (Fan et al., 2025) introduces adaptive dual-track rubrics with credit and deduction items, demonstrating that fine-grained per-item scoring provides more actionable diagnostic signal than holistic judgments. RubricBench (Zhang et al., 2026d) and RubricEval (Pan et al., 2026) then turn the lens on the rubrics themselves. RubricBench directly quantifies the gap between human-written and LLM-generated rubrics, finding that replacing model-generated criteria with expert ones boosts judge accuracy by approximately 27%; RubricEval provides the first meta-evaluation benchmark at rubric-criterion granularity, asking not whether the judge’s final verdict aligns with humans, but whether each individual criterion is applied correctly. Together, these two benchmarks establish a foundational problem that every subsequent category must confront: LLM-generated rubrics systematically 
+
+30 misalign with human judgment , concentrating on surface features like format and length while ignoring task feasibility and implicit constraints. Professional benchmarks evaluate LLM performance on high-stakes expert-level tasks drawn from real-world workflows in fields such as medicine, law, and finance, where evaluation errors carry tangible consequences. When evaluation stakes are high enough, the community’s answer to the LLM rubric quality problem is simply to remove LLMs from the construction process altogether. HealthBench (Arora et al., 2025) enlists 262 physicians, PRBench (Akyürek et al., 2025) draws on 182 credentialed legal and financial professionals across 114 countries, and ProfBench (Wang et al., 2025b) explicitly prohibits its 38 expert contributors from using any LLM assistance. This Expert-only convergence is not coincidental: ProfBench’s controlled comparison directly demonstrates that rubrics generated by the same model used for scoring produce systematic self-enhancement bias, inflating quality estimates in ways that human-constructed rubrics do not. However, the cost of this quality guarantee is severe. HealthBench required 262 physicians and ExpertLongBench (Ruan et al., 2025) required over 10 hours of expert investment per task, construction efforts that are by definition non-replicable at scale. XpertBench (Liu et al., 2026d) offers a partial concession through HIL construction, but its peak success rate of only 66% across seven domains suggests that even human-validated rubrics cannot fully bridge the gap between current models and genuine expert-level performance. The Professional category thus crystallizes a fundamental trade-off: Expert construction is the quality ceiling, but it is also a scalability wall .Deep Research benchmarks assess the ability of models and agents to produce long-form research reports in response to complex, open-ended queries, a task that demands multi-step retrieval, synthesis, and structured argumentation. Long-form report evaluation cannot rely on Expert construction for every query, yet automated generation risks the quality degradation documented by General benchmarks. The three Deep Research entries each navigate this trade-off differently: ResearchRubrics (Sharma et al., 2025) resolves it by investing 2,800+ hours of human labor into 2,500+ expert-written criteria, closer to the Professional approach. DRACO (Zhong et al., 2026) and ReportLogic (Zhao et al., 2026b) adopt human-in-the-loop construction, accepting some quality risk in exchange for coverage of authentic user queries sampled from real request logs. However, what unites all three is the discovery that implicit criteria represent the hardest evaluation frontier . ResearchRubrics finds that implicit standards, defined as dimensions users expect but never explicitly state, account for 39.4% of all criteria, and that even top-tier systems comply with fewer than 68% of them. ReportLogic further shows that context-aware rubrics, which instantiate each dimension as concrete task-specific checks, significantly outperform generic rubric definitions, suggesting that rubric effectiveness is fundamentally tied to the degree of task specificity encoded in the criteria. Multi-modal benchmarks extend rubric-based evaluation beyond text to images, video, and speech, targeting tasks such as technical image generation, multimodal reasoning, video aesthetic assessment, and speech dialogue understanding. When evaluation targets shift across modalities, the gap between what rubric designers can specify in advance and what actually determines quality becomes acute. UEval (Li et al., 2026a) covers eight real-world task types with over 10,000 human-verified rubric criteria, finding that GPT-5-Thinking scores only 66.4 out of 100 and that reasoning models consistently outperform non-reasoning ones, suggesting that rubric compliance in complex multimodal tasks requires genuine inferential capacity rather than pattern matching. TechImage-Bench (Ni et al., 2026) takes atomic decomposition to its logical extreme, automatically deriving hierarchical rubrics from surrounding text and expanding them into 44,131 binary check items; the best model achieves under 80% accuracy, revealing that fine-grained scientific precision remains far beyond current capabilities. MTalk-Bench (Du et al., 2025) and AesRM (Han et al., 2026b) respond to these limits by adopting Behavior-Grounded rubrics, which are derived not from task specifications but from observed model behaviors and aesthetic judgments, acknowledging that some evaluation dimensions resist advance specification and must instead be grounded in empirically observable behavior .Academic benchmarks apply rubric-based evaluation to the outputs of the research process itself, 31 Table 2: Overview of rubric-based benchmarks. Rubric Construction follows the source taxonomy in §3: Expert = domain experts without LLM assistance; Auto = fully automated LLM generation; HIL =human-in-the-loop. Scoring Design follows the structural and content taxonomy in §2: Granularity :Holistic / Analytic / Atomic; Content : Task-Grounded ( Task ) / Behavior-Grounded ( Behav. ) /Knowledge-Grounded ( Know. ).                                                                                                                                 
+
+> Category Benchmark Data Size Rubric Construction Scoring Design Expert Auto HIL Granularity Content
+> General SedarEval (2025) 1,000 ✗✗✓Analytic Task RubricBench (2026d) 1,147 ✓✗✗Analytic Task RubricEval (2026) 3,486 ✓✗✗Atomic Task BenchBench (2026) 15,000 ✗✓✗Holistic Task Professional HealthBench (2025) 48,562 ✓✗✗Atomic Know. PRBench (2025) 19,356 ✓✗✗Analytic Know. ProfBench (2025b) 7,347 ✓✗✗Analytic Know. ExpertLongBench (2025) 1,050 ✓✗✗Analytic Know. XpertBench (2026d) 1,346 ✗✗✓Analytic Know. PLAWBENCH (2026) 12,500 ✓✗✗Analytic Know. Deep Research ResearchRubrics (2025) 2,593 ✓✗✗Analytic Task DRACO (2026) 3934 ✗✗✓Analytic Task ReportLogic (2026b) -✗✗✓Analytic Behav. Multi-modal MTalk-Bench (2025) 568 ✗✗✓Analytic Behav. UEval (2026a) 10,417 ✗✗✓Analytic Task TechImage-Bench (2026) 44,131 ✗✓✗Atomic Know. AesRM (2026b) 2,500 ✓✗✗Analytic Behav. Academic PaperBench (2025) 8,316 ✓✗✗Analytic Know. PresentBench (2026c) 12,900 ✓✗✗Atomic Task TabXEval (2026) 250 ✗✗✓Analytic Task
+
+including paper reproduction, presentation generation, and table quality assessment, rather than to downstream user interactions. PaperBench (Starace et al., 2025) decomposes ML paper reproduction into 8,316 independently scorable items using hierarchical weighted rubrics co-developed with original authors, replacing the binary success-or-failure verdict of traditional replication with partial-credit evaluation that captures incremental progress. Its adoption into the OpenAI Preparedness Framework, Anthropic Responsible Scaling Policy, and Google DeepMind Frontier Safety Framework signals that rubric-based evaluation has become infrastructure for AI governance, not just a research methodology . PresentBench (Chen et al., 2026c) and TabXEval (Pancholi et al., 2026) extend the same logic to slides generation and table quality assessment respectively, demonstrating that structured criteria can replace holistic judgment across the full range of academic output types. Three cross-cutting observations emerge from Table 2. First, the Professional category is the only one where every benchmark adopts Expert construction, reflecting the irreducible role of domain knowledge in high-stakes evaluation. Second, Holistic granularity appears only in BenchBench, where it serves as one component of a dynamic pipeline rather than a standalone scoring mechanism, suggesting that the community has broadly converged on Analytic and Atomic designs as more reliable and actionable. Third, Behavior-Grounded content remains systematically underrepresented, suggesting that constructing rubrics grounded in empirically observable model behavior rather than predefined task specifications remains methodologically challenging and is yet to be adopted at scale. 32 7.2 Downstream Applications 
+
+As rubric-based evaluation and training have matured, their application has expanded well beyond general-purpose NLP tasks into specialized domains where the stakes of evaluation errors are considerably higher. This section examines five representative downstream application areas: healthcare, law, education, finance and industry, and academic research. Across all five, a common challenge recurs: translating the implicit judgment standards of domain experts into explicit, programmatically verifiable criteria without sacrificing the depth of knowledge that makes those standards meaningful. 
+
+Healthcare. The medical domain presents the starkest version of the tension between rubric quality and scalability. HealthBench’s 262 physicians and 48,562 hand-written criteria set the quality ceiling (Arora et al., 2025), but at a construction cost that is by definition non-replicable. Health-SCORE (Yang et al., 2026b) addresses this through distillation, clustering expert-written criteria into a reusable general rubric library and dynamically selecting the most relevant subset per query. Shah et al. (2026) further show that after iterative refinement, LLM-generated rubrics can match inter-physician ranking consistency at one-thousandth of the annotation cost, suggesting that the quality-scalability tension requires layered solutions rather than a choice between extremes. 
+
+Law. Legal evaluation introduces a requirement absent from other domains: rubrics must support the auditability of reasoning processes, not just the correctness of outputs. PLawBench (Shi et al., 2026) and PRBench (Akyürek et al., 2025) consistently find that models perform relatively well on instruction-following but systematically underperform on process transparency and domain due diligence, which are precisely the dimensions most central to legal practice. LEGIT (Lee et al., 2026) addresses this by converting court judgments into hierarchical legal issue trees where each node constitutes a verifiable rubric criterion with legal authority backing, enabling layered diagnosis from final conclusion down to individual argument coverage. 
+
+Education. The educational context reframes the purpose of rubric-based evaluation: the goal is not to rank outputs but to promote learner improvement, transforming rubrics from passive scoring instruments into active learning scaffolds. iRULER (Bai et al., 2026) embodies this shift most clearly, providing Why, Why Not, and How To feedback per criterion alongside a rubric-of-rubrics mechanism that applies evaluative logic recursively to the rubric itself. When deployed in real educational settings, Yu et al. (2026c) demonstrate feasibility in a real university classroom covering over 1,000 students, while Favero et al. (2026) and Šindelář et al. (2026) extend rubric-based assessment to standardized testing contexts, the latter constructing proxy datasets that replicate protected evaluation corpora under confidentiality constraints. 
+
+Finance. Finance. Financial evaluation demands rubrics that can handle both the technical precision of quantitative reasoning and the interpretive complexity of open-ended professional judgment. FIRE (Zhang et al., 2026e) addresses this through a dual-track design, pairing 1,000 closed-form questions with direct automated evaluation while providing 2,000 open-ended questions with query-specific rubrics and dedicated scoring models, enabling scalable assessment without sacrificing task specificity. PRBench’s financial subset contributed by CFA-qualified professionals across 114 countries and 47 jurisdictions (Akyürek et al., 2025), further reveals a consistent pattern that cuts across both benchmarks: models perform relatively well on instruction-following but fall significantly short on due diligence and domain-specific reasoning, with top scores reaching only 0.39, suggesting that financial rubric compliance requires not just instruction adherence but genuine domain expertise that current models have yet to internalize. 
+
+Society. Rubric-based evaluation has extended into high-throughput social decision-making contexts where structured criteria can replace subjective judgment at scale. In recruitment, Yuksel et al. (2026) and Sun et al. (2026) adopt rubric-driven multi-agent frameworks to evaluate candidates across dimensions such as technical competency and communication, replacing keyword-matching tools with criteria-grounded assessments that produce transparent and auditable ranking rationales. In news trustworthiness assessment, Zhang et al. (2026a) decompose credibility evaluation into verifiable 33 criteria covering source reliability, factual grounding, and reasoning consistency, enabling scalable automated assessment that would otherwise require expert human review. SCRuB (Watson-Daniels et al., 2026) further extends rubric-based evaluation to social concept reasoning, where no binary correct answer exists and quality can only be measured by the depth and critical rigor of the response, using a five-dimensional critical thinking rubric and a panel of disciplinary perspectives to measure reasoning depth and critical rigor in place of conventional accuracy metrics. 
+
+Academic Research. The scientific research domain applies rubric-based evaluation to the processes that produce and validate knowledge itself. ReviewGrounder (Li et al., 2026h) finds that a smaller specialized model with rubric-guided literature grounding outperforms GPT-4.1 across all eight peer review dimensions, demonstrating that structured criteria amplify domain-specific evidence more than raw model scale. DataRubrics (Winata et al., 2025) further reveals that even QA-verified human annotations carry a 26% error rate on dataset quality assessment, while LLM-based rubric evaluation performs comparably on fine-grained criteria, challenging the assumption that human review is inherently more reliable. Beyond evaluation, Starace et al. (2025) replaces binary replication verdicts with 8,316 partially scorable items, its adoption into three major AI safety frameworks signaling that rubric-based evaluation has become infrastructure for AI governance. This logic extends to data-scarce industrial science: WaferSAGE (Xu and Lian, 2026) constructs structured rubrics covering defect type, spatial distribution, and root cause analysis to drive a synthetic data pipeline, bringing a 4B-parameter model to near Gemini-3-Flash performance under strict local deployment constraints. Goel et al. (2025) push rubric-based approaches further into scientific planning itself, automatically extracting research-objective-specific rubrics as reward signals in a generator-verifier loop, with cross-domain transfer from medical to ML targets demonstrating that the learned planning capabilities generalize beyond the training domain. Across all these domains, the specific form of the core challenge differs, ranging from scalability in healthcare, auditability in law, and interactivity in education, to transferability in finance, normative consensus in society, and reflexivity in scientific research. Yet the underlying tension remains constant, namely translating the implicit judgment standards of domain experts into explicit, programmatically verifiable criteria without sacrificing the depth of knowledge that makes those standards meaningful. 
+
+> Summary
+> This chapter examines where rubric-based evaluation and training have been put to use, overviewing representative benchmarks across five categories and downstream applications across six domains, from which three core conclusions can be drawn.
+> The benchmark landscape reveals a consistent convergence away from holistic scoring toward Analytic and Atomic designs, while grounding evaluation criteria in empirically observable model behavior remains an underdeveloped direction.
+> Across all six application domains, the core challenge takes different forms, ranging from scalability in healthcare and auditability in law to normative consensus in society and reflexivity in scientific research, yet the underlying tension between explicit structure and implicit expertise remains constant.
+> The breadth of these applications demonstrates that rubrics are no longer confined to evaluation benchmarks, but are increasingly emerging as a general interface through which human intentions, domain knowledge, and alignment objectives can be translated into actionable machine behavior.
+
+## 8 Where Does Rubric Research Head? 
+
+Tracing the full arc of rubric research, from its early role as an evaluation auxiliary to its current deep integration into model training and self-evolution pipelines, the boundaries of the rubric paradigm continue to expand rapidly. This chapter discusses five interconnected open questions that we believe will define the future of rubric research across the evolving LLM landscape. 34 8.1 Reliability of Rubric Generation 
+
+Rubric generation has long been treated as a preprocessing step rather than a core research object, operating under the implicit assumption that any structured criterion is inherently more reliable than holistic scoring. This assumption has proven increasingly fragile as rubrics are deployed at scale. Low-quality rubrics can go further than simply failing to help, actively pushing reward models toward incorrect preferences and causing more harm than using no rubric at all (Kawabata and Sugawara, 2026; Qi et al., 2026; Shen et al., 2026). The gap between model-generated and human-authored rubrics remains substantial even for frontier models (Zhang et al., 2026d), and this gap reflects deeper misalignments in how models prioritize evaluation dimensions. The root cause of this problem is structural. Rubric generation relies on the model’s own value judgments as a quality anchor, but that anchor is precisely what needs to be calibrated. This creates a self-referential loop that cannot be resolved from within the system. Breaking it requires quality reference points that are independent of the generating model, which is in essence a meta-evaluation problem. A reliable rubric quality metric would need to capture more than whether a rubric discriminates correctly on observed preference pairs. It should also assess robustness under distribution shift and resistance to adversarial manipulation. Constructing such a metric without large-scale human annotation remains one of the most pressing open challenges for scalable rubric deployment, with direct implications for the reliability of the broader rubric-driven ecosystem. This circularity becomes especially pronounced in self-evolution settings, where rubric generation, execution, and training all share the same signal source, making external anchors not optional additions but necessary conditions for reliable rubric-driven systems (Pombal et al., 2026; Siro et al., 2026) 
+
+8.2 Beyond Static Rubric Design 
+
+Recent research work identify that static rubrics face a theoretical ceiling. For any finite fixed set of criteria, there always exists a true reward function for which those criteria yield zero predictive correlation (Gupta et al., 2025). In practice, this manifests as rubric saturation: models learn to satisfy all existing criteria, the reward signal degrades into noise, and reward hacking becomes possible (Shao et al., 2025a; Xu et al., 2026d). Dynamic generation addresses this directly, but it introduces a different difficulty. When rubrics change continuously, cross-model and cross-checkpoint comparisons become hard to interpret. Performance improvements may reflect changes in the evaluation standard rather than genuine capability gains. This problem becomes especially acute in long-horizon training runs, where rubric evolution and policy evolution are interleaved. A layered design offers a promising direction. Abstract-level core dimensions such as factuality, safety, and instruction following possess cross-temporal stability and are well-suited as persistent criteria, whereas instance-level fine-grained checklist items depend heavily on the current ability boundary of the model and may benefit from dynamic adjustment as training progresses. This separation finds partial support in architectures that maintain globally shared criteria alongside task-specific dimensions (Kong et al., 2026), but principled methods for governing the boundary between stable and dynamic layers, and for ensuring that dynamic updates improve discrimination remain largely underdeveloped. Formalizing the conditions under which rubric updates constitute genuine evaluation improvement rather than overfitting to the current policy represents an important theoretical problem for the field. 
+
+8.3 Multimodal Extension and Cross-Modal Unification 
+
+Initial evidence suggests that certain evaluation principles transfer across modalities, and that rubric-grounded judgment learned on one modality can improve reward accuracy on unseen modalities (Jia et al., 2025a; Kong et al., 2026; Yu et al., 2026b). These results motivate the broader goal of a unified rubric framework that supports coherent evaluation across text, image, video, and audio. Extending rubric methodology to multimodal settings is, however, fundamentally more challenging than adapting 35 text-based rubrics to new input formats. The perceptual mechanisms, quality dimensions, and human judgment standards across modalities are inherently heterogeneous. Evaluating temporal coherence in video involves tracking causal relationships across frames that have no direct analog in static image or text evaluation. Assessing prosodic appropriateness in speech requires sensitivity to paralinguistic features largely absent from text. These differences reflect distinct cognitive faculties rather than surface variation in representation format. The central open question is how to draw a principled boundary between evaluation criteria that are genuinely modality-agnostic and those that are intrinsically modality-specific. The former constitute transferable alignment signals suitable for a shared rubric layer, while the latter require dedicated design and cannot be meaningfully unified without distortion. This boundary remains empirically underexplored, and current multimodal rubric designs largely reflect engineering intuition rather than validated decompositions. A more rigorous approach would involve systematic studies of how human quality judgments correlate and diverge across modalities on matched content. Establishing this foundation may benefit from engagement with cognitive science and perceptual psychology, as the question of what constitutes quality across sensory modalities is ultimately about human perception and cannot be fully answered from training data alone. 
+
+8.4 From External Criteria to Internalized Mechanisms 
+
+Recent work has shown that rubric generation ability and response generation ability can be co-trained within a single model, with each capability reinforcing the other through a shared parameter space (Li et al., 2026f; Xu et al., 2026a; Ye et al., 2025). These results suggest that rubrics need not exist solely as externally injected standards but can function as structured carriers of the model’s self-assessment capability throughout training, and that joint optimization of generation and evaluation produces more data-efficient alignment than treating the two as separate processes. This direction raises a deeper question about the nature of the rubric paradigm itself. In its current dominant form, rubrics are delivered via prompts or reward signals and remain outside the model as separate artifacts. This implies a conditional form of alignment: the model behaves according to rubric standards when rubrics are present, but there is no guarantee that this behavior reflects internalized values that persist without explicit guidance. A model that has genuinely internalized rubric-like evaluation standards would apply them spontaneously, catch its own errors before they surface in outputs, and update its internal criteria in response to new information about quality in a given domain. Such a model would be more robust to distribution shift than one that depends on external rubric injection. The pathway toward this transition remains open. Implicit internalization through large-scale rubric-conditioned training assumes that sufficient exposure to rubric-guided feedback gradually encodes evaluation principles into model weights, analogously to how factual knowledge is absorbed through pretraining. Explicit metacognitive architecture design proposes dedicated self-evaluation components integrated into the forward pass, allowing the model to assess intermediate generation states before committing to a final output. Each direction carries distinct theoretical justifications and engineering challenges, and it remains unclear which will produce more reliable internalization of human-aligned standards. As LLM self-evolution capabilities continue to grow, the role of rubrics is expected to shift progressively from an external evaluation tool toward a constituent element of the model’s representational structure. In this sense, the paradigm shift from holistic evaluation to structured criteria described throughout this article remains a work in progress, and its endpoint may be a state in which rubrics are no longer visible as separate artifacts but have become part of how the model understands and monitors its own outputs. 36 9 Conclusion 
+
+This work has traced the trajectory of rubrics across the full lifecycle of LLM development, revealing a consistent pattern: each leap in model capability exposes an alignment gap that existing mechanisms cannot bridge, and rubrics have repeatedly proven to be the structural response that closes it. From evaluation instruments that decompose holistic judgments into verifiable criteria, to training signals that extend reinforcement learning beyond verifiable domains, to endogenous mechanisms that co-evolve with the models they govern, rubrics have progressively deepened their integration into the alignment pipeline. Their theoretical limits and practical failure modes, however, remain open challenges that the field has only begun to systematically confront. Ultimately, the trajectory points toward a future in which rubrics are no longer visible as separate artifacts imposed from outside, but have become part of how models understand and monitor their own outputs, serving as a durable foundation for aligning increasingly autonomous AI systems. 
+
+## References 
+
+J. Achiam, S. Adler, S. Agarwal, L. Ahmad, I. Akkaya, F. L. Aleman, D. Almeida, J. Altenschmidt, S. Altman, S. Anadkat, et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 , 2023. A. F. Akyürek, A. Gosai, C. B. C. Zhang, V. Gupta, J. Jeong, A. Gunjal, T. Rabbani, M. Mazzone, D. Randolph, M. M. Meymand, G. Chattha, P. Rodriguez, D. Mares, P. Singh, M. Liu, S. Chawla, P. Cline, L. Ogaz, E. Hernandez, Z. Wang, P. Bhatter, M. Ayestaran, B. Liu, and Y. He. Prbench: Large-scale expert rubrics for evaluating high-stakes professional reasoning, 2025. URL https: //arxiv.org/abs/2511.11562 .M. F. I. Amin, Y. Watanobe, D. M. Muepu, H. Suzuki, K. Nanaumi, and M. M. Rahman. Llm-as-a-judge for human-ai co-creation: A reliability-aware evaluation framework for coding, 2026. URL 
+
+https://arxiv.org/abs/2604.27727 .R. K. Arora, J. Wei, R. S. Hicks, P. Bowman, J. Quiñonero-Candela, F. Tsimpourlas, M. Sharman, M. Shah, A. Vallone, A. Beutel, J. Heidecke, and K. Singhal. Healthbench: Evaluating large language models towards improved human health, 2025. URL https://arxiv.org/abs/2505.08775 .J. Bai, W. S. Cheong, P. Muller, and B. Y. Lim. iruler: Intelligible rubric-based user-defined llm evaluation for revision, 2026. URL https://arxiv.org/abs/2602.12779 .S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang, S. Wang, J. Tang, H. Zhong, Y. Zhu, M. Yang, Z. Li, J. Wan, P. Wang, W. Ding, Z. Fu, Y. Xu, J. Ye, X. Zhang, T. Xie, Z. Cheng, H. Zhang, Z. Yang, H. Xu, and J. Lin. Qwen2.5-vl technical report, 2025. URL 
+
+https://arxiv.org/abs/2502.13923 .Y. Bai, A. Jones, K. Ndousse, A. Askell, A. Chen, N. DasSarma, D. Drain, S. Fort, D. Ganguli, T. Henighan, N. Joseph, S. Kadavath, J. Kernion, T. Conerly, S. El-Showk, N. Elhage, Z. Hatfield-Dodds, D. Hernandez, T. Hume, S. Johnston, S. Kravec, L. Lovitt, N. Nanda, C. Olsson, D. Amodei, T. Brown, J. Clark, S. McCandlish, C. Olah, B. Mann, and J. Kaplan. Training a helpful and harmless assistant with reinforcement learning from human feedback, 2022a. URL https://arxiv.org/ abs/2204.05862 .Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon, C. Chen, C. Olsson, C. Olah, D. Hernandez, D. Drain, D. Ganguli, D. Li, E. Tran-Johnson, E. Perez, J. Kerr, J. Mueller, J. Ladish, J. Landau, K. Ndousse, K. Lukosuite, L. Lovitt, M. Sellitto, N. Elhage, N. Schiefer, N. Mercado, N. DasSarma, R. Lasenby, R. Larson, S. Ringer, 37 S. Johnston, S. Kravec, S. E. Showk, S. Fort, T. Lanham, T. Telleen-Lawton, T. Conerly, T. Henighan, T. Hume, S. R. Bowman, Z. Hatfield-Dodds, B. Mann, D. Amodei, N. Joseph, S. McCandlish, T. Brown, and J. Kaplan. Constitutional ai: Harmlessness from ai feedback, 2022b. URL 
+
+https://arxiv.org/abs/2212.08073 .M. Bhattarai, I. Boureima, N. R. Ranasinghe, S. Pakin, and D. O’Malley. Rubric-grounded rl: Structured judge rewards for generalizable reasoning, 2026. URL https://arxiv.org/abs/2605.08061 .B. Bi, S. Liu, Y. Wang, S. Tong, L. Mei, Y. Ge, Y. Xu, J. Guo, and X. Cheng. Reward and guidance through rubrics: Promoting exploration to improve multi-domain reasoning, 2025. URL 
+
+https://arxiv.org/abs/2511.12344 .S. M. Brookhart. How to create and use rubrics for formative assessment and grading . Ascd, 2013. S. M. Brookhart. Appropriate criteria: Key to effective rubrics. In Frontiers in education , volume 3, page 22. Frontiers Media SA, 2018. J. Chen, W. Sun, Q. Yin, Z. Tan, and J. Zhang. Ace-rl: Adaptive constraint-enhanced reward for long-form generation reinforcement learning, 2025. URL https://arxiv.org/abs/2509.04903 .L. Chen, Q. Liu, W. Lin, and F. Liang. Criterion validity of llm-as-judge for business outcomes in conversational commerce, 2026a. URL https://arxiv.org/abs/2604.00022 .X. Chen, G. Li, Z. Wang, B. Jin, C. Qian, Y. Wang, H. Wang, Y. Zhang, D. Zhang, T. Zhang, H. Tong, and H. Ji. Rm-r1: Reward modeling as reasoning, 2026b. URL https://arxiv.org/abs/2505. 02387 .X.-S. Chen, J. Zhu, P. lin Li, H. Wang, S. Yang, and M.-H. Guo. Presentbench: A fine-grained rubric-based benchmark for slide generation, 2026c. URL https://arxiv.org/abs/2603.07244 .Y. Chen, J. Li, L. Chen, Z. Gong, J. Li, Z. Qin, H. Chang, A. Xu, Z. Yang, H. Alinejad-Rokny, Q. Qu, B. Zheng, and M. Yang. Rucl: Stratified rubric-based curriculum learning for multimodal large language model reasoning, 2026d. URL https://arxiv.org/abs/2602.21628 .Z. Chen, Z. Lin, X. Liu, Z. Lan, Y. Gong, and P. Cheng. Improving data and reward design for scientific reasoning in large language models, 2026e. URL https://arxiv.org/abs/2602.08321 .Y. Chu, H. Li, K. Yang, Y. Copur-Gencturk, K. Haudek, J. Krajcik, and J. Tang. Optimizing in-context demonstrations for llm-based automated grading, 2026a. URL https://arxiv.org/abs/2603. 00465 .Y. Chu, H. Li, K. Yang, Y. Copur-Gencturk, J. Krajcik, N. Shin, and J. Tang. Confusion-aware rubric optimization for llm-based automated grading, 2026b. URL https://arxiv.org/abs/2603. 00451 .J. Cook, T. Rocktäschel, J. Foerster, D. Aumiller, and A. Wang. Ticking all the boxes: Generated checklists improve llm evaluation and generation, 2024. URL https://arxiv.org/abs/2410.03608 .H. Deng, C. Farber, J. Lee, and D. Tang. Rubric-conditioned llm grading: Alignment, uncertainty, and robustness, 2025. URL https://arxiv.org/abs/2601.08843 .K. D. Dhole and E. Agichtein. Rubricrag: Towards interpretable and reliable llm evaluation via domain knowledge retrieval for rubric generation, 2026. URL https://arxiv.org/abs/2603.20882 .38 J. Dineen, A. Rrv, Q. Liu, Z. Xu, X. Ye, M. Shen, Z. Li, S. Lu, C. Baral, M. Chen, and B. Zhou. Qa-lign: Aligning llms through constitutionally decomposed qa. In Findings of the Association for Computational Linguistics: EMNLP 2025 , page 20619–20642. Association for Computational Linguistics, 2025. doi: 10.18653/v1/2025.findings-emnlp.1123. URL http://dx.doi.org/10. 18653/v1/2025.findings-emnlp.1123 .L. Ding. Adarubric: Task-adaptive rubrics for reliable llm agent evaluation and reward learning, 2026. URL https://arxiv.org/abs/2603.21362 .R. Ding, Y. Pang, H. Sun, Y. Wang, Z. S. Wu, and Z. Deng. Rubrics as an attack surface: Stealthy preference drift in llm judges, 2026. URL https://arxiv.org/abs/2602.13576 .Y. Du, Q. Huang, G. Zhu, Z. Dai, S. Chen, Q. Zhu, L. Pan, M. Chen, Y. Zhang, L. Zhou, B. Wang, and H. Li. Mtalk-bench: Evaluating speech-to-speech models in multi-turn dialogues via arena-style and rubrics protocols, 2025. URL https://arxiv.org/abs/2508.18240 .Y. Dubois, B. Galambosi, P. Liang, and T. B. Hashimoto. Length-controlled alpacaeval: A simple way to debias automatic evaluators, 2025. URL https://arxiv.org/abs/2404.04475 .K. Fan, K. Feng, M. Zhang, T. Peng, Z. Li, Y. Jiang, S. Chen, P. Pei, X. Cai, and X. Yue. Exploring reasoning reward model for agents, 2026a. URL https://arxiv.org/abs/2601.22154 .Z. Fan, W. Wang, X. Wu, and D. Zhang. Sedareval: Automated evaluation using self-adaptive rubrics, 2025. URL https://arxiv.org/abs/2501.15595 .Z. Fan, R. Chen, T. Hu, R. Peng, Z. Huang, H. Xu, Y. Chen, J. Wu, J. Zhao, and Z. Liu. Optimsyn: Influence-guided rubrics optimization for synthetic data generation, 2026b. URL https://arxiv. org/abs/2604.00536 .J. Fang, Z. Hong, M. Zheng, M. Song, G. Li, H. Jiang, D. Zhang, H. Guo, X. Wang, and T.-S. Chua. Rubric-based on-policy distillation, 2026. URL https://arxiv.org/abs/2605.07396 .L. Favero, J. A. Pérez-Ortiz, T. Käser, and N. Oliver. Beyond holistic scores: Automatic trait-based quality scoring of argumentative essays, 2026. URL https://arxiv.org/abs/2602.04604 .X. Feng, Y. Li, Z. Wan, Z. Gao, J. Yuan, D. Chen, and C. Qiao. Rubricrl: Simple generalizable rewards for text-to-image generation, 2025a. URL https://arxiv.org/abs/2511.20651 .Y. Feng, S. Wang, Z. Cheng, Y. Wan, and D. Chen. Are we on the right way to assessing llm-as-a-judge?, 2025b. URL https://arxiv.org/abs/2512.16041 .V. Gallego. Configurable preference tuning with rubric-guided synthetic data, 2025. URL https: //arxiv.org/abs/2506.11702 .D. Galvan-Sosa, G. Gaudeau, P. Kavumba, Y. Li, H. gu, Z. Yuan, K. Sakaguchi, and P. Buttery. Rubrik’s cube: Testing a new rubric for evaluating explanations on the cube dataset, 2025. URL 
+
+https://arxiv.org/abs/2503.23899 .S. Gao, Y. Su, P. Sui, C. Ginder, and M. Zitnik. Qworld: Question-specific evaluation criteria for llms, 2026. URL https://arxiv.org/abs/2603.23522 .S. Goel, R. Hazra, D. Jayalath, T. Willi, P. Jain, W. F. Shen, I. Leontiadis, F. Barbieri, Y. Bachrach, J. Geiping, and C. Whitehouse. Training ai co-scientists using rubric rewards, 2025. URL 
+
+https://arxiv.org/abs/2512.23707 .39 A. Gunjal, A. Wang, E. Lau, V. Nath, Y. He, B. Liu, and S. Hendryx. Rubrics as rewards: Reinforcement learning beyond verifiable domains, 2025. URL https://arxiv.org/abs/2507.17746 .D. Guo, D. Yang, H. Zhang, J. Song, P. Wang, Q. Zhu, R. Xu, R. Zhang, S. Ma, X. Bi, et al. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948 , 2025. T. Guo, X. Chen, Y. Wang, R. Chang, S. Pei, N. V. Chawla, O. Wiest, and X. Zhang. Large language model based multi-agents: A survey of progress and challenges, 2024. URL https: //arxiv.org/abs/2402.01680 .K. Gupta, P. Vajreshwari, Y. Pandya, R. Magazine, A. Nambi, and A. Awadallah. Scaling agentic capabilities, not context: Efficient reinforcement finetuning for large toolspaces, 2026. URL 
+
+https://arxiv.org/abs/2603.06713 .T. Gupta, S. Shandilya, X. Zhang, R. Madhavan, S. Ghosh, C. Bansal, H. Yao, and S. Rajmohan. Carmo: Dynamic criteria generation for context-aware reward modelling, 2025. URL https: //arxiv.org/abs/2410.21545 .H. Han, J. Xie, X. Ma, W. Zhu, Z. Zhang, Z. Long, H. Chen, and Q. Ye. Swe-trace: Optimizing long-horizon swe agents through rubric process reward models and heuristic test-time scaling, 2026a. URL https://arxiv.org/abs/2604.14820 .Y. Han, Y. Wei, Y. He, X. Liu, T. Li, Z. Yu, A. Han, S. Zhang, T. Weng, and D. Zou. Aesrm: Improving video aesthetics with expert-level feedback, 2026b. URL https://arxiv.org/abs/2604.28078 .K. Harada, L. Yoshida, T. Kojima, Y. Iwasawa, and Y. Matsuo. Automated refinement of essay scoring rubrics for language models via reflect-and-revise, 2025. URL https://arxiv.org/abs/2510. 09030 .H. Hashemi, J. Eisner, C. Rosset, B. Van Durme, and C. Kedzie. Llm-rubric: A multidimensional, calibrated approach to automated evaluation of natural language texts. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , page 13806–13834. Association for Computational Linguistics, 2024. doi: 10.18653/v1/2024.acl-long.745. URL http://dx.doi.org/10.18653/v1/2024.acl-long.745 .Y. He, W. Li, H. Zhang, S. Li, K. Mandyam, S. Khosla, Y. Xiong, N. Wang, X. Peng, B. Li, S. Bi, S. G. Patil, Q. Qi, S. Feng, J. Katz-Samuels, R. Y. Pang, S. Gonugondla, H. Lang, Y. Yu, Y. Qian, M. Fazel-Zarandi, L. Yu, A. Benhalloum, H. Awadalla, and M. Faruqui. Advancedif: Rubric-based benchmarking and reinforcement learning for advancing llm instruction following, 2025. URL 
+
+https://arxiv.org/abs/2511.10507 .Y. Hong, H. Yao, B. Shen, W. Xu, H. Wei, and Y. Dong. Rulers: Locked rubrics and evidence-anchored scoring for robust llm evaluation, 2026. URL https://arxiv.org/abs/2601.08654 .C. Huang, S.-Y. Chou, Z. Zhang, and C. Cardie. Bootstrapping post-training signals for open-ended tasks via rubric-based self-play on pre-training text, 2026a. URL https://arxiv.org/abs/2604. 20051 .J. Huang, Q. Yang, R. Zheng, and J. Chen. Beyond verifiable rewards: Rubric-based grm for reinforced fine-tuning swe agents, 2026b. URL https://arxiv.org/abs/2604.16335 .Z. Huang, Y. Zhuang, G. Lu, Z. Qin, H. Xu, T. Zhao, R. Peng, J. Hu, Z. Shen, X. Hu, X. Gu, P. Tu, J. Liu, W. Chen, Y. Fu, Z. Fan, Y. Gu, Y. Wang, Z. Yang, J. Li, and J. Zhao. Reinforcement learning with rubric anchors, 2025. URL https://arxiv.org/abs/2508.12790 .40 D. M. Hunter, R. M. Jones, and B. S. Randhawa. The use of holistic versus analytic scoring for large-scale assessment of writing. Canadian Journal of Program Evaluation , 11(2):61–86, 1996. J. Huynh, A. Gomez, A. Deviyani, R. Shelby, J. P. Bigham, and F. Diaz. Quantifying the statistical effect of rubric modifications on human-autorater agreement, 2026. URL https://arxiv.org/ abs/2605.06283 .W. Ikezogwo, M. S. Seyfioglu, R. Krishna, and K. Bouyarmane. When rubrics fail: Error enumeration as reward in reference-free rl post-training for virtual try-on, 2026. URL https://arxiv.org/ abs/2603.05659 .A. Jaech, A. Kalai, A. Lerer, A. Richardson, A. El-Kishky, A. Low, A. Helyar, A. Madry, A. Beutel, A. Carney, et al. Openai o1 system card. arXiv preprint arXiv:2412.16720 , 2024. D. Jayalath, S. Goel, T. Foster, P. Jain, S. Gururangan, C. Zhang, A. Goyal, and A. Schelten. Compute as teacher: Turning inference compute into reference-free supervision, 2026. URL 
+
+https://arxiv.org/abs/2509.14234 .P. Jayarao, H. Gupta, N. Varshney, and C. Dwivedi. Explicit reasoning makes better judges: A systematic study on accuracy, efficiency, and robustness, 2026. URL https://arxiv.org/abs/2509.13332 .M. Jia, Z. Zhang, I. Cases, Z. Liu, M. Jiang, and P. Qi. Autorubric-r1v: Rubric-based generative rewards for faithful multimodal reasoning. arXiv preprint arXiv:2510.14738 , 2025a. R. Jia, Y. Yang, Y. Gai, K. Luo, S. Huang, J. Lin, X. Jiang, and G. Jiang. Writing-zero: Bridge the gap between non-verifiable tasks and verifiable rewards, 2025b. URL https://arxiv.org/abs/2506. 00103 .R. Jia, Y. Yang, Y. Wu, Y. Gai, S. Tao, M. Zhou, J. Lin, X. Jiang, and G. Jiang. Open rubric system: Scaling reinforcement learning with pairwise adaptive rubric, 2026. URL https://arxiv.org/ abs/2602.14069 .A. Kawabata and S. Sugawara. C2: Scalable rubric-augmented reward modeling from binary preferences, 2026. URL https://arxiv.org/abs/2604.13618 .S. Kim, J. Shin, Y. Cho, J. Jang, S. Longpre, H. Lee, S. Yun, S. Shin, S. Kim, J. Thorne, and M. Seo. Prometheus: Inducing fine-grained evaluation capability in language models, 2024. URL 
+
+https://arxiv.org/abs/2310.08491 .M. Kinniment, L. J. K. Sato, H. Du, B. Goodrich, M. Hasin, L. Chan, L. H. Miles, T. R. Lin, H. Wijk, J. Burget, A. Ho, E. Barnes, and P. Christiano. Evaluating language-model agents on realistic autonomous tasks, 2024. URL https://arxiv.org/abs/2312.11671 .Z. Kong, D. Ma, Z. Xu, A. Yang, Y. Ru, H. Wang, Z. Zhou, F. Bie, L. Xiang, H. Wu, J. Zhao, and Z. He. Omni-rrm: Advancing omni reward modeling via automatic rubric-grounded preference synthesis, 2026. URL https://arxiv.org/abs/2602.00846 .N. Lambert, V. Pyatkin, J. Morrison, L. Miranda, B. Y. Lin, K. Chandu, N. Dziri, S. Kumar, T. Zick, Y. Choi, N. A. Smith, and H. Hajishirzi. Rewardbench: Evaluating reward models for language modeling, 2024. URL https://arxiv.org/abs/2403.13787 .J. Lee, K.-W. On, S. Han, A. Cohan, and J. Hockenmaier. Evaluating legal reasoning traces with legal issue tree rubrics, 2026. URL https://arxiv.org/abs/2512.01020 .W. LeVine, B. Evers, S. Saltwick, and A. Venkatesh. Rubricrefine: Improving tool-use agent reliability with training-free pre-execution refinement, 2026. URL https://arxiv.org/abs/2605.09730 .41 B. Li, Y. Yin, W. Chai, X. Fu, and Z. Liu. Ueval: A benchmark for unified multimodal generation, 2026a. URL https://arxiv.org/abs/2601.22155 .G. Li, B. D. Mishra, Z. Wang, J. Yan, Y. Chen, C.-L. Li, L. T. Le, R. Han, G. Lee, H. Tong, C.-Y. Lee, and T. Pfister. Rubricem: Meta-rl with rubric-guided policy decomposition beyond verifiable rewards, 2026b. URL https://arxiv.org/abs/2605.10899 .Q. Li, S. Dou, K. Shao, C. Chen, and H. Hu. Evaluating scoring bias in llm-as-a-judge, 2026c. URL 
+
+https://arxiv.org/abs/2506.22316 .S. Li, Z. Zhang, W. Chen, Y. Luo, M. Hong, and C. Ding. Stitchcuda: An automated multi-agents end-to-end gpu programing framework with rubric-based agentic reinforcement learning, 2026d. URL https://arxiv.org/abs/2603.02637 .S. Li, J. Zhao, M. Wei, H. Ren, Y. Zhou, J. Yang, S. Liu, K. Zhang, and W. Chen. Rubrichub: A comprehensive and highly discriminative rubric dataset via automated coarse-to-fine generation, 2026e. URL https://arxiv.org/abs/2601.08430 .S. S. Li, R. Xin, T. Xiao, Y. Wang, R. Shao, Z. Hao, M. Sclar, S. Oh, F. Brahman, P. W. Koh, and Y. Tsvetkov. Evolm: Self-evolving language models through co-evolved discriminative rubrics, 2026f. URL https://arxiv.org/abs/2605.03871 .W. Li, X. Wang, S. Yuan, R. Xu, J. Chen, Q. Dong, Y. Xiao, and D. Yang. Curse of knowledge: When complex evaluation context benefits yet biases llm judges, 2025a. URL https://arxiv.org/abs/ 2509.03419 .Y. Li, J. H. Mohamud, C. Sun, D. Wu, and B. Boulet. Leveraging llms as meta-judges: A multi-agent framework for evaluating llm judgments, 2025b. URL https://arxiv.org/abs/2504.17087 .Y. Li, R. Y. Feng, T. Wei, and C.-C. Hsu. Coreflect: Conversational evaluation via co-evolutionary simulation and reflective rubric refinement, 2026g. URL https://arxiv.org/abs/2601.12208 .Z. Li, Y. Lu, D. Jiang, H. Zhang, Y. Bai, C. Li, Y. Wang, S. Ji, J. Xie, and Y. Zhang. Reviewgrounder: Improving review substantiveness with rubric-guided, tool-integrated agents, 2026h. URL https: //arxiv.org/abs/2604.14261 .X. Liang, H. Zhang, J. Li, K. Chen, Q. Zhu, and M. Zhang. Generative reward modeling via synthetic criteria preference learning. In W. Che, J. Nabende, E. Shutova, and M. T. Pilehvar, editors, Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 26755–26769, Vienna, Austria, July 2025. Association for Computational Linguistics. ISBN 979-8-89176-251-0. doi: 10.18653/v1/2025.acl-long.1297. URL 
+
+https://aclanthology.org/2025.acl-long.1297/ .H. Lightman, V. Kosaraju, Y. Burda, H. Edwards, B. Baker, T. Lee, J. Leike, J. Schulman, I. Sutskever, and K. Cobbe. Let’s verify step by step, 2023. URL https://arxiv.org/abs/2305.20050 .L. Lin, J. Liu, T. Yang, L. Cai, Y. Xu, L. Wei, S. Xie, and G. Zhang. Jade: Expert-grounded dynamic evaluation for open-ended professional tasks, 2026. URL https://arxiv.org/abs/2602.06486 .D. Liu, F. Yang, X. Wang, S. Yan, J. Chai, J. Li, Y. Ban, Z. Mao, W. Lin, and G. Yin. Cdrrm: Contrast-driven rubric generation for reliable and interpretable reward modeling, 2026a. URL 
+
+https://arxiv.org/abs/2603.08035 .R. Liu, D. Yu, Z. Liang, Y. Shi, T. Zheng, R. Dai, H. Mi, P. Tokekar, and Leoweiliang. Deltarubric: Generative multimodal reward modeling via joint planning and verification, 2026b. URL https: //arxiv.org/abs/2605.09269 .42 T. Liu, R. Xu, T. Yu, I. Hong, C. Yang, T. Zhao, and H. Wang. Openrubrics: Towards scalable synthetic rubric generation for reward modeling and llm alignment, 2026c. URL https://arxiv.org/abs/ 2510.07743 .X. Liu, X. Ma, Y. Ma, Y. Peng, D. Wang, Z. Wen, G. Zhang, K. Zhang, X. Chen, Y. Ding, T. He, J. Hou, L. Hu, Z. Huang, Y. Hui, J. Jiao, C. Ju, Y. Kong, Y. Li, J. Liu, M. Liu, L. Ma, F. Ni, Y. Ni, P. Niu, Y. Qiu, Y. Ren, X. Shen, Z. Shi, Z. Wang, W. Yue, C. Zhang, S. Zhang, X. Zhang, K. Zhao, Z. Zhu, S. Wu, Q. Zhao, and W. Huang. Xpertbench: Expert level tasks with rubrics-based evaluation, 2026d. URL https://arxiv.org/abs/2604.02368 .Y. Liu, D. Iter, Y. Xu, S. Wang, R. Xu, and C. Zhu. G-eval: Nlg evaluation using gpt-4 with better human alignment, 2023. URL https://arxiv.org/abs/2303.16634 .C. Lv, J. Zhou, W. Zhao, J. Xu, Z. Huang, M. Tian, S. Dou, T. Gui, L. Tian, X. Zhou, X. Zheng, X. Huang, and J. Zhou. Learning query-specific rubrics from human preferences for deepresearch report generation, 2026. URL https://arxiv.org/abs/2602.03619 .C. Ma, J. Zhang, Z. Zhu, C. Yang, Y. Yang, Y. Jin, Z. Lan, L. Kong, and J. He. Agentboard: An analytical evaluation board of multi-turn llm agents, 2024. URL https://arxiv.org/abs/2401.13178 .L. Ma, Y. Xu, X. Long, and Z. Zheng. An efficient rubric-based generative verifier for search-augmented llms, 2025. URL https://arxiv.org/abs/2510.14660 .A. Mahmoud, M. Rezaei, Z. Wang, A. Gunjal, B. Liu, and Y. He. Reward hacking in rubric-based reinforcement learning, 2026. URL https://arxiv.org/abs/2605.12474 .N. Mallinar, A. A. Heydari, X. Liu, A. Z. Faranesh, B. Winslow, N. Hammerquist, B. Graef, C. Speed, M. Malhotra, S. Patel, J. L. Prieto, D. McDuff, and A. A. Metwally. A scalable framework for evaluating health language models, 2026. URL https://arxiv.org/abs/2503.23339 .C. Masters, M. Grześkiewicz, and S. V. Albrecht. Arcane: A multi-agent framework for interpretable and configurable alignment, 2025. URL https://arxiv.org/abs/2512.06196 .A. Mittal, R. Shar, Z. Wu, S. Agarwal, T. Wu, C. Donahue, A. Talwalkar, W. Chi, and V. Chen. Comparing developer and llm biases in code evaluation, 2026. URL https://arxiv.org/abs/2603.24586 .T. Mu, A. Helyar, J. Heidecke, J. Achiam, A. Vallone, I. Kivlichan, M. Lin, A. Beutel, J. Schulman, and L. Weng. Rule based rewards for language model safety, 2024. URL https://arxiv.org/abs/ 2411.01111 .A. Nagar, A.-K. Kaliya-Perumal, Y.-H. Han, A. S.-H. Huang, K. Kee, Y. Cao, Y. Chen, and H. Jiang. Clr-voyance: Reinforcing open-ended reasoning for inpatient clinical decision support with outcome-aware rubrics, 2026. URL https://arxiv.org/abs/2605.09584 .M. Ni, Z. Yang, Y. Zhang, L. Li, C.-C. Lin, K. Lin, Z. Wang, X. Wang, S. Liu, L. Zhang, W. Zuo, and L. Wang. Techimage-bench: Rubric-based evaluation for technical image generation, 2026. URL 
+
+https://arxiv.org/abs/2512.12220 .L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. L. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray, J. Schulman, J. Hilton, F. Kelton, L. Miller, M. Simens, A. Askell, P. Welinder, P. Christiano, J. Leike, and R. Lowe. Training language models to follow instructions with human feedback, 2022. URL https://arxiv.org/abs/2203.02155 .T. Pan, X. Lin, W. Yang, Q. He, S. Chen, L. Qi, W. Xu, H. Feng, B. Xu, and Y. Xiao. Rubriceval: A rubric-level meta-evaluation benchmark for llm judges in instruction following, 2026. URL 
+
+https://arxiv.org/abs/2603.25133 .43 V. Pancholi, J. Bafna, T. Anvekar, M. Shrivastava, and V. Gupta. Tabxeval: Why this is a bad table? an exhaustive rubric for table evaluation, 2026. URL https://arxiv.org/abs/2505.22176 .A. Pathak, R. Gandhi, V. Uttam, A. Ramamoorthy, P. Ghosh, A. R. Jindal, S. Verma, A. Mittal, A. Ased, C. Khatri, Y. Nakka, Devansh, J. S. Challa, and D. Kumar. Rubric is all you need: Improving llm-based code evaluation with question-specific rubrics. In Proceedings of the 2025 ACM Conference on International Computing Education Research V.1 , page 181–195. ACM, Aug. 2025. doi: 10.1145/3702652.3744220. URL http://dx.doi.org/10.1145/3702652.3744220 .J. Pombal, R. Rei, and A. F. T. Martins. Self-preference bias in rubric-based evaluation of large language models, 2026. URL https://arxiv.org/abs/2604.06996 .Z. Qi, C. Dickens, D. Pham, A. Dsouza, A. Parchami, F. Sala, and P. Varma. Rift: A rubric failure mode taxonomy and automated diagnostics, 2026. URL https://arxiv.org/abs/2604.01375 .W. Qiu, D. Guan, J. Wang, Z. Li, Y. Gai, M. Zhou, E. Zhao, X. Jiang, and G. Jiang. Rationale matters: Learning transferable rubrics via proxy-guided critique for vlm reward models, 2026. URL 
+
+https://arxiv.org/abs/2603.16600 .M. Raghavendra, A. Gunjal, B. Liu, and Y. He. Agentic rubrics as contextual verifiers for swe agents, 2026. URL https://arxiv.org/abs/2601.04171 .D. Rao and C. Callison-Burch. Autorubric: Unifying rubric-based llm evaluation, 2026. URL 
+
+https://arxiv.org/abs/2603.00077 .M. Rezaei, R. Vacareanu, Z. Wang, C. Wang, B. Liu, Y. He, and A. F. Akyürek. Online rubrics elicitation from pairwise comparisons, 2025. URL https://arxiv.org/abs/2510.07284 .J. Ruan, I. Nair, S. Cao, A. Liu, S. Munir, M. Pollens-Dempsey, T. Chiang, L. Kates, N. David, S. Chen, R. Yang, Y. Yang, J. Gump, T. Bialek, V. Sankaran, M. Schlanger, and L. Wang. Expertlongbench: Benchmarking language models on expert-level long-form generation tasks with structured checklists, 2025. URL https://arxiv.org/abs/2506.01241 .K. Sanders, N. Weir, S. Chaudhary, K. Bostrom, and H. Rangwala. Generating data-driven reasoning rubrics for domain-adaptive reward modeling, 2026. URL https://arxiv.org/abs/2602.06795 .A. Shah, A. Hines, A. Downs, D. Bajet, P. Mui, F. Araujo, L. Offutt, A. Rutledge, and E. Jimenez. Case-specific rubrics for clinical ai evaluation: Methodology, validation, and llm-clinician agreement across 823 encounters, 2026. URL https://arxiv.org/abs/2604.24710 .R. Shao, A. Asai, S. Z. Shen, H. Ivison, V. Kishore, J. Zhuo, X. Zhao, M. Park, S. G. Finlayson, D. Sontag, T. Murray, S. Min, P. Dasigi, L. Soldaini, F. Brahman, W. tau Yih, T. Wu, L. Zettlemoyer, Y. Kim, H. Hajishirzi, and P. W. Koh. Dr tulu: Reinforcement learning with evolving rubrics for deep research, 2025a. URL https://arxiv.org/abs/2511.19399 .Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. K. Li, Y. Wu, and D. Guo. Deepseekmath: Pushing the limits of mathematical reasoning in open language models, 2024. URL 
+
+https://arxiv.org/abs/2402.03300 .Z. Shao, Y. Luo, C. Lu, Z. Z. Ren, J. Hu, T. Ye, Z. Gou, S. Ma, and X. Zhang. Deepseekmath-v2: Towards self-verifiable mathematical reasoning, 2025b. URL https://arxiv.org/abs/2511.22570 .M. Sharma, C. B. C. Zhang, C. Bandi, C. Wang, A. Aich, H. Nghiem, T. Rabbani, Y. Htet, B. Jang, S. Basu, A. Balwani, D. Peskoff, M. Ayestaran, S. M. Hendryx, B. Kenstler, and B. Liu. Researchrubrics: A benchmark of prompts and rubrics for evaluating deep research agents, 2025. URL https: //arxiv.org/abs/2511.07685 .44 W. F. Shen, X. Qiu, C. Whitehouse, L. Alazraki, S. Goel, F. Barbieri, T. Willi, A. Mathur, and I. Leontiadis. Rethinking rubric generation for improving llm judge and reward modeling for open-ended tasks, 2026. URL https://arxiv.org/abs/2602.05125 .L. Sheng, W. Ma, R. Hong, X. Wang, A. Zhang, and T.-S. Chua. Reinforcing chain-of-thought reasoning with self-evolving rubrics, 2026. URL https://arxiv.org/abs/2602.10885 .S. Shi, R. Wei, M. Tufano, J. Cambronero, R. Cheng, F. Ivančić, and P. Rondon. Towards a human-in-the-loop framework for reliable patch evaluation using an llm-as-a-judge, 2025. URL 
+
+https://arxiv.org/abs/2511.10865 .Y. Shi, H. Liu, Y. Hu, G. Song, X. Xu, Y. Ma, T. Tang, L. Zhang, Q. Chen, D. Feng, W. Lv, W. Wu, K. Yang, S. Yang, W. Wang, R. Shi, Y. Qiu, Y. Qi, J. Zhang, X. Sui, Y. Chen, Y. Zhang, A. Yang, B. Yu, D. Liu, J. Lin, W. Shen, B. Zhao, C. L. A. Clarke, and H. Wei. Plawbench: A rubric-based benchmark for evaluating llms in real-world legal practice, 2026. URL https://arxiv.org/abs/2601.16669 .S. Si, H. Zhao, Y. Lei, Q. Wang, D. Chen, Z. Wang, Z. Wang, K. Luo, Z. Wang, G. Chen, F. Qi, M. Zhang, and M. Sun. From context to skills: Can language models learn from context skillfully?, 2026. URL https://arxiv.org/abs/2604.27660 .A. Singh, A. Fry, A. Perelman, A. Tart, A. Ganesh, A. El-Kishky, A. McLaughlin, A. Low, A. Ostrow, A. Ananthram, et al. Openai gpt-5 system card. arXiv preprint arXiv:2601.03267 , 2025. C. Siro, P. Aliannejadi, and M. Aliannejadi. Learning to judge: Llms designing and applying evaluation rubrics, 2026. URL https://arxiv.org/abs/2602.08672 .P. Srivastava, H. Singh, R. Madhavan, G. Patil, S. Addepalli, A. Suggala, R. Aravamudhan, S. Sharma, A. Laha, A. Raghuveer, K. Shanmugam, and D. Precup. Robust reward modeling via causal rubrics, 2025. URL https://arxiv.org/abs/2506.16507 .G. Starace, O. Jaffe, D. Sherburn, J. Aung, J. S. Chan, L. Maksin, R. Dias, E. Mays, B. Kinsella, W. Thompson, J. Heidecke, A. Glaese, and T. Patwardhan. Paperbench: Evaluating ai’s ability to replicate ai research, 2025. URL https://arxiv.org/abs/2504.01848 .W. Su, X. Chen, Y. Wu, Q. Ai, and Y. Liu. Enhancing judgment document generation via agentic legal information collection and rubric-guided optimization, 2026. URL https://arxiv.org/ abs/2605.02011 .G. Sun, R. Yu, L. Yin, Y. Yang, B. Zhang, and Z. Xu. Comai: A collaborative multi-agent framework for robust and equitable interview evaluation, 2026. URL https://arxiv.org/abs/2603.16215 .Z. Tan, Z. Yu, B. Lin, Z. Geng, H. Geng, Y. Zhang, M. Zhang, Y. Chen, S. Hu, Z. Yin, C. Zhang, and L. Bai. Papo: Stabilizing rubric integration training via decoupled advantage normalization, 2026. URL https://arxiv.org/abs/2603.26535 .J. Tian, F. Liu, J. Han, Y. Jiang, Y. Wu, Y. Liu, H. Li, F. Xu, and W. Li. Auto-rubric as reward: From implicit preferences to explicit multimodal generative criteria, 2026. URL https://arxiv.org/ abs/2605.08354 .V. Viswanathan, Y. Sun, S. Ma, X. Kong, M. Cao, G. Neubig, and T. Wu. Checklists are better than reward models for aligning language models, 2025. URL https://arxiv.org/abs/2507.18624 .M. Wadhwa, Z. Sprague, C. Malaviya, P. Laban, J. J. Li, and G. Durrett. Evalagent: Discovering implicit evaluation criteria from the web, 2025. URL https://arxiv.org/abs/2504.15219 .45 Y. Wan, T. Fang, Z. Li, Y. Huo, W. Wang, H. Mi, D. Yu, and M. R. Lyu. Inference-time scaling of verification: Self-evolving deep research agents via test-time rubric-guided verification, 2026. URL 
+
+https://arxiv.org/abs/2601.15808 .P. Wang, L. Li, Z. Shao, R. X. Xu, D. Dai, Y. Li, D. Chen, Y. Wu, and Z. Sui. Math-shepherd: Verify and reinforce llms step-by-step without human annotations, 2024. URL https://arxiv.org/abs/ 2312.08935 .P. Wang, Linus, P. Liu, Z. Sang, C. Xie, and H. Yang. Infimed-orbit: Aligning llms on open-ended complex tasks via rubric-based incremental training, 2025a. URL https://arxiv.org/abs/2510. 15859 .X. Wang, V. Chen, H. Ji, and G. Neubig. A rubric-supervised critic from sparse real-world outcomes, 2026. URL https://arxiv.org/abs/2603.03800 .Z. Wang, J. Jung, X. Lu, S. Diao, E. Evans, J. Zeng, P. Molchanov, Y. Choi, J. Kautz, and Y. Dong. Profbench: Multi-domain rubrics requiring professional knowledge to answer and judge, 2025b. URL https://arxiv.org/abs/2510.18941 .J. Watson-Daniels, H. Bhattacharjee, S. Wang, B. Handoko, A. Li, A. Ovalle, M. Pasupuleti, C. Ross, V. Sarma, A. Subramonian, K. Ullrich, W. van der Vaart, Y. Xin, and M. Nickel. Scrub: Social concept reasoning under rubric-based evaluation, 2026. URL https://arxiv.org/abs/2605.06444 .J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter, F. Xia, E. Chi, Q. Le, and D. Zhou. Chain-of-thought prompting elicits reasoning in large language models, 2023. URL https: //arxiv.org/abs/2201.11903 .X. Wei, Q. Zong, X. Li, E. J. Yu, and S. Li. QuRL: Rubrics as judge for open-ended question answering. In The Fourteenth International Conference on Learning Representations , 2026. URL 
+
+https://openreview.net/forum?id=DrhWTuhtYq .Y. Wei, D. Pearl, M. Beckman, and R. J. Passonneau. Concept-based rubrics improve llm formative assessment and data synthesis, 2025. URL https://arxiv.org/abs/2504.03877 .S. Weng, Y. Feng, and X. Xie. Beyond accuracy: Policy invariance as a reliability test for llm safety judges, 2026. URL https://arxiv.org/abs/2605.06161 .G. I. Winata, D. Anugraha, E. Liu, A. F. Aji, S.-Y. Hung, A. Parashar, P. A. Irawan, R. Zhang, Z.-X. Yong, J. C. B. Cruz, N. Muennighoff, S. Kim, H. Zhao, S. Kar, K. E. Suryoraharjo, M. F. Adilazuarda, E.-S. A. Lee, A. Purwarianti, D. T. Wijaya, and M. Choudhury. Datasheets aren’t enough: Datarubrics for automated quality metrics and accountability, 2025. URL https://arxiv.org/abs/2506.01789 .J. Wu, J. Zhu, Y. Liu, M. Xu, and Y. Jin. Agentic reasoning: A streamlined framework for enhancing llm reasoning with agentic tools, 2025a. URL https://arxiv.org/abs/2502.04644 .M. Wu, G. Zhang, S. Min, S. Levine, and A. Kumar. Rlac: Reinforcement learning with adversarial critic for free-form generation tasks, 2025b. URL https://arxiv.org/abs/2511.01758 .P. Wu, X. Zhang, K. Wan, W. Zhao, G. Wu, X. Du, and Z. Chen. Amaris: A memory-augmented rubric improvement system for rubric-based reinforcement learning, 2026. URL https://arxiv.org/ abs/2605.18592 .L. Xie, S. Huang, Z. Zhang, A. Zou, Y. Zhai, D. Ren, K. Zhang, H. Hu, B. Liu, H. Chen, Z. Liu, and B. Ding. Auto-rubric: Learning from implicit weights to explicit rubrics for reward modeling, 2026a. URL https://arxiv.org/abs/2510.17314 .46 W. Xie, H. Zhao, W. Liu, Y. Zhu, L. Chen, M. Ye, Z. Chen, Y. Xu, S. Dong, Z. Wang, X. Xu, K. Shi, R. Wu, X. Zhang, W. Shao, B. Chang, N. Duan, and J. Wang. Step-wise rubric rewards for llm reasoning, 2026b. URL https://arxiv.org/abs/2605.17291 .K. Xu and Z. Lian. Wafersage: Large language model-powered wafer defect analysis via synthetic data generation and rubric-guided reinforcement learning, 2026. URL https://arxiv.org/abs/2604. 27629 .R. Xu, T. Liu, Z. Dong, T. Yu, I. Hong, C. Yang, L. Zhang, T. Zhao, and H. Wang. Alternating reinforcement learning for rubric-based reward modeling in non-verifiable llm post-training, 2026a. URL https://arxiv.org/abs/2602.01511 .T. Xu, Y. Zheng, P. Lu, L. Ye, Y. Wu, Z. Zhang, Y. Yu, C. Ma, J. Zhu, P. Liu, B. Dong, H. Zhu, R. Huang, and G. Yu. Rubrics to tokens: Bridging response-level rubrics and token-level rewards in instruction following tasks, 2026b. URL https://arxiv.org/abs/2604.02795 .Y. Xu, T. Hirasawa, T. Kozuno, and Y. Ushiku. Am i more pointwise or pairwise? revealing position bias in rubric-based llm-as-a-judge, 2026c. URL https://arxiv.org/abs/2602.02219 .Y. Xu, G. Potje, S. Shandilya, T. Yuan, L. de Oliveira Nunes, R. Agarwal, S. Asgari, A. Atkinson, E. Kıcıman, S. Lu, R. Chandra, and T. Chakraborty. Sibylsense: Adaptive rubric learning via memory tuning and adversarial probing, 2026d. URL https://arxiv.org/abs/2602.20751 .B. Yang, L. Feng, Y. Chen, Y. Zhang, X. Xu, and S. Li. Fairjudge: An adaptive, debiased, and consistent llm-as-a-judge, 2026a. URL https://arxiv.org/abs/2602.06625 .Z. Yang, S. Janghorbani, D. Zhang, J. Han, Q. Qian, A. R. II, G. D. Lyng, S. S. Batra, and R. E. Tillman. Health-score: Towards scalable rubrics for improving health-llms, 2026b. URL 
+
+https://arxiv.org/abs/2601.18706 .Z. Ye, Y. Yue, H. Wang, X. Han, J. Jiang, C. Wei, L. Fan, J. Liang, S. Zhang, J. Li, C. Guo, J. Wang, P. Wei, and J. Gu. Self-rewarding rubric-based reinforcement learning for open-ended reasoning, 2025. URL https://arxiv.org/abs/2509.25534 .A. Yehudai, L. Eden, A. Li, G. Uziel, Y. Zhao, R. Bar-Haim, A. Cohan, and M. Shmueli-Scheuer. Survey on evaluation of llm-based agents, 2026. URL https://arxiv.org/abs/2503.16416 .L. S. Yifei, A. Chang, C. Malaviya, and M. Yatskar. Researchqa: Evaluating scholarly question answering at scale across 75 fields with survey-mined questions and rubrics, 2025. URL https: //arxiv.org/abs/2509.00496 .F. Yu, N. Seedat, D. Herrmannova, F. Schilder, and J. R. Schwarz. Beyond pointwise scores: Decomposed criteria-based evaluation of llm responses, 2025. URL https://arxiv.org/abs/2509.16093 .J. Yu, Z. Xu, J. Wang, and Y. Yang. Think-with-rubrics: From external evaluator to internal reasoning guidance, 2026a. URL https://arxiv.org/abs/2605.07461 .Y.-Q. Yu, F. Hong, X. Qu, H. Wang, G. Wu, Q. Luo, N. Xu, H. Wang, W. Xu, Y. Liao, Z. Chen, H. Li, Z. Li, D. Peng, M. Liao, J. Wu, H. Ren, and D. Tu. Visual preference optimization with rubric rewards, 2026b. URL https://arxiv.org/abs/2604.13029 .Z. Yu, X. Liu, H. Mao, M. Liu, L. Chen, J. Xin, and Y. Yu. Evaluating ai grading on real-world handwritten college mathematics: A large-scale study toward a benchmark, 2026c. URL 
+
+https://arxiv.org/abs/2603.00895 .47 J. Yuan, Z. Cui, H. Wang, Y. Gao, Y. Zhou, and U. Naseem. Kardia-r1: Unleashing llms to reason toward understanding and empathy for emotional support via rubric-as-judge reinforcement learning, 2025. URL https://arxiv.org/abs/2512.01282 .Y. Yuan, Q. Mang, J. Chen, H. Wan, X. Liu, J. Xu, J. tse Huang, W. Wang, W. Jiao, and P. He. Curing miracle steps in llm mathematical reasoning with rubric rewards, 2026. URL https: //arxiv.org/abs/2510.07774 .K. A. Yuksel, A. B. Anees, A. Elneima, S. Hewavitharana, M. Al-Badrashiny, and H. Sawaf. Agentic ai for human resources: Llm-driven candidate assessment, 2026. URL https://arxiv.org/abs/ 2603.26710 .D. Zhang, M. D. Smucker, and C. L. A. Clarke. Resources for automated evaluation of assistive rag systems that help readers with news trustworthiness assessment, 2026a. URL https://arxiv. org/abs/2602.24277 .J. Zhang, X. Lv, L. Feng, L. Hou, and J. Li. Chaining the evidence: Robust reinforcement learning for deep search agents with citation-aware rubric rewards, 2026b. URL https://arxiv.org/abs/ 2601.06021 .J. Zhang, Z. Wang, L. Gui, S. M. Sathyendra, J. Jeong, V. Veitch, W. Wang, Y. He, B. Liu, and L. Jin. Chasing the tail: Effective rubric-based reward modeling for large language model post-training, 2026c. URL https://arxiv.org/abs/2509.21500 .Q. Zhang, J. Zhou, Y. Wang, F. Lyu, Y. Ming, C. Xu, Q. Sun, K. Zheng, P. Kang, X. Liu, and C. Ma. Rubricbench: Aligning model-generated rubrics with human standards, 2026d. URL 
+
+https://arxiv.org/abs/2603.01562 .X. Zhang. Rethinking atomic decomposition for llm judges: A prompt-controlled study of reference-grounded qa evaluation, 2026. URL https://arxiv.org/abs/2603.28005 .X. Zhang, H. Wu, J. Guo, Z. Zhang, Y. Zhang, L. Huo, X. Ma, J. Wan, X. Jiao, Y. Jing, and J. Xie. Fire: A comprehensive benchmark for financial intelligence and reasoning evaluation, 2026e. URL 
+
+https://arxiv.org/abs/2602.22273 .J. Zhao, K. Fang, and L. Cheng. When and what to ask: Askbench and rubric-guided rlvr for llm clarification, 2026a. URL https://arxiv.org/abs/2602.11199 .J. Zhao, Z. Huan, Z. Wang, X. Zhang, J. Zhou, S. Verberne, and Z. Ren. Reportlogic: Evaluating logical quality in deep research reports, 2026b. URL https://arxiv.org/abs/2602.18446 .L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang, J. E. Gonzalez, and I. Stoica. Judging llm-as-a-judge with mt-bench and chatbot arena, 2023. URL https://arxiv.org/abs/2306.05685 .Y. Zheng, H. Luo, Z. Lin, W. Liu, and L. A. Tuan. Benchbench: Benchmarking automated benchmark generation, 2026. URL https://arxiv.org/abs/2603.20807 .J. Zhong, H. Zhang, C. Southern, J. Yang, T. Wang, K. Jung, S. Zhang, D. Yarats, J. Ho, and J. Ma. Draco: a cross-domain benchmark for deep research accuracy, completeness, and objectivity, 2026. URL https://arxiv.org/abs/2602.11685 .Y. Zhou, S. Li, S. Liu, W. Fang, K. Zhang, J. Zhao, J. Yang, Y. Zhou, J. Lv, T. Zheng, H. Lu, W. Chen, Y. Xie, and M. Song. Breaking the exploration bottleneck: Rubric-scaffolded reinforcement learning for general llm reasoning, 2026. URL https://arxiv.org/abs/2508.16949 .48 P. Šindelář, D. Slivka, C. Bouma, F. Prášil, and O. Bojar. Training data generation for context-dependent rubric-based short answer grading, 2026. URL https://arxiv.org/abs/2603.28537 .49
