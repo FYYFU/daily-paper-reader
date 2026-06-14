@@ -8,91 +8,89 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-06-13
-- 运行时间：2026-06-13 20:54:38 UTC
+- 最新运行日期：2026-06-14
+- 运行时间：2026-06-14 20:44:46 UTC
 - 运行状态：成功
 - 本次总论文数：23
 - 精读区：9
 - 速读区：14
 
 ### 今日简报（AI）
-今日推荐聚焦AI安全评估失效与推理模型优化，两篇高分论文从表示层和KV缓存管理切入。  
-精读论文揭示行为安全评估的表示层盲区，并提出分层KV缓存分配提升推理效率。  
-建议关注安全评估的深层表示分析及推理模型资源分配策略。
-- 详情：[/202606/13/README](/202606/13/README)
+今日精选23篇论文，重点关注强化学习防御与策略蒸馏。精读推荐《PolicyGuard》提出测试时与步骤级防御，《Dense Supervision, Sparse Updates》揭示策略蒸馏的稀疏性与几何特性。后续可关注自主越狱红队测试与多轮推理方向。
+- 详情：[/202606/14/README](/202606/14/README)
 
 ### 精读区论文标签
-1. [When Behavioral Safety Evaluation Fails: A Representation-Level Perspective](/202606/13/2606.08044v1-when-behavioral-safety-evaluation-fails-a-representation-level-perspective)  
+1. [PolicyGuard: Towards Test-time and Step-level Adversary Defense for Reinforcement Learning Agent](/202606/14/2606.12896v1-policyguard-towards-test-time-and-step-level-adversary-defense-for-reinforcement-learning-agent)  
+   标签：评分：10.0/10、query:ai-safety
+   evidence：RL智能体测试时步骤级后门防御
+2. [Dense Supervision, Sparse Updates: On the Sparsity and Geometry of On-Policy Distillation](/202606/14/2606.13657v1-dense-supervision-sparse-updates-on-the-sparsity-and-geometry-of-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：在线策略蒸馏的稀疏性和几何分析
+3. [HIPIF: Hierarchical Planning and Information Folding for Long-Horizon LLM Agent Learning](/202606/14/2606.10507v1-hipif-hierarchical-planning-and-information-folding-for-long-horizon-llm-agent-learning)  
+   标签：评分：9.0/10、query:l-context-rl
+   evidence：长上下文干扰问题下的分层强化学习方法
+4. [SAIGuard: Communication-State Simulation for Proactive Defense of LLM Multi-Agent Systems](/202606/14/2606.12474v1-saiguard-communication-state-simulation-for-proactive-defense-of-llm-multi-agent-systems)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：LLM表示层面的安全评估方法
-2. [ReasonAlloc: Hierarchical Decoding-Time KV Cache Budget Allocation for Reasoning Models](/202606/13/2606.11164v1-reasonalloc-hierarchical-decoding-time-kv-cache-budget-allocation-for-reasoning-models)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：面向高效推理的分层KV缓存分配
-3. [The Role of Feedback Alignment in Self-Distillation](/202606/13/2606.11173v1-the-role-of-feedback-alignment-in-self-distillation)  
+   evidence：面向LLM多智能体系统的主动防御
+5. [Keep Policy Gradient in Charge: Sibling-Guided Credit Distillation for Long-Horizon Tool-Use Agents](/202606/14/2606.12634v1-keep-policy-gradient-in-charge-sibling-guided-credit-distillation-for-long-horizon-tool-use-agents)  
    标签：评分：9.0/10、query:opd
-   evidence：自蒸馏：教师-学生框架下的知识蒸馏
-4. [Acoda: Adversarial Code Obfuscation for Defending against LLM-based Analysis](/202606/13/2606.11755v1-acoda-adversarial-code-obfuscation-for-defending-against-llm-based-analysis)  
+   evidence：强化学习中的自蒸馏方法应用于长程工具使用智能体，直接涉及RL蒸馏
+6. [Individual Control Barrier Functions-Guided Diffusion Model for Safe Offline Multi-Agent Reinforcement Learning](/202606/14/2606.12640v1-individual-control-barrier-functions-guided-diffusion-model-for-safe-offline-multi-agent-reinforcement-learning)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：针对基于LLM分析的对抗代码混淆防御
-5. [Grammar-Constrained Decoding Can Jailbreak LLMs into Generating Malicious Code](/202606/13/2606.11817v1-grammar-constrained-decoding-can-jailbreak-llms-into-generating-malicious-code)  
+   evidence：使用控制屏障函数和扩散模型的安全离线多智能体强化学习
+7. [Smarter Saboteurs, Better Fixers: Scaling & Security in Linear Multi-Agent Workflows](/202606/14/2606.12709v1-smarter-saboteurs-better-fixers-scaling--security-in-linear-multi-agent-workflows)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：通过语法约束解码实现的越狱攻击
-6. [Semantic Quorum Assurance: Collective Certification for Non-Deterministic AI Infrastructure](/202606/13/2606.08021v1-semantic-quorum-assurance-collective-certification-for-non-deterministic-ai-infrastructure)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：自主操作中的智能体安全
-7. [From Holistic Evaluation to Structured Criteria: Rubrics Across the Evolving LLM Landscape](/202606/13/2606.08625v1-from-holistic-evaluation-to-structured-criteria-rubrics-across-the-evolving-llm-landscape)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：用于LLM评估和安全对齐的评量标准框架
-8. [Agent Skill Evaluation and Evolution: Frameworks and Benchmarks](/202606/13/2606.11435v1-agent-skill-evaluation-and-evolution-frameworks-and-benchmarks)  
-   标签：评分：8.0/10、query:opd
-   evidence：综述了轨迹蒸馏和强化学习在技能演化中的应用
-9. [Dummy Backdoor as a Defense: Removing Unknown Backdoors via Shared Internal Mechanisms for Generative LLMs](/202606/13/2606.11648v1-dummy-backdoor-as-a-defense-removing-unknown-backdoors-via-shared-internal-mechanisms-for-generative-llms)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：大语言模型后门攻击防御
+   evidence：多智能体工作流中的智能体安全
+8. [Learning to Reason by Analogy via Retrieval-Augmented Reinforcement Fine-Tuning](/202606/14/2606.13680v1-learning-to-reason-by-analogy-via-retrieval-augmented-reinforcement-fine-tuning)  
+   标签：评分：9.0/10、query:opd
+   evidence：使用黄金相关蒸馏训练检索器，并用强化微调优化策略，直接匹配RL中的蒸馏技术
+9. [ConMem: Structured Memory-Guided Adaptation in Training-Free Multi-Agent Systems](/202606/14/2606.08702v1-conmem-structured-memory-guided-adaptation-in-training-free-multi-agent-systems)  
+   标签：评分：8.0/10、query:agent-swarm
+   evidence：多智能体系统通过记忆蒸馏实现协调，与智能体集群架构相关
 
 ### 速读区论文标签
-1. [Q-Delta: Beyond Key-Value Associative State Evolution](/202606/13/2606.08804v1-q-delta-beyond-key-value-associative-state-evolution)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：用于高效线性注意力推理的查询感知delta规则
-2. [HIPIF: Hierarchical Planning and Information Folding for Long-Horizon LLM Agent Learning](/202606/13/2606.10507v1-hipif-hierarchical-planning-and-information-folding-for-long-horizon-llm-agent-learning)  
+1. [Can the Environment Speak for Itself? $T^{2}$-GRPO: A Turn-Trajectory Group Relative Policy Optimization for Caregiver Agents](/202606/14/2606.08875v1-can-the-environment-speak-for-itself-t2-grpo-a-turn-trajectory-group-relative-policy-optimization-for-caregiver-agents)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：护理场景中的智能体安全强化学习
+2. [MAStrike: Shapley-Guided Collusive Red-Teaming on Multi-Agent Systems](/202606/14/2606.12918v1-mastrike-shapley-guided-collusive-red-teaming-on-multi-agent-systems)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：多智能体系统上的协同红队测试
+3. [Multi-Turn Reasoning When Context Arrives in Pieces: Scalable Sharding and Memory-Augmented RL](/202606/14/2606.12941v1-multi-turn-reasoning-when-context-arrives-in-pieces-scalable-sharding-and-memory-augmented-rl)  
    标签：评分：8.0/10、query:l-context-rl
-   evidence：长视界LLM智能体学习，通过分层RL解决长上下文干扰
-3. [Bootstrapped Monitoring: Leveraging Transparent Reasoning to Oversee Stronger AI Agents](/202606/13/2606.11998v1-bootstrapped-monitoring-leveraging-transparent-reasoning-to-oversee-stronger-ai-agents)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：引导式监控协议用于智能体安全监督
-4. [ALIGNBEAM : Inference-Time Alignment Transfer via Cross-Vocabulary Logit Mixing](/202606/13/2606.12342v1-alignbeam--inference-time-alignment-transfer-via-cross-vocabulary-logit-mixing)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：推理时安全防御对抗越狱攻击
-5. [AdMem: Advanced Memory for Task-solving Agents](/202606/13/2606.06787v1-admem-advanced-memory-for-task-solving-agents)  
-   标签：评分：7.0/10、query:agent-swarm
-   evidence：用于任务求解智能体的多智能体记忆框架
-6. [The Easy, the Hard, and the Learnable: Confidence and Difficulty-Adaptive Policy Optimization for LLM Reasoning](/202606/13/2606.07950v1-the-easy-the-hard-and-the-learnable-confidence-and-difficulty-adaptive-policy-optimization-for-llm-reasoning)  
+   evidence：基于记忆的强化学习用于多轮长上下文推理
+4. [ARMOR-MAD: Adaptive Routing for Heterogeneous Multi-Agent Debate in Large Language Model Reasoning](/202606/14/2606.13197v1-armor-mad-adaptive-routing-for-heterogeneous-multi-agent-debate-in-large-language-model-reasoning)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：自适应路由提升多智能体推理效率
+5. [ReSum: Synergizing LLM Reasoning and Summarization with Reinforcement Learning](/202606/14/2606.13316v1-resum-synergizing-llm-reasoning-and-summarization-with-reinforcement-learning)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：利用自摘要提升RLVR推理效率
+6. [Personalized and Robust Proactive Robot Assistance with Uncertainty-Guided LLM Reasoning](/202606/14/2606.08458v1-personalized-and-robust-proactive-robot-assistance-with-uncertainty-guided-llm-reasoning)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：置信度与难度自适应策略优化提高LLM推理效率
-7. [DICE: Entropy-Regularized Equilibrium Selection for Stable Multi-Agent LLM Coordination](/202606/13/2606.08068v1-dice-entropy-regularized-equilibrium-selection-for-stable-multi-agent-llm-coordination)  
-   标签：评分：7.0/10、query:agent-swarm
-   evidence：通过均衡选择实现多智能体LLM稳定协调
-8. [RiskNet: A large-scale dataset of AI risk incidents from news with alignment and multi-dimensional annotations](/202606/13/2606.08376v1-risknet-a-large-scale-dataset-of-ai-risk-incidents-from-news-with-alignment-and-multi-dimensional-annotations)  
+   evidence：不确定性引导的高效LLM推理
+7. [Rethinking the Divergence Regularization in LLM RL](/202606/14/2606.09821v1-rethinking-the-divergence-regularization-in-llm-rl)  
+   标签：评分：7.0/10、query:opd
+   evidence：讨论LLM RL中的散度正则化，与on-policy蒸馏方法相关
+8. [An Agency-Transferring Model-Free Policy Enhancement Technique](/202606/14/2606.09825v1-an-agency-transferring-model-free-policy-enhancement-technique)  
+   标签：评分：7.0/10、query:opd
+   evidence：从基线策略向学习策略转移代理权的RL方法
+9. [Game-Theoretic Multi-Agent Control for Robust Contextual Reasoning in LLMs](/202606/14/2606.10322v1-game-theoretic-multi-agent-control-for-robust-contextual-reasoning-in-llms)  
    标签：评分：7.0/10、query:ai-safety
-   evidence：AI风险事件数据集用于安全评估
-9. [Game-Theoretic Multi-Agent Control for Robust Contextual Reasoning in LLMs](/202606/13/2606.10322v1-game-theoretic-multi-agent-control-for-robust-contextual-reasoning-in-llms)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：针对提示注入和上下文中毒的多智能体防御
-10. [Beyond Uniform Token-Level Trust Region in LLM Reinforcement Learning](/202606/13/2606.10968v1-beyond-uniform-token-level-trust-region-in-llm-reinforcement-learning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：超越均匀token级信任区域，提升LLM RL效率
-11. [TRACE: A Unified Rollout Budget Allocation Framework for Efficient Agentic Reinforcement Learning](/202606/13/2606.11119v1-trace-a-unified-rollout-budget-allocation-framework-for-efficient-agentic-reinforcement-learning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：为提升推理效率而设计的回滚预算分配框架
-12. [Reformulate LLM Reinforcement Learning for Efficient Training under Black-box Discrepancy](/202606/13/2606.08779v2-reformulate-llm-reinforcement-learning-for-efficient-training-under-black-box-discrepancy)  
+   evidence：基于博弈论的防御提示注入和上下文投毒
+10. [Learning What to Remember: Observability-Safe Memory Retention via Constrained Optimization for Long-Horizon Language Agents](/202606/14/2606.10616v1-learning-what-to-remember-observability-safe-memory-retention-via-constrained-optimization-for-long-horizon-language-agents)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：长时域智能体通过约束优化进行记忆保留
+11. [CATPO: Critique-Augmented Tree Policy Optimization](/202606/14/2606.08346v1-catpo-critique-augmented-tree-policy-optimization)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：在训练-推理偏差下提升LLM强化学习训练效率
-13. [Inference-Time Conformal Reasoning with Valid Factuality Control for Large Language Models](/202606/13/2606.08831v1-inference-time-conformal-reasoning-with-valid-factuality-control-for-large-language-models)  
+   evidence：通过树信息评分减少推理强化学习中的计算浪费
+12. [Learnable Token Sparsification for Efficient Gigapixel Whole Slide Image Reasoning](/202606/14/2606.08641v1-learnable-token-sparsification-for-efficient-gigapixel-whole-slide-image-reasoning)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：用于千兆像素图像高效推理的可训练令牌稀疏化
+13. [Distilling Safe LLM Systems via Soft Prompts for On Device Settings](/202606/14/2606.09388v1-distilling-safe-llm-systems-via-soft-prompts-for-on-device-settings)  
    标签：评分：6.0/10、query:ai-safety
-   evidence：推理时事实性控制增强LLM安全性
-14. [MARCH: Model-Assisted Reinforcement Learning for the Perceptive Control of Humanoids over Sparse Footholds](/202606/13/2606.10288v1-march-model-assisted-reinforcement-learning-for-the-perceptive-control-of-humanoids-over-sparse-footholds)  
-   标签：评分：6.0/10、query:opd
-   evidence：强化学习中的教师-学生蒸馏用于运动控制
+   evidence：基于蒸馏的端侧大模型安全对齐
+14. [Demystifying Hidden-State Recurrence: Switchable Latent Reasoning with On-Policy Reinforcement Learning](/202606/14/2606.13106v1-demystifying-hidden-state-recurrence-switchable-latent-reasoning-with-on-policy-reinforcement-learning)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：使用在线强化学习的可切换潜在推理，压缩推理过程
 
 
 <div class="dpr-home-promo-card">
