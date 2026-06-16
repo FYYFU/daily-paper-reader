@@ -1,0 +1,1346 @@
+Title: AdaSR: Adaptive Streaming Reasoning with Hierarchical Relative Policy Optimization
+
+URL Source: https://arxiv.org/pdf/2606.14694v1
+
+Published Time: Mon, 15 Jun 2026 01:12:53 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# AdaSR: Adaptive Streaming Reasoning with Hierarchical Relative Policy Optimization 
+
+Junlong Tong 1,2 , Wenqi Xu 1,5 , Yingqi Fan 1, Anhao Zhao 1,3 
+
+Xuan Lu 1,2 , Yang Tan 1,4 , Xiaoyu Shen 1*1Eastern Institute of Technology, Ningbo 2Shanghai Jiao Tong University 
+
+> 3
+
+The Hong Kong Polytechnic University 4Southeast University 
+
+> 5
+
+Xi’an Jiaotong-Liverpool University 
+
+jl-tong@sjtu.edu.cn xyshen@eitech.edu.cn 
+
+Abstract 
+
+Large reasoning models typically follow a read-then-think paradigm: they observe the com-plete input, reason over a static context, and then produce the answer. Yet many real-world scenarios are inherently dynamic, such as au-dio and video stream, where information ar-rives as a continuous stream and models must reason, update, and respond under partial ob-servations. Recent streaming reasoning meth-ods allow models to think while reading , but they largely rely on supervised imitation of pre-constructed trajectories, which limits their flex-ibility. In this paper, we propose AdaSR , an adaptive streaming reasoning framework that enables models to reason during input stream-ing and perform final deliberation once the stream is complete, learning when to think, and how much computation to allocate across different stages. To optimize this hierarchi-cal reasoning process, we introduce Hierar-chical Relative Policy Optimization (HRPO) ,which decomposes policy optimization into streaming reasoning and deep reasoning phases, providing more fine-grained advantage assign-ment instead of uniformly distributing a sin-gle sequence-level advantage over all tokens. HRPO integrates format, accuracy, and adap-tive thinking rewards to enforce valid reasoning protocols, preserve final task performance, and encourage latency-aware computation alloca-tion. Experiments show that AdaSR achieves a better balance among reasoning accuracy, computational efficiency, and streaming latency compared with supervised fine-tuning baseline. We release our code at § EIT-NLP/AdaSR .
+
+1 Introduction 
+
+Large reasoning models (OpenAI, 2024; DeepSeek-AI, 2025) have achieved remarkable performance on complex tasks such as mathematical reason-ing, code generation, and multi-step decision mak-ing, often through chain-of-thought (CoT) reason-
+
+> *Corresponding author
+
+ing (Wei et al., 2022): they receive an input, gen-erate intermediate reasoning steps, and finally pro-duce an answer. This paradigm follows a read then think pattern, where reasoning begins only after the model has observed a static and complete context. Real-world environments, however, are often dy-namic. Inputs do not always appear as complete contexts; instead, they arrive as continuous streams: speech unfolds over time, videos reveal information frame by frame, interactive agents receive observa-tions sequentially, and sensor-driven systems must react before an event is fully observed (Gu et al., 2017; Ma et al., 2018; Arivazhagan et al., 2019; Chen et al., 2024; Lin et al., 2024; Défossez et al., 2024). In such settings, waiting for the full input introduces unnecessary latency, whereas reasoning too early may lead to premature or misleading con-clusions. This raises a fundamental question: how can reasoning models think, update, and respond under continuously evolving observations? Recent efforts have begun to explore streaming reasoning, enabling models to reason in real time as inputs dynamically unfold (Tong et al., 2025a; Zhang et al., 2026). However, existing streaming CoT methods typically rely on supervised fine-tuning over carefully constructed streaming tra-jectories. Such fine-grained supervision is costly, since each partial observation may require a cor-responding local reasoning annotation. More im-portantly, imitation learning tends to encourage models to reproduce the surface form of streaming traces, rather than acquire the underlying ability to decide whether a partial input requires shallow un-derstanding, deeper reasoning, or no reasoning at all. As a result, models trained on fixed supervised trajectories may exhibit the appearance of stream-ing reasoning, yet still lack genuine adaptivity. To move beyond imitation-based streaming rea-soning, we propose AdaSR, an adaptive stream-ing reasoning framework that leverages reinforce-ment learning to optimize how models reason over 1   
+
+> arXiv:2606.14694v1 [cs.CL] 12 Jun 2026 Figure 1: Overview of the AdaSR framework. (left) AdaSR thinks while reading streaming inputs, decide whether to reason over each segment, and allocate computation between streaming thinking and final deep thinking. (right)
+> AdaSR introduces HRPO to align optimization with the temporal structure of streaming reasoning, assigning fine-grained advantages across local and global scopes.
+
+evolving inputs, as shown in Figure 1. AdaSR learns a computation policy during input streaming: when to reason, when to skip, and how to balance streaming reasoning with final deliberation, echo-ing broader efforts on adaptive computation and test-time compute allocation (Graves, 2016; Snell et al., 2024; Muennighoff et al., 2025). A natural starting point is Group Relative Policy Optimiza-tion (GRPO) (Shao et al., 2024), which has shown strong effectiveness in improving reasoning models with outcome-based rewards (Ziegler et al., 2019; Ouyang et al., 2022; Cobbe et al., 2021; Shao et al., 2024; DeepSeek-AI, 2025). However, streaming reasoning presents a structured optimization prob-lem that standard GRPO does not explicitly capture. A streaming trajectory consists of multiple reason-ing units generated under partial observations, fol-lowed by a deep reasoning phase that integrates the complete context. Assigning a single sequence-level advantage uniformly to all generated tokens blurs this temporal structure, making it difficult to distinguish the contributions of local understand-ing, global integration, and final correctness. 1
+
+To address this issue, AdaSR introduces Hi-erarchical Relative Policy Optimization (HRPO), which refines GRPO with stage-aware advantage assignment. Instead of treating the entire trajectory 
+
+> 1GRPO’s uniform advantage assignment leads to a cross-phase credit paradox: deep-phase success can falsely amplify redundant streaming thoughts, while deep-phase inefficiency can unfairly suppress useful ones.
+
+as a flat sequence, HRPO decomposes the learn-ing signal according to the temporal structure of streaming reasoning, assigning distinct advantages to streaming tokens, deep-reasoning tokens, and the full rollout. This preserves GRPO’s group-relative optimization while turning the coarse sequence-level advantage into finer-grained, hierarchy-aware credit signals. Combined with format, accuracy, and adaptive thinking rewards, AdaSR optimizes both final task performance and the computation path that leads to it. Experiments show that AdaSR achieves a better balance among reasoning accu-racy, computational efficiency, and latency com-pared with supervised fine-tuning baselines. Our contributions are fourfold: (1) We propose AdaSR, to the best of our knowledge the first adap-tive streaming reasoning framework that learns when to reason, when to skip, and how to allocate computation over evolving inputs, guided by adap-tive thinking rewards. (2) We introduce HRPO, a hierarchy-aware advantage assignment method that replaces coarse sequence-level credit with local-to-global advantages, enabling fine-grained optimiza-tion for structured streaming reasoning trajecto-ries. (3) We adapt streaming reasoning to a vLLM-compatible rollout and inference pipeline (Kwon et al., 2023), improving its practicality for efficient training and deployment in realistic streaming sce-narios. (4) Experiments show that AdaSR achieves a better trade-off among reasoning accuracy and latency than supervised fine-tuning baselines. 22 Preliminary 
+
+Streaming Thinking The standard reasoning paradigm follows a read-then-think pattern: the model receives the full context before reason-ing. Given a question Q and a context C =
+
+{C1, . . . , C T } decomposed into sequential sen-tences, with Rt denoting the reasoning segment associated with the prefix ending at Ct, this component can be summarized as Pstandard =QTt=1 P (Rt|Q, C ≤T , R ≤t−1). In contrast, stream-ing thinking (Tong et al., 2025a; Zhang et al., 2026; Chiang et al., 2025a) lets reasoning unfold with the input stream: as each sentence arrives, the model forms a local thought under partial context, then performs a final deep deliberation once the com-plete context and task instruction I are available: 
+
+Pstreaming = P (Rq | Q)
+
+> T
+
+Y
+
+> t=1
+
+P (Rt | Q, C ≤t, R ≤t−1)
+
+· P (R | Q, C ≤T , R ≤T ).
+
+(1) The first factor is the streaming phase: after each sentence Ct, the model emits Rt before seeing fu-ture sentences, or skips irrelevant input. Boundary and end-of-thought tokens separate local segments under streaming masks. The second factor is the deep phase, integrating C≤T and R≤T into the final response R. We denote the phase boundary by ts.
+
+GRPO for Reasoning Reinforcement learning improves LLM reasoning by optimizing outcome rewards without explicit chain-of-thought annota-tions (DeepSeek-AI, 2025). In PPO (Schulman et al., 2017), old-policy rollouts are reweighted to-ken by token and clipped to stabilize updates, while advantages are typically estimated by a learned value function. GRPO (Shao et al., 2024) keeps this clipped update but removes the value model: for a question-answer pair (q, a ) ∼ D , the old policy πθold samples G candidate outputs {oi}Gi=1 ,whose rewards are compared within the same group to form relative advantages. The objective averages the clipped token-level surrogate over each candi-date sequence while keeping πθ close to πref :
+
+JGRPO (θ) = E (q,a )∼D {oi}Gi=1 ∼πθold (·| q)
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+1
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+C
+
+
+
+ri,t (θ), ˆAi
+
+
+
+− β KL( πθ ∥ πref )
+
+#) 
+
+,
+
+(2) where the clipped term C ri,t (θ), ˆAi
+
+ =min  ri,t (θ) ˆAi, clip (ri,t (θ), 1 − ε, 1 + ε) ˆAi
+
+
+
+inherits PPO’s trust-region behavior through the clipping threshold ε, with β controlling the KL regularization strength. In this term, the token-wise importance ratio is paired with a sequence-level advantage obtained by normalizing the reward 
+
+Ri = R(q, a, o i) against the G rewards sampled for the same question:                
+
+> ri,t (θ) = πθ(oi,t |q, o i,<t )
+> πθold (oi,t |q, o i,<t ),ˆAi=Ri−μ({Rj}Gj=1 )
+> σ({Rj}Gj=1 ).
+
+(3) Since the same ˆAi is attached to every token po-sition t in oi, GRPO treats a candidate output as one flat trajectory. This is suitable for batch reasoning, where the model reasons after observing the full input, but it is too coarse for streaming reasoning: local thoughts produced under partial observations and final deliberation over the complete context receive indistinguishable credit. 
+
+3 Methodology 
+
+We present Adaptive Streaming Reason-ing( AdaSR ), an RL framework for adaptive computation allocation between streaming and deep reasoning. As shown in Figure 1, AdaSR combines hierarchical relative policy optimization (HRPO §3.1), adaptive rewards (§3.2), and streaming rollout (§3.3). 
+
+3.1 Hierarchical Relative Policy Optimization 
+
+The GRPO assigns a uniform advantage to all to-kens in a trajectory, treating it as a flat sequence. However, streaming reasoning trajectories have an inherently hierarchical structure: the streaming phase ( 1 ≤ t ≤ | ts|) produces local and partial observations, while the deep phase ( |ts| < t ≤ | oi|)integrates the full context. The HRPO decomposes advantage estimation into fine-grained levels. 
+
+Hierarchical Advantage Assignment The cen-tral difficulty in streaming reasoning is temporal credit assignment: streaming tokens should be cred-ited for local decisions under partial observations, deep tokens for final integration, and the whole trajectory for answer correctness. HRPO keeps the group-relative normalization of GRPO, but sepa-rates these signals into streaming-local ( s), deep-local ( d), and trajectory-global ( g) advantages. For each question q, HRPO samples G trajecto-ries {oi}Gi=1 from πθold . Let Asi , Adi , and Agi denote 3the group-relative advantages associated with the streaming-local, deep-local, and trajectory-global levels, respectively. HRPO defines hierarchical ad-vantages by attaching the appropriate level-wise advantage to the corresponding token range: 
+
+ˆAℓi,t = Aℓi , t ∈ T ℓi , ℓ ∈ { s, d, g },
+
+T si = [1 , |ts|], T di = ( |ts|, |oi|], T gi = [1 , |oi|].
+
+(4) where the intervals in T ℓi denote integer token po-sitions. Here |ts| denotes the token length of the streaming reasoning phase, so |oi|−| ts| is the length of the deep phase. For each level ℓ ∈ { s, d, g },HRPO uses the shared per-token importance ratio 
+
+rℓi,t (θ) = πθ(oi,t |q, o i,<t )/π θold (oi,t |q, o i,<t ). The superscript records which hierarchical advantage and surrogate term the ratio is paired with. Thus, local advantages shape phase-specific behavior, while the global advantage preserves answer-level correctness across the full rollout. 
+
+Policy Optimization Objective Based on the fine-grained advantages and ratios above, HRPO defines three clipped surrogate losses over their corresponding token ranges. The objective is: 
+
+JHRPO (θ) = E (q,a )∼D {oi}Gi=1 ∼πθold 
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+λ
+
+|ts|
+
+> |ts|
+
+X
+
+> t=1
+
+C(rsi,t , ˆAsi,t ) + λ
+
+|oi| − | ts|
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+C(rdi,t , ˆAdi,t )
+
+| {z }
+
+> local clipped surrogate objective
+
++ 1
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+C(rgi,t , ˆAgi,t )
+
+| {z }
+
+> global clipped surrogate objective
+
+−β KL( πθ ∥ πref )
+
+!#) 
+
+,
+
+(5) where C(rℓi,t , ˆAℓi,t ) = min  rℓi,t ˆAℓi,t , clip( rℓi,t ,
+
+1−ε, 1+ ε) ˆAℓi,t 
+
+ for ℓ ∈ { s, d, g } is the clipped surrogate objective (Schulman et al., 2017). 2
+
+The coefficient λ ∈ [0 , 1] balances local and global objectives. When λ = 0 , HRPO falls back to the global trajectory-level signal; increasing λ
+
+strengthens phase-specific optimization. Unlike the GRPO which applies one advantage uniformly across the entire trajectory, HRPO applies differen-tiated local advantages to each phase while simul-taneously maintaining a global correctness signal across all tokens, resolving the temporal credit as-signment problem inherent in streaming reasoning. 
+
+> 2We provide the policy gradient analysis in Appendix B.
+
+3.2 Adaptive Streaming Reasoning Reward 
+
+In streaming reasoning, the model must reason in-crementally as the input unfolds, deciding not only what intermediate thoughts to produce but also how much computation to allocate at each stage. Optimizing only for terminal accuracy provides no direct supervision over this computation path, and may therefore encourage inefficient trajecto-ries, such as overly verbose streaming thoughts or delayed reasoning concentrated in the deep phase. To guide both task performance and computation allocation, we decompose the reward into format, accuracy, and adaptive thinking components, cor-responding to structural validity, final correctness, and latency-aware reasoning efficiency. 
+
+Format Reward The format reward makes roll-outs parseable for HRPO. During streaming, each segment must terminate with <EOT> , and the con-tent before <EOT> must be either a reasoning thought or <skip> . During deep reasoning, the output must contain a non-empty deep reasoning field ending with <EOR> . For rollout i, we denote the corresponding binary rewards by Rsi, fmt and 
+
+Rdi, fmt . This component constrains structural valid-ity rather than reasoning quality. 
+
+Accuracy Reward The accuracy reward pro-vides the terminal task signal: Racc  
+
+> i
+
+= 1[ˆ ai = ai],where ˆai is the model prediction and ai is the ground-truth answer. It evaluates the complete tra-jectory after both streaming and deep reasoning, anchoring learning to final correctness. 
+
+Adaptive Thinking Reward The adaptive think-ing reward uses token length as a proxy for com-putation allocation. It discourages excessive com-putation while allowing the policy to allocate more tokens when additional reasoning is useful. We first define phase-local length-shaping penalties: 
+
+RLs 
+
+> i
+
+= 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+− log(1 + |si,n |) ,RLd 
+
+> i
+
+= − log  1 + LDi
+
+ ,
+
+(6) where RLs 
+
+> i
+
+and RLd 
+
+> i
+
+are local length penalties for streaming and deep reasoning, respectively. These terms are gated by accuracy and format, so length shaping is applied only to correct and parseable trajectories. The logarithmic form discourages ver-bosity with diminishing marginal strength. Local penalties alone do not capture the latency asymmetry between phases: streaming reasoning 4can overlap with input arrival, whereas deep reason-ing begins only after the stream ends. We therefore introduce a success-conditioned trajectory-level ef-ficiency reward: 
+
+Reff  
+
+> i
+
+= Racc  
+
+> i
+
+Rsi, fmt Rdi, fmt 
+
+| {z }
+
+> acc. & format gate
+
+·
+
+
+
+1 − exp 
+
+
+
+− LDi
+
+τ
+
+  
+
+1 − exp 
+
+
+
+− LSi
+
+τ
+
+ | {z }
+
+> reasoning length lower-bound gate
+
+· exp 
+
+
+
+− αL Si + LDi
+
+τ
+
+| {z }
+
+> latency-aware allocation
+
+,
+
+(7) where 0 < α < 1 and τ > 0 control the latency dis-count and shared reward scale, respectively. 3 The lower-bound gates assign little efficiency bonus to trajectories with negligible reasoning in either phase and saturate once sufficient reasoning is pro-duced. The exponential term then penalizes the ef-fective latency cost αL Si + LDi . Thus, the global re-ward favors trajectories that are correct, parseable, and computationally sufficient but not excessive. 
+
+Hierarchical Advantage Composition Eq. 4 specifies where each level-wise advantage is ap-plied: Asi is assigned to streaming tokens, Adi to deep-reasoning tokens, and Agi to the full trajec-tory. Following the multi-reward normalization observation in GDPO (Liu et al., 2026a), we avoid first summing weighted rewards and then normal-izing the result, which can blur distinct reward components into the same advantage signal. In-stead, for any component reward Xi within the 
+
+G rollouts of the same question, we first com-pute the component advantage NG (Xi) =  Xi −
+
+μ({Xj }Gj=1 )/σ ({Xj }Gj=1 ), and then compose ad-vantages at their corresponding temporal levels: 
+
+Asi = NG
+
+ Rsi, fmt 
+
+ + βNG
+
+
+
+RLs
+
+> i
+
+
+
+,Adi = NG
+
+
+
+Rdi, fmt 
+
+
+
++ βNG
+
+
+
+RLd
+
+> i
+
+
+
+,Agi = NG (Racc  
+
+> i
+
+) + βNG
+
+
+
+Reff 
+
+> i
+
+
+
+.
+
+(8) This advantage-level composition matches Eq. 4: format and length signals supervise the correspond-ing streaming or deep time span, while accuracy and efficiency provide a trajectory-level signal. The    
+
+> 3αdiscounts streaming tokens because they can overlap with input arrival, while deep tokens incur full post-stream latency. τis the shared scale for both lower-bound gates and the latency penalty. We provide the details in Appendix C.
+
+shared β controls the strength of the adaptive think-ing signal after normalization. 4
+
+3.3 Training Algorithm Streaming Rollout Following Streaming-Thinker (Tong et al., 2025a), we implement streaming rollout by extending the vLLM infer-ence engine (Kwon et al., 2023). Input sentences are fed sequentially: after prefilling each sentence 
+
+Ct, the model decodes streaming reasoning tokens Rt until <EOT> . Position IDs implement streaming position encoding—input tokens and reasoning tokens maintain independent positional indices (Su et al., 2024; Tong et al., 2025a). Streaming attention masks prevent attending to future input during the streaming phase. After all 
+
+T sentences, the instruction I is appended and the model generates deep reasoning R. The trajectory 
+
+oi = [ R1, . . . , R T , R ] is collected with per-token log-probabilities. 
+
+Policy Gradient Computation Given the col-lected trajectories, we compute log-probabilities under πθ using streaming attention masks. The reward components are computed, converted into group-relative component advantages, composed into level-wise advantages, and assigned to token ranges before optimizing the HRPO loss (Eq. 5) via gradient ascent. 5 The training process is shown in the Algorithm 1. 
+
+4 Experiments 
+
+Experimental Setup We evaluate AdaSR with Qwen3 series models (Yang et al., 2025a) on reasoning tasks covering mathematical reason-ing, context-based question answering, and log-ical reasoning. For in-domain evaluation, we use GSM-Symbolic (Mirzadeh et al., 2024), Meta-MathQA (Yu et al., 2023), and PubMedQA (Jin et al., 2019); for out-of-domain evaluation, we fur-ther use GSM-Infinite (Zhou et al., 2025) and Log-icNLI dataset (Tian et al., 2021). These datasets contain sufficiently long problem statements, con-textual passages, or multi-step constraints that can be naturally segmented into sentence-level streams,     
+
+> 4If βwere instead applied at the reward level before group normalization, then in the active gated regime the positive scale would be canceled and βwould lose its effect; we pro-vide the proof in Appendix C.
+> 5Appendix E provides implementation details on the streaming vLLM rollout, attention masks, stream-aware logits computation, veRL adaptation, and the full algorithm.
+
+5Algorithm 1: AdaSR Training with HRPO 
+
+Input: Dataset D, policy πθ initialized from SFT model, group size G, hierarchy weight λ, clip range ε.
+
+Output: Trained policy πθ. 
+
+> 1
+
+for each training iteration do  
+
+> 2
+
+Sample mini-batch B = {(qk, a k)} from D; 
+
+> 3
+
+for each (q, a ) ∈ B do  
+
+> 4
+
+Split context into sentences {C1, . . . , C T }; 
+
+> 5
+
+for i = 1 to G do // Group sampling  
+
+> 6
+
+for t = 1 to T do // Streaming rollout  
+
+> 7
+
+Prefill Ct with streaming position encoding and attention mask (See Appendix E); Decode R(i) 
+
+> t
+
+∼ πθold (· | Q, C ≤t, R (i)
+
+> <t
+
+) until <EOT> ; 
+
+> 8
+
+end  
+
+> 9
+
+Decode deep reasoning R(i) ∼ πθold (· | Q, C ≤T , R (i) 
+
+> ≤T
+
+); 
+
+> 10
+
+Collect oi = [ R(i)1 , . . . , R (i) 
+
+> T
+
+, R (i)] with log-probs;  
+
+> 11
+
+end  
+
+> 12
+
+Compute reward components for each oi; 
+
+> 13
+
+Compose Asi , Adi , and Agi via Eq. 8;  
+
+> 14
+
+Assign hierarchical token advantages via Eq. 4;  
+
+> 15
+
+Compute JHRPO via Eq. 5, using the time-grouped form in Eq. 10;  
+
+> 16
+
+end  
+
+> 17
+
+Update θ via gradient ascent on JHRPO ; 
+
+> 18
+
+end 
+
+making them suitable for evaluating reasoning un-der partial and progressively arriving inputs. We evaluate AdaSR in terms of reasoning per-formance and streaming efficiency. Accuracy is the primary metric, reflecting the goal of improv-ing reasoning under streaming inputs. We further measure efficiency using token length and real latency. 6 Token length includes total generation length as well as streaming- and deep-reasoning lengths, while latency captures response delay un-der streaming inference, where streaming reason-ing can overlap with input reception but deep rea-soning directly delays the final answer. 
+
+Main Experiment Table 1 shows that AdaSR-HRPO improves streaming reasoning by better al-locating computation rather than simply generat-ing longer reasoning traces. Compared with the SFT-based StreamingThinker baseline, HRPO con-sistently improves accuracy on both Qwen3-1.7B and Qwen3-4B, with particularly large gains on harder benchmarks such as GSM-symbolic P2 and MetaMathQA. On Qwen3-1.7B, HRPO improves accuracy by +22 .7% on GSM-symbolic P2 and 
+
+> 6See Appendix F for the definition of real latency.
+
++20 .1% on MetaMathQA, suggesting that super-vised streaming trajectories alone are insufficient for robust reasoning under partial observations. Compared with GRPO, HRPO achieves a better accuracy-efficiency frontier: across all eight set-tings, it improves accuracy while reducing total generation length. This indicates that hierarchi-cal advantage assignment alleviates the tendency of sequence-level optimization to reward globally successful but locally inefficient traces. By sep-arating credit across streaming and deep stages, HRPO encourages useful intermediate reasoning while suppressing redundant computation. The results show a clear model-scale effect. On Qwen3-1.7B, HRPO uses slightly more total tokens than SFT but achieves much higher accuracy, indi-cating that smaller models benefit from additional adaptive computation. On Qwen3-4B, HRPO im-proves both accuracy and total length across all benchmarks, reducing total length by 6.9% –13 .4% 
+
+while further increasing accuracy. This suggests that stronger base models can turn adaptive stream-ing reasoning into a Pareto improvement. AdaSR’s advantage is also better understood from a latency-aware perspective rather than raw 6Model Benchmark Metric Read-then-think StreamingThinker (SFT) (Tong et al., 2025a) AdaSR-GRPO (Ours) AdaSR-HRPO (Ours) 
+
+> Qwen3-1.7B
+
+GSM-symbolic P1 Acc ↑ 0.634 0.834 0.850 (+1.9%) 0.871 (+4.4%) 
+
+Streaming stage Len. ↓ – 165.707 172.994 (+4.4%) 160.032 (-3.4%) 
+
+Deep stage Len. ↓ 1598.699 118.042 133.798 (+13.3%) 131.972 (+11.8%) 
+
+Total Len. ↓ 1598.699 283.749 306.792 (+8.1%) 292.004 (+2.9%) 
+
+GSM-symbolic P2 Acc ↑ 0.424 0.642 0.758 (+18.1%) 0.788 (+22.7%) 
+
+Streaming stage Len. ↓ – 229.290 235.784 (+2.8%) 210.046 (-8.4%) 
+
+Deep stage Len. ↓ 1866.474 132.616 148.704 (+12.1%) 160.210 (+20.8%) 
+
+Total Len. ↓ 1866.474 361.906 384.488 (+6.2%) 370.256 (+2.3%) 
+
+MetaMathQA Acc ↑ 0.848 0.688 0.823 (+19.6%) 0.826 (+20.1%) 
+
+Streaming stage Len. ↓ – 149.196 158.712 (+6.4%) 173.246 (+16.1%) 
+
+Deep stage Len. ↓ 1281.774 121.465 159.285 (+31.1%) 129.356 (+6.5%) 
+
+Total Len. ↓ 1281.774 270.661 317.997 (+17.5%) 302.602 (+11.8%) 
+
+PubMedQA Acc ↑ 0.588 0.749 0.776 (+3.6%) 0.793 (+5.9%) 
+
+Streaming stage Len. ↓ – 414.737 433.573 (+4.5%) 414.206 (-0.1%) 
+
+Deep stage Len. ↓ 434.629 120.534 143.314 (+18.9%) 136.642 (+13.4%) 
+
+Total Len. ↓ 434.629 535.271 576.887 (+7.8%) 550.848 (+2.9%) 
+
+> Qwen3-4B
+
+GSM-symbolic P1 Acc ↑ 0.636 0.934 0.946 (+1.3%) 0.950 (+1.7%) 
+
+Streaming stage Len. ↓ – 167.786 157.305 (-6.2%) 150.688 (-10.2%) 
+
+Deep stage Len. ↓ 1717.155 119.206 111.145 (-6.8%) 116.559 (-2.2%) 
+
+Total Len. ↓ 1717.155 286.992 268.450 (-6.5%) 267.247 (-6.9%) 
+
+GSM-symbolic P2 Acc ↑ 0.462 0.816 0.874 (+7.1%) 0.884 (+8.3%) 
+
+Streaming stage Len. ↓ – 227.210 209.866 (-7.6%) 196.390 (-13.6%) 
+
+Deep stage Len. ↓ 1937.396 130.374 126.268 (-3.1%) 131.162 (+0.6%) 
+
+Total Len. ↓ 1937.396 357.584 336.134 (-6.0%) 327.552 (-8.4%) 
+
+MetaMathQA Acc ↑ 0.828 0.860 0.909 (+5.7%) 0.924 (+7.4%) 
+
+Streaming stage Len. ↓ – 152.200 140.010 (-8.0%) 121.708 (-20.0%) 
+
+Deep stage Len. ↓ 1379.088 121.998 113.545 (-6.9%) 115.650 (-5.2%) 
+
+Total Len. ↓ 1379.088 274.198 253.555 (-7.5%) 237.358 (-13.4%) 
+
+PubMedQA Acc ↑ 0.615 0.756 0.792 (+4.8%) 0.807 (+6.7%) 
+
+Streaming stage Len. ↓ – 402.877 378.214 (-6.1%) 356.728 (-11.5%) 
+
+Deep stage Len. ↓ 331.835 116.106 111.842 (-3.7%) 114.512 (-1.4%) 
+
+Total Len. ↓ 331.835 518.983 490.056 (-5.6%) 471.240 (-9.2%) 
+
+Table 1: Main results on streaming reasoning benchmarks with Qwen3-1.7B/4B. We compare AdaSR-HRPO with GRPO, read-then-think, and SFT-based baselines, reporting accuracy and streaming/deep/total lengths. Percentages denote relative changes over StreamingThinker (SFT); red indicates improvements and green degradations. 
+
+Qwen3-1.7B GSM-symbolic P2 GSM-symbolic P1 Method Acc ↑ Streaming Len. ↓ Deep Len. ↓ Total Len. ↓ Acc ↑ Streaming Len. ↓ Deep Len. ↓ Total Len. ↓
+
+GRPO 0.758 235.784 148.704 384.488 0.867 172.994 133.798 306.792 HRPO 0.788 (+4.0%) 210.046 (-10.9%) 160.210 (+7.7%) 370.256 (-3.7%) 0.871 (+0.5%) 160.032 (-7.5%) 131.972 (-1.4%) 292.004 (-4.8%) 
+
+HRPO-sentence 0.754 (-0.5%) 250.946 (+6.4%) 131.024 (-11.9%) 381.970 (-0.7%) 0.868 (+0.1%) 180.677 (+4.4%) 115.770 (-13.5%) 296.447 (-3.4%) 
+
+HRPO-token 0.770 (+1.6%) 213.528 (-9.4%) 145.432 (-2.2%) 358.960 (-6.6%) 0.862 (-0.6%) 158.733 (-8.2%) 120.714 (-9.8%) 279.447 (-8.9%) 
+
+Table 2: Effect of hierarchical advantage assignment on GSM-symbolic P2/P1. We report accuracy and phase-specific lengths for GRPO, HRPO, sentence-level, and token-level variants. Percentages are relative to GRPO; red/green denote improvements/degradations. Token-level assignment only affects the format boundary token. 
+
+total length alone. Unlike read-then-think meth-ods, which defer all reasoning until the full input is observed, AdaSR shifts part of the computation into the streaming stage and keeps final deliber-ation compact. For example, on GSM-symbolic P2 with Qwen3-1.7B, HRPO reduces deep-stage reasoning from 1866 .474 to 160 .210 tokens while improving accuracy from 0.424 to 0.788 , showing that AdaSR learns to reason while reading instead of postponing computation to the final response. 
+
+Influence of Hierarchical Advantage Assign-ment Table 2 examines how the granularity of advantage assignment affects streaming reasoning. GRPO applies a single sequence-level advantage to all generated tokens, while HRPO separates credit assignment into streaming and deep reason-ing stages. We further compare two finer-grained variants: HRPO-sentence, which assigns streaming advantages at the sentence level, and HRPO-token, which applies token-level assignment only to the boundary token associated with the format reward. Other reward components are not token-local by nature, and therefore follow the same assignment scheme as HRPO-sentence. The results show that stage-level HRPO achieves the best overall accuracy-efficiency trade-off. Com-pared with GRPO, HRPO improves accuracy on both GSM-symbolic P2 and P1 while reducing total generation length, indicating that separating stream-ing and deep-stage credit can effectively mitigate the coarse credit assignment of standard GRPO. In contrast, finer-grained assignment does not con-sistently improve performance. HRPO-sentence reduces deep reasoning length but lowers accu-racy, suggesting that sentence-level credit may over-localize reasoning signals and weaken cross-sentence reasoning coherence. 7Figure 2: Training dynamics of GRPO and HRPO variants. From left to right, we show reward, answer accuracy, and policy entropy across training steps.                                                                          
+
+> Qwen3-1.7B GRPO HRPO Benchmark Metric Acc reward Acc + format Acc + format + length Acc reward Acc + format Acc + format + length GSM-symbolic P2 Acc ↑0.726 0.762 0.756 (-0.8%) 0.726 0.778 0.788 (+1.3%)
+> Streaming Len. ↓231.966 287.526 235.784 (-18.0%) 231.966 275.562 210.046 (-23.8%)
+> Deep Len. ↓165.942 191.756 148.704 (-22.5%) 165.942 160.990 160.210 (-0.5%)
+> Total Len. ↓397.908 479.282 384.488 (-19.8%) 397.908 436.552 370.256 (-15.2%)
+> GSM-symbolic P1 Acc ↑0.850 0.875 0.867 (-0.9%) 0.867 0.869 0.871 (+0.2%)
+> Streaming Len. ↓168.723 206.503 172.994 (-16.2%) 168.723 197.902 160.032 (-19.1%)
+> Deep Len. ↓137.984 161.667 133.798 (-17.2%) 137.984 137.218 131.972 (-3.8%)
+> Total Len. ↓306.707 368.170 306.792 (-16.7%) 306.707 335.120 292.004 (-12.9%)
+
+Table 3: Analysis of adaptive streaming rewards. We compare GRPO and HRPO under progressively structured rewards, from accuracy-only to format- and length-aware designs. Percentages in Acc + format + length are relative to Acc + format , with higher accuracy and lower lengths treated as improvements. 
+
+HRPO-token achieves the shortest total length, but its accuracy is lower than HRPO. This indicates that token-level assignment is useful for precise for-mat control, such as boundary-token supervision, but is insufficient for assigning semantic reasoning credit. Overall, the results suggest that the most ef-fective granularity is not the finest one, but the one that matches the natural structure of streaming rea-soning: stage-level assignment between streaming and deep deliberation. Figure 2 shows training dynamics that are consis-tent with the final evaluation. The left panel reports the total training reward, which combines accu-racy, format, and length rewards, while the middle panel tracks answer accuracy. Stage-level HRPO achieves the strongest reward curve and the best final accuracy among the compared variants, indi-cating that separating credit between streaming and deep reasoning provides a more effective optimiza-tion signal. In contrast, the finer-grained variants do not consistently improve the learning curves, suggesting that overly localized assignment may fragment the semantic credit needed for reason-ing. The entropy curves show an initial exploration phase followed by a steady decrease, indicating that the policies gradually become more confident as training progresses. 
+
+Analysis of Adaptive Streaming Rewards Ta-ble 3 examines how reward components affect adap-tive streaming reasoning, where the model must de-cide when to reason or skip during the input stream. With accuracy reward alone, the model receives only a final outcome signal and lacks guidance on streaming-format compliance. Adding the for-mat reward improves accuracy under both GRPO and HRPO, suggesting that parseable read-think trajectories stabilize training, though with longer generations. The length-aware reward encourages more ef-ficient computation allocation across streaming and deep stages. Under GRPO, it reduces gen-eration length but slightly hurts accuracy on GSM-symbolic P2 and P1, indicating that flat sequence-level optimization applies length pressure too coarsely. In contrast, HRPO benefits more con-sistently: compared with Acc + format , adding the length reward improves accuracy while reduc-ing total length by 15 .2% on P2 and 12 .9% on P1, mainly by suppressing redundant streaming-stage thoughts while preserving deep-stage deliberation. These results show that adaptive rewards and hierarchical advantage assignment are complemen-8Qwen3-4B GSM-Infinite LogicNLI Method Acc ↑ Streaming Len. ↓ Deep Len. ↓ Total Len. ↓ Acc ↑ Streaming Len. ↓ Deep Len. ↓ Total Len. ↓                        
+
+> SFT-based 0.479 157.87 115.54 273.408 0.474 432.131 132.102 564.248
+> GRPO 0.509 169.11 116.27 285.38 0.445 473.971 121.277 595.263 HRPO 0.546 134.03 131.62 265.65 0.489 462.599 129.380 591.985
+
+Table 4: Out-of-distribution on GSM-Infinite and out-of-task on LogicNLI performance with Qwen3-4B. We report final answer accuracy, streaming reasoning length, deep reasoning length, and total generated length. Higher accuracy is better, while lower length indicates more efficient reasoning.                                  
+
+> Backend Read-then-think StreamingThinker AdaSR-GRPO AdaSR-HRPO Throughput ↑Latency ↓Throughput ↑Latency ↓Throughput ↑Latency ↓Throughput ↑Latency ↓
+> Transformers 33.170 56.250 31.810 6.080 (9.25 ×)31.450 6.710 (8.38 ×)32.570 6.520 (8.63 ×)
+> vLLM 140.600 13.270 134.509 1.403 (9.46 ×)136.319 1.595 (8.32 ×)136.945 1.505 (8.82 ×)
+
+Table 5: The throughput (token/s) and reasoning latency (s) under different inference backends. We compare read-then-think, StreamingThinker, AdaSR-GRPO, and AdaSR-HRPO using Transformers and vLLM backends. Throughput is higher-is-better, while latency is lower-is-better. Speedups in parentheses for latency denote reductions relative to read-then-think under the same backend. 
+
+tary: format rewards make streaming trajectories learnable, length-aware rewards make them effi-cient, and HRPO assigns these signals to the appro-priate reasoning stages. 
+
+Performance on Out-of-Domain Cases Ta-ble 4 evaluates out-of-distribution generalization on GSM-Infinite and out-of-task generalization on LogicNLI. On GSM-Infinite, both GRPO and HRPO improve accuracy over the SFT-based base-line, indicating that RL optimization transfers to longer mathematical inputs. HRPO achieves the best accuracy, increasing performance from 0.479 
+
+to 0.546 , while also producing the shortest stream-ing length and total length among all methods. On LogicNLI, HRPO again obtains the highest accu-racy, improving over both SFT-based and GRPO models. Although SFT-based decoding remains shorter in total length on LogicNLI, HRPO reduces the total length compared with GRPO while achiev-ing better accuracy, suggesting a stronger perfor-mance trade-off under out-of-task generalization. 
+
+Analysis of Streaming Latency Table 5 reports the practical latency under Transformers and vLLM backends on the GSM-Symbolic dataset. 7 Com-pared with read-then-think, streaming reasoning greatly reduces exposed latency, since intermedi-ate reasoning can be overlapped with the arrival of input segments and only the final deep reasoning re-mains on the critical path. As a result, all streaming methods achieve over 8× latency reduction under 
+
+> 7Following the StreamingThinker (Tong et al., 2025a), we set the input streaming speed to 150 words per minute.
+
+both backends. Although AdaSR adaptively real-locates computation between streaming and deep stages, it introduces only minor latency fluctuations compared with StreamingThinker, especially un-der vLLM. With the vLLM backend, streaming inference is further accelerated, achieving a 4.3×
+
+speedup in AdaSR-HRPO latency, which demon-strates that AdaSR can be efficiently deployed in realistic serving scenarios. 
+
+5 Conclusion 
+
+In this paper, we presented AdaSR, an adaptive framework for streaming reasoning that enables LLMs to decide when to think, when to skip, and how to allocate computation between inter-mediate streaming reasoning and final deep de-liberation as inputs progressively unfold. To op-timize this structured reasoning process, we in-troduced Hierarchical Relative Policy Optimiza-tion, which decomposes advantage assignment across streaming, deep-reasoning, and global lev-els, thereby mitigating the coarse credit assignment inherent in sequence-level optimization. Experi-ments demonstrate that AdaSR achieves a better trade-off among reasoning accuracy, computational efficiency, and streaming latency. These results sug-gest that streaming reasoning is not merely a variant of conventional long-form reasoning, but a distinct optimization problem that requires temporal credit assignment and adaptive computation allocation. We hope this work provides a step toward more flexible, efficient, and responsive reasoning models for real-time and dynamically evolving inputs. 9Limitations 
+
+AdaSR is an initial step toward RL-based adaptive streaming reasoning. We focus on text streams with verifiable answers, which allows us to isolate the temporal credit-assignment problem and evaluate HRPO cleanly. Extending this framework to contin-uous audio, video, and more open-ended interactive streams is a promising next direction, likely requir-ing richer reward signals, modality-specific rollout engines, and adaptive scheduling of the hierarchy and reward-shaping coefficients. 
+
+References 
+
+Victor Agostinelli, Max Wild, Matthew Raffel, Kazi Ahmed Asif Fuad, and Lizhong Chen. 2024. Simul-llm: A framework for exploring high-quality simul-taneous translation with large language models. In 
+
+Proceedings of the 62nd Annual Meeting of the As-sociation for Computational Linguistics (Volume 1: Long Papers) .Arash Ahmadian, Chris Cremer, Matthias Gallé, Marzieh Fadaee, Julia Kreutzer, Olivier Pietquin, Ahmet Üstün, and Sara Hooker. 2024. Back to ba-sics: Revisiting reinforce style optimization for learn-ing from human feedback in llms. arXiv preprint arXiv:2402.14740 .Naveen Arivazhagan, Colin Cherry, Wolfgang Macherey, Chung-Cheng Chiu, Semih Yavuz, Ruom-ing Pang, Wei Li, and Colin Raffel. 2019. Monotonic infinite lookback attention for simultaneous machine translation. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics , pages 1313–1323. Siddhant Arora, Haidar Khan, Kai Sun, Xin Luna Dong, Sajal Choudhary, Seungwhan Moon, Xinyuan Zhang, Adithya Sagar, Surya Teja Appini, Kaushik Patnaik, and 1 others. 2025. Stream rag: Instant and accurate spoken dialogue systems with streaming tool usage. 
+
+arXiv preprint arXiv:2510.02044 .Joya Chen, Zhaoyang Lv, Shiwei Wu, Kevin Qinghong Lin, Chenan Song, Difei Gao, Jia-Wei Liu, Ziteng Gao, Dongxing Mao, and Mike Zheng Shou. 2024. Videollm-online: Online video large language model for streaming video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pat-tern Recognition , pages 18407–18418. Joya Chen, Ziyun Zeng, Yiqi Lin, Wei Li, Zejun Ma, and Mike Zheng Shou. 2025. Livecc: Learning video llm with streaming speech transcription at scale. In Pro-ceedings of the Computer Vision and Pattern Recog-nition Conference , pages 29083–29095. Cheng-Han Chiang, Xiaofei Wang, Linjie Li, Chung-Ching Lin, Kevin Lin, Shujie Liu, Zhendong Wang, Zhengyuan Yang, Hung-yi Lee, and Lijuan Wang. 2025a. Shanks: Simultaneous hearing and think-ing for spoken language models. arXiv preprint arXiv:2510.06917 .Cheng-Han Chiang, Xiaofei Wang, Linjie Li, Chung-Ching Lin, Kevin Lin, Shujie Liu, Zhendong Wang, Zhengyuan Yang, Hung-yi Lee, and Lijuan Wang. 2025b. Stitch: Simultaneous thinking and talking with chunked reasoning for spoken language models. 
+
+arXiv preprint arXiv:2507.15375 .Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. 2021. Training verifiers to solve math word prob-lems. arXiv preprint arXiv:2110.14168 .DeepSeek-AI. 2025. Deepseek-r1: Incentivizing rea-soning capability in llms via reinforcement learning. 
+
+arXiv preprint arXiv:2501.12948 .Alexandre Défossez, Laurent Mazaré, Manu Orsini, Amélie Royer, Patrick Pérez, Hervé Jégou, Edouard Grave, and Neil Zeghidour. 2024. Moshi: A speech-text foundation model for real-time dialogue. arXiv preprint arXiv:2410.00037 .Maha Elbayad, Laurent Besacier, and Jakob Verbeek. 2020. Efficient wait-k models for simultaneous ma-chine translation. In Proceedings of Interspeech 2020 .Qingkai Fang, Shoutao Guo, Yan Zhou, Zhengrui Ma, Shaolei Zhang, and Yang Feng. 2024. Llama-omni: Seamless speech interaction with large language mod-els. arXiv preprint arXiv:2409.06666 .In Gim, Seung-seob Lee, and Lin Zhong. 2024. Asyn-chronous llm function calling. arXiv preprint arXiv:2412.07017 .Alex Graves. 2016. Adaptive computation time for recurrent neural networks. arXiv preprint arXiv:1603.08983 .Jiatao Gu, Graham Neubig, Kyunghyun Cho, and Vic-tor O.K. Li. 2017. Learning to translate in real-time with neural machine translation. In Proceedings of the 15th Conference of the European Chapter of the Association for Computational Linguistics: Volume 1, Long Papers , pages 1053–1062, Valencia, Spain. Association for Computational Linguistics. Shoutao Guo, Shaolei Zhang, and Yang Feng. 2024a. Decoder-only streaming transformer for simultane-ous translation. arXiv preprint arXiv:2406.03878 .Shoutao Guo, Shaolei Zhang, Zhengrui Ma, Min Zhang, and Yang Feng. 2024b. Agent-simt: Agent-assisted simultaneous machine translation with large language models. arXiv preprint arXiv:2406.06910 .Shengran Hu and Jeff Clune. 2023. Thought cloning: Learning to think while acting by imitating human thinking. In Advances in Neural Information Pro-cessing Systems .
+
+10 Qiao Jin, Bhuwan Dhingra, Zhengping Liu, William W. Cohen, and Xinghua Lu. 2019. Pubmedqa: A dataset for biomedical research question answering. In Pro-ceedings of the 2019 Conference on Empirical Meth-ods in Natural Language Processing and the 9th In-ternational Joint Conference on Natural Language Processing , pages 2567–2577. Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gon-zalez, Hao Zhang, and Ion Stoica. 2023. Efficient memory management for large language model serv-ing with pagedattention. Proceedings of the 29th Symposium on Operating Systems Principles , pages 611–626. Junming Lin, Zheng Fang, Chi Chen, Zihao Wan, Fuwen Luo, Peng Li, Yang Liu, and Maosong Sun. 2024. Streamingbench: Assessing the gap for mllms to achieve streaming video understanding. arXiv preprint arXiv:2411.03628 .Junyan Lin, Junlong Tong, Hao Wu, Jialiang Zhang, Jinming Liu, Xin Jin, and Xiaoyu Shen. 2026. Speak while watching: Unleashing true real-time video un-derstanding capability of multimodal large language models. arXiv preprint arXiv:2601.06843 .Jihao Liu, Zhiding Yu, Shiyi Lan, Shihao Wang, Rongyao Fang, Jan Kautz, Hongsheng Li, and Jose M Alvare. 2024. Streamchat: Chatting with streaming video. arXiv preprint arXiv:2412.08646 .Shih-Yang Liu, Xin Dong, Ximing Lu, Shizhe Diao, Peter Belcak, Mingjie Liu, Min-Hung Chen, Hongxu Yin, Yu-Chiang Frank Wang, Kwang-Ting Cheng, Yejin Choi, Jan Kautz, and Pavlo Molchanov. 2026a. Gdpo: Group reward-decoupled normalization policy optimization for multi-reward rl optimization. arXiv preprint arXiv:2601.05242 .Siyuan Liu, Jiahui Xu, Feng Jiang, Kuang Wang, Zefeng Zhao, Chu-Ren Huang, Jinghang Gu, Changqing Yin, and Haizhou Li. 2026b. Discourse-aware dual-track streaming response for low-latency spoken dialogue systems. arXiv preprint arXiv:2602.23266 .Zichen Liu, Changyu Chen, Wenjun Li, Penghui Qi, Tianyu Pang, Chao Du, Wee Sun Lee, and Min Lin. 2025. Understanding r1-zero-like training: A critical perspective. arXiv preprint arXiv:2503.20783 .Mingbo Ma, Liang Huang, Hao Xiong, Renjie Zheng, Kaibo Liu, Baigong Zheng, Chuanqiang Zhang, Zhongjun He, Hairong Liu, Xing Li, and 1 others. 2018. Stacl: Simultaneous translation with implicit anticipation and controllable latency using prefix-to-prefix framework. arXiv preprint arXiv:1810.08398 .Iman Mirzadeh, Keivan Alizadeh, Hooman Shahrokhi, Oncel Tuzel, Samy Bengio, and Mehrdad Farajtabar. 2024. Gsm-symbolic: Understanding the limitations of mathematical reasoning in large language models. 
+
+arXiv preprint arXiv:2410.05229 .Niklas Muennighoff, Zitong Yang, Weijia Shi, Xi-ang Lisa Li, Li Fei-Fei, Hannaneh Hajishirzi, Luke Zettlemoyer, Percy Liang, Emmanuel Candès, and Tatsunori Hashimoto. 2025. s1: Simple test-time scaling. arXiv preprint arXiv:2501.19393 .OpenAI. 2024. Learning to reason with llms. OpenAI Blog .Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, and 1 others. 2022. Training language models to follow in-structions with human feedback. Advances in Neural Information Processing Systems , 35:27730–27744. Siqi Ouyang, Oleksii Hrinchuk, Zhehuai Chen, Vitaly Lavrukhin, Jagadeesh Balam, Lei Li, and Boris Gins-burg. 2024. Anticipating future with large language model for simultaneous machine translation. arXiv preprint arXiv:2410.22499 .Matthew Raffel, Victor Agostinelli, and Lizhong Chen. 2024. Simultaneous masking, not prompt-ing optimization: A paradigm shift in fine-tuning llms for simultaneous translation. arXiv preprint arXiv:2405.10443 .John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. 2017. Proxi-mal policy optimization algorithms. arXiv preprint arXiv:1707.06347 .Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Li, Mingchuan Zhang, Y.K. Zhang, Yu Li, Y. Wu, and Daya Guo. 2024. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 .Guangming Sheng, Chi Zhang, Zilingfeng Ye, Xibin Wu, Wang Zhang, Ru Zhang, Yanghua Peng, Haibin Lin, and Chuan Wu. 2024. Hybridflow: A flex-ible and efficient rlhf framework. arXiv preprint arXiv:2409.19256 .Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Ku-mar. 2024. Scaling llm test-time compute optimally can be more effective than scaling model parameters. 
+
+arXiv preprint arXiv:2408.03314 .Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. 2024. Roformer: En-hanced transformer with rotary position embedding. 
+
+Neurocomputing , 568:127063. Jidong Tian, Yitian Li, Wenqing Chen, Liqiang Xiao, Hao He, and Yaohui Jin. 2021. Diagnosing the first-order logical reasoning ability through LogicNLI. pages 3738–3747. Junlong Tong, Yingqi Fan, Anhao Zhao, Yunpu Ma, and Xiaoyu Shen. 2025a. Streamingthinker: Large language models can think while reading. arXiv preprint arXiv:2510.17238 .
+
+11 Junlong Tong, Jinlan Fu, Zixuan Lin, Yingqi Fan, Anhao Zhao, Hui Su, and Xiaoyu Shen. 2025b. Llm as effec-tive streaming processor: Bridging streaming-batch mismatches with group position encoding. arXiv preprint arXiv:2505.16983 .Junlong Tong, Zilong Wang, YuJie Ren, Peiran Yin, Hao Wu, Wei Zhang, and Xiaoyu Shen. 2026a. From static inference to dynamic interaction: A survey of streaming large language models. arXiv preprint arXiv:2603.04592 .Junlong Tong, Yao Zhang, Anhao Zhao, Yingqi Fan, Yunpu Ma, and Xiaoyu Shen. 2026b. Proactivellm: Learning active interaction for streaming large lan-guage models. arXiv preprint arXiv:2606.00523 .Lu Wang, Zhuoran Jin, Yupu Hao, Yubo Chen, Kang Liu, Yulong Ao, and Jun Zhao. 2026. Think while watching: Online streaming segment-level memory for multi-turn video reasoning in multimodal large language models. arXiv preprint arXiv:2603.11896 .Zhenhailong Wang, Xuehang Guo, Sofia Stoica, Haiyang Xu, Hongru Wang, Hyeonjeong Ha, Xiusi Chen, Yangyi Chen, Ming Yan, Fei Huang, and 1 others. 2025. Perception-aware policy optimiza-tion for multimodal reasoning. arXiv preprint arXiv:2507.06448 .Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc V Le, and Denny Zhou. 2022. Chain-of-thought prompting elicits reasoning in large language models. Advances in Neural Information Processing Systems , 35:24824– 24837. Roy Xie, David Qiu, Deepak Gopinath, Dong Lin, Yan-chao Sun, Chong Wang, Saloni Potdar, and Bhuwan Dhingra. 2025a. Interleaved reasoning for large lan-guage models via reinforcement learning. arXiv preprint arXiv:2505.19640 .Zhifei Xie, Ziyang Ma, Zihang Liu, Kaiyu Pang, Hongyu Li, Jialin Zhang, Yue Liao, Deheng Ye, Chunyan Miao, and Shuicheng Yan. 2025b. Mini-omni-reasoner: Token-level thinking-in-speaking in large speech models. arXiv preprint arXiv:2508.15827 .Zhifei Xie and Changqiao Wu. 2024. Mini-omni: Lan-guage models can hear, talk while thinking in stream-ing. arXiv preprint arXiv:2408.16725 .An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, Chujie Zheng, Day-iheng Liu, Fan Zhou, Fei Huang, Feng Hu, Hao Ge, Haoran Wei, Huan Lin, Jialong Tang, and 4 oth-ers. 2025a. Qwen3 technical report. arXiv preprint arXiv:2505.09388 .Haolin Yang, Feilong Tang, Lingxiao Zhao, Xiang An, Ming Hu, Huifa Li, Xinlin Zhuang, Yifan Lu, Xiaofeng Zhang, Abdalla Swikir, and 1 others. 2025b. Streamagent: Towards anticipatory agents for streaming video understanding. arXiv preprint arXiv:2508.01875 .Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models. In Proceedings of the 11th International Conference on Learning Representations .Longhui Yu, Weisen Jiang, Han Shi, Jincheng Yu, Zhengying Liu, Yu Zhang, James T. Kwok, Zhen-guo Li, Adrian Weller, and Weiyang Liu. 2023. Metamath: Bootstrap your own mathematical ques-tions for large language models. arXiv preprint arXiv:2309.12284 .Qiying Yu, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai, Tiantian Fan, Gaohong Liu, Lingjun Liu, and 1 others. 2025. Dapo: An open-source llm reinforcement learning system at scale. arXiv preprint arXiv:2503.14476 .Wenyi Yu, Siyin Wang, Xiaoyu Yang, Xianzhao Chen, Xiaohai Tian, Jun Zhang, Guangzhi Sun, Lu Lu, Yux-uan Wang, and Chao Zhang. 2024. Salmonn-omni: A codec-free llm for full-duplex speech understanding and generation. arXiv preprint arXiv:2411.18138 .Aohan Zeng, Zhengxiao Du, Mingdao Liu, Kedong Wang, Shengmin Jiang, Lei Zhao, Yuxiao Dong, and Jie Tang. 2024. Glm-4-voice: Towards intelligent and human-like end-to-end spoken chatbot. arXiv preprint arXiv:2412.02612 .Gengyuan Zhang, Tanveer Hannan, Hermine Kleiner, Beste Aydemir, Xinyu Xie, Jian Lan, Thomas Seidl, Volker Tresp, and Jindong Gu. 2025a. Avila: Asynchronous vision-language agent for stream-ing multimodal data interaction. arXiv preprint arXiv:2506.18472 .Jialiang Zhang, Junlong Tong, Junyan Lin, Hao Wu, Yirong Sun, Yunpu Ma, and Xiaoyu Shen. 2026. Think-as-you-see: Streaming chain-of-thought rea-soning for large vision-language models. arXiv preprint arXiv:2603.02872 .Qinglin Zhang, Luyao Cheng, Chong Deng, Qian Chen, Wen Wang, Siqi Zheng, Jiaqing Liu, Hai Yu, Chao-hong Tan, Zhihao Du, and Shiliang Zhang. 2025b. Omniflatten: An end-to-end gpt model for seamless voice conversation. In Proceedings of the 63rd An-nual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) .Yang Zhou, Hongyi Liu, Zhuoming Chen, Yuandong Tian, and Beidi Chen. 2025. Gsm-infinite: How do your llms behave over infinitely increasing context length and reasoning complexity? arXiv preprint arXiv:2502.05252 .Daniel M. Ziegler, Nisan Stiennon, Jeffrey Wu, Tom B. Brown, Alec Radford, Dario Amodei, Paul Chris-tiano, and Geoffrey Irving. 2019. Fine-tuning lan-guage models from human preferences. arXiv preprint arXiv:1909.08593 .
+
+12 A Related Work 
+
+Streaming LLMs Streaming LLMs (Tong et al., 2026a) aim to move language-model inference from static full-context processing toward dynamic interaction, where input perception, reasoning, out-put generation, and external actions may overlap. From an application perspective, existing work has explored several forms of real-time interaction. Simultaneous translation studies read while out-putting , where models learn or impose read/write policies such as wait-k and efficient interaction de-cision to trade source completeness for latency (Ma et al., 2018; Arivazhagan et al., 2019; Elbayad et al., 2020; Tong et al., 2025b, 2026b), with recent LLM-based and speech-to-speech systems extend-ing this setting to real-time translation (Agostinelli et al., 2024; Raffel et al., 2024; Guo et al., 2024a,b; Ouyang et al., 2024). Streaming video and mul-timodal systems study think/speak while watch-ing , processing frames incrementally, chatting over evolving video streams, or generating reasoning synchronized with incoming visual evidence (Chen et al., 2024; Liu et al., 2024; Chen et al., 2025; Lin et al., 2026; Zhang et al., 2026; Wang et al., 2026). Spoken dialogue systems study think while hearing 
+
+and speak while thinking , enabling low-latency or full-duplex speech interaction and, in some cases, hidden reasoning during listening or speaking (Xie and Wu, 2024; Défossez et al., 2024; Fang et al., 2024; Zeng et al., 2024; Zhang et al., 2025b; Yu et al., 2024; Chiang et al., 2025b; Xie et al., 2025b; Chiang et al., 2025a; Liu et al., 2026b). Agentic systems further study think while acting , where models interleave reasoning with tool use, retrieval, function calls, or anticipatory actions under stream-ing observations (Yao et al., 2023; Hu and Clune, 2023; Gim et al., 2024; Arora et al., 2025; Zhang et al., 2025a; Yang et al., 2025b; Xie et al., 2025a). These scenarios show that streaming LLMs are motivated not only by faster token emission, but also by the need to coordinate computation with continuously evolving inputs. Among these scenarios, think while reading pro-vides a clean abstraction for streaming reason-ing, where the model processes input segments sequentially, reasons under partial observations, and performs final deliberation after the stream ends. StreamingThinker (Tong et al., 2025a) real-izes this paradigm with sentence-level streaming CoT and streaming-specific attention, position en-coding, and KV-cache designs, showing how LLMs can reason under streaming visibility constraints. Yet its intermediate reasoning behavior is largely shaped by constructed supervised traces. AdaSR instead studies whether models can learn their own computation policy: when to think, when to skip, and how to allocate computation between online thoughts and final deep reasoning. 
+
+Policy Optimization in RLVR Reinforcement Learning with Verifiable Rewards (RLVR) has re-cently become a central paradigm for improving the reasoning ability of large language models, where policies are optimized using automatically checkable outcome rewards rather than learned re-ward models (Cobbe et al., 2021; Shao et al., 2024; DeepSeek-AI, 2025). Early RLHF and RLVR sys-tems commonly build upon PPO-style clipped pol-icy objectives (Schulman et al., 2017; Ziegler et al., 2019; Ouyang et al., 2022), while GRPO replaces the critic with group-relative reward normalization, estimating the baseline from multiple rollouts of the same prompt and thereby reducing the cost of value modeling (Shao et al., 2024). Recent studies further refine this paradigm from differ-ent perspectives. REINFORCE-style methods re-visit critic-free optimization for language-model alignment (Ahmadian et al., 2024). Dr. GRPO analyzes the optimization bias of GRPO and shows that length-dependent loss aggregation can artifi-cially encourage longer responses, especially for incorrect trajectories; it therefore modifies the ag-gregation and normalization scheme to improve token efficiency while preserving reasoning per-formance (Liu et al., 2025). DAPO improves the scalability and stability of long-CoT RL by in-troducing decoupled clipping and dynamic sam-pling, together with practical techniques such as Clip-Higher, token-level policy-gradient loss, and overlong reward shaping (Yu et al., 2025). GDPO extends GRPO to multi-reward RLVR by decou-pling the normalization of different reward com-ponents before aggregation, alleviating advantage collapse caused by directly normalizing summed rewards (Liu et al., 2026a). Beyond text-only rea-soning, PAPO incorporates perception-aware op-timization into RLVR by adding an implicit per-ception loss and entropy regularization, enabling GRPO- or DAPO-style training to better support multimodal reasoning (Wang et al., 2025). Overall, these methods improve RLVR along dimensions such as critic-free optimization, length-bias correc-tion, training stability, multi-reward composition, 13 and multimodal grounding. However, they still largely optimize completed trajectories at the se-quence or token level, without explicitly modeling the hierarchical temporal structure of streaming reasoning. In contrast, our HRPO targets the phase-structured credit assignment problem, assigning advantages over streaming, deep-reasoning, and global token ranges to better optimize adaptive rea-soning under partial and evolving inputs. 
+
+B HRPO Analysis 
+
+GRPO Limitation for Streaming Reasoning 
+
+We further formalize why the standard GRPO ob-jective in Eq. 2 is mismatched with streaming reasoning. For a sampled streaming trajectory 
+
+oi = [ R1, . . . , R T , R ], let tbnd denote the bound-ary between the online streaming phase and the fi-nal deep-thinking phase, as defined in Eq. 1. GRPO first collapses the whole trajectory into a scalar reward Ri and then assigns the resulting group-normalized advantage ˆAi to every token: 
+
+∇θJGRPO (θ) ∝ E
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+1
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+mi,t ri,t ˆAi∇θ log πθ(oi,t | q, o i,<t )
+
+#
+
+.
+
+(9) where mi,t denotes whether the clipped surrogate is active. Thus tokens before and after tbnd receive the same learning signal even though they play dif-ferent roles: streaming tokens should be judged by the quality and timeliness of partial-observation reasoning, while deep tokens should be judged by full-context integration. This flat credit assign-ment creates two failure modes. If an incorrect or unhelpful streaming segment is rescued by deep deliberation, GRPO still reinforces the streaming tokens because the final reward is high; conversely, useful streaming thoughts are penalized whenever the final answer fails for reasons in the deep phase. Consequently, GRPO cannot tell whether perfor-mance changes come from online reasoning, fi-nal deliberation, or their interaction, motivating the hierarchical advantage decomposition used by HRPO. 
+
+Advantage Decomposition and Policy Gradient 
+
+We keep the notation in Eq. 5. Starting from the original HRPO objective, the local and global sur-rogate terms can be grouped by token time step. Streaming tokens receive the streaming local signal and the global signal; deep tokens receive the deep local signal and the same global signal: 
+
+JHRPO (θ) = E (q,a )∼D {oi}Gi=1 ∼πθold 
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+λ
+
+|ts|
+
+> |ts|
+
+X
+
+> t=1
+
+C(rsi,t , ˆAsi,t ) + λ
+
+|oi| − | ts|
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+C(rdi,t , ˆAdi,t )
+
+| {z }
+
+> local clipped surrogate objective
+
++ 1
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+C(rgi,t , ˆAgi,t )
+
+| {z }
+
+> global clipped surrogate objective
+
+−β KL( πθ ∥ πref )
+
+!#) 
+
+= E (q,a )∼D {oi}Gi=1 ∼πθold 
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+> |ts|
+
+X
+
+> t=1
+
+λ
+
+|ts| C
+
+
+
+rsi,t , ˆAsi,t 
+
+
+
++ 1
+
+|oi| C
+
+
+
+rgi,t , ˆAgi,t 
+
+
+
+− β
+
+|oi| KL( πθ(· | q, o i,<t ) ∥ πref (· | q, o i,<t )) 
+
+!
+
++
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+λ
+
+|oi| − | ts| C
+
+
+
+rdi,t , ˆAdi,t 
+
+
+
++ 1
+
+|oi| C
+
+
+
+rgi,t , ˆAgi,t 
+
+
+
+− β
+
+|oi| KL( πθ(· | q, o i,<t ) ∥
+
+πref (· | q, o i,<t )) 
+
+!#) 
+
+.
+
+(10) This time-wise form makes the effective credit assignment explicit: before the boundary |ts|, each token is optimized with a streaming-local coeffi-cient λ/ |ts| and a global coefficient 1/|oi|; after the boundary, the streaming-local term is replaced by the deep-local coefficient λ/ (|oi|−| ts|).We next derive the corresponding policy gradi-14 ent. By linearity of differentiation and expectation, 
+
+∇θJHRPO (θ) = E (q,a )∼D {oi}Gi=1 ∼πθold 
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+λ
+
+|ts|
+
+> |ts|
+
+X
+
+> t=1
+
+∇θC
+
+
+
+rsi,t , ˆAsi,t 
+
+
+
++ λ
+
+|oi| − | ts|
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+∇θC
+
+
+
+rdi,t , ˆAdi,t 
+
+
+
++ 1
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+∇θC
+
+
+
+rgi,t , ˆAgi,t 
+
+
+
+− β
+
+|oi|
+
+> |oi|
+
+X
+
+> t=1
+
+∇θ KL( 
+
+πθ(· | q, o i,<t ) ∥ πref (· | q, o i,<t )) 
+
+#) 
+
+.
+
+(11) For each ℓ ∈ { s, d, g }, the sampled advantage ˆAℓi,t 
+
+and the old-policy denominator in rℓi,t are fixed with respect to θ, so 
+
+∇θrℓi,t = rℓi,t ∇θ log πθ(oi,t |q, o i,<t ). (12) Therefore the clipped surrogate contributes a policy-gradient term only when the unclipped PPO branch is selected: 
+
+∇θC
+
+
+
+rℓi,t , ˆAℓi,t 
+
+
+
+=
+
+
+
+rℓi,t ˆAℓi,t ∇θ log πθ
+
+(oi,t | q, o i,<t ) ,
+
+ˆAℓi,t ≥ 0 and rℓi,t ≤ 1 + ε, 
+
+or ˆAℓi,t < 0 and 
+
+rℓi,t ≥ 1 − ε
+
+0, otherwise .
+
+(13) Substituting Eq. 13 into Eq. 11 gives the time-wise policy gradient: 
+
+∇θJHRPO (θ) = E (q,a )∼D {oi}Gi=1 ∼πθold 
+
+(
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+"
+
+> |ts|
+
+X
+
+> t=1
+
+λ
+
+|ts| msi,t rsi,t ˆAsi,t + 1
+
+|oi| mgi,t rgi,t ˆAgi,t 
+
+!
+
+∇θ log πθ(oi,t | q, o i,<t )
+
+−
+
+> |ts|
+
+X
+
+> t=1
+
+β
+
+|oi| ∇θ KL( πθ(· | q, o i,<t ) ∥
+
+πref (· | q, o i,<t )) +
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+λ
+
+|oi| − | ts| mdi,t rdi,t ˆAdi,t 
+
++ 1
+
+|oi| mgi,t rgi,t ˆAgi,t 
+
+!
+
+∇θ log πθ(oi,t | q, o i,<t )
+
+−
+
+> |oi|
+
+X
+
+> t=|ts|+1
+
+β
+
+|oi| ∇θ KL( 
+
+πθ(· | q, o i,<t ) ∥ πref (· | q, o i,<t )) 
+
+#) 
+
+.
+
+(14) where mℓi,t is the binary condition in the first branch of Eq. 13; it is not a new reward or advan-tage variable, but only records whether the corre-sponding clipped surrogate is active. Equivalently, if no clipping is active at token t, the streaming-token and deep-token gradient factors reduce to 
+
+ λ
+
+|ts| rsi,t ˆAsi,t + 1
+
+|oi| rgi,t ˆAgi,t 
+
+
+
+· ∇ θ log πθ(oi,t | q, o i,<t ) , for 1 ≤ t ≤ | ts|.
+
+(15) and 
+
+ λ
+
+|oi| − | ts| rdi,t ˆAdi,t + 1
+
+|oi| rgi,t ˆAgi,t 
+
+
+
+· ∇ θ log πθ(oi,t | q, o i,<t ) , for |ts| < t ≤ | oi|.
+
+(16) with the KL-gradient term subtracted at every to-ken as shown in Eq. 14. At θ = θold , where the ratios equal one, HRPO uses the effective per-token advantages 
+
+λ
+
+|ts| ˆAsi,t + 1
+
+|oi| ˆAgi,t , λ
+
+|oi|−| ts| ˆAdi,t + 1
+
+|oi| ˆAgi,t 
+
+(17) for streaming and deep tokens respectively. 15 C Reward Analysis for Streaming Reasoning 
+
+Adaptive reward hacking An intuitive design for local length reward is to add accuracy and for-mat gates, so that only correct and parseable trajec-tories receive the local length signal. However, our local length term is actually a penalty . Consider 
+
+ℓsi ≤ 0 and the gated design RLs 
+
+> i
+
+= Racc  
+
+> i
+
+Rsi, fmt ℓsi .Correct and format-valid samples are penalized when they are too long, while incorrect or mal-formed samples are multiplied by the gate and therefore receive 0 penalty. The gate thus creates a loophole: failing the gate can be better than being correct but verbose. Rollout Accuracy Format RLs
+
+> i
+
+A: correct but long 1 1 −3
+
+B: incorrect 0 1 0
+
+C: incorrect 0 1 0
+
+D: incorrect 0 1 0
+
+After group normalization, the zero-valued in-correct rollouts can obtain positive local length advantages, while the correct long rollout obtains a negative one. The local branch can therefore re-ward failed trajectories for avoiding the length cost, creating a direct conflict with the global signal. This failure may appear to be solvable by care-fully tuning the coefficient of the local length re-ward. In the gated regime, however, weighting the reward before computing the advantage cancels the coefficient during normalization, as shown in Eq. 19. Therefore, local length scores should not be gated by final accuracy, and format validity should be handled by masking or filtering at the advantage-computation level rather than by multiplying the negative penalty itself. 
+
+Hyperparameter Sensitivity Analysis We ana-lyze why HRPO applies β after component-wise normalization in Eq. 8. Consider a reward-level alternative at any hierarchical level ℓ ∈ { s, d, g }:
+
+Rℓi (β) = bℓ + βg ℓXℓi , β > 0, (18) where bℓ is the shared additive gate reward, gℓ > 0
+
+is the shared multiplicative gate scale, and Xℓi is the remaining length or efficiency shaping term. In the active gated regime, bℓ and gℓ are fixed within the sampled group. The normalized advantage is therefore: 
+
+ˆAℓi (β) = Rℓi (β) − μ {Rℓj (β)}Gj=1 
+
+
+
+σ {Rℓj (β)}Gj=1 
+
+
+
+=
+
+βg ℓ
+
+
+
+Xℓi − μ({Xℓj }Gj=1 )
+
+
+
+βg ℓσ({Xℓj }Gj=1 )= Xℓi − μ({Xℓj }Gj=1 )
+
+σ({Xℓj }Gj=1 ) .
+
+(19) Thus reward-level weighting makes β ineffective under fixed gates. In contrast, Eq. 8 applies β after normalization, so it remains an explicit multiplier on the composed advantage. If a component has zero variance within the group, that component still produces no relative advantage. The corresponding experiments can be found at Table 6. 
+
+Hyperparameter Weighting Experiments We investigate the role of different hyperparameters in both reward composition and advantage weighting, with the results summarized in Table 6. Specif-ically, we study the effects of the format, length, and accuracy reward weights, as well as the ad-vantage weighting coefficient λ, on GRPO, HRPO, and the finer-grained HRPO-Sentence and HRPO-Token variants using Qwen3-1.7B. Based on these comparisons, we select the configuration with Acc: 1, format: 2, length: 0.05, and λ = 0 .05 as the default setting in our paper, since it provides a rela-tively robust trade-off among accuracy, formatting reliability, and response length. 
+
+D Evaluation Details of AdaSR 
+
+Multiseed Results with Standard Deviation To assess the robustness of our results, we conduct experiments under multiple random seeds and re-port the mean performance together with the corre-sponding standard deviation. The detailed results are presented in Table 7 and Table 8. 
+
+Out-of-Domain Experiment Details In Table 4, our SFT-base model is trained on the math-based datasets P1, P2, and MetaMathQA. GSM-Infinite is an out-of-domain mathematical benchmark, while LogicNLI is a logic-based benchmark used to eval-uate the model’s out-of-task generalization ability. 
+
+E Training Details of AdaSR 
+
+While the main text provides the algorithmic work-flow of AdaSR, this appendix further details the concrete streaming rollout and stream-aware logits computation, as illustrated in Figure 3. 16 Reward coefficients α β λ Method GSM-symbolic P2 GSM-symbolic P1 MetaMathQA Acc. Format Acc Len. Acc Len. Acc Len. 
+
+Baselines 
+
+/ / 0.5 / / SFT 0.642 356.910 0.839 286.132 0.688 270.661 1 / 0.5 / / GRPO 0.726 392.908 0.877 301.709 0.805 297.310 
+
+Format reward and local-global balance without adaptive length reward 
+
+1 2 0.5 / 0.1 TSDPO 0.782 498.728 0.895 377.679 0.842 385.627 1 2 0.5 / 0.5 TSDPO 0.774 452.712 0.886 341.994 0.816 371.474 1 2 0.5 / 1 TSDPO 0.758 381.932 0.872 314.082 0.802 304.650 1 2 0.5 / 0.5 TSDPO-sentence 0.798 436.818 0.926 346.441 0.858 337.687 1 2 0.5 / 0.5 TSDPO-token 0.776 435.020 0.888 330.450 0.815 343.115 1 2 0.5 / 1 TSDPO 0.756 377.750 0.869 323.723 0.804 321.838 1 2 0.5 / 1 TSDPO-sentence 0.736 433.320 0.879 341.503 0.825 342.731 1 2 0.5 / 0.05 TSDPO 0.800 433.080 0.884 331.890 0.817 343.084 
+
+Adaptive length-reward weight β at fixed λ = 0 .5
+
+1 2 0.5 0.05 0.5 TSDPO 0.642 442.900 0.818 315.474 0.655 461.854 1 2 0.5 0.1 0.5 TSDPO 0.532 322.770 0.669 403.125 0.583 531.450 1 2 0.5 0.5 0.5 TSDPO 0.134 610.698 0.195 630.160 0.293 621.358 1 2 0.5 1 0.5 TSDPO 0.088 136.512 0.154 164.506 0.320 173.537 
+
+Granularity comparison with stronger local weighting ( λ = 1 )
+
+1 2 0.5 0.05 / GRPO 0.054 73.670 0.083 73.890 0.194 89.980 1 2 0.5 0.05 1 HRPO 0.620 316.740 0.770 273.110 0.664 334.560 1 2 0.5 0.05 1 HRPO-sentence 0.596 402.470 0.621 629.650 0.565 701.251 1 2 0.5 0.05 1 HRPO-token 0.450 240.300 0.635 173.960 0.662 188.980 
+
+Local-global objective balance λ with adaptive length reward 
+
+1 2 0.5 0.05 0.01 HRPO 0.776 384.980 0.874 299.130 0.813 307.040 1 2 0.5 0.05 0.05 HRPO 0.750 373.060 0.870 290.530 0.801 293.200 1 2 0.5 0.05 0.1 HRPO 0.760 357.980 0.869 279.850 0.810 272.600 1 2 0.5 0.05 1 HRPO 0.620 316.740 0.770 273.110 0.664 334.560 
+
+Default setting and latency-discount sensitivity 
+
+1 2 0.5 0.05 / GRPO 0.758 384.488 0.85 306.792 0.823 317.997 1 2 0.5 0.05 0.05 HRPO 0.788 370.256 0.871 292.004 0.826 302.602 1 2 0.75 0.05 0.05 HRPO 0.800 353.230 0.887 291.355 0.775 276.256 1 2 0.25 0.05 0.05 HRPO 0.784 418.572 0.894 311.095 0.821 344.982 1 2 1 0.05 0.05 HRPO 0.794 351.022 0.876 291.810 0.810 270.148 
+
+Fine-grained variants under the default reward setting 
+
+1 2 0.5 0.05 0.05 HRPO-sentence 0.762 381.170 0.873 296.516 0.809 300.954 1 2 0.5 0.05 0.05 HRPO-token 0.756 354.008 0.860 278.407 0.805 276.448 
+
+Format reward coefficient sensitivity at fixed Acc. coefficient = 1 
+
+1 1 0.5 0.05 0.05 HRPO 0.772 361.840 0.858 284.910 0.807 294.730 1 2 0.5 0.05 0.05 HRPO 0.788 370.256 0.871 292.004 0.826 302.602 1 5 0.5 0.05 0.05 HRPO 0.764 405.620 0.852 321.780 0.798 335.440 
+
+Table 6: Hyperparameter settings and evaluation results for Qwen3-1.7B. The first two columns report the coefficients of the accuracy and format rewards, while α is the latency discount, β is the adaptive length-reward weight, and λ
+
+controls the local-global balance in HRPO. Rows are grouped by ablation theme, and evaluation reports accuracy and total generation length on GSM-symbolic P2/P1 and MetaMathQA. 
+
+Procedure of AdaSR algorithm Algorithm 1 summarizes the overall training procedure of AdaSR. Starting from a streaming SFT policy, AdaSR performs group sampling for each input, generates sentence-level streaming rationales fol-lowed by a deep reasoning stage, and then com-putes reward components for each sampled trajec-tory. These rewards are further decomposed into streaming, deep, and global advantages, which are assigned to the corresponding token groups through the hierarchical advantage mechanism. Finally, the policy is optimized with the HRPO objective, allowing the model to improve answer accuracy while explicitly controlling the contribution of dif-ferent reasoning stages. 
+
+Hyperparameters We initialize AdaSR from the corresponding StreamingThinker SFT checkpoint and optimize it with the streaming RL stack de-scribed below. Unless otherwise specified, the actor and reference policy are trained with FSDP, while rollout generation is served by vLLM (Kwon et al., 2023). In our main implementation, vLLM rollout 17 Model Benchmark Metric Read-then-think StreamingThinker (SFT) (Tong et al., 2025a) AdaSR-GRPO (Ours) AdaSR-HRPO (Ours)                                                                                                       
+
+> Qwen3-1.7B  GSM-symbolic P1 Acc ↑0.634 0.834 0.863 ±0.0087 0.872 ±0.0041
+> Total Len. ↓1598.699 283.749 305.108 ±2.973 289.930 ±1.392
+> GSM-symbolic P2 Acc ↑0.424 0.642 0.765 ±0.0074 0.773 ±0.0135
+> Total Len. ↓1866.474 361.906 387.673 ±3.602 373.438 ±2.568
+> MetaMathQA Acc ↑0.848 0.688 0.818 ±0.0090 0.815 ±0.0140 Total Len. ↓1281.774 270.661 318.163 ±1.751 296.808 ±8.091
+> Qwen3-4B  GSM-symbolic P1 Acc ↑0.636 0.934 0.943 ±0.0043 0.935 ±0.0104 Total Len. ↓1717.155 286.992 268.948 ±0.727 257.665 ±6.439
+> GSM-symbolic P2 Acc ↑0.462 0.816 0.871 ±0.0055 0.876 ±0.0112
+> Total Len. ↓1937.396 357.584 336.332 ±1.203 317.438 ±6.752
+> MetaMathQA Acc ↑0.828 0.860 0.903 ±0.0050 0.909 ±0.0128
+> Total Len. ↓1379.088 274.198 251.699 ±1.518 237.388 ±0.618
+
+Table 7: Main multiseed results on streaming reasoning benchmarks with Qwen3-1.7B and Qwen3-4B. For AdaSR-GRPO and AdaSR-HRPO. 
+
+Qwen3-1.7B GSM-symbolic P2 GSM-symbolic P1 MetaMathQA Method Acc ↑ Total Len. ↓ Acc ↑ Total Len. ↓ Acc ↑ Total Len. ↓
+
+GRPO 0.765 ± 0.0074 387.673 ± 3.602 0.867 ± 0.0024 305.108 ± 2.973 0.818 ± 0.0090 318.163 ± 1.751 
+
+HRPO 0.773 ± 0.0135 373.438 ± 2.568 0.872 ± 0.0041 289.930 ± 1.392 0.815 ± 0.0140 296.808 ± 8.091 
+
+HRPO-sentence 0.757 ± 0.0060 383.475 ± 1.352 0.870 ± 0.0039 296.344 ± 0.764 0.807 ± 0.0071 306.744 ± 1.029 
+
+HRPO-token 0.764 ± 0.0050 356.935 ± 1.643 0.862 ± 0.0047 279.256 ± 1.681 0.801 ± 0.0012 277.332 ± 0.860 
+
+Table 8: Multiseed results of hierarchical advantage assignment on Qwen3-1.7B. We report mean ± sample standard deviation over available runs. 
+
+Figure 3: Illustration of the AdaSR training pipeline. The left panel shows the overall training pipeline, where streaming rollouts are generated, hierarchical rewards are computed, log probabilities are evaluated, and hierar-chical advantages are assigned. The upper-right panel illustrates the rollout-side implementation, where parallel input/output KV caches and grouped position encoding enable streaming generation with separated prefill and decoding states. The lower-right panel shows the log-probability computation, where a streaming autoregressive mask and grouped position encoding preserve the same partial-observation structure during policy evaluation. Together, these components support consistent streaming rollout generation and streaming-aware hierarchical advantage computation. 
+
+18 Parameter Value                                   
+
+> Weight of Local clipped surrogate term (λ)
+> 0.05
+> Weight of Local Length Advantage ( β)0.05
+> Latency discount coefficient α0.5 scale coefficient τAvg of Token Length Train batch size 16 PPO mini batch size 16
+> PPO micro batch size per GPU 2
+> Log-prob micro batch size per GPU 8
+> KL coefficient False Max prompt length 8192 tokens Max response length 2048 tokens Max model length 4096 tokens Sampling temperature 0.6
+> Top-psampling 0.95
+> Top-ksampling 20
+> Number of samples per prompt 12
+> Intermediate max tokens 512 tokens Compression ratio 0.35
+> Minimum reasoning tokens 20 tokens Maximum reasoning tokens 2048 tokens Learning rate 2e-6 Weight decay 0.01 Warmup ratio 0.05
+
+Table 9: Hyperparameters in streaming RL training. 
+
+uses tensor parallelism over four GPUs. All experi-ments are conducted on A100 GPUs. The detailed parameters are shown in the Table 9. 
+
+veRL Adaptation AdaSR is implemented by adapting the standard verl training loop (Sheng et al., 2024). The original verl pipeline assumes that rollout prompts are fully available before generation and that actor log-probability compu-tation uses a standard full-context causal mask. This assumption is incompatible with stream-ing reasoning, where each streaming segment must be generated and scored under a partial-observation constraint. We therefore replace the default trainer, rollout engine, and actor for-ward path at runtime: RayPPOTrainer is replaced by a streaming-aware trainer, vLLMRollout by 
+
+StreamingThinkerVLLMRollout , and the actor model by a Qwen3 forward implementation that accepts streaming metadata. This keeps verl’s dis-tributed PPO/GRPO infrastructure, FSDP actor up-dates, reference policy evaluation, logging, and checkpointing intact, while changing only the parts that define rollout semantics and token visibility. The training order is important. AdaSR first computes rewards on the raw rollout batch, be-cause reward functions need the generated text and the round-level streaming/deep segment bound-aries. Only after reward computation do we repack the rollout into the StreamingThinker training lay-out. This repacking step reconstructs the source and target segment lists, preserves the generated round boundaries, and writes metadata such as 
+
+_lengths , source_seg_len , target_seg_len ,and target_seg_roles . The repacked batch is then used for old log-probability, reference log-probability, advantage assignment, and actor up-date, ensuring that all policy-gradient quantities are computed under the same streaming visibility. 
+
+Rollout Generation The streaming rollout ex-tends vLLM generation from a single full-prompt call to a round-based state machine. For each prompt, the rollout state initially contains only the first revealed source segment and the assis-tant prefix. At round t, the state is converted to a TokensPrompt containing all source segments revealed so far and all previously generated target tokens. The model then decodes a streaming rea-soning segment Rt until a streaming stop token such as <EOT> is reached. If unrevealed source seg-ments remain, the next sentence is appended to the source side and the request is requeued; otherwise the final round uses the deep-reasoning sampling configuration and decodes until the final termina-tion token. To preserve StreamingThinker’s position seman-tics during vLLM rollout, each prompt token is annotated with a source or target role, including its segment index. The custom vLLM model-input builder maps these roles to group position IDs: source tokens and target tokens maintain indepen-dent position counters that both start from zero. For strict streaming masks, the same segmented roles are also used to build a block-diagonal visibil-ity mask during prefill. Thus, even though vLLM schedules batched generation efficiently, the model observes only the source segments that should be visible at the current streaming step. This imple-ments the StreamingThinker attention and position design inside the RL rollout engine. 
+
+Forward Logits Calculation PPO-style updates require the log-probabilities of the sampled re-sponse under the old policy, the reference policy, and the updated actor. A subtle issue is that the physical rollout tensor layout differs from the logi-cal streaming layout: prompts are left-padded be-fore rollout, responses are right-padded after gener-ation, and the target sequence contains both stream-ing and deep reasoning segments. Before each 19 Timestamp  𝑡 1 𝑡 2 𝑡 3
+
+Input 
+
+Read Then 
+
+Think 
+
+Streaming 
+
+Thinking 
+
+Behaviors 
+
+Behaviors 
+
+Time 
+
+<Read>  <Read While Think >
+
+Behaviors 
+
+Time 
+
+<Read While Think > <Think > <Answer >
+
+<Think ><Read> <Read> <Read>  <Think ><Think > <Answer >
+
+Delay 
+
+Delay Figure 4: Comparison of reasoning paradigms. Streaming thinking performs reasoning concurrently with incremental input reading, enabling earlier responses and reducing delay. In contrast, the read-then-think paradigm postpones reasoning until all inputs are received, resulting in a larger delay. Question 
+
+If Nancy can work a total of 200 hours during the semester, what is the minimum hourly wage she needs to earn in order to cover the remaining tuition cost? 
+
+Context 1. Nancy is considering applying to the University of Michigan but wants to determine if she can afford it. 
+
+2. The tuition fee is $22,000 per semester. 
+
+3. Her parents can cover half the cost, and Nancy can receive a scholarship worth $3,000 and a student loan twice the amount of her scholarship. 
+
+SFT 
+
+Streaming Thinking 
+
+<think> 
+
+1. <skip> 
+
+2. The semester tuition is $22,000, which is the total cost that must be covered. 
+
+3. Nancy’s parents pay half of $22,000, which is $11,000, and she also gets $3,000 in scholarship money plus a student loan equal to twice that scholarship, or $6,000. Together these available funds total $19,000, so the remaining tuition cost is $22,000 -$19,000 = $3,000. 
+
+Deep Thinking 
+
+Now, the streaming reasoning is completed. Let’s combine all infor-mation and begin deeper & global reasoning to infer the answer. The key facts are that the full tuition is $22,000, and after subtracting the parents’ $11,000 contribution, the $3,000 scholarship, and the $6,000 student loan, $3,000 remains. Nancy can work 200 hours, so to earn exactly $3,000, her wage must satisfy 200 x wage = 3,000, giving wage = 15 dollars per hour. Thus, any wage at least $15 per hour would cover the remaining cost. Therefore, the answer is 15. 
+
+</think> 
+
+RL 
+
+Streaming Thinking 
+
+<think> 
+
+1. <skip> 
+
+2. The semester tuition is $22,000, so this is the total cost that must be covered. 
+
+3. Her parents pay half of $22,000, which is $11,000, and the schol-arship is $3,000. The student loan is twice the scholarship, so that is $6,000. Together, the covered amount is $11,000 + $3,000 + $6,000 = $20,000. Therefore, the remaining tuition cost is $22,000 - $20,000 = $2,000. 
+
+Deep Thinking 
+
+Now, the streaming reasoning is completed. Let’s combine all in-formation and begin deeper & global reasoning to infer the answer. Nancy needs to cover the remaining $2,000 using 200 work hours. The minimum hourly wage is the remaining cost divided by total hours, so $2,000 / 200 = $10 per hour. Therefore, the answer is 10. 
+
+</think> 
+
+Figure 5: Comparison between SFT and RL on a mathematical reasoning example. 
+
+actor forward pass, AdaSR therefore removes in-valid padding, concatenates the real source tokens with the real response tokens, and right-pads the resulting logical sequences within the micro-batch. The streaming metadata records the source length, target length, and per-segment boundaries of each sample. Given this packed representation, the Qwen3 20 streaming forward pass constructs a sentence-level streaming causal mask. Streaming tokens are al-lowed to attend to past target tokens and to source segments that have already been revealed, but not to future source segments. The final deep-reasoning segment is allowed to attend to the full source con-text and previous streaming thoughts. Logits for target tokens are sliced from the positions immedi-ately preceding each response token, and the result-ing log-probabilities are written back into the fixed response-width tensors expected by verl. Conse-quently, the PPO ratio compares old and new pol-icy probabilities for exactly the same sampled to-kens under the same streaming attention constraint, while HRPO can assign streaming, deep, and global advantages to their corresponding token ranges. 
+
+F Latency Analysis of Streaming Reasoning 
+
+Time Delay Time delay measures the wall-clock latency between the arrival of the final input token and the generation of the first answer token, directly reflecting the user-perceived waiting time after the input stream ends. As shown in Figure 4, read-then-think defers all reasoning until the full input is observed, so the entire reasoning process con-tributes to post-input latency. In contrast, streaming thinking performs intermediate reasoning during input reception, amortizing computation over the input stream and reducing residual latency after the final input segment arrives. Following Stream-ingThinker (Tong et al., 2025a), we set the input reading speed to 150 words per minute. 
+
+G Case Study 
+
+Comparison of SFT and RL for Streaming Paradigm for Math Reasoning Figure 5 is an extracted example comparing SFT and RL in math-ematical reasoning. As shown in the highlighted section, the RL model performs the calculation cor-rectly in the third segment of the streaming thinking process, whereas the SFT model makes an arith-metic error at the same step. This error in the SFT reasoning is then propagated into the deep thinking stage, ultimately leading to an incorrect answer. 21
