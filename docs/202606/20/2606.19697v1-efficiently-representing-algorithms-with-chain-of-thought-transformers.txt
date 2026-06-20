@@ -1,0 +1,1138 @@
+Title: Efficiently Representing Algorithms With Chain-of-Thought Transformers
+
+URL Source: https://arxiv.org/pdf/2606.19697v1
+
+Published Time: Fri, 19 Jun 2026 00:21:39 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# Efficiently Representing Algorithms with Chain-of-Thought Transformers 
+
+Yanhong Li 
+
+Allen Institute for AI 
+
+yanhongl@allenai.org 
+
+Anej Svete 
+
+ETH Zürich 
+
+asvete@ethz.ch 
+
+Ashish Sabharwal 
+
+Allen Institute for AI 
+
+ashishs@allenai.org 
+
+William Merrill 
+
+Allen Institute for AI 
+
+willm@allenai.org 
+
+## Abstract 
+
+The increasing popularity of reasoning models—language models that output a series of reasoning or thought tokens before producing an answer—is justified, in part, by theoretical results showing that chain-of-thought (CoT) transformers can simulate Turing machines, and thus perform arbitrary computation. However, the Turing machine, while suitable for complexity-theoretic analysis, is not convenient, intuitive, or efficient for discussing algorithms. Algorithms are typically designed and analyzed at a higher level of abstraction, captured by the Word RAM model with random-access memory and unit-cost operations on O(log n)-bit words. As a result, Word RAM algorithms can be substantially more efficient than their Turing machine counterparts, raising the question: Can CoT transformers efficiently simulate Word RAM algorithms? For instance, can they sort n items in O(n log n) steps or run Dijkstra’s algorithm in O(E + V log V ) steps? We answer affirmatively, up to poly-logarithmic overhead. We first establish this for finite-precision transformers with poly-logarithmic width and rightmost unique hard attention, then strengthen the result to two more practical settings with finite width and log-precision: continuous 
+
+CoT, where reasoning takes the form of vectors rather than tokens, and a hybrid 
+
+architecture in which transformer layers sit atop a recurrent (linear RNN) layer. In all three cases, we find that CoT can efficiently simulate any Word RAM algorithm with only a poly-logarithmic overhead in n. This overhead reduces to log-square when the Word RAM has a “flat” instruction set, and only logarithmic for multiplication-free flat instructions—in stark contrast to known CoT simulations of Turing machines, which require quadratic overhead over Word RAM. 
+
+## 1 Introduction 
+
+It has been known for a while that chain of thought (CoT) makes transformers Turing complete —able to simulate any algorithm in principle (Pérez et al., 2021). This justifies the empirical practice of training reasoning models to solve complex tasks (e.g., Snell et al., 2024; DeepSeek-AI, 2025; OpenAI, 2026). However, the ability to simulate a Turing machine (TM) does not immediately translate to being able to implement interpretable algorithms efficiently: while TMs provide an established framework for analyzing computational complexity, they are not practical for designing real-world algorithms. For instance, sorting n items takes only O(n log n) steps on a random-access machine (RAM)—an idealized computer whose memory cells can be read and written in unit time at arbitrary addresses, formalized in §2.1—because each comparison and swap touches an arbitrary array entry in a single step. A TM has no such random access: to reach the addressed cell it must move its head there, scanning a tape region of length up to O(n + t) per access. Simulating these                         
+
+> Preprint.
+> arXiv:2606.19697v1 [cs.LG] 18 Jun 2026 RAM step sRAM step s+1
+> · · · 0110 1001 1010 · · · mem #a1#v(s)1· · · mem #aℓ#v(s)
+> ℓ
+> TM-oracle scratch
+> 1011 0010 0101 · · · mem #a1#v(s+1) 1· · · · · ·
+
+Figure 1: Schematic of the CoT transcript simulating a Word RAM program. Within each slot, the model may emit TM-oracle scratch tokens—intermediate computations used to carry out the instruction—before committing the resulting memory updates as a list of address–value pairs. 
+
+O(n log n) RAM steps on a TM therefore costs up to O(n2 log n) steps, and on a single-tape TM sorting provably requires Ω( n2/ log n) steps (Hennie, 1965). This overhead is not a quirk of the analysis—it reflects a fundamental mismatch between TMs and algorithms that rely on random memory access or word-level arithmetic. This paper asks: can CoT transformers efficiently simulate algorithms as written in textbooks? We answer affirmatively. The natural model for describing textbook algorithms efficiently and concisely is the Word RAM .A Word RAM program stores data in a random-access memory (RAM) partitioned into words of 
+
+w = Θ(log( n + t)) bits—wide enough to address any of the O(n + t) cells the program may touch during a t-step execution—and it executes a program one instruction at a time, where each instruction runs in O(1) steps. Its primitive operations—memory reads and writes, integer arithmetic, bitwise operations, and comparisons—correspond directly to the operations of modern programming languages and the algorithms textbooks describe. Thus, the standard complexity bounds practitioners know about correspond naturally to the algorithms expressed in the Word RAM model. For example, sorting takes O(n log n) Word RAM steps and Dijkstra’s algorithm takes O(E + V log V ).Existing CoT expressivity results establish computational universality by simulating Turing machines (Pérez et al., 2021; Merrill and Sabharwal, 2024). These constructions, however, operate entirely at the TM-instruction level: each CoT token encodes one tape symbol, and each decoding step simulates one TM transition. Routing a Word RAM program of t steps through this construction therefore costs 
+
+O(t2) CoT tokens: a Word RAM on a TM already incurs an O(t2) blowup, 1 and the CoT spends one token per TM step. What is missing is a direct simulation at the Word RAM-instruction level—one that would let CoT transformers execute textbook algorithms at close to their textbook complexity. We close this gap with direct Word RAM simulations for decoder-only CoT transformers in three settings. (i) First, finite-precision transformers of polylogarithmic width using rightmost-unique hard attention—an interpretable and pedagogical construction emitting O(w2) tokens per Word RAM instruction, hence O(t w 2) = O(t log 2(n + t)) tokens overall, with the per-instruction overhead drop-ping to O(w) for multiplication-free instruction sets. This is essentially tight for discrete CoT: just as a Python program hard-coding a p-bit integer must write Ω( p) characters, any CoT transcript represent-ing a w-bit word must emit Ω( w) tokens from a fixed alphabet, giving an Ω( t w ) = Ω( t log( n + t)) 
+
+lower bound. Our Word RAM simulation matches this bound up to one logarithmic factor in general and exactly when multiplication is excluded—already far below the Ω( t2) of TM-based CoT simula-tions. (ii) Second, fixed-width transformers with continuous CoT —which reasons with hidden vectors in place of discrete tokens. These models can invoke a TM oracle for each Word RAM instruction, generalizing the finite-precision setting. (iii) Third, hybrid models—transformers augmented with a linear RNN layer—which can implement the same simulation with explicit CoT. For an instruc-tion set whose individual operations run in time κ(w) on a TM, the latter two constructions take 
+
+O(t κ (w)) CoT steps, generalizing the results to arbitrary instruction sets. This recovers the same poly-logarithmic overhead as the first setting: for the flat instruction sets we consider, κ(w) = O(w)
+
+when multiplication, division, and modulo are excluded and O(w2) otherwise, so O(t κ (w)) is 
+
+O(t log( n + t)) or O(t log 2(n + t)) accordingly. 
+
+Contributions. In summary, we prove that CoT transformers can directly simulate Word RAM algorithms with only poly-logarithmic overhead per instruction, matching an information-theoretic lower bound for discrete CoT up to a single logarithmic factor. Specifically, as summarized in Tab. 1: (i) Polylogarithmic-width transformers (§3). Fixed-precision transformers of log 2(n + t) width with rightmost-unique hard attention can simulate Word RAM programs. A Word RAM running t  
+
+> 1In general, each random-access step forces the TM to scan a tape region of length O(t)to reach the addressed cell.
+
+2steps with word size w = Θ(log( n + t)) is simulated using O(t · w2) = O(t log 2(n + t)) tokens, dropping to O(t · w) = O(t log( n + t)) for multiplication-free instruction sets. The latter matches the Ω( t w ) lower bound for discrete CoT exactly, the former up to a single w factor. (ii) Fixed-width transformers with continuous CoT (§5). A fixed-width, log-precision transformer augmented with continuous CoT—where each reasoning step is a real-valued vector rather than a discrete token—simulates any Word RAM program with O(t · κ(w)) decoding steps, where κ(w)
+
+is the TM cost of executing one instruction. (iii) Hybrid transformer–RNN models (§6). A fixed-width transformer augmented with a single linear RNN layer simulates any Word RAM program at the same O(t · κ(w)) cost with explicit 
+
+CoT, showing that recurrence is a natural and practical substitute for the width or continuity extensions of (i) and (ii). Table 1: The three transformer settings in which we simulate Word RAMs and their trade-offs. Overheads are per simulated RAM step (CoT tokens per instruction); w = Θ(log( n + t)) is the word size and κ(w) is the TM cost of one instruction. The polylog-width overhead drops to O(w) for multiplication-free instruction sets; for the fixed-width settings, κ(w) = O(w) (simple-arithmetic) or 
+
+O(w2) (full-arithmetic) flat instructions.                             
+
+> Setting Precision Width Attention Uniform? Overhead/step Result Polylog-width (§3) fixed O(log 2n)rightmost UHAT no O(w2)Thm. 1 Continuous CoT (§5) O(log n)fixed averaging hard yes O(κ(w)) Thm. 3 Hybrid (§6) O(log n)fixed averaging hard + RNN yes O(κ(w)) Thm. 4
+
+## 2 Preliminaries 
+
+2.1 The Word RAM Computational Model 
+
+There are several different variants of Word RAMs in the literature with different instruction set details, ranging from C-like Word RAMs (Hagerup, 1998; Thorup, 1996; Morin, 2013) to the weaker multiplication-free basic instruction set of Brodnik et al. (1997). While classical literature has often explored various minimal , assembly-like instruction sets under which the model is Turing-complete, our goal here is different: we would like to argue that transformers and hybrid models, when equipped with CoT, can directly simulate programs even when they are written in a much higher-level language, such as “textbook algorithms” or simple Python programs, with only a log or log-square overhead. Note that this is a stronger claim than simulating a minimal instruction set with instructions like 
+
+load , store , increment , etc., with a log or log-square overhead. Keeping this overhead small is important; after all, every Word RAM program can be converted to a Turing machine if one disregards the overhead (which, in general, would be quadratic), and then simulated using standard transformers with CoT via known constructions (Pérez et al., 2021; Merrill and Sabharwal, 2024). 
+
+Syntax. To this end, we define the following grammar for specifying Word RAM programs. Let n be the input length, k as the maximum number of variables (realized as registers) allowed in the Word RAM program, and c1, . . . , cm as the fixed constants (independent of n) allowed in the program.                                                           
+
+> Line →Var =Expr | halt
+> Expr →Input | Const | Var | Expr Op Expr | UnOp Expr | Expr if Cond else Expr Cond →Bool | Expr Comp Expr | Cond BoolOp Cond | ¬Cond Var →Reg | Mem | pc
+> Mem →mem [Expr] Input →inp [Expr] Reg →r1 |r2 |. . . |rk
+> Op →+| − | × | ÷ | mod | ≪ | ≫ | &| | |⊕
+> BoolOp →∧|∨
+> UnOp →¬
+> Comp →<| ≤ | =|̸ =| ≥ | >
+> Const →n|c1 |c2 |. . . |cm
+
+The above grammar allows nesting of expressions (e.g., mem [mem [mem [7]]]) as well as composition of logical operators over conditionals via the Cond rule. We require that the nesting depth of every expression and condition be bounded by a constant independent of n. This is what makes each line 3executable in O(1) Word RAM steps. We also consider a simplified version of this grammar that doesn’t allow nesting. This is obtained by changing the grammar expansion rules for Expr and Cond to not be recursive, as follows:           
+
+> FlatExpr →Input | Const | Var Expr →FlatExpr | FlatExpr Op FlatExpr | UnOp FlatExpr | FlatExpr if Cond else FlatExpr Cond →Bool | FlatExpr Comp FlatExpr
+
+We call a Word RAM program flat if it uses only the flat grammar above. We further distinguish two flat instruction classes by which operators from Op appear: full-arithmetic flat programs may use any operator from Op, while simple-arithmetic flat programs restrict Op to {+, −, ≪, ≫, &, |, ⊕} ,i.e., it excludes ×, ÷, mod .
+
+Semantics. A specific Word RAM machine is specified by a finite-length program of the form above, with the standard semantics when executed on a string x ∈ Σ∗. In more detail, the machine has three memory arrays: a read-only one inp that contains the input x, mem is a standard read-write tape initialized to all zeros, and out is an output tape that can only be written to, where written values are stored mod |Σ|. The machine state also specifies the value of the program counter pc and finite registers r1 , . . . , rk , which all start as 0. When an instruction is run, pc is incremented, unless it is otherwise assigned by the instruction (e.g., pc = r2 + 1 ). The program runs until halt is executed, at which point the contents of out is deemed the output. When considering language recognition, we say that a Word RAM accepts a string iff out [0] = 1 .Without loss of generality, we can view the program counter pc and each register ri as stored in memory via pc ≜ mem [0] and ri ≜ mem [−i], with mem being 1-indexed for standard memory. 
+
+2.2 Transformers and Related Models Transformers. We defer a definition of the standard transformers model to §A.1. The depth of our transformer will be fixed , i.e., O(1) , w.r.t. sequence length n and CoT runtime t = O(nc). Regarding precision and width of our transformers, we consider two possibilities motivated by a bifurcation in the transformer expressivity literature (Strobl et al., 2024; Svete et al., 2026): 1. Fixed precision and polylogarithmic, i.e., O(log k n) width. Because width grows with n and t,this model is not fully uniform, meaning new parameters are introduced on longer inputs and CoTs. We use rightmost-unique hard attention transformers ( UHAT s) (cf. Strobl et al., 2024). 2. Logarithmic, i.e., O(log n), precision and fixed width. We further enforce in this model that the parameters are fully uniform. We use averaging hard attention (cf. Strobl et al., 2024). 
+
+Linear RNNs and Hybrid Models. Next, we define linear RNN layers. There are many existing linear RNN architectures with complex parameterizations that all meet the following general form for different choices of At, bt, and ct (Merrill et al., 2026): St+1 = AtSt + bt and ht = c⊤ 
+
+> t
+
+St We will assume for simplicity that At, bt, and ct are all parameterized as projections of the input vector to the RNN layer at step t. RNNs can be fit into a transformer architecture by using the head input to compute At, b t, and ct and then defining ht as the head output. The sublayer output from a multihead RNN layer would then be passed through layer-norm in the standard way. A hybrid model is an architecture that mixes attention heads with linear RNN heads. 
+
+CoT. Finally, we say that a transformer T computes a function f within CoT budget t(n) if, after feeding x through T and allowing at most t(|w|) autoregressive steps sampled greedily (potentially terminating early), the generated tokens end with the suffix =f (w)$ , where = is an output delimiter and $ is the end-of-string symbol. Continuous CoT is defined analogously except that final logits of the transformer are passed as a “soft token” to the next step rather than a token decoded from them. 
+
+2.3 Layernorm Hash Representation 
+
+In the log-precision model, we will represent values v using their layer-norm hash ϕ(v), which is a unit-norm vector in R4 defined as follows (Merrill and Sabharwal, 2024): 
+
+ϕ(v) ≡ ϕ(v, 1) := layernorm( v, 1, −v, −1) = (v, 1, −v, −1) 
+
+√2v2 + 2 . (1) 4More generally, ϕ(a, b ) = layernorm( a, b, −a, −b). This representation has several useful properties (similar to binary encodings) that we will leverage. The first property is useful for performing an equality check using inner product, as well as tie-breaking in order to simulate rightmost attention: 
+
+Proposition 1 (Equality Check and Mismatch Gap: Merrill and Sabharwal, 2024) . Let u, v ∈{0, 1, . . . , T }. Then ⟨ϕ(u), ϕ (v)⟩ = 1 if and only if u = v. Further, when u̸ = v, ϕ(u), ϕ (v)⟩ ≤ 
+
+1 − δT where δT := 14( T 2+1) 2 .
+
+See proof in §A.2 for completeness. ϕ is scale invariant (Merrill and Sabharwal, 2024): ϕ(cu, cv ) = 
+
+ϕ(u, v ) = ϕ(u/v, 1) = ϕ(u/v ). We can also “swap” the dimensions of ϕ to invert a number: if 
+
+ϕ(v) = ( s1, s 2, −s1, −s2), then ϕ(1 /v ) = ( s2, s 1, −s2, −s1). We introduce a new general affine update (proof in §A.2), computable by a fixed-depth feedforward network as well as with an RNN: 
+
+Proposition 2 (Affine Update) . Fix constants a, b ∈ R. Let ϕ(v) = ( s1, s 2, −s1, −s2). Then 
+
+ϕ(av + b) = layernorm( as 1 + bs 2, s 2, −(as 1 + bs 2), −s2).
+
+## 3 Simulating Word RAMs with Polylog-Width Transformers 
+
+We begin by showing how transformers with polylogarithmic width and fixed precision can simulate Word RAMs—a stepping stone towards more uniform transformer models, which do not require new parameters as the input length grows. Thus, we use the construction in this section to cleanly outline the simulation; the main ideas will re-appear in the subsequent sections. 
+
+The transformer model. We use a log 2-width finite-precision transformer model; see Remark 2 for a discussion of why log 2 width is needed. The constructions build on the log-width machinery formalized by existing work (Li et al., 2024; Svete et al., 2025; Svete and Sabharwal, 2026). 2 This allows us to reuse existing gadgets in our constructions. 
+
+Representation of values. In the polylogarithmic-width setting, word-sized integers are stored in the residual stream as binary vectors denoting their binary expansions: for a value v ∈ { 0, 1}w, the 
+
+representation repr( v) def 
+
+= bits( v) ∈ { 0, 1}w is placed directly as a vector in the residual stream. This gives two primitives: (i) equality checking via inner products ( repr( i)⊤repr( j) = w iff i = j,and strictly less otherwise), and (ii) bit extraction via repr( v)⊤et = bt for the tth standard basis vector et. These two primitives are the key gadgets exploited throughout this section; the subsequent sections will define different representations to maintain fixed width. Thm. 1 formalizes Word RAM simulation by log 2-width transformers; see §C for the full proof. 
+
+Theorem 1 (Simulation of Word RAMs by log 2-Width Transformers) . Let M be a flat Word RAM program with word size w. Then there exists a rightmost UHAT T with finite precision, O(w) heads each of width O(w), and total model dimension O(w2) = O(log 2(n + t)) , such that, for any t ≥ n,
+
+T can simulate t steps of M with t · O (w2) CoT steps. Further, if M does not use ×, ÷, or mod , T
+
+can simulate t steps of M with t · O (w) CoT steps. Proof sketch. Following the Word RAM definition (§2.1), the Word RAM state—program counter, registers, and memory—is folded into a single random-access memory mem . The construction logs every memory write to the CoT transcript as a memory block of the form mem # bits( a) # bits( v)
+
+(Fig. 1). The central operation is the memory read (Lem. 12): given a query address bits( a) in the residual stream, recover the value of the rightmost mem block whose address field encodes a (i.e., the most recent write to mem [a]). This uses two attention steps: the first selects the rightmost matching address position; the second retrieves the value field at the known offset. Each CoT step runs four constant-depth layer blocks (cf. Fig. 4 and §C): (i) Load pc : an indexed read with the constant query 0 recovers bits( mem [0]) in two attention layers (Prop. 3); (ii) Load Instruction and Operands: the active line of the program is identified from bits( mem [0]) by an MLP that issues parallel reads of every compile-time address listed in the instruction’s operand descriptor (registers), and a second round of reads resolves any runtime addresses ( mem [a] or inp [a])whose index a is now in the residual stream (Prop. 4); (iii) Execute: a single MLP computes the w-bit    
+
+> 2In particular, we use L-uniform transformers (London and Kanade, 2025), (Barcelo et al., 2026, §4.4) with positional encodings that only contain the binary representation of the position. This prevents the PEs from encoding too much information and relies on the transformer abilities to simulate the Word RAM programs.
+
+5destination value(s) and the next pc from the operands now in the residual stream (Prop. 5); (iv) Store: 
+
+an attention layer computes the within-step offset δ from the rightmost &, and the appropriate δth 
+
+token (a mem , a #, an address bit, a value bit, or &) is emitted as the output token (Prop. 6). For simple instructions, Blocks (i) –(iii) produce identical outputs at every token within the same step, so only δ advances in Block (iv) , emitting one token at a time over O(w) total positions. Deserialization uses w dedicated attention heads (one per bit), each of width w, giving the O(w2) = 
+
+O(log 2(n + t)) model dimension. In contrast to simple instructions, multiplication, division, and modulo cannot be computed in a single transformer step and are compiled into O(w) flat micro-steps that share state through program-private memory cells. Each micro-step costs O(w) tokens, for 
+
+O(w2) total; every micro-step uses the same four-block pipeline (Prop. 7). 
+
+Corollary 1. Let M and T be as in Thm. 1. We have the following: (i) T can simulate t steps of M with full-arithmetic flat instructions using O(t log 2 t) steps. (ii) T can simulate t steps of M with simple-arithmetic flat instructions using O(t log t) steps. Remark 1 (Bit extraction as a dot product) . Reading from and writing into the CoT transcript both require bit extraction : computing BIT( v, t ), the tth bit of v. In the log 2-width setting this is trivial: since bits( v) ∈ { 0, 1}w is stored as a coordinate vector in the residual stream, extracting bt
+
+reduces to the dot product bits( v)⊤et = bt with the tth standard basis vector et. In the fixed-width constructions later, bits( v) is no longer directly available as a coordinate vector, so bit extraction becomes substantially more involved and is one of the primary sources of complexity in those proofs. These results provide a general framework for how CoT can simulate Word RAM programs. However, the log 2-width construction is non-uniform : the model grows with n, so new parameters—untrained on shorter inputs—must be invoked as the inputs grow longer. The construction also requires 
+
+rightmost UHAT ; we show in Remark 3 that weaker attention models cannot implement the indexed-read step. The fixed-width constructions in the following sections avoid the non-uniformity and reliance on rightmost UHAT s at the cost of more complex reading and writing mechanisms. 
+
+## 4 Towards a Uniform Fixed-Width Construction: Bottlenecks and Plan 
+
+In §3, storing bits( v) in the residual stream gives three things for free: (i) equality checking via inner products, (ii) bit extraction via bits( v)⊤et = bt, and (iii) a clean serialization/deserialization mechanism. Moving to fixed width forces us to abandon the bits representation, and each of these primitives must be rebuilt from scratch. We describe the resulting challenges below. 
+
+Bottleneck: Reading and writing values. The deepest challenge in moving to fixed width is that we must adopt a different representation of numbers in the residual stream. For fixed-width constructions, any such representation repr of values must satisfy two properties simultaneously: (a) Equality gap: repr( i)⊤repr( j) = 1 if i = j, and repr( i)⊤repr( j) < 1 − ϵ otherwise. (b) Read/write: We can serialize repr( v) to a binary CoT encoding and recover repr( v) from it. The first property is needed for the indexed-read attention mechanism; the second is needed both 
+
+(a) to pass pointers computed at a higher layer back to lower layers in future steps, and (b) to hand binary-encoded operands to the TM oracle for complex arithmetic. Past work has established the 
+
+layer-norm hash ϕ(i) as a fixed-width representation satisfying the equality-gap property (Merrill and Sabharwal, 2024), but reading and writing via ϕ presents a challenge. Writing is hard because it requires computing BIT( v, j ) from ϕ(v)—mapping a hash representation back to individual bits. 3 One approach is to compute ϕ(v mod 2) and ϕ(⌊v/ 2⌋) iteratively. When 
+
+v ≤ t, Merrill and Sabharwal (2025) give a construction for computing ϕ(v mod 2) and ϕ(⌊v/ 2⌋)
+
+from ϕ(v); for larger values this is open (note that Prop. 2 allows easily computing ϕ(v/ 2) , but not 
+
+ϕ(⌊v/ 2⌋)). To resolve the write challenge, we adopt a normal form for Word RAMs that enforces 
+
+v ≤ t at every step, developed in §4.1, allowing us to compute the least significant bit of v as well as 
+
+ϕ(⌊v/ 2⌋). The remaining bits of v can be obtained by iterating the process, which requires repeatedly 
+
+conditioning on ϕ(⌊v/ 2⌋), ϕ(⌊v/ 4⌋), etc. We show this can be achieved via either of two minimal  
+
+> 3BIT( v, j )plays a central role in descriptive complexity theory and the analysis of transformer expressivity.
+
+6architectural extensions: continuous CoT (§5, Lem. 5) or hybrid transformer–RNN models (§6, Lem. 8). 4
+
+Reading is hard for a complementary reason: while ϕ(v) can be reconstructed from a binary CoT encoding via iterative bit-shifting within the ϕ representation, this is not known to be achievable by a plain transformer. We show that this too becomes feasible with either of two minimal architectural extensions: continuous CoT (§5, Lem. 7) and hybrid transformer–RNN models (§6, Lem. 9). 4
+
+4.1 Writing Solution: Equivalent RAMs with Bounded Word Values 
+
+We define a c-dimensional Word RAM as a Word RAM where the tape is replaced by a c-dimensional array of c-dimensional tuples. The following lemma shows that such Word RAMs are as powerful as standard Word RAMs, up to a constant factor in runtime (see §B for a proof): 
+
+Lemma 1. Let M be a 1-dimensional Word RAM with word size w = c log( n + t) for some c ∈ N.Then there exists a c-dimensional restricted Word RAM M ′ with word size w′ = log( n + t) and the same instruction set as M that simulates t steps of M using O(t) steps. 
+
+This shows that we can reduce any M using word size w = c log( n + t) to M ′ using word size 
+
+w = log( n + t). Now, define a Word RAM as restricted if, for any step i, any value v represented in any register satisfies v ≤ i. Any Word RAM M can be converted to be restricted by making it do nothing for the first v steps, and then simulating the i-th step of M at step v + i:
+
+Lemma 2. Let M be any c-dimensional Word RAM where all values are at most v(n) on inputs of size n. Then there exists M ′ that simulates t steps of M using v(n) + t steps such that, at each step i,all values in M ′ are at most i.
+
+We can first invoke Lem. 1 and then apply Lem. 2 with v(n) = n + t to obtain the following: 
+
+Theorem 2 (Restricted Word RAM Equivalence) . A standard Word RAM running in time t(n) on inputs of size n can be simulated by a restricted c-dimensional Word RAM in time O(n + t(n)) .
+
+This will be useful because simulating restricted Word RAMs with transformer-like models will be easier than simulating unrestricted ones. Specifically, the property v ≤ i will be useful for writing numbers in binary as it allows us to divide numbers using attention via the following special case of the “division lemma” of Merrill and Sabharwal (2024) where the divisor is 2 (see §B for a proof): 
+
+Lemma 3 (Simplified Division Lemma) . There exists a transformer block that, for any ϕ(v) present in the residual stream at position t for v ≤ t, adds ϕ(⌊v/ 2⌋) and ϕ(v mod 2) to the residual stream. 
+
+This will be useful for writing numbers ϕ(v) onto the CoT in binary because it allows computing the least significant bit via ϕ(v mod 2) , or ϕ(v mod 2 i), which can be useful for recovering other bits. 
+
+## 5 Simulating Word RAMs with Continuous CoT 
+
+The bounded-value normal form from §4.1 ensures a crucial bit-extraction precondition: during execution, every word v at RAM step s satisfies v ≤ s. Since each simulated step produces at least one transcript symbol, this implies v ≤ τ whenever the simulator begins emitting a bit-string segment at transcript position τ . Thus, whenever we need to stream a word as bits we may apply the simplified division primitive (Lem. 3) to compute ϕ(⌊v/ 2⌋) and ϕ(v mod 2) (the first bit) from ϕ(v), and then repeat the process for the next bit by conditioning the computation on ϕ(⌊v/ 2⌋), and so on. The remaining obstacle is persistence : after streaming w discrete bits, later computation must still have access to a constant-dimensional word code that supports exact-match attention (for RAM addressing) and can be carried forward across time. We show that continuous CoT can be used to achieve both conditioning and persistence. 
+
+Continuous CoT and soft tokens. In the continuous-CoT model, each decoding step emits both (i) a discrete token from a fixed alphabet and (ii) a constant-dimensional soft token pi ∈ Rds . The next decoding step receives the entire prefix, including the past soft tokens, so pi can be attended to by future layers. In particular, a constant-depth transformer block can copy designated coordinates of 
+
+> 4This iterative computation can also be performed by a logarithmic-depth transformer; we do not explore this here.
+
+7the most recent soft token forward (e.g. via a fixed-offset retrieval head), so the soft token acts as a small persistent register bank threaded through the transcript. 
+
+Theorem 3 (Simulating Word RAMs with CCoT) . Let M be a d-dimensional-array Word RAM with word size w = log( n + t) + O(1) and per-instruction bit-serial cost bound κ(w).5 Then there exists a log-precision, finite-width continuous CoT transformer T such that, for any t ≥ n, t steps of M
+
+can be simulated by T using O(t κ (w)) decoding steps. Proof overview. We prove Thm. 3 by induction on the simulated RAM step s. The simulator maintains an append-only transcript whose soft token stores the pair (ϕ(a), ϕ (v)) for the written address/value mem [a] ← v (absorbing pc and registers into mem ; see §2.1). Checkpoint and store-summary positions are marked by constant discrete tags so attention can restrict to the relevant subset. If no store-summary exists for an address a, the value at mem [a] is interpreted as 0. A useful property of continuous CoT is that we can always make the latest checkpoint available “from layer 0” at future positions: a constant-depth carry block can attend to the rightmost checkpoint tag and copy its soft-token coordinates into designated coordinates of the current residual stream. 
+
+One simulated RAM step. Assume the invariant holds at the end of RAM step s. To simulate step 
+
+s+1 , we perform the following conceptual phases (some happen within a single decoding step, others take many decoding steps), illustrated in Fig. 2: (1) Load pc . Attend to the rightmost checkpoint and copy ϕ(PC (s)) (and the register codes) into the current residual stream. Use PC (s) to select which instruction subroutine/oracle to run. (2) Load operand values. For each register/constant operand, read ϕ(·) directly from the copied checkpoint state. For each memory operand mem [a], form ϕ(a) and dereference the most recent matching store-summary to recover the operand in coded form ϕ(v) (Lemma 4). (3) Serialize inputs (write a binary tape). For each coded input word needed by the instruction oracle, emit its w bits onto the discrete transcript using Lemma 5. This creates a delimited 
+
+work-tape suffix for the instruction oracle. (4) Instruction execution (TM oracle). Activate the instruction-specific TM-oracle subroutine, which operates only on the work-tape suffix and runs for O(κ(w)) decoding steps, emitting the output words as bit streams (Lemma 6). (5) Deserialize outputs. Convert each output bit stream into its coded form ϕ(·) for future addressing and equality tests, using Lemma 7. (6) Store updates (re-establish the invariant). Emit a new checkpoint token whose soft token stores the updated state ϕ(PC (s+1) ), ϕ (r(s+1) 1 ), . . . , ϕ (r(s+1)  
+
+> ρ
+
+). If the instruction writes mem [a] ← v,also emit a store-summary token storing (ϕ(a), ϕ (v)) . By construction, this new checkpoint (and store-summary, if present) is the rightmost such entry, so it will be used at the next step. Correctness follows from induction on s: step (5) appends the new rightmost checkpoint encoding the updated registers/PC, and appends the new rightmost store-summary for any updated address. The total number of decoding steps spent in phases (2)–(4) is O(w + κ(w)) per RAM instruction, yielding O(t κ (w)) steps overall. The following lemmas implement each step (proofs in §D). 
+
+Lemma 4 (Steps 1–2: loading values) . Suppose the transcript contains store-summary positions, each tagged and whose soft token stores a pair (ϕ(aj ), ϕ (vj )) . Let τ be a transcript position at which a query address a is available as ϕ(a) in the residual stream, and suppose a ≤ τ . Then a log-precision, finite-width continuous-CoT transformer can retrieve ϕ(vj∗ ), where j∗ is the largest index with aj∗ = a. If no such j∗ exists, it retrieves ϕ(0) .
+
+Lemma 5 (Step 3: serialization) . Let τ be a transcript position at which a value v is available as 
+
+ϕ(v) in the residual stream, and suppose v ≤ τ . Then a log-precision, finite-width continuous-CoT transformer can emit the w bits of v over the next w decoding steps, ordered from least to most significant, while keeping ϕ(v) available in designated coordinates of the soft token throughout. 
+
+Lemma 6 (Step 4: instruction execution) . Fix any RAM instruction I on w-bit operands whose bit-serial implementation runs in κ(w) decoding steps. There exists a log-precision, finite-width continuous-CoT transformer subnetwork that, once activated, simulates this bit-serial computation         
+
+> 5Here κ(w)counts decoding steps of a fixed-alphabet bit-serial implementation of a RAM instruction on w-bit operands, including the unavoidable Ω( w)serialization of any fresh w-bit output word over a fixed alphabet.
+
+8Phase 1 : Load pc                 
+
+> Phase 2 : Dereference operand addresses
+> Phase 3 : Serialize inputs to bits
+> Phase 4 : Instruction oracle (TM)
+> Phase 5 : Deserialize outputs to ϕ(·)
+> Phase 6 : Emit store-summary / checkpoint
+> one RAM step ( O(κ(w))  steps)
+> (bookkeeping)
+> Lem. 4
+> Lem. 5
+> Lem. 6
+> Lem. 7
+> (bookkeeping)
+> Phases 3–5 collapse into Block 3 of Fig. 4.
+> Soft token
+> ...
+> aux
+> ...
+> ϕ(v)
+> ϕ(a)
+> ...
+> aux
+> O(1) dim.
+> Attends to full context
+> input · · · prev. step ckpt · · · wts b0· · · bw-1oracle work c0· · · cw-1ckpt’
+> work-tape suffix (used by the oracle) CoT transcript
+> soft token:
+> O(1) aux codes
+
+Figure 2: Six-step CCoT simulation of a RAM instruction; detailed caption in Appendix, Fig. 5. 
+
+for O(κ(w)) decoding steps and emits the output bit streams of I onto the transcript. Moreover, the subnetwork can be made to ignore the rest of the transcript by delimiting a work-tape suffix (with a start marker) and restricting all attention inside the subroutine to positions in that suffix. 
+
+Lemma 7 (Step 5: deserialization) . There exists a log-precision, finite-width continuous-CoT transformer that, on bit sequence b0, . . . , b w−1 followed by w arbitrary tokens, computes ϕ(v) in the residual stream at the last step, where v = Pw−1 
+
+> k=0
+
+bk2k is the LSB evaluation of b.
+
+Step 6: storing new values. We emit a soft token encoding the target position to write to (from load step) as k and the output value (from deserialize) as v. This completes the store step, satisfying our inductive invariant for step s + 1 , which completes the proof. We have the following consequences of Thm. 3, depending on the complexity of the instruction set: 
+
+Corollary 2 (Simulating Word RAMs with CCoT) . Let M and T be as in Thm. 3. Depending on the complexity of the instruction set κ(w) of M , the following hold: (i) T can simulate t steps of M with arbitrary poly (w)-time instructions using ˜O(t) steps. (ii) T can simulate t steps of M with full-arithmetic flat instructions using O(t log 2 t) steps. (iii) T can simulate t steps of M with simple-arithmetic flat instructions using O(t log t) steps. 
+
+## 6 Simulating Word RAMs with Hybrid Models 
+
+Finally, we show that, similarly to using CCoT, leveraging hybrid models that mix transformer and linear RNN components allow simulating a Word RAM: 
+
+Theorem 4 (Simulating Word RAMs with Hybrid Models) . Let M be a c-dimensional-array Word RAM with word size w = log( n + t) + O(1) and maximum instruction cost κ(w). Then there exists a log-precision, fixed-width hybrid model H with a single RNN layer at the bottom such that, for any 
+
+t ≥ n, t steps of M can be simulated by H using O(tκ (w)) steps. 
+
+Let v = Pw−1 
+
+> k=0
+
+bk2k. The proof of this theorem is structurally identical to that of Thm. 3 for transformers with continuous CoT, except for the way values v, represented as ϕ(v) in the residual stream, are serialized as bits b0, b 1, . . . , b w−1 via CoT, and the way bits b0, b 1, . . . , b w−1 in the input layer are deserialized as ϕ(v) in the residual stream. Since we no longer have access to soft tokens in the CoT output, we cannot simply emit intermediate ϕ representations as part of the CoT to condition 9upon in the next step. However, we can use a similar ability afforded by RNNs, which naturally allow conditioning on values available in the residual stream at the immediately previous position. The only other difference is in the store step, where the continuous CoT captures operations of the form mem [a] ← v by emitting a store-summary soft token storing (ϕ(a), ϕ (v)) . Instead, we now serialize a and v using w bits each via the (updated) serialization lemma below, and use the (updated) deserialization lemma on these bits to obtain ϕ(a) and ϕ(v) in the layer 1 residual stream after w
+
+additional dummy tokens. All other steps in the construction for Thm. 3 remain unchanged. In the remainder of this section, we thus focus on deriving counterparts of Lemmata 5 and 7 for hybrid architectures. The serialization construction is essentially the same as in the proof of Lem. 5, except that without continuous CoT, we cannot emit ϕ(vk+1 ), defined as ϕ(⌊vk/2⌋), at position τ + k + 1 and read it back in at the following position. Instead, we emit bk, computed via Lem. 3. We then compute ϕ(⌊vk/2⌋) from ϕ(vk) and bk
+
+via its equivalent form ϕ( 12 (vk − bk)) by leveraging Prop. 2 to turn it into a linear transformation that an RNN head can perform. This gives the following result (proof in §E): 
+
+Lemma 8 (Serialization) . Let τ be a transcript position at which a value v is available as ϕ(v) in the residual stream, and suppose v ≤ τ . Then a log-precision, finite-width hybrid model can emit the 
+
+w bits of v over the next w decoding steps, ordered from least to most significant. 
+
+For deserialization, we use the same recursive computation as in the corresponding lemma for continuous CoT (Lem. 7), except now the computation is within the hidden state of the linear RNN rather than via soft tokens. This gives the following result (proof in §E): 
+
+Lemma 9 (Deserialization) . There exists a log-precision, finite-width hybrid model that, on any bit sequence b0, . . . , b w−1 followed by w arbitrary tokens, computes ϕ(v), where v = Pw−1 
+
+> k=0
+
+bk2k is the LSB evaluation of b, in the residual stream at depth 1 at the last token. 
+
+Analogously to Cor. 2 for the CCoT simulation, we have the following notable cases: 
+
+Corollary 3 (Simulating Word RAM with Hybrid Models) . Let M and H be as in Thm. 4. Depending on the complexity of the instruction set κ(w) of M , the following hold: (i) H can simulate t steps of M with arbitrary poly (w)-time instructions using ˜O(t) steps. (ii) H can simulate t steps of M with full-arithmetic flat instructions using O(t log 2 t) steps. (iii) H can simulate t steps of M with simple-arithmetic flat instructions using O(t log t) steps. 
+
+## 7 Conclusion 
+
+We show that poly-logarithmic-width transformers can simulate a Word RAM; while it is unclear whether fixed-width transformers can also do so, we show that two minimal extensions to fixed-width transformers (continuous CoT transformers and hybrid models) both can. Our results show that CoT—at least for certain architectures—allows simulating algorithms with their general textbook runtimes up to a polylogarithmic factor, removing the quadratic overhead that would be incurred by going through previously established Turing completeness results (Pérez et al., 2021; Merrill and Sabharwal, 2024). Since certain realistic extensions (continuous CoT or RNN layers) to transformers are crucial for the fixed-width constructions, it is an interesting open question to what degree these extensions are necessary for efficient Word RAM simulation. It would also be interesting to study to what degree these extensions benefit algorithmic reasoning in transformer models in practice. 
+
+## References 
+
+Pablo Barcelo, David Chiang, George Cybenko, Lena Strobl, and Andy Yang. Theory of Neural Language Models (Dagstuhl Seminar 25282). Dagstuhl Reports , 15(7):22–52, 2026. ISSN 2192-5283. doi: 10.4230/DagRep.15.7.22. URL https://drops.dagstuhl.de/entities/ document/10.4230/DagRep.15.7.22 .Andrej Brodnik, Peter Bro Miltersen, and J. Ian Munro. Trans-dichotomous algorithms without multiplication — some upper and lower bounds. In Frank Dehne, Andrew Rau-Chaplin, Jörg-Rüdiger Sack, and Roberto Tamassia, editors, Algorithms and Data Structures , pages 426–439, Berlin, Heidelberg, 1997. Springer Berlin Heidelberg. 10 DeepSeek-AI. DeepSeek-R1 incentivizes reasoning in LLMs through reinforcement learning. Nature ,645(8081):633–638, Sep 2025. ISSN 1476-4687. doi: 10.1038/s41586-025-09422-z. URL 
+
+https://doi.org/10.1038/s41586-025-09422-z .Torben Hagerup. Sorting and searching on the word ram. In STOC , STACS ’98, page 366–398, Berlin, Heidelberg, 1998. Springer-Verlag. ISBN 3540642307. F.C. Hennie. One-tape, off-line turing machine computations. Information and Control , 8(6):553–578, 1965. ISSN 0019-9958. doi: https://doi.org/10.1016/S0019-9958(65)90399-2. URL https: //www.sciencedirect.com/science/article/pii/S0019995865903992 .Selim Jerad, Anej Svete, Jiaoda Li, and Ryan Cotterell. Unique hard attention: A tale of two sides. In ACL , pages 977–996, Vienna, Austria, July 2025. doi: 10.18653/v1/2025.acl-short.76. URL 
+
+https://aclanthology.org/2025.acl-short.76/ .Jeonghoon Kim, Byeongchan Lee, Cheonbok Park, Yeontaek Oh, Beomjun Kim, Taehwan Yoo, Seongjin Shin, Dongyoon Han, Jinwoo Shin, and Kang Min Yoo. Peri-LN: Revisiting normalization layer in the transformer architecture. In Forty-second International Conference on Machine Learning , 2025. URL https://openreview.net/forum?id=ci1S6wmXfO .Donald E. Knuth. The art of computer programming, volume 2 (3rd ed.): seminumerical algorithms .Addison-Wesley Longman Publishing Co., Inc., USA, 1997. ISBN 0201896842. URL https: //dl.acm.org/doi/10.5555/270146 .Jiaoda Li and Ryan Cotterell. Characterizing the expressivity of fixed-precision transformer language models. In NeurIPS , 2026. URL https://openreview.net/forum?id=29LwAgLFpj .Zhiyuan Li, Hong Liu, Denny Zhou, and Tengyu Ma. Chain of thought empowers transformers to solve inherently serial problems. In ICLR , 2024. URL https://openreview.net/forum? id=3EWTEy9MTM .Charles London and Varun Kanade. Pause tokens strictly increase the expressivity of constant-depth transformers. In NeurIPS , 2025. URL https://openreview.net/forum?id= eG5oh8l1WZ .William Merrill and Ashish Sabharwal. A logic for expressing log-precision transformers. In NeurIPS ,2023a. William Merrill and Ashish Sabharwal. The parallelism tradeoff: Limitations of log-precision transformers. TACL , 11:531–545, 2023b. William Merrill and Ashish Sabharwal. The expressive power of transformers with chain of thought. In ICLR . OpenReview.net, 2024. URL https://openreview.net/forum?id= NjNGlPh8Wh .William Merrill and Ashish Sabharwal. A little depth goes a long way: the expressive power of log-depth transformers. In NeurIPS , 2025. URL https://openreview.net/forum?id= zDze7VtB5C .William Merrill, Hongjian Jiang, Yanhong Li, Anthony Lin, and Ashish Sabharwal. Why are linear rnns more parallelizable? arXiv preprint arXiv:2603.03612 , 2026. URL https://arxiv. org/abs/2603.03612 .Pat Morin. Open Data Structures: An Introduction , volume 9. Athabasca University Press, 2013. Franz Nowak, Anej Svete, Alexandra Butoi, and Ryan Cotterell. On the representational capacity of neural language models with chain-of-thought reasoning. In ACL , pages 12510–12548, Bangkok, Thailand, August 2024. doi: 10.18653/v1/2024.acl-long.676. URL https://aclanthology. org/2024.acl-long.676/ .Team Olmo. Olmo 3, 2026. URL https://arxiv.org/abs/2512.13961 .11 Catherine Olsson, Nelson Elhage, Neel Nanda, Nicholas Joseph, Nova DasSarma, Tom Henighan, Ben Mann, Amanda Askell, Yuntao Bai, Anna Chen, Tom Conerly, Dawn Drain, Deep Ganguli, Zac Hatfield-Dodds, Danny Hernandez, Scott Johnston, Andy Jones, Jackson Kernion, Liane Lovitt, Kamal Ndousse, Dario Amodei, Tom Brown, Jack Clark, Jared Kaplan, Sam McCandlish, and Chris Olah. In-context learning and induction heads. arXiv preprint arXiv:2209.11895 , 2022. URL https://arxiv.org/abs/2209.11895 .OpenAI. OpenAI o1 system card. arXiv preprint arXiv:2412.16720 , 2026. URL https://arxiv. org/abs/2412.16720 .Bo Peng, Ruichong Zhang, Daniel Goldstein, Eric Alcaide, Xingjian Du, Haowen Hou, Jiaju Lin, Jiaxing Liu, Janna Lu, William Merrill, Guangyu Song, Kaifeng Tan, Saiteja Utpala, Nathan Wilce, Johan S. Wind, Tianyi Wu, Daniel Wuttke, and Christian Zhou-Zheng. RWKV-7 ”goose” with expressive dynamic state evolution. In Second Conference on Language Modeling , 2025. URL 
+
+https://openreview.net/forum?id=ayB1PACN5j .Jorge Pérez, Pablo Barceló, and Javier Marinkovic. Attention is turing-complete. Journal of Machine Learning Research , 22(75):1–35, 2021. URL http://jmlr.org/papers/v22/20-302. html .Imanol Schlag, Kazuki Irie, and Jürgen Schmidhuber. Linear transformers are secretly fast weight programmers. In Marina Meila and Tong Zhang, editors, Proceedings of the 38th International Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research ,pages 9355–9366. PMLR, 18–24 Jul 2021. URL https://proceedings.mlr.press/ v139/schlag21a.html .Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Kumar. Scaling LLM test-time compute optimally can be more effective than scaling model parameters. arXiv preprint arXiv:2408.03314 , 2024. URL https://arxiv.org/abs/2408.03314 .Howard Straubing. Finite automata, formal logic, and circuit complexity . Birkhauser Verlag, CHE, 1994. ISBN 3764337192. Lena Strobl, William Merrill, Gail Weiss, David Chiang, and Dana Angluin. What formal languages can transformers express? a survey. TACL , 12:543–561, 2024. doi: 10.1162/tacl_a_00663. URL 
+
+https://aclanthology.org/2024.tacl-1.30/ .Anej Svete and Ryan Cotterell. Transformers can represent n-gram language models. In NAACL ,pages 6845–6881, Mexico City, Mexico, June 2024. doi: 10.18653/v1/2024.naacl-long.381. URL 
+
+https://aclanthology.org/2024.naacl-long.381/ .Anej Svete and Ashish Sabharwal. On the reasoning abilities of masked diffusion language models. In ICLR , 2026. URL https://openreview.net/forum?id=BVnIsh4Nz1 .Anej Svete, William Merrill, and Ashish Sabharwal. The exact expressive power of fixed-precision looped padded transformers, 2025. URL https://anejsvete.github.io/files/ fp-lpt.pdf .Anej Svete, William Merrill, Ryan Cotterell, and Ashish Sabharwal. Revisiting padded transformer expressivity: Which architectural choices matter and which don’t. In ICML , 2026. URL https: //openreview.net/forum?id=nBuL6HywFX .Mikkel Thorup. On RAM priority queues. In SODA , SODA ’96, page 59–67, USA, 1996. Society for Industrial and Applied Mathematics. ISBN 0898713668. Andy Yang, David Chiang, and Dana Angluin. Masked hard-attention transformers recognize exactly the star-free languages. In NeurIPS , 2024a. URL https://openreview.net/forum?id= FBMsBdH0yz .Andy Yang, Christopher Watson, Anton Xue, Satwik Bhattamishra, Jose Llarena, William Merrill, Emile Dos Santos Ferreira, Anej Svete, and David Chiang. The transformer cookbook. TMLR ,2026. ISSN 2835-8856. URL https://openreview.net/forum?id=sPshCSvDrX .12 Songlin Yang, Bailin Wang, Yu Zhang, Yikang Shen, and Yoon Kim. Paralleliz-ing linear transformers with the delta rule over sequence length. In NeurIPS ,volume 37, pages 115491–115522, 2024b. doi: 10.52202/079017-3668. URL 
+
+https://proceedings.neurips.cc/paper_files/paper/2024/file/ d13a3eae72366e61dfdc7eea82eeb685-Paper-Conference.pdf .13 A Details on the Preliminaries 
+
+A.1 The Transformer Model 
+
+This appendix restates the decoder-only transformer model used in Merrill and Sabharwal (2024), which itself builds on the component-level formalization of Merrill and Sabharwal (2023a). Let Σ
+
+be the fixed token alphabet. Let Dp be the datatype of p-bit floating-point numbers with truncated arithmetic as in Merrill and Sabharwal (2023b). 
+
+Definition 1 (Decoder-only transformer) . A p-precision decoder-only transformer with h heads, d
+
+layers, model dimension m, and feedforward width u consists of: (i) an embedding map e : Σ × ⋉ →
+
+Dmp ; (ii) for each layer ℓ and head k, a similarity map sℓk : Dmp × Dmp → Dp and a value map 
+
+vℓk : Dmp → Dm/h p ; (iii) for each layer ℓ, an activation map f ℓ : ( Dm/h p )h × Dmp → Dmp ; (iv) an output map γ : Dmp → Σ′.
+
+Definition 2 (One strict-causal decoding step) . For a prefix z = z1 · · · zn, set h0 
+
+> i
+
+= e(zi, i ). For each layer ℓ and head k, define 
+
+aℓi,k = X
+
+> j<i
+
+sℓk(hℓ−1 
+
+> i
+
+, hℓ−1 
+
+> j
+
+)
+
+Zℓi,k 
+
+vℓk(hℓ−1 
+
+> j
+
+), Zℓi,k = X
+
+> j<i
+
+sℓk(hℓ−1 
+
+> i
+
+, hℓ−1 
+
+> j
+
+).
+
+Then 
+
+hℓi = f ℓ(aℓi, 1, . . . , aℓi,h , hℓ−1 
+
+> i
+
+), g(z) = γ(hdn).
+
+Definition 3 (Projected pre-norm) . For a residual vector h and a linear map M, projected pre-norm applies layer norm to Mh :
+
+PLN( h; M) = LN( Mh ).
+
+We note that now-standard peri-norm (Kim et al., 2025) or reordered norm (Olmo, 2026), which did not exist at the time of Merrill and Sabharwal (2024), allows implementing projected pre-norm constructions with no extra projection. With reordered norm, we can simply always write normalized values at the layer output and then apply a projection to select those values when needed. With peri-norm, the same idea works: all writes to the residual stream are normalized, so when we read a normalized vector at the next sublayer input, the number of writes gets normalized away with no distortions. As in Merrill and Sabharwal (2024), the lower-bound construction does not depend on any special positional encoding. We assume standard causal masking rather than strict causal masking. 
+
+A.2 Layernorm Hash Details Proposition 1 (Equality Check and Mismatch Gap: Merrill and Sabharwal, 2024) . Let u, v ∈{0, 1, . . . , T }. Then ⟨ϕ(u), ϕ (v)⟩ = 1 if and only if u = v. Further, when u̸ = v, ϕ(u), ϕ (v)⟩ ≤ 
+
+1 − δT where δT := 14( T 2+1) 2 .Proof. Since ϕ(x) = 1√2( x2+1) (x, 1, −x, −1) , one computes 
+
+⟨ϕ(x), ϕ (y)⟩ = xy + 1 
+
+p(x2 + 1)( y2 + 1) 
+
+and therefore 
+
+1 − ⟨ ϕ(x), ϕ (y)⟩2 = (x − y)2
+
+(x2 + 1)( y2 + 1) .
+
+If u̸ = v are integers in [0 , T ], then (u − v)2 ≥ 1 and (u2 + 1)( v2 + 1) ≤ (T 2 + 1) 2, hence 
+
+1 − ⟨ ϕ(u), ϕ (v)⟩2 ≥ 1/(T 2 + 1) 2. Using √1 − ϵ ≤ 1 − ϵ/ 2 gives ⟨ϕ(u), ϕ (v)⟩ ≤ 1 − 12( T 2+1) 2 ; the stated δT is a slackened bound. 
+
+Proposition 2 (Affine Update) . Fix constants a, b ∈ R. Let ϕ(v) = ( s1, s 2, −s1, −s2). Then 
+
+ϕ(av + b) = layernorm( as 1 + bs 2, s 2, −(as 1 + bs 2), −s2).
+
+14 Proof. Noting that (s1, s 2, −s1, −s2) is simply ϕ(s1, s 2) and that ϕ(v) = ϕ(v, 1) , scale invariance of ϕ and the precondition in the proposition implies v = s1 
+
+> s2
+
+. Thus av + b = a s1 
+
+> s2
+
++ b. It follows that 
+
+ϕ(av + b) = ϕ(a s1 
+
+> s2
+
++ b) = ϕ(a s1 
+
+> s2
+
++ b, 1) = ϕ(as 1 + bs 2, s 2), where the last equality follows from scale invariance of ϕ.
+
+## B Proofs for Restricted Word RAMs 
+
+Lemma 1. Let M be a 1-dimensional Word RAM with word size w = c log( n + t) for some c ∈ N.Then there exists a c-dimensional restricted Word RAM M ′ with word size w′ = log( n + t) and the same instruction set as M that simulates t steps of M using O(t) steps. Proof. We will show how to simulate M with M ′. The following invariant will be helpful: M has size w = cw ′, so any value x can represented with c values x′
+
+> 1
+
+, . . . , x ′
+
+> c
+
+, each of word size w′.For any instruction in M that retrieves the value at x and stores it into y, we will instead have c
+
+instructions that retrieve the value at each x′ 
+
+> i
+
+and store it into y′ 
+
+> i
+
+for 1 ≤ i ≤ c. Similarly, whenever we write the value at y into x, we will have c instructions that write value y′ 
+
+> i
+
+into x′
+
+> i
+
+. Thus, each read or write instruction in M can be simulated by c instructions in M ′.It remains to be shown that arithmetic instructions in M can also be simulated in M ′:• Adding x and y in M can be implemented in M ′ by starting with κ1 = 0 and adding blocks 
+
+x′ 
+
+> i
+
++ y′ 
+
+> i
+
++ κi iteratively for i = 1 , 2, . . . , c , with κi+1 = 1[x′ + y′ ≥ 2w] being the carry bit for the subsequent step. This takes at most 2c steps. • Subtracting mirrors addition, with the borrow bit βi+1 = 1[x′ + βi < y ′]. (If the final borrow bit βc+1 = 1 , the result is negative.) • Multiplying x and y in M can be implemented in M ′ via long multiplication in base m = 2 w′
+
+.Write x = Pci=1 x′ 
+
+> i
+
+· mi−1 and y = Pcj=1 y′ 
+
+> j
+
+· mj−1. For each j = 1 , . . . , c , we compute the partial product aj = x · y′ 
+
+> j
+
+· mj−1 and keep a running sum S ← S + aj . The partial product 
+
+x · y′ 
+
+> j
+
+is itself computed block-by-block: for each i = 1 , . . . , c , multiply x′ 
+
+> i
+
+· y′ 
+
+> j
+
+(a product of two w′-bit numbers, fitting in 2w′ bits) and add it into block i of the partial product together with any carry from block i − 1. Since each x′
+
+> i
+
+, y ′ 
+
+> j
+
+< 2w′
+
+, the product x′ 
+
+> i
+
+· y′ 
+
+> j
+
+< 22w′
+
+, so the carry into block i + 1 is at most 2w′
+
+− 1, which fits in w′ bits. Computing one partial product 
+
+x · y′ 
+
+> j
+
+thus takes O(c) steps; summing it into S (via the addition procedure above) takes another 
+
+O(c) steps. Over all c values of j, the total cost is O(c2) steps. • Dividing x by y in M can be implemented in M ′ via long division in base m = 2 w′
+
+, analogously to multiplication (Knuth, 1997, §4.3.1, Alg. D). The quotient ⌊x/y ⌋ has c base-m digits 
+
+q′
+
+> 1
+
+, . . . , q ′
+
+> c
+
+; we recover them one by one from most to least significant. At each step, the top two blocks of the running remainder and the top block of y together determine the next quotient digit exactly via a single w′-bit division (available as a primitive in M ′). Each of the c digits thus costs O(c) steps (one scalar division plus a multiply-and-subtract to update the remainder), giving O(c2) total. • Taking mod : the remainder r = x−⌊ x/y ⌋· y is computed alongside the quotient in the procedure above at no extra asymptotic cost. • Left or right shifting . We describe the left shift case; the right shift case is analogous. Suppose we want to compute z = x ≪ k. Decompose the shift amount as k = q · w′ + r where 
+
+q = ⌊k/w ′⌋ is the number of whole blocks to shift and r = k mod w′ is the intra-block shift. 6
+
+Thus, shifting left by k bits moves block i of the input to block i + q of the output, with an r-bit internal shift. Concretely, for i = 1 , . . . , c :
+
+z′ 
+
+> i
+
+=
+
+
+
+0 if i ≤ q, 
+
+(x′ 
+
+> i−q
+
+≪ r) | (x′ 
+
+> i−q−1
+
+≫ (w′ − r)) if i > q and i − q − 1 ≥ 1,x′ 
+
+> i−q
+
+≪ r if i > q and i − q − 1 < 1,                   
+
+> 6Note that since k < w =cw ′, the shift amount fits in a single w′-bit block of M′. Thus, q=⌊k/w ′⌋and r=kmod w′
+> are each single-block values computable in O(1) steps with primitives in M′.
+
+15 x step 1 · · · step s · · · step t output 
+
+mem # a(s)1 # v(s)1 · · · mem # a(s) 
+
+> K
+
+# v(s) 
+
+> K
+
+&                    
+
+> memory block 1:write mem [a(s)1]←v(s)1
+> memory block K:write mem [a(s)
+> K]←v(s)
+> K
+> one step: Kmemory blocks =O(w)tokens
+> a(s)1
+> v(s)1
+> ...
+> a(s)
+> K
+> v(s)
+> K
+> Kaddress–value pairs (a(s)
+> k, v (s)
+> k)
+> Discrete CoT
+> Kmemory blocks of bit tokens
+> Continuous CoT
+> single log-prec. vector
+
+Figure 3: Executing a Word RAM program with discrete vs. continuous CoT under the unified-memory convention. The entire machine state—program counter, registers, and memory—lives in a single random-access memory mem , so each simulated step is fully described by the constant-many ( K) address–value pairs it writes. Bottom-left (discrete CoT): each step emits K memory blocks mem # bits( a(s) 
+
+> k
+
+) # bits( v(s) 
+
+> k
+
+) followed by an & marker, totaling O(w) bit tokens. Bottom-right (continuous CoT): the same K address–value pairs are packed as coordinates of a single log-precision vector emitted at step s.where all individual shifts are within [0 , w ′) so they stay inside word size w′. Each output block depends on at most 2 input blocks, so the whole operation takes O(c) instructions. • Comparing x with y in M can be implemented in M ′ by iteratively comparing x′ 
+
+> i
+
+with y′
+
+> i
+
+. This takes at most c steps. • Branching between x and y in M based on a condition can be implemented by a cascade of c
+
+branches on each block of x, y , which can be done in at most c steps. Thus, we can simulate each instruction of M with a constant number of instructions in M ′.
+
+Lemma 3 (Simplified Division Lemma) . There exists a transformer block that, for any ϕ(v) present in the residual stream at position t for v ≤ t, adds ϕ(⌊v/ 2⌋) and ϕ(v mod 2) to the residual stream. Proof. The idea is the same as in the more general proof of Merrill and Sabharwal (2024) for division by an arbitrary small value m. In their construction, each position i computes ϕ(i/m ) and performs an equality test with ϕ(j) computed at all prior positions j < i to determine if i/m is an integer, i.e., 
+
+i is a multiple of m. Then position t attends back to find the closest multiple of m via rightmost hard attention to compute the mod and div values. In our special use case, we can simplify this process as follows: each position j < t computes a key kj = ϕ(2 j) and value ϕ(j). Position t uses query qt = ϕ(v − 1) , which can be computed via Prop. 2. It can be verified that the closest matching key is k⌈(v−1) /2⌉,7 and the corresponding value is 
+
+ϕ(⌈(v − 1) /2⌉). Observe that for all integer values v, ⌈(v − 1) /2⌉ = ⌊v/ 2⌋. Thus the retrieved value is ϕ(⌊v/ 2⌋), which we add to the residual stream. To obtain ϕ(v mod 2) , we compute ϕ(2 ⌊v/ 2⌋) via Prop. 2 and perform an equality test with ϕ(v). If these are equal, ϕ(v mod 2) is 0, otherwise it is 1;we add this to the residual stream as well. 
+
+## C Proofs of Polylog-Width Transformer Results 
+
+Serialization format. Before stating the propositions, we fix the transcript format used throughout all four components.                                                      
+
+> 7Suppose vis odd, i.e., v= 2 j∗+ 1 for some integer j∗. Then (v−1) /2 = j∗and we have an exact key-query match between qtand kj∗. When vis even, say v= 2 j∗, then (v−1) /2 = j∗−1/2. The two contenders for the closest match with qt=ϕ(2 j∗−1) in this case are kj∗−1=ϕ(2 j∗−2) and kj∗=ϕ(2 j∗). Since these are unit norm vectors, the key-query inner product is the same as cosine distance, which is larger between ϕ(2 j∗−1) and ϕ(2 j∗)than between
+> ϕ(2 j∗−1) and ϕ(2 j∗−2) .
+
+16 Alphabet. The output alphabet is Σ ⊔ { 0, 1, #, &, mem }, where & is the end-of-step marker, mem 
+
+is the memory-write marker, and 0, 1 are bit tokens . The simulator uses no other key tokens: the program counter, registers, and any instruction-private intermediate state all live in mem at fixed addresses (cf. §2.1), so every committed write has the same shape. 
+
+Memory blocks. Every write to the simulated memory appends one memory block to the transcript: 
+
+mem # a1 · · · aw
+
+| {z }
+
+> address field
+
+# v1 · · · vw
+
+| {z }
+
+> value field
+
+,
+
+occupying 2w + 3 consecutive positions and recording mem [a] ← v. Lem. 12 matches an address 
+
+bits( a) available in the residual stream against the address field of the rightmost mem block, then uses the known offset w + 1 to retrieve the value field. 
+
+Steps. A Word RAM step is the run of (constant-many) memory blocks committed by one simulated instruction, terminated by an & token; & is therefore both an end-of-step marker and the anchor at which Blocks 1–3 produce the snapshot for the next step (see Block 4). 
+
+Residual stream convention. Throughout the proofs, the phrase “ bits( v) is available in the residual stream at position i” means that the w-dimensional vector bits( v) = ( b1, . . . , b w) ∈ { 0, 1}w occupies a dedicated w-dimensional subspace of the Θ(log 2 n)-dimensional residual stream at that position. Each transformer layer reads from and writes to named subspaces; different subspaces hold different operands, intermediate addresses, and result slots so that they do not interfere. This can be done without loss of generality (Yang et al., 2026, §4.2). 
+
+State recovery. The contents of mem [a] at any point in the transcript is the value of the rightmost memory block whose address field encodes a. Lem. 12 performs this lookup in constant depth, writing the retrieved bits( v) into a designated residual-stream subspace. 8
+
+Default values for unwritten cells. At the start of simulation no memory block has been emitted, so a rightmost-match read for any address returns 0. The Word RAM program supplies a static initialization vector that fixes the initial value at every address used by the program (zero by default; specific constants for mem [0] = PC start and any program-private scratch cells), and this initialization is baked into the transformer weights. When a read for address a has no matching block in the transcript (detected by a single attention head testing whether the rightmost match exists), an MLP overrides the default 0 output of Lem. 12 with the program-specified initialization constant for that address. Because the initialization map is fixed at compile time and depends only on the program, this override is a constant-depth, finite-precision operation. We now outline the proof of Thm. 1, which is the main result of this section; the propositions that follow will fill in the details of each component. 
+
+Theorem 1 (Simulation of Word RAMs by log 2-Width Transformers) . Let M be a flat Word RAM program with word size w. Then there exists a rightmost UHAT T with finite precision, O(w) heads each of width O(w), and total model dimension O(w2) = O(log 2(n + t)) , such that, for any t ≥ n,
+
+T can simulate t steps of M with t · O (w2) CoT steps. Further, if M does not use ×, ÷, or mod , T
+
+can simulate t steps of M with t · O (w) CoT steps. Proof. Memory-only state. Following the Word RAM definition (§2.1), the entire machine state— program counter, registers, and the memory—is stored as a single random-access memory mem 
+
+indexed by integer addresses. The transformer simulates the Word RAM by maintaining, in the CoT transcript, a log of memory writes from which the current contents of any address can be recovered. Concretely, every write to an address a is appended to the transcript as a memory block 
+
+mem # bits( a) # bits( v),
+
+where bits( ·) is the binary encoding into {0, 1}w. The contents of mem [a] at any point in the transcript is the value v of the rightmost memory block whose address field encodes a, or the program-supplied initialization constant if no such block exists; Lem. 12 shows that a rightmost UHAT can perform this lookup in constant depth. Read-only input is handled identically: inp [i] is recovered by direct positional attention to input position i. The transcript is partitioned by & markers into steps , each step being the run of memory blocks committed by one simulated Word RAM instruction; see Fig. 4.   
+
+> 8This is analogous to the commonly studied induction heads (Olsson et al., 2022): a head first matches the address pattern, then retrieves the value at the position immediately following it.
+
+17 Block 1 : Load PC 
+
+Block 2 : Load Instruction and Operands 
+
+Block 3 : Execute Instruction 
+
+Block 4 : Store Results 
+
+> one CoT step
+> Prop. 3
+> Prop. 4
+> Props. 5 and 7
+> Props. 6 and 7
+
+Residual Stream                   
+
+> ...
+> a1
+> ...
+> bit δ
+> ...
+> am
+> wdim.
+> address/value slots for current step
+> Attends to full context
+> input · · · prev. instr. &· · · mem #a1· · · aw#b1· · · bδ
+> offset δfrom last &CoT transcript
+> results
+> attend to last  &; copy result
+
+Figure 4: Layer-block structure and CoT transcript view of one step in the log 2-width simulation. 
+
+Layer blocks (center): each CoT step executes four constant-depth blocks. Block 1 reads bits( mem [0]) 
+
+(the pc ) via one indexed memory read in two attention layers (Prop. 3). Block 2 uses two more sequential attention layers: the first identifies the active instruction and reads its compile-time operand addresses; the second resolves any runtime ( mem [a] or inp [a]) addresses (Prop. 4). Block 3 is a pure MLP that computes the destination value(s) and the next pc from the operands now in the residual stream (Prop. 5). Block 4 attends to the rightmost & to compute the within-step offset δ, copies the snapshot precomputed by Blocks 1–3 at that &, and emits the appropriate δth token ( mem , #, address bit, value bit, or closing &) into the transcript (Prop. 6). CoT transcript (bottom): the input and previous steps are followed by the & that opens the current step (where Blocks 1–3 produced and cached the snapshot, depicted by the green badge), then the current step’s memory-block serialization; 
+
+bδ (red) is the token emitted at this step; the shaded beam indicates that each block attends causally over the full prefix. Residual stream (right): each memory block to be written by the current step occupies a pair of w-dimensional slots (address and value). Blocks 1–3 run at every position, but their rightmost-match reads only produce the correct snapshot at & positions; at the Cw + D − 1
+
+subsequent serialization positions their outputs are corrupted by the partially written current-step memory block and are disregarded by Block 4, which instead copies the snapshot from the most recent &.
+
+What one CoT step does. The construction decomposes each CoT step into four consecutive layer blocks , each handled by a constant-depth subnetwork. 
+
+Block 1: Load pc (Prop. 3). A single indexed read (Lem. 12) with query address 0 retrieves 
+
+bits( mem [0]) from the transcript, recovering the current pc value into a dedicated residual-stream subspace. The indexed read uses two attention layers (address matching against the rightmost mem 
+
+block with a = 0 , then value retrieval). 
+
+Block 2: Load Instruction and Operands (Prop. 4). Each instruction Ip in the program declares a fixed operand descriptor —a static list of memory addresses it reads—which the program supplies and is hard-coded into the transformer weights. The list contains two kinds of addresses: compile-time 
+
+addresses (the registers −i and any program-private scratch cells used by Ip) and runtime addresses (memory or input cells whose index mem [a] or inp [a] is itself the value of another address that must be read first). 18 Sub-step 2a (dispatch and compile-time reads). With bits( mem [0]) in the residual stream, a constant-depth MLP computes the match bit δp
+
+> def
+
+= 1[bits( mem [0]) = bits( p)] for every program address 
+
+p ∈ { 0, . . . , P − 1}. The weights of T contain P head groups H0, . . . , HP −1, one per program line; each Hp issues, in parallel, one indexed read (Lem. 12) for every compile-time address in Ip’s descriptor. All P groups run as parallel heads within the same two attention layers; an MLP gated by 
+
+δp then copies the active group’s results into shared operand slots. 
+
+Sub-step 2b (runtime reads). For each runtime address listed in Ip’s descriptor (the value bits( a) for a 
+
+mem [a] or inp [a] access), bits( a) is now available in the residual stream from Sub-step 2a. A second indexed read uses bits( a) as the query: Lem. 12 for mem [a], or a direct positional attention to input position a for inp [a]. By the flat Word RAM constraint, no runtime address is itself memory-indirect, so two more attention layers suffice. After Block 2 every operand of Ip resides in its designated residual-stream slot. 
+
+Block 3: Execute Instruction (Prop. 5). With all operands in the residual stream, a single constant-depth MLP computes the w-bit destination value bits( v) and the next pc value bits( pc ′), placing both into dedicated result slots. For instructions whose result is a w-bit function of w-bit operands (bitwise, +, −, ≪, ≫, comparisons, conditional moves, branch-target arithmetic), Block 3 imple-ments the operation as an AC 0 circuit and uses no attention. For ×, ÷, mod , Block 3 executes one inner iteration of the corresponding long-multiplication or long-division algorithm; the per-iteration intermediates (partial product, remainder, quotient, phase counter) live in program-private memory cells, so they are read and written like any other word and the simulator-level treatment is unchanged (Prop. 7). 
+
+Block 4: Store Results (Prop. 6). Block 4 appends, to the transcript, the memory blocks committed by the active instruction: a mem # bits( ad) # bits( v) block for each address ad that Ip writes (typically the destination plus the updated pc ), followed by a closing &. The transformer’s weights are shared across positions, so Blocks 1–3 run at every position; their reads are reliable, however, only at &
+
+positions, where the rightmost-match reads see exclusively committed memory blocks from prior 
+
+steps. At any non-& position within the current step’s serialization, a rightmost-match read for the destination address ad would retrieve the freshly (and partially) written value of the current step rather than its operand-time value. Block 4 sidesteps this by ignoring the local outputs of Blocks 1–3 at non-& positions and instead attending to the most recent &, copying the snapshot (the addresses to be written and the corresponding result bits) that Blocks 1–3 produced at that &. Concretely: at the 
+
+& position itself, Block 4 emits the first token of the next step’s serialization (the mem token of the first memory block); at each of the following Cw + D − 1 positions, an attention head attends to the rightmost & at position s&, an MLP computes the offset δ def 
+
+= t − s& ∈ { 1, . . . , Cw + D}, and a constant-depth MLP selects the appropriate δth token of the serialization (a mem marker, a # marker, an address bit, a value bit, or the closing &) from the snapshot via one-hot extraction (Svete and Cotterell, 2024, Lem. B.1). When the offset hits a block boundary, the next memory block’s mem 
+
+and # tokens are emitted; when all blocks have been written, the closing & is emitted, at which point Blocks 1–3 will again run on a clean prefix and produce the snapshot for the next step. 
+
+Token count. Each Word RAM step writes a constant number K of memory blocks (depending only on the program, not the input), so 
+
+Cw + D = 2 Kw + 3 K + 1 
+
+tokens are emitted per step (each block is mem , two #s, and 2w bit tokens; one closing &). For instructions whose semantics is a single AC 0 operation (simple-arithmetic class) this is O(w) per step. For ×/÷/mod , the operation is unfolded into w inner iterations, each of which is itself a flat memory-read/write step taking O(w) tokens (Prop. 7); the total is therefore O(w2). Summing over t
+
+Word RAM steps gives t · O (w2) CoT tokens, and t · O (w) when no ×/÷/mod instruction is used. 
+
+Residual stream as a serialized snapshot. It is instructive to view the residual stream at any CoT position as a structured record with one w-dimensional slot per memory block to be emitted by the current step: an address slot and a value slot for each of the K writes. Each CoT token fills one bit of one slot, advancing δ through the slots until & marks completion. The CoT transcript is therefore a sequence of mem -anchored memory blocks, and the simulator’s job at each step reduces to (i) reading a constant number of mem blocks, (ii) computing the new contents, and (iii) appending a constant number of new mem blocks. Fig. 4 (right) illustrates this view alongside the transcript structure. 19 Proposition 3 (Load pc ). Let T be a rightmost UHAT with log 2 width and finite precision, and suppose the serialization format above is in use. At every CoT position t, T can recover bits( mem [0]) 
+
+from the transcript and place it in a dedicated residual-stream subspace using two attention layers. Proof. The query address is the constant 0, hard-coded into the transformer weights and available in the residual stream as bits(0) . A single application of Lem. 12 with this query retrieves bits( mem [0]) :the first attention layer matches the rightmost mem block whose address field encodes 0 and extracts the position of the matching block; the second attention layer attends to the value field of that block and assembles its bits, via Lem. 11, into the dedicated bits( pc ) subspace. If no such block exists, the override of the previous paragraph produces the program-supplied initial pc value bits(PC start ).
+
+Proposition 4 (Load instruction and operands) . Let T be a rightmost UHAT with log 2 width and finite precision, and suppose bits( mem [0]) is in the residual stream (from Block 1). Then T can identify the active instruction and load all its operands into designated residual-stream slots in four attention layers. Proof. Operand descriptor. Every flat Word RAM instruction Ip is equipped with a static operand descriptor : a list of memory addresses to read. The descriptor partitions the addresses into • compile-time addresses Act  
+
+> p
+
+⊆ [2 w − 1] : integer constants known at program-compile time (the registers −i, the pc address 0, and any program-private scratch addresses used by Ip); • runtime addresses Art  
+
+> p
+
+: addresses of the form mem [a] or inp [a] where a itself is the value at some compile-time address. The descriptor is a compile-time constant : it depends only on the instruction type, not on the runtime values, so it is hard-coded into the weights of T .
+
+Sub-step 2a: Instruction identification and compile-time reads. With bits( mem [0]) in the residual stream, a constant-depth MLP computes the match bit 
+
+δp
+
+> def
+
+= 1[bits( mem [0]) = bits( p)] ∈ { 0, 1}
+
+for every program address p ∈ { 0, . . . , P − 1} simultaneously (each bits( p) is a hard-coded weight constant). The weights of T contain P attention-head groups H0, . . . , HP −1, one per program line. All P groups run in parallel: each group Hp issues, for every compile-time address a ∈ Act  
+
+> p
+
+, one indexed read via Lem. 12 with the constant query bits( a), writing the retrieved bits( mem [a]) into a dedicated disjoint subspace of the residual stream. Each indexed read uses two attention layers (address matching, then value retrieval), and all P groups run as parallel heads within those same two layers. A subsequent MLP gated by δp copies the active group’s operands from their dedicated subspace into the shared operand slots, leaving the other subspaces unused. After Sub-step 2a, every compile-time operand of Ip occupies its designated slot. 
+
+Sub-step 2b: Runtime reads. For each runtime address in Art  
+
+> p
+
+, the address value bits( a) resolved in Sub-step 2a is now in the residual stream and serves as the query for a second indexed read: Lem. 12 for mem [a], or a direct positional attention to input position a for inp [a]. By the flat Word RAM constraint, no runtime address is itself memory-indirect, so two more attention layers suffice. After Sub-step 2b, all operands required by Ip reside in their designated residual-stream slots and are ready for Block 3. The total depth of Block 2 is four attention layers plus a constant number of MLP layers. 
+
+Proposition 5 (Execute instruction) . Suppose all operands of instruction Ip reside in their designated residual-stream slots (from Block 2). Then T can compute, in constant depth using a single MLP with no attention, the w-bit value bits( vd) to be written to each address ad that Ip updates, including the next pc value bits( pc ′).Proof. With all operands bits( a), bits( b) ∈ { 0, 1}w in the residual stream, the active gated MLP subnetwork Np computes the destination value(s) bits( vd) directly: • Bitwise operators (&, |, ⊕, ≪, ≫): each vt is an O(1) -depth Boolean function of at, bt (and a hard-coded shift amount), computed in one MLP layer. 20 • Addition and subtraction : implementable by a constant-depth AC 0 circuit (Straubing, 1994, §VIII.1), and thus by an MLP. • Comparison (<, ≤, =,̸ =, ≥, > ): reduced to subtraction and sign extraction. • Boolean and conditional operations: computed in O(1) depth from the Boolean bits in the residual stream. • Move and branch targets : the result is a hard-coded constant or a copy of an operand value already in the residual stream. • Inner iteration of ×/÷/mod : the MLP executes one iteration of the long-multiplication or long-division algorithm using the per-iteration intermediates (partial product, remainder, quotient, phase counter) read in Block 2 from program-private memory addresses, and produces their updated values as additional destination words (Prop. 7). Block 3 always computes, in addition, the next pc value bits( pc ′) = bits( mem [0]) + bits(1) (or a hard-coded branch target if Ip is a branch); this value is written to address 0 by Block 4. Block 3 uses no attention, and the destination values remain stable at every CoT position of the same step since the operands are fixed and Blocks 1–2 recover the same values each time. 
+
+Proposition 6 (Store results) . Suppose that at every & position s&, the full snapshot for the next step—the set of destination addresses {ad} together with bits( ad) and the corresponding result words 
+
+bits( vd)—is in the residual stream (from Blocks 1–3 evaluated at s&). Then T can, at every position 
+
+t > s & within the step, attend to the rightmost &, compute the offset δ def 
+
+= t − s&, and emit the correct 
+
+δth token of the step’s serialization (a mem marker, a # marker, an address bit, a value bit, or the closing &) in constant depth, using one attention layer and one MLP. Proof. Anchoring at the most recent &. By construction, & tokens partition the transcript into steps: each step’s serialization is a run of Cw + D tokens following an & (and ends with the next 
+
+&), where C = 2 K and D = 3 K + 1 for K the (program-determined) number of memory blocks committed by the active step. An attention head issues a query matching the & token type via Lem. 13, uniquely attending to the rightmost & at position s& < t (or to the input boundary token at the very first step). The retrieved value vector is the positional encoding PE( s&) = bits( s&). A subsequent MLP computes the within-step offset δ def 
+
+= t − s& from PE( t) and bits( s&); this difference ranges over {1, . . . , Cw + D}. The same attention head also retrieves, from the residual stream at s&, the snapshot (the destination addresses bits( ad) and result values bits( vd) for every memory block of the current step, in fixed order) that Blocks 1–3 produced at s&.
+
+Selecting and emitting the δth token. The serialization layout of a step is fixed once dispatched: a sequence of memory blocks of the form mem # ⟨w address bits ⟩ # ⟨w value bits ⟩ at known offsets, followed by a closing &. The MLP converts δ to its one-hot encoding eδ ∈ { 0, 1}Cw +D and uses it to select among: (1) the mem token when δ is the offset of the start of a memory block; (2) a # marker when δ is the offset of an address-field or value-field start; (3) an address bit bj = bits( ablock( δ))⊤ej(δ) (Svete and Cotterell, 2024, Lem. B.1) when δ falls inside an address field; (4) a value bit bj = bits( vblock( δ))⊤ej(δ) when δ falls inside a value field, where block( δ) and 
+
+j(δ) ∈ { 1, . . . , w } are the block index and intra-field bit index determined from δ alone; (5) the closing & when δ = Cw + D, which simultaneously triggers the next step’s full Block 1–3 evaluation at that position. The selected token is emitted as the output at position t.
+
+Why the snapshot is reliable at & positions. Blocks 1–3 are run at every position t uniformly; what changes across positions is the prefix they see. At an & position s&, all rightmost-address reads see the previous step’s committed memory blocks (no half-written block of the new step has yet been emitted), so the operand reads are unambiguous and Blocks 1–3 produce the correct snapshot for the next step. At any non-& position within the step’s serialization, the same machinery runs but its rightmost-match reads now collide with the partially emitted memory block of the current step: in particular, a read for any destination address ad would retrieve the (possibly partial) freshly written 21 value rather than the operand-time value. Block 4 sidesteps this by anchoring on the rightmost & and copying the snapshot computed there, where only fully committed memory blocks are visible; the local outputs of Blocks 1–3 at non-& positions are disregarded. 
+
+Proposition 7 (Multiplication, division, and modulo via per-iteration memory cells) . Let I be a ×, ÷,or mod instruction with operands a and b. Then T can compute the result of I in O(w) Word RAM steps, each costing O(w) CoT tokens, for a total of O(w2) CoT tokens, using only the four-block pipeline above. Proof. Why O(w2) tokens are necessary. The standard bit-serial long-multiplication and long-division algorithms run w outer iterations, each updating an w-bit intermediate. Compiling the instruction into w flat Word RAM micro-steps that share state through memory yields a w × O (w) = 
+
+O(w2) token budget; each micro-step is exactly the standard four-block pipeline, with no special control flow. 
+
+Per-iteration state in memory. The program reserves four private memory addresses αP , αR, αq ,
+
+απ (constants, fixed at compile time) for the partial product P , the running remainder R, the partial quotient q, and a phase counter π, respectively, plus two more αa, α b for the operand snapshot. The compiled implementation of I is a program fragment that (1) on entry, writes the operands a, b to αa, α b, zero-initializes P, R, q , and sets π ← 1;(2) executes a loop of w flat micro-steps, each of which reads a, b , the current intermediates, and π,performs one algorithm iteration, writes the updated intermediates and π ← π + 1 , and branches on π;(3) on exit, writes the final result to the destination address. Each micro-step has compile-time-fixed read and write address sets (entries of 
+
+{αa, α b, α P , α R, α q , α π }), so the operand descriptors and four-block pipeline of Props. 3 to 6 apply unchanged: each micro-step costs O(w) CoT tokens. 
+
+Multiplication ( a × b mod 2 w). Indexing bits LSB-first, micro-step π extracts bπ = bits( b)⊤eπ in Block 3 and computes P ′ = P + a · bπ · 2π (mod 2 w). After w micro-steps, P = a × b (mod 2 w),and a final step copies P to the destination. 
+
+Division and modulo ( a÷b, a mod b). Indexing bits LSB-first, micro-step π processes bit i = w −π
+
+of a (MSB to LSB). Block 3 extracts ai = bits( a)⊤ei, computes R′ = ( R ≪ 1) | ai, performs the trial subtraction R′′ = R′ − b, and tests the sign via the high bit of the (w+1) -bit result. If R′′ ≥ 0:
+
+q′ = q | (1 ≪ i), R ← R′′ ; otherwise: q′ = q, R ← R′. After w micro-steps, q = ⌊a/b ⌋ and 
+
+R = a mod b, and a final step copies the appropriate value to the destination. Both algorithms use O(w2) CoT tokens via the standard four-block pipeline. 
+
+Lemma 10 (Indexed read for log 2-width transformers) . Let T be a finite-precision, log 2-width UHAT 
+
+with positional encodings PE( j) = bits( j). Let k ∈ [2 w − 1] be a query key available as bits( k)
+
+in the residual stream at position i. Suppose the CoT transcript contains a sequence of key–value blocks: at positions s1 < s 2 < · · · < s m ≤ i − 1, each block si = ( ki, v i) starts with a key field of 
+
+w consecutive bit tokens bits( ki) ∈ { 0, 1}w followed by a value field of w consecutive bit tokens 
+
+bits( vi) ∈ { 0, 1}w. Let s∗ be the start of the rightmost block whose key field encodes k; k∗ = k.Then we can augment T with a constant-depth subnetwork that, at position i, recovers 
+
+bits( v∗) = 
+
+> w−1
+
+X
+
+> t=0
+
+btet
+
+in the residual stream after the first transformer layer, where bits( v∗) = ( b0 · · · bw−1), with the default value 0 when no matching block exists. Proof. Step 1: Key matching. Using an affine transformation of bits( ki) as the key vectors and 
+
+bits( k) as the query vector, the attention scores among positions 1, . . . , i are maximized at sj for 
+
+j = 1 , . . . , m (Lem. 13). Rightmost UHAT selects the position s∗, extracts its positional encoding as the value vector vs∗ , and adds to it the constant offset w with an MLP. 
+
+Step 2: Value retrieval. Position i now has access to the position of the value v∗. The next attention layer can uniquely attend to this position and retrieve the value (Lem. 13). 22 Lemma 11 (Serializing-Deserializing values via CoT) . Let T be a finite-precision, log 2-width 
+
+> UHAT
+
+. Suppose that at position i the output symbol is # and the residual stream contains bits( v) = (b1 · · · bw) ∈ { 0, 1}w. Then, T can be augmented with constant-depth subnetworks such that: (1) (Write) With w CoT steps, T can output bt in position i + t for all t ∈ { 1, . . . , w }.(2) (Read) T has bits( v) available in the residual stream at position i + w.Proof. Part (1): Write. T at position i + t must emit bt, the tth bit of v. By hypothesis, bits( v) is available in the residual stream at position i + t (recomputed by the same constant-depth subnetwork at each instruction-mode output step; cf. Prop. 5). To identify t, we use positional encodings 
+
+PE( j) = bits( j). At position i + t, an attention layer uses rightmost-unique hard attention to attend to the last preceding # symbol, which occupies position i (cf. Lem. 10). The attending position extracts bits( i) from the value at position i. A subsequent MLP subtracts bits( i) from the local positional encoding bits( i + t), yielding bits( t). A second MLP layer then converts bits( t) into the one-hot vector et ∈ { 0, 1}w, which can be done as a conjunction of the bits of bits( t) (Svete and Cotterell, 2024, Lemma B.1). Finally, an MLP computes bits( v)⊤et = bt, which is emitted as the output token at position i + t.
+
+Part (2): Read. At position i + w, we must reconstruct bits( v) = Pw−1 
+
+> t=0
+
+btet in the residual stream, where et is the tth standard basis vector. We use w dedicated hard-attention heads H0, H 1, . . . , H w−1,one per bit. Head Ht must attend to position i + t, i.e., to the earlier position that emitted bit bt.Head Ht at position i + w computes a query from bits( i + w) = PE( i + w) and keys from 
+
+bits( j) = PE( j) at each earlier position j. Ht can identify position i + t exactly by forming the query PE( i + w) − bits( w − t) = PE( i + t), and matching it against the key PE( j). Hard attention then selects position i + t holding the symbol xi+t as the unique position with key equal to the query. The value map of head Ht returns xi+t · et = bt · et. After summing over all w heads, the first transformer layer at position i + w produces 
+
+> w−1
+
+X
+
+> t=0
+
+xi+t · et =
+
+> w−1
+
+X
+
+> t=0
+
+bt · et = bits( v),
+
+which is repr( v) as required. 
+
+Remark 2 (Why log 2 width is necessary) . The Read step above uses w = Θ(log n) heads, each of width Θ(log n), for a total model dimension of Θ(log 2 n). Both factors are forced. 
+
+Logarithmically many heads. To reconstruct bits( v) at a single position, one must gather w bits from w distinct earlier positions. Compressing information from a log-growing number of positions into fewer constantly-many heads is infeasible at constant precision: the attention weight at each position is a scalar, so with o(w) heads the aggregated output is a fixed-dimensional summary of o(w)
+
+positions, which cannot faithfully recover all w bits. One could in principle design highly bespoke positional encodings (with L-uniform PEs; cf. London and Kanade (2025) and Svete and Sabharwal (2026)) that pack multiple bits into a single head’s key-query score, but this would substantially complicate the construction and break the clean one-bit-per-head structure; we therefore use Θ( w)
+
+heads. 
+
+Logarithmic width per head. Each head Ht must attend to a specific position i + t, which it identifies by forming the query PE( i + w) − bits( w − t) = PE( i + t) and matching it against position keys. Carrying the positional offset bits( w − t) in the query already requires θ(1) bits of information per head; a constant-width head cannot encode this offset. Hence each head must itself be of growing width. Together, Θ( w) heads of width Θ( w) give total dimension Θ( w2) = Θ(log 2 n). Note that the structure is highly uniform: all w heads are simple affine transformations of the same log n-wide positional encoding PE , differing only in a constant additive offset bits( w − t).
+
+Remark 3 (Why rightmost UHAT is necessary) . The indexed-read step requires attending to the 
+
+rightmost position in the transcript whose key field matches a query address a ∈ { 0, 1}w. We sketch why constant-precision AHAT (and equivalently leftmost UHAT (Jerad et al., 2025; Li and Cotterell, 2026)) cannot implement this. 23 Abstractly, the attention score at position j decomposes as 
+
+score( i, j ) = q⊤ 
+
+> i
+
+kj = bits( a)⊤bits( aj )
+
+| {z }
+
+> key match
+
++ m(j)
+
+| {z } 
+
+> rightmost bias
+
+,
+
+where aj is the key address at position j and m : N → R must be strictly increasing so that the rightmost matching position wins. The key-match term equals Θ( w) when aj = a and is strictly less otherwise, so m must simultaneously satisfy: (i) strict monotonicity m(j + 1) > m (j), which forces m(j + 1) − m(j) = Ω(1) , thus m(j) = Ω( j) = Ω( n) over a transcript of length n due to constant precision; and (ii) a dominance bound m(j) < O(log n) so that a mismatched position cannot outscore a matched one. These two requirements are contradictory, so rightmost UHAT is necessary. 9
+
+By contrast, attending to the leftmost match is easy under AHAT : one only needs a boolean flag indicating whether the same address appeared earlier, which is computable in constant precision. Logarithmic precision also circumvents the barrier by encoding offsets m with m(j) < 1 for all 
+
+j (circumventing the requirement that m(j + 1) − m(j) = Ω(1) ); existing transformer Turing completeness results rely on exactly that (Pérez et al., 2021; Nowak et al., 2024). 
+
+Lemma 12 (Reading from Memory) . Let T be a rightmost UHAT with log 2 width and finite precision. Suppose the CoT transcript contains a store log where each entry is serialized as 
+
+mem # bits( aj ) # bits( vj ). Given an address a ∈ [2 w − 1] available as bits( a) in the residual stream at position i, T can retrieve the most recent value v stored at address a in constant depth. Proof. The retrieval is performed in two attention steps: 
+
+Step 1: Address Matching. T generates a query bits( a) and attends to all positions j < i following an mem marker (these can be detected by looking back a constant number of positions). By Lem. 10, the rightmost UHAT mechanism selects the starting position s∗ of the most recent block where the w
+
+bits following mem perfectly match bits( a). The Transformer then extracts the positional encoding 
+
+PE( s∗) into the residual stream. 
+
+Step 2: Value Retrieval. Using the retrieved PE( s∗), T computes the position of the corresponding value field by adding to it a constant offset. A second attention layer uniquely attends to this position and uses the bit-retrieval mechanism of Lem. 11 to reconstruct bits( v) = Pw−1 
+
+> t=0
+
+btet in the residual stream. If no matching mem is found, the attention mechanism defaults to a null vector, resulting in bits(0) 
+
+as per the simulation invariant. The following is a restatement of Svete and Sabharwal (2026, Lem. D.7), used throughout this section. 
+
+Lemma 13 (Svete and Sabharwal 2026, Lem. D.7) . Let T be a finite-precision polylogarithmic-width transformer such that its residual stream contains bits( v) at position i. Then, T ’s attention heads can attend to all positions j ≤ i that contain bits( v) in the residual stream as well (and put zero attention to others). If T is a rightmost UHAT , the rightmost such position is uniquely attended to. 
+
+## D Proofs of Continuous CoT Results 
+
+Lemma 5 (Step 3: serialization) . Let τ be a transcript position at which a value v is available as 
+
+ϕ(v) in the residual stream, and suppose v ≤ τ . Then a log-precision, finite-width continuous-CoT transformer can emit the w bits of v over the next w decoding steps, ordered from least to most significant, while keeping ϕ(v) available in designated coordinates of the soft token throughout. Proof. Write v = Pw−1 
+
+> k=0
+
+bk2k and define v0 := v, vk+1 := ⌊vk/2⌋, and bk := vk mod 2 .At decoding step k (position τ + k + 1 ), we have vk ≤ v ≤ τ < τ + k + 1 , hence vk ≤ τ + k + 1 .Therefore we may apply Lemma 3 with (v, d ) = ( vk, 2) to compute ϕ(⌊vk/2⌋) = ϕ(vk+1 ) and   
+
+> 9Greater expressivity of rightmost UHAT has been established independently in the finite-precision and finite-width settings (Yang et al., 2024a; Jerad et al., 2025; Li and Cotterell, 2026); the argument above shows the same holds in the finite-precision growing-width setting.
+
+24 Phase 1 : Load pc                 
+
+> Phase 2 : Dereference operand addresses
+> Phase 3 : Serialize inputs to bits
+> Phase 4 : Instruction oracle (TM)
+> Phase 5 : Deserialize outputs to ϕ(·)
+> Phase 6 : Emit store-summary / checkpoint
+> one RAM step ( O(κ(w))  steps)
+> (bookkeeping)
+> Lem. 4
+> Lem. 5
+> Lem. 6
+> Lem. 7
+> (bookkeeping)
+> Phases 3–5 collapse into Block 3 of Fig. 4.
+> Soft token
+> ...
+> aux
+> ...
+> ϕ(v)
+> ϕ(a)
+> ...
+> aux
+> O(1) dim.
+> Attends to full context
+> input · · · prev. step ckpt · · · wts b0· · · bw-1oracle work c0· · · cw-1ckpt’
+> work-tape suffix (used by the oracle) CoT transcript
+> soft token:
+> O(1) aux codes
+
+Figure 5: Phase structure and CoT transcript view of one RAM step in the CCoT (continuous CoT) simulation; counterpart to Fig. 4. Phases (center): unlike the log 2-width construction in which one CoT step executes four constant-depth layer blocks, in the CCoT simulation a single RAM step expands across O(κ(w)) decoding steps grouped into six conceptual phases (cf. the proof overview of Thm. 3). Phase 1 forms ϕ(0) and reads the current ϕ(PC) = ϕ(mem [0]) from the rightmost matching store-summary, selecting the active instruction (under the unified memory convention, the program counter and registers all live at fixed addresses in mem , so reads use a single dereferencing primitive). Phase 2 dereferences each memory operand mem [a] by forming ϕ(a) and retrieving ϕ(v) from the rightmost matching store-summary (Lem. 4). Phase 3 emits the w bits of each operand onto the transcript while keeping its ϕ(·) code in the soft token (Lem. 5). Phase 4 runs the instruction-specific TM oracle on the work-tape suffix, which streams output bits over O(κ(w)) decoding steps (Lem. 6). Phase 5 converts each output bit stream back to ϕ(·) for future addressing/equality (Lem. 7). Phase 6 emits a store-summary token for each write the instruction performs to mem (including writes to address 0 for the new pc and to addresses −1, −2, . . . for any updated registers), followed by an end-of-step checkpoint, re-establishing the transcript invariant. The dashed purple rectangle marks Phases 3–5, which together implement the bit-serial execution of the instruction; in the fixed-precision (polylog-width) construction these three phases collapse into a single constant-depth MLP block (Block 3 of Fig. 4), since values can be manipulated directly as w-bit residual-stream slots without the serialize/oracle/deserialize round trip needed to expose them as w discrete tokens. CoT transcript (bottom): the prev. checkpoint (green) carries the cached state in its soft token; serialized operand bits, the oracle’s work region, and the deserialized output bits form the work-tape suffix; the rightmost 
+
+ckpt’ (red) is the new checkpoint emitted at the end of this step. Soft token (right): the residual stream carries a constant number of O(1) -dimensional codes ϕ(·), in contrast to the w-dimensional bit slots of Fig. 4. Under the unified memory convention, no slot is reserved for a specific register: highlighted slots ϕ(a), ϕ (v) (red) hold the address being looked up and the value being loaded/written at the current step, and remaining slots are generic O(1) scratch ( aux ) used inside bit-serial routines. 
+
+ϕ(vk mod 2) = ϕ(bk) in constant depth. A constant-depth equality test against the constants ϕ(0) 
+
+and ϕ(1) selects the token 0/1 to be emitted, along with ϕ(vk+1 ) as a soft token to be used at the next position. After w steps the emitted tokens are exactly b0, . . . , b w−1, along with soft tokens for intermediate ϕ(vk) values. 
+
+Lemma 7 (Step 5: deserialization) . There exists a log-precision, finite-width continuous-CoT transformer that, on bit sequence b0, . . . , b w−1 followed by w arbitrary tokens, computes ϕ(v) in the residual stream at the last step, where v = Pw−1 
+
+> k=0
+
+bk2k is the LSB evaluation of b.
+
+25 Proof. As we read the bits of v from least significant to most, we can compute v/ 2w by keeping a running sum that starts at 0 and is updated as follows: at each step, cut it in half and add the next bit. Concretely, let v0 = 0 and, for 1 ≤ ℓ ≤ w, define vℓ = 12 vℓ−1 + bℓ−1. It can be verified that 
+
+vw = v/ 2w.To perform this computation with CoT using soft tokens, we start with v0 = 0 , represented internally as ϕ(0) . Thus we have access to ϕ(v0) when bit b0 is ready to be serialized. By induction, we assume that when bit bℓ−1 is serialized using a soft token, we also have ϕ(vℓ−1) available and can serialize it as part of the same soft token. In the next step, we read both ϕ(bℓ−1) and ϕ(vℓ−1) from the transcript, and use Prop. 2 to compute ϕ(vℓ) as the affine transformation ϕ( 12 vℓ−1 + bℓ−1). After w steps, we thus have ϕ(vw) = ϕ(v/ 2w).Finally, we use an additional w steps of soft token CoT and Prop. 2 to repeatedly ( w times) multiply the result by 2, resulting in ϕ(v) as desired. An alternative construction for this lemma is to first convert the sequence of bits from least-significant-first to most-significant-first using w steps of attention, and then build v iteratively from vw−1 to v0
+
+using the recursion vℓ = 2 vℓ+1 + bℓ+1 .
+
+Lemma 4 (Steps 1–2: loading values) . Suppose the transcript contains store-summary positions, each tagged and whose soft token stores a pair (ϕ(aj ), ϕ (vj )) . Let τ be a transcript position at which a query address a is available as ϕ(a) in the residual stream, and suppose a ≤ τ . Then a log-precision, finite-width continuous-CoT transformer can retrieve ϕ(vj∗ ), where j∗ is the largest index with aj∗ = a. If no such j∗ exists, it retrieves ϕ(0) .Proof. Let S = {j < τ : position j is a store-summary }, and for each j ∈ S let the store-summary’s soft token contain (ϕ(aj ), ϕ (vj )) . In our restricted simulation, store addresses written at time j
+
+satisfy aj ≤ j, hence (since j < τ ) we have aj ≤ τ for all j ∈ S; together with the hypothesis a ≤ τ ,this lets us apply Prop. 1 with T = τ .Let δ := δτ be the corresponding gap, i.e., for every j ∈ S,
+
+⟨ϕ(a), ϕ (aj )⟩ =
+
+1 if aj = a, 
+
+≤ 1 − δ if aj̸ = a. 
+
+Retrieve the most recent matching store (candidate). Because store-summary positions are tagged, we can restrict an attention head to attend only over S. We additionally use a fixed-width, strictly increasing time coordinate tj available from the positional embedding (e.g., tj := − 1 
+
+> j+1
+
+∈
+
+(−1, 0) ), so that tj < t j′ whenever j < j ′.Consider a (hard) attention head whose score for a store-summary position j ∈ S is 
+
+score( j) := ⟨ϕ(a), ϕ (aj )⟩ + ε t j ,
+
+with ε := δ/ 4. Since tj ∈ (−1, 0) , we have εt j ∈ (−ε, 0) .If aj = a then score( j) ≥ 1 − ε = 1 − δ/ 4. If aj̸ = a then score( j) ≤ (1 − δ) + 0 = 1 − δ. Thus every matching store-summary strictly outscores every non-matching store-summary. Among the matching store-summaries, the additive term εt j strictly breaks ties in favor of larger j (because tj is strictly increasing). Therefore, if j∗ exists, the unique maximizer of score( j) over j ∈ S is exactly 
+
+j∗ = max {j ∈ S : aj = a}, and hard attention retrieves the associated value payload ϕ(vj∗ ). We also route ϕ(aj∗ ) into designated residual coordinates alongside ϕ(vj∗ ) for a hit-test below; denote the retrieved pair by (ϕ(˜ a), ϕ (˜ v)) .If no such j∗ exists, the same head returns some store-summary payload (ϕ(˜ a), ϕ (˜ v)) with ˜a̸ = a.
+
+Hit-test and default to zero. To ensure the output is ϕ(0) when no match exists, we perform a final hit-test using Prop. 1. Fix c := 1 − δ/ 2 (note 1 − δ < c < 1). Use a second hard-attention head that compares only: (i) the current position τ , whose key contains ϕ(˜ a) and whose value contains 
+
+ϕ(˜ v), and (ii) a fixed anchor position (e.g. the start token) whose key contributes the constant score c
+
+and whose value is ϕ(0) . Concretely, arrange the head so that its score for τ is ⟨ϕ(a), ϕ (˜ a)⟩ and its score for the anchor is c, with all other positions receiving strictly smaller scores. 26 By Prop. 1, ⟨ϕ(a), ϕ (˜ a)⟩ = 1 iff ˜a = a, and otherwise it is at most 1 − δ < c . Hence: - If a match exists, then ˜a = a and the head selects the current position, outputting ϕ(˜ v) = ϕ(vj∗ ). - If no match exists, then ˜a̸ = a and the head selects the anchor, outputting ϕ(0) .All operations use only constant-dimensional codes and inverse-polynomial margins in τ , so they are implementable with finite width and O(log τ )-bit precision. 
+
+Lemma 6 (Step 4: instruction execution) . Fix any RAM instruction I on w-bit operands whose bit-serial implementation runs in κ(w) decoding steps. There exists a log-precision, finite-width continuous-CoT transformer subnetwork that, once activated, simulates this bit-serial computation for O(κ(w)) decoding steps and emits the output bit streams of I onto the transcript. Moreover, the subnetwork can be made to ignore the rest of the transcript by delimiting a work-tape suffix (with a start marker) and restricting all attention inside the subroutine to positions in that suffix. Proof. Fix any RAM instruction I as a function from a fixed number of w-bit inputs to a fixed number of w-bit outputs. By assumption, there exists a Turing machine MI that computes I in time 
+
+κ(w). Using existing Turing-completeness results for transformers (Merrill and Sabharwal, 2024), there exists a transformer TI that simulates MI (and thus computes I) in time O(κ(w)) .
+
+## E Proofs of Hybrid Model Results 
+
+Lemma 8 (Serialization) . Let τ be a transcript position at which a value v is available as ϕ(v) in the residual stream, and suppose v ≤ τ . Then a log-precision, finite-width hybrid model can emit the 
+
+w bits of v over the next w decoding steps, ordered from least to most significant. Proof. The construction is essentially the same as in the proof of Lem. 5, except that without continuous CoT, we cannot emit ϕ(vk+1 ), defined as ϕ(⌊vk/2⌋), at position τ + k + 1 and read it back in at the following position. Instead, we emit bk, computed via Lem. 3. Write ϕ(v) as 
+
+(s1, s 2, −s1, −s2) and observe that ⌊vk/2⌋ = 12 (vk − bk). We can thus apply Prop. 2 to compute 
+
+ϕ(⌊vk/2⌋), up to a normalization factor, as: 
+
+  12 s1, s 2, − 12 s1, −s2
+
+ when bk = 0 
+
+  12 (s1 − s2), s 2, − 12 (s1 − s2), −s2
+
+ when bk = 1 
+
+We can use this to design a simple RNN layer that computes ϕ(⌊vk/2⌋) at position τ +k+1 as follows. The RNN state St will always be diagonal; thus we consider only its vector of diagonal entries ht.The hidden state hτ +k of the RNN is the (unnormalized) ϕ(vk). In particular, hτ = ϕ(v0) = ϕ(v),which can be implemented with a 0 transition matrix and the additive term ϕ(v). The RNN computes the next hidden state as hτ +k+1 = Akhτ +k where Ak is B0 when bk = 0 and B1 when bk = 1 ,where                             
+
+> B0=
+> 
+> 1/20000100001/200001
+> ,B1=
+> 
+> 1/2−1/2000100001/2−1/20001
+> 
+
+Observe that hτ +k+1 is precisely the unnormalized form of ϕ(⌊vk/2⌋) derived above. The layer outputs the normalized form layernorm( hτ +k+1 ), which equals ϕ(⌊vk/2⌋), to the residual stream, which is then used in the next step to compute bk+1 and continue the process. While we do not enforce it, the matrices used in the construction have a diagonal-plus-low-rank parameterization: B0 is directly diagonal, and each block of B1 can be decomposed into the identity minus a rank-1 matrix. Thus, these matrices resemble the parameterizations used in architectures like DeltaNet (Schlag et al., 2021; Yang et al., 2024b) and RWKV-7 (Peng et al., 2025). 
+
+Lemma 9 (Deserialization) . There exists a log-precision, finite-width hybrid model that, on any bit sequence b0, . . . , b w−1 followed by w arbitrary tokens, computes ϕ(v), where v = Pw−1 
+
+> k=0
+
+bk2k is the LSB evaluation of b, in the residual stream at depth 1 at the last token. 
+
+27 Proof. We use the same recursive computation as in the corresponding lemma for continuous CoT (Lem. 7) except within the linear RNN. Namely v0 = 0 and, for 1 ≤ ℓ ≤ w, define vℓ = 12 vℓ−1 +bℓ−1.We compute and emit bit bℓ−1 at position ℓ as before. However, instead of emitting a soft token containing ϕ(vℓ−1) (which we now cannot do), we simply use hℓ = vℓ as the hidden state of the RNN at position ℓ. This state is then updated as hℓ = 12 hℓ−1 + bℓ−1. As before, at position w, the hidden state is hw = vw = v/ 2w. Again as before, we use a simple RNN to multiply this quantity with 2 an additional w times to obtain v, incurring w steps of overhead. Lastly, we add the final output to the residual stream at layer 1 as ϕ(v).28
