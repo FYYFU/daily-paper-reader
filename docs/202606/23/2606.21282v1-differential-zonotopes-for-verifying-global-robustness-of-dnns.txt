@@ -1,0 +1,1185 @@
+Title: Differential Zonotopes for Verifying Global Robustness of DNNs
+
+URL Source: https://arxiv.org/pdf/2606.21282v1
+
+Published Time: Tue, 23 Jun 2026 00:45:41 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Differential Zonotopes for Verifying Global Robustness of DNNs 
+
+# Anagha Athavale 
+
+TU Wien AIT Austrian Institute of Technology Vienna, Austria anagha.athavale@tuwien.ac.at 
+
+# Samuel Teuber 
+
+Karlsruhe Institute of Technology Karlsruhe, Germany teuber@kit.edu 
+
+# Matteo Maffei 
+
+TU Wien Vienna, Austria matteo.maffei@tuwien.ac.at 
+
+# Ezio Bartocci 
+
+TU Wien Vienna, Austria ezio.bartocci@tuwien.ac.at 
+
+# Dejan Nickovic 
+
+AIT Austrian Institute of Technology Vienna, Austria dejan.nickovic@ait.ac.at 
+
+# Georg Weissenbacher 
+
+TU Wien Vienna, Austria georg.weissenbacher@tuwien.ac.at 
+
+## Abstract 
+
+The robustness of deep neural networks (DNNs) is critical in security-sensitive applications, where small input perturbations should not alter model predictions. This property is commonly formalized as local or global robustness: the former considers perturbations around a single input, while the latter—strictly stronger—quantifies over all input pairs. While local robustness can be expressed as a safety property, global robustness is a 2-safety property, making it substantially more challenging to verify. We present a novel static analysis technique for verifying the global robustness of DNNs. Our approach is based on differential halo zonotopes, a new abstract domain that extends zonotopes to jointly propagate pairs of perturbed inputs in lock-step while tightly bounding their divergence. In addition, we introduce a symmetric variant of confidence-based global robustness that disregards per-turbations leading to differing but low-confidence predictions. This relaxation yields a practically meaningful notion of robustness that applies to a broader class of networks. We implement our approach in a new tool, called TwoSafe , and evaluate it on standard DNN verification benchmarks, including widely deployed models. Our results show that TwoSafe signifi-cantly outperforms the state of the art in both precision and scala-bility, enabling the verification of networks an order of magnitude larger than those handled by prior techniques. 
+
+## Keywords 
+
+Neural network verification, Global robustness, Zonotopes 
+
+## 1 Introduction 
+
+Deep Neural Networks (DNNs) [ 22 ] are widely deployed today throughout society, enabling high levels of autonomy and efficiency in many domains, including transportation, healthcare and finance. For many of these applications, the accuracy of DNNs is an essential property, as wrong predictions can lead to significant economic loss or even harm to humans. Therefore, rigorous methods are often required to verify the behavior of DNNs, especially in security-critical settings. 
+
+Robustness [3, 23 , 26 , 28 , 48 ] has emerged as a key property for safe and correct DNNs, requiring that small input perturbations do not alter model predictions. This is crucial since systems deployed in real-world environments must operate reliably under uncertainty and, possibly adversarial, variability in their inputs and operating conditions. In the absence of robustness guarantees, even small input deviations (e.g., induced by sensor perturbations) can trigger disproportionate and unexpected changes in the output of a DNN, a consequence of the highly nonlinear structure of the common neural network architectures. As a result, nominal correctness on typical inputs is insufficient to ensure correct behavior in practice. In recent years, substantial effort has been invested in the devel-opment of methods and tools to formally verify the robustness of DNNs, with predominant approaches relying on the methods of satisfiability solving [ 26 , 28 , 37 , 45 ] and static analysis [ 8, 18 , 44 , 50 ]. Most existing methods focus on local robustness verification, where robustness is checked only in the neighborhood of predefined input points. Although such guarantees are valuable, they only provide partial assurance and may fail to detect unsafe behaviors in unex-plored regions of the input space. A recent line of work put forward the concept of confidence-based global robustness [ 3 ], which establishes robustness guaran-tees for all admissible inputs that lead to outputs with sufficiently high confidence. Global guarantees are a prerequisite for the true certification of DNNs and their reliable integration into security-critical applications. However, existing verification methods [ 3] for confidence-based global robustness, based on specialized satisfia-bility solvers, still suffer from poor scalability. To some extent, this does not come as a surprise, since local robustness is a safety prop-erty, whereas global robustness is a two-safety property [ 14 ] which is notoriously more expensive to verify since it requires confirming the relation [ 6, 7] between two universally quantified execution traces, as opposed to a single one. While local robustness tools scale to networks with thousands of neurons, global robustness verifiers are currently limited to networks with at most tens of neurons [ 3 ]. Hence, there is at present an inherent tension between the strength of the robustness guarantees and the scalability of the associated verification tools. This poses the following research question: How can we improve the scalability of global robustness verification despite its inherent two-safety complexity? Contribution. We present a novel verification framework for confidence-based global robustness, which we show to outperform the state-of-the-art. In particular, we provide the following main contributions. 
+
+• A differential zonotope-based static analysis technique. We develop an efficient verification technique for confidence-based global robustness, which is based on the new concept 
+
+> 1
+> arXiv:2606.21282v1 [cs.CR] 19 Jun 2026 Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+
+of differential halo zonotopes . Our approach is inspired by recent work on differential zonotopes for DNN equivalence checking [ 53 ], but requires non-trivial extension of these ideas to move from pairwise model comparison (the same inputs applied to two different DNNs) to global robustness guarantees (different inputs applied to the same DNN) and, in this setting, to find the sweet spot between soundness and precision. 
+
+• A proof of soundness for differential zonotope-based static analysis. We formally prove the soundness of our verifica-tion technique, with the core results formalized in Isabelle (results marked in cyan). 
+
+• A new definition of global robustness. Our experiments indi-cate that confidence-based global robustness, as originally defined [ 3], can be overly restrictive and may fail to hold even for intuitively secure DNNs. In particular, the original definition—hereafter referred to as the asymmetric vari-ant—requires that no adversarial perturbation can trans-form a high-confidence classification into a different one, regardless of the confidence of the resulting classification. Hence we introduce a weaker variant, which we call sym-metric confidence-based global robustness . This notion re-quires that two classifications coincide whenever both are of high confidence. As such, the symmetric definition is strictly less restrictive than the asymmetric one, while re-maining meaningful in practical scenarios—for example, when low-confidence predictions are subject to manual inspection or deferred decision-making. Moreover, this def-inition admits an efficient verification procedure in our framework, as it can be encoded directly in our static anal-ysis and checked using the same abstract domain. 
+
+• A tool accompanied with an extensive evaluation. We im-plement our global robustness static analysis technique on top of the propagation algorithm implemented in the 
+
+VeryDiff tool [ 53 ] for differential equivalence checking of DNNs. We evaluate our approach on four case studies from the literature, including the LHC and HAR, which are actively deployed in practice. The LHC benchmark [ 16 ]is used for real-time particle classification on FPGA accel-erators at CERN, and the HAR benchmark [ 1] is used for human activity recognition on wearable devices, a technol-ogy increasingly deployed in healthcare and assisted living applications [ 10 , 15 , 38 , 46 , 47 ]. In comparison to the State of the Art in global robustness verification [ 3] scaling to 15 
+
+ReLU neurons, our approach scales to significantly wider (500 ReLU s) and deeper DNNs (6 times 50 ReLU s) while supporting larger input spaces (up to 561 dimensions). 
+
+Overview. After Section 2 introduces the necessary background on zonotope-based static analysis and confidence-based robustness properties, Section 3 introduces our new symmetric confidence-based property. Section 4 then introduces our new analysis tech-nique for the verification of confidence-based robustness and proves its soundness. We evaluate our implementation in Section 5. Sec-tion 6 discusses related approaches and their similarities and differ-ences.   
+
+> Input layer Hidden layer Output layer
+> 𝑥 1
+> 𝑥 2
+> 𝑧 1
+> 𝑧 2
+> 𝑧 out
+> 1
+> 1
+> 1
+> −1
+> 1
+> 1
+
+Figure 1: Running example: a DNN with 2 inputs, 2 hidden 
+
+ReLU neurons, and 1 output neuron. 
+
+## 2 Background 
+
+We denote vectors in bold (e.g., v) and matrices using capital letters (e.g., 𝐺 ). We consider the verification of piecewise linear, feed-forward DNNs. 
+
+## 2.1 Deep Neural Networks (DNNs) 
+
+A DNN with input dimension 𝐼 ∈ N, input space ℐ ⊆ R𝐼 , output dimension 𝑂 ∈ N, and 𝐿 ∈ N layers is a function 𝑓 : ℐ → R𝑂 ,mapping an input vector x(0) ∈ ℐ to an output vector x(𝐿 ) ∈ R𝑂 .Each layer of the DNN consists of an affine transformation followed by a non-linear activation. More precisely, the 𝑖 -th layer computes 
+
+ˆx(𝑖 ) = 𝑊 (𝑖 ) x(𝑖 −1) + b(𝑖 ) , x(𝑖 ) = ℎ
+
+
+
+ˆx(𝑖 ) 
+
+,
+
+where 𝑊 (𝑖 ) is a weight matrix, b(𝑖 ) a bias, and ℎ a non-linear acti-vation function. In this work, we focus on networks with ReLU activations, i.e., 
+
+ℎ( ˆx(𝑖 ) ) applies ReLU ( ˆx(𝑖 ) ) = max (0, ˆx(𝑖 ) ) component-wise for all 
+
+1 ≤ 𝑖 ≤ 𝐿 and 𝑓 (x) then denotes the composition of the network’s 
+
+𝐿 layers. 
+
+Example 2.1 (Forward Pass through a DNN) . Figure 1 shows a small DNN that we will use as a running example throughout the paper. It has 2 inputs 𝑥 1, 𝑥 2 ∈ [ 0, 1], 2 hidden ReLU neurons, and 1 output neuron. The weights are represented as 
+
+𝑊 (1) =
+
+1 11 −1
+
+
+
+, 𝑊 (2) =  1 1 ,
+
+and are also shown on each edge. The bias vectors are set to 0 and ignored for simplicity. 
+
+Hidden layer. The pre-activation value of 𝑧 1 is computed via the affine transformation: 
+
+ˆ𝑧 1 = 1.0 · 𝑥 1 + 1.0 · 𝑥 2 ˆ𝑧 2 = 1.0 · 𝑥 1 − 1.0 · 𝑥 2
+
+Applying the ReLU function: 
+
+𝑧 1 = ReLU ( ˆ𝑧 1) = max (0, 𝑥 1 +𝑥 2) 𝑧 2 = ReLU ( ˆ𝑧 2) = max (0, 𝑥 1 −𝑥 2)
+
+Output layer. We compute the DNN’s output as 
+
+𝑧 𝑜𝑢𝑡 = 1.0 · 𝑧 1 + 1.0 · 𝑧 2
+
+For input 𝒙 = (0.5, 0.5)⊤, this gives 𝑧 1 = 1, 𝑧 2 = 0, and 𝑧 𝑜𝑢𝑡 = 1.We will focus on classification DNNs which provide their clas-sification as class (𝑓 (𝒙 )) = arg max 𝑖 ∈ [ 1,𝑂 ] 𝑓 𝑖 (𝒙 ) where 𝑓 𝑖 is the 
+
+𝑖 -th output component of 𝑓 and arg max returns the component 
+
+𝑖 ∈ [ 1, 𝑂 ] for which 𝑓 𝑖 (𝒙 ) is maximal. Classifications of DNNs are often also interpreted as probability distributions via the func-tion softmax 𝑖 (𝑓 (𝒙 )) = 𝑒 𝑓 𝑖 (𝒙 )      
+
+> Í𝑂 𝑗 =1𝑒 𝑓 𝑗 (𝒙 )
+
+. In this case, we compute the 
+
+> 2Differential Zonotopes for Verifying Global Robustness of DNNs
+
+confidence of a DNN as conf (𝑓 (𝒙 )) = softmax class (𝑓 (𝑥 ) ) (𝑓 (𝒙 )) .In this work, we will focus on the case where conf (𝑓 (𝒙 )) > 0.5
+
+prohibiting the case where two classes have the same confidence. 
+
+## 2.2 Zonotopes 
+
+A well-established abstraction technique for the verification of local properties in DNN is based on zonotopes [18 , 21 , 49 ]. Zonotopes form an abstract domain enabling efficient propagation of input sets through DNNs composed of (piecewise) affine transformations. 
+
+Definition 2.2 (Zonotope) . A zonotope with input and output dimension 𝑛 and 𝑚 , respectively, consists of a generator matrix 
+
+𝐺 ∈ R𝑚 ×𝑛 and a center 𝒄 ∈ R𝑚 , which we denote as 𝒵 = (𝐺, 𝒄 ). A zonotope’s concretization encompasses 
+
+⟨( 𝐺, 𝒄 )⟩ = { 𝐺 𝝐 + 𝒄 | 𝝐 ∈ [− 1, 1]𝑛 } ⊆ R𝑚 .
+
+Intuitively, a zonotope represents a set of points by starting at the center 𝒄 and allowing movement along each generator direction (column of 𝐺 ) by any amount in [− 1, 1]. Each 𝜖 𝑖 ∈ [− 1, 1] inde-pendently controls how far we move along the 𝑖 -th generator. The concretization ⟨( 𝐺, 𝒄 )⟩ is then the set of all points reachable this way. Zonotopes are denoted by 𝒵 . We denote by 𝐺 𝑖 the 𝑖 -th row of 𝐺 
+
+and by 𝒵 𝑖 the 𝑖 -th component of 𝒵 which is determined by 𝐺 𝑖 and 
+
+𝒄 𝑖 . Each row 𝐺 𝑖 together with 𝒄 𝑖 defines a scalar-valued function of 𝝐 called an affine form 𝔷 = (𝒈 , 𝑐 ) := (𝐺 𝑖 , 𝒄 𝑖 ), representing one output dimension of the zonotope. A zonotope can thus be viewed is a sequence of 𝑚 affine forms with common generators. Given a zonotope and a vector 𝒗 ∈ [− 1, 1]𝑑 , with 𝑑 ≤ 𝑛 , we denote by 𝒵 (𝒗 )
+
+the zonotope where we fix the first 𝑑 generators with the values in 𝒗 ,i.e. we compute the constant 𝐺 (1: 𝑚 ),(1: 𝑑 ) 𝒗 . By moving the resulting fixed value to to the zonotope’s center, we can define the resulting zonotope as follows: 𝒵 (𝒗 ) :=  𝐺 (1: 𝑚 ),(𝑑 +1: 𝑛 ) ,  𝐺 (1: 𝑚 ),(1: 𝑑 ) 𝒗 + 𝒄  .
+
+Example 2.3. For a Zonotope 𝒵 = (𝐺, 0) with 𝐺 =
+
+ 1.0 0.02.0 1.0
+
+
+
+and 𝒗 = (− 1) ∈ R1, the zonotope 𝒵 (𝒗 ) is computed by fixing the first generator with −1 yielding 
+
+
+
+(0 1 )𝑇 , (− 1 − 2)𝑇 
+
+.By abuse of notation, for 𝑑 = 𝑛 we also refer to 𝒵 (𝒗 ) ∈ R𝑚 as the vector obtained by setting 𝝐 = 𝒗 .Zonotopes provide a good trade-off between efficiency and ex-pressivity for the verification of DNNs. The result of affine transfor-mations can be computed exactly while preserving dependencies w.r.t. generators of the original zonotope: 
+
+Proposition 2.4 (Affine Zonotope Transformation [ 21 , 53 ]) . Let 
+
+𝒵 = (𝐺, c) be a zonotope and 𝐴 (x) = 𝑊 x+b be an affine transforma-tion. The zonotope ˆ𝒵 = 𝑊 𝒵 + 𝑏 := (𝑊 𝐺,𝑊 c + b) exactly describes 
+
+𝐴 applied to the points 𝑥 ∈ ⟨ 𝒵 ⟩, i.e. for all 𝑑 ≤ 𝑛 and v ∈ [− 1, 1]𝑑 :
+
+{𝑊 x + b | x ∈ ⟨ 𝒵 (v)⟩} = ⟨ ˆ𝒵 (v)⟩ 
+
+Although expressive, zonotopes allow the efficient computation of bounds: 
+
+Proposition 2.5 (Zonotope Output Bounds [ 21 ]) . Consider some affine form 𝔷 = (g, 𝑐 ) it holds for all x ∈ [− 1, 1]𝑛 that: 
+
+gx + 𝑐 ∈
+
+h
+
+𝔷 , 𝔷 
+
+i
+
+:= 𝑐 − Í𝑛 𝑖 =0 |g𝑖 | , 𝑐 + Í𝑛 𝑖 =0 |g𝑖 |
+
+There exist effective abstract transformers to over-approximate the behavior of ReLU [49 ]: If the output of a ReLU node is stable (i.e. its input is either entirely positive or entirely negative), the ReLU 
+
+behaves linearly and we can exactly represent its behavior with zonotopes. On the other hand, if a ReLU is unstable (i.e. its input range crosses includes 0), zonotopes (as linear transformations of a 
+
+[− 1, 1] box) cannot exactly represent its behavior of ReLU and we must resort to approximation instead. 
+
+𝝐 new 
+
+𝑥 
+
+𝑦 = ReLU (𝑥 )
+
+Figure 2: ReLU approximation 
+
+To this end, the zono-tope’s generator dimen-sion 𝑛 is increased once per ReLU neuron and the additional generator 
+
+𝝐 new is used to represent the approximation error incurred through repre-senting ReLU via a linear approximation. Figure 2 illustrates how an input zonotope is mapped through ReLU (red function) to produce an over-approximating output zonotope (cyan region). The addi-tional generator 𝝐 new captures the approximation error. Overall, we add one additional generator per unstable ReLU neuron in the NN. 
+
+Example 2.6 (Zonotope Propagation through a DNN) . Consider the DNN from Figure 1 with weights: 
+
+𝑊 (1) =
+
+1 11 −1
+
+
+
+, 𝑊 (2) =  1 1
+
+We verify the network over the input region 𝑥 1, 𝑥 2 ∈ [0, 1],which we represent as a zonotope with center 𝒄 = (0.5, 0.5)⊤ and generator matrix 𝐺 =
+
+0.5 00 0.5
+
+
+
+, so that 𝑥 1 = 0.5𝜖 1 + 0.5 and 
+
+𝑥 2 = 0.5𝜖 2 + 0.5 for 𝜖 1, 𝜖 2 ∈ [− 1, 1].
+
+Affine layer. Applying Proposition 2.4, the pre-activation zono-tope is: 
+
+ˆ𝐺 = 𝑊 (1)𝐺 =
+
+0.5 0.50.5 −0.5
+
+
+
+, ˆ𝒄 = 𝑊 (1) 𝒄 =
+
+10
+
+
+
+.
+
+The two pre-activation affine forms are: 
+
+𝑧 1 = 0.5𝜖 1 + 0.5𝜖 2 + 1 ∈ [ 0, 2]
+
+𝑧 2 = 0.5𝜖 1 − 0.5𝜖 2 + 0 ∈ [− 1, 1]
+
+ReLU layer. Neuron 1 (𝑧 1): since 𝑙 1 = 0 ≥ 0, the neuron is stable (always active) and ReLU (𝑧 1) = 𝑧 1 exactly; no new generator is needed. 
+
+Neuron 2 (𝑧 2): since 𝑙 2 = −1 < 0 < 1 = 𝑢 2, the neuron is unstable. We introduce a new generator 𝜖 3 to over-approximate ReLU (𝑧 2)
+
+[49]: 
+
+𝑧 ′ 
+
+> 2
+
+= 0.25 𝜖 1 − 0.25 𝜖 2 + 0.5𝜖 3 + 0.5
+
+The generator matrix now has three columns (𝜖 1, 𝜖 2, 𝜖 3), one per input dimension and one for the ReLU approximation error. 
+
+Output layer. Applying the output weights 𝑊 (2) = (1, 1):
+
+𝑧 out = 𝑧 1 + 𝑧 ′ 
+
+> 2
+
+= 0.75 𝜖 1 + 0.25 𝜖 2 + 0.5𝜖 3 + 1.5
+
+By Proposition 2.5, the output is then bounded by: 
+
+𝑧 out ∈ [ 1.5 − ( 0.75 + 0.25 + 0.5), 1.5 + ( 0.75 + 0.25 + 0.5)] = [0, 3]   
+
+> 3Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+> 𝑥 1
+> 𝑥 2
+> 𝜖 1
+> 𝜖 2
+> Affine Layer
+> c𝑧 1
+> 𝑧 2
+> 𝜖 1
+> 𝜖 2
+> ReLU Layer
+> c
+> 𝜖 1
+> 𝜖 2
+> 𝜖 3
+> 𝑧 ′
+> 1
+> 𝑧 2’
+> True reachable set
+> Over-approximation ( 𝜖 3dimension)
+
+Figure 3: Zonotope propagation through the running example (Example 2.6): the input zonotope is transformed by the affine layer and then over-approximated through the ReLU layer. The blue face shows the true reachable set; the pink hatched faces show the over-approximation in the extra 𝜖 3 dimension, introduced solely because neuron 𝑧 2 is unstable. The stable neuron 𝑧 1
+
+requires no new generator. The arrows illustrate how the generators span the (over-approximate) zonotope. 
+
+This is an over-approximation of the true output range due to the 
+
+ReLU approximation at neuron 2. Figure 3 visualizes this propaga-tion: the input zonotope (a square in the 𝑥 1-𝑥 2 plane) is transformed by the affine layer into the diamond-shaped zonotope, reflecting the rotation and shearing induced by 𝑊 (1) . After the ReLU layer, the stable neuron 𝑧 1 is propagated exactly, while the unstable neuron 𝑧 2
+
+introduces a new generator 𝜖 3, represented as the extra dimension of the resulting zonotope. The blue face shows the true reachable set; the pink hatched faces show the over-approximation introduced by the new generator 𝜖 3.
+
+## 2.3 Zonotopes for Equivalence Verification. 
+
+Teuber et al. [ 53 ] propose a zonotope-based abstract domain to prove equivalence properties across two DNNs using the differen-tial verification paradigm [ 41 , 42 ]. Given two DNNs of the same structure (modulo weight changes) and an input region of interest, a zonotope-based reachability analysis is performed for both individ-ual DNNs. In addition, a differential zonotope 𝒵 Δ is propagated in lock-step with the individual analyses. 𝒵 Δ then yields a bound on the difference between executions which is tighter than the bounds obtained via individual analyses [53]. We can then reason about differences in DNN behavior by an-alyzing the zonotopes propagated through the individual DNNs (𝒵 ′/𝒵 ′′ ) and the zonotope bounding the difference between execu-tions ( 𝒵 Δ) in combination. Any tuple of points (𝒙 , 𝒚 ) is contained in ⟨ 𝒵 ′, 𝒵 ′′ , 𝒵 Δ ⟩ iff they are contained in the individual zonotopes (𝒵 ′, 𝒵 ′′ ) and their difference 𝒙 − 𝒚 is contained in 𝒵 Δ:
+
+Definition 2.7 (Concretization of Differential Zonotopes [ 53 ]) . For two individual zonotopes 𝒵 ′, 𝒵 ′′ and a differential zonotope 𝒵 Δ
+
+we define the concretization of  𝒵 ′, 𝒵 ′′ , 𝒵 Δ  as follows: 
+
+⟨
+
+
+
+𝒵 ′, 𝒵 ′′ , 𝒵 Δ 
+
+⟩ =
+
+
+
+(𝒙 , 𝒚 )
+
+∃𝝐 ∈ [− 1, 1]𝑛 𝒵 ′ (𝝐 ) = 𝒙 ∧
+
+𝒵 ′′ (𝝐 ) = 𝒚 ∧
+
+𝒵 Δ (𝝐 ) = (𝒙 − 𝒚 )
+
+
+
+A challenge in this approach lies in keeping track of generators added due to necessary approximations of unstable ReLU neurons in 𝒵 ′, 𝒵 ′′ or 𝒵 Δ. To this end, one can represent zonotopes as con-sisting of multiple generator blocks (e.g. denoting 𝒵 ′ = (𝐸 ′, 𝐴 ′, 𝒄 )
+
+for 𝐸 ′ ∈ R𝑚 ×𝑛 1 , 𝐴 ′ ∈ R𝑚 ×𝑛 2 ). Generator blocks help to distinguish between generator columns which were part of the initial input encoding ( exact generators) and generators added later for ReLU 
+
+approximations ( approximate generators). This distinction is im-portant because 𝒵 ′, 𝒵 ′′ , and 𝒵 Δ must share the same generator columns to maintain the correlation between the two executions. Without this alignment, the bound on the difference 𝒵 Δ would be no tighter than simply subtracting the individual zonotopes 𝒵 ′−𝒵 ′′ .By concatenating the generator blocks and inserting zero-blocks, one obtains standardized zonotopes aligned between 𝒵 ′, 𝒵 ′′ , 𝒵 Δ.For simplicity, we omit generator blocks in our presentation. Differential zonotopes achieve their improved capabilities in bounding the difference between DNN executions through special-ized abstract transformers which update 𝒵 Δ based on differences between the DNNs as well as differences accumulated in 𝒵 Δ in pre-vious layers. For example, for affine transformations, the resulting 
+
+𝒵 Δ can be computed as follows: 
+
+Proposition 2.8 (Affine Differential Zonotope Transformation [ 53 ]) .
+
+Given two affine transformations 𝑊 1𝒙 +𝒃 1 and 𝑊 2𝒚 +𝒃 2 and zonotopes 
+
+𝒵 ′, 𝒵 ′′ and 𝒵 Δ, let ˆ𝒵 ′, ˆ𝒵 ′′ , ˆ𝒵 Δ be as follows: 
+
+ˆ𝒵 ′ = 𝑊 1𝒵 ′ + 𝒃 1, ˆ𝒵 ′′ = 𝑊 2𝒵 ′ + 𝒃 2,
+
+ˆ𝒵 Δ = 𝑊 1𝒵 Δ + ( 𝑊 1 − 𝑊 2) 𝒵 ′′ + ( 𝒃 1 − 𝒃 2).
+
+Then for 𝑑 ≤ 𝑛 and 𝒗 ∈ [− 1, 1]𝑑 with 
+
+(𝒙 , 𝒚 ) ∈ ⟨( 𝒵 ′ (𝒗 ) , 𝒵 ′′ (𝒗 ) , 𝒵 Δ (𝒗 ))⟩ we get: 
+
+(( 𝑊 1𝒙 + 𝒃 1) , (𝑊 2𝒚 + 𝒃 2)) ∈ ⟨( ˆ𝒵 1 (𝒗 ) , ˆ𝒵 2 (𝒗 ) , ˆ𝒵 Δ (𝒗 ))⟩ 
+
+A similar (though in this case approximate) transformation can be constructed for the difference between two ReLU nodes by rewrit-ing ReLU (𝑥 ) − ReLU (𝑦 ) to ReLU (𝑥 ) − ReLU (𝑥 − Δ) [53]. 
+
+Example 2.9 (Differential Zonotope Propagation through a DNN) .
+
+Consider again the DNN from Figure 1. For sake of simplicity we verify the equivalence of two copies of this network over the input region 𝑥 1, 𝑥 2 ∈ [ 0, 1], represented as the zonotope from Example 2.6. Since we are verifying equivalence, both networks receive the same input, so we initialize: 
+
+𝒵 ′ = 𝒵 ′′ = (𝐺, 𝒄 ), 𝒵 Δ = (0, 0)
+
+Since both networks share the same weights and biases (e.g. 𝑊 1 −
+
+𝑊 2 = 0), the affine update from Proposition 2.4 gives ˆ𝒵 Δ = (0, 0),and the individual zonotopes transform as in Example 2.6. At the unstable neuron 𝑧 2, both 𝒵 ′ and 𝒵 ′′ independently introduce ap-proximate generators 𝜖 ′ 
+
+> 3
+
+and 𝜖 ′′  
+
+> 3
+
+. Naively subtracting 𝒵 ′ and 𝒵 ′′ 
+
+then yields the affine form 0.5𝜖 ′ 
+
+> 3
+
+− 0.5𝜖 ′′  
+
+> 3
+
+which leads to a difference 
+
+> 4Differential Zonotopes for Verifying Global Robustness of DNNs
+
+bound of [− 1, 1]. In contrast, the transformation of the differential zonotope 𝒵 Δ accounts for the previously accumulated difference 
+
+[0, 0] yielding the output bound [0, 0] which proves equivalence. This difference in precision underscores the effectiveness of dif-ferential verification for hyper-properties where naive zonotope propagation suffers from accumulating over-approximation errors. The initialization 𝒵 ′ = 𝒵 ′′ and 𝒵 Δ = 0 is specific to equivalence verification. As we show in Section 4, naively reusing this initial-ization for global robustness verification, where the two executions receive different inputs, leads to unsound or imprecise results — motivating our novel differential halo zonotope encoding. The differential zonotope abstract domain is implemented in the tool VeryDiff [ 53 ] which, however, only supports equivalence verification, i.e. the equivalence of two DNNs where the second DNN was either created through weight modifications [ 53 ] (e.g., via pruning) or through polynomial approximation of activation functions [ 31 ] (for fully homomorphic encryption). Prior work has shown that differential verification, especially in classification settings, is very sensitive to the considered property, i.e., not all re-lational properties benefit equally from differential verification [ 53 ,Sec. 6]. 
+
+## 2.4 Asymmetric Confidence-Based Global Robustness 
+
+A widely studied property of DNNs is local robustness , which re-quires that small perturbations of a fixed input do not change the network’s classification. Formally, a DNN 𝑓 is locally robust at an input 𝒙 0 with tolerance 𝜺 iff 
+
+∀𝒙 ∈ ℐ. |𝒙 0 − 𝒙 | ≤ 𝜺 → class (𝑓 (𝒙 0)) = class (𝑓 (𝒙 )) 
+
+While local robustness provides meaningful guarantees around specific inputs, it leaves the rest of the input space unconstrained. A natural attempt to generalize this to a global property is to require classification consistency for every pair of nearby inputs: 
+
+∀𝒙 , 𝒚 ∈ ℐ. |𝒙 − 𝒚 | ≤ 𝜺 → class (𝑓 (𝒙 )) = class (𝑓 (𝒚 )) 
+
+However, this naive lifting is unsatisfiable for any non-trivial clas-sifier: along any decision boundary, two arbitrarily close inputs are mapped to different classes by definition. To overcome this, Athavale et al. [ 3] introduce confidence-based global robustness , which restricts the global requirement to inputs classified with high confidence [ 2, 24 , 35 ]. The intuition is that decision boundaries are typically associated with low confidence, so excluding low-confidence inputs makes a global property attainable. Formally, we define confidence-based global robustness as follows: 
+
+Definition 2.10 (Asymmetric Confidence-Based Global Robust-ness [ 3 ]) . A DNN 𝑓 satisfies asymmetric global robustness for confidence 𝜏 > 0 and tolerance 𝜺 iff 
+
+∀𝒙 , 𝒚 ∈ ℐ . |𝒙 − 𝒚 | ≤ 𝜺 ∧ conf (𝑓 (𝒙 )) > 𝜏 
+
+→ class (𝑓 (𝒙 )) = class (𝑓 (𝒚 )) 
+
+Asymmetric confidence-based global robustness [ 3], intuitively, ensures that for any data instance 𝒙 classified with high confidence 
+
+𝜏 , no other data instance, 𝒚 , that is 𝜀 close to 𝒙 shall be classified to a different class. The asymmetry is reflected in the confidence requirement being placed only on 𝒙 and not on 𝒚 .class 2 
+
+x1
+
+x2
+
+class 1 
+
+class 3 
+
+Figure 4: Symmetric vs asymmetric confidence-based global robustness. 𝑥 1 and 𝑥 2 denote points in the continuous input space. Grayscale shading indicates confidence, where darker regions correspond to higher confidence. The pink pair satis-fies both properties. The blue pair violates the asymmetric property but satisfies the symmetric property due to low con-fidence at the perturbed point. The orange pair violates both properties. 
+
+## 3 Symmetric Confidence-Based Global Robustness 
+
+Section 2.4 presented confidence-based robustness as a property with the potential to provide strong robustness guarantees on the entire input space of a DNN. We note that this property stipulates a strong requirement, as it precludes the possibility of low-confidence adversarial examples. We argue that in several situations, it is mean-ingful to allow the network to classify 𝒚 to a different class, if it does so with a low confidence score (e.g., when a low confidence score triggers a warning for manual intervention). To this end, we introduce a more permissive, symmetric confi-dence-based global robustness property (Definition 3.1) that only constrains pairs of inputs that are both classified with high confi-dence to different classes. The difference between the asymmetric and the symmetric confidence-based robustness properties is il-lustrated in Figure 4. The pair of pink points are marked safe by both asymmetric and symmetric properties, since they are clas-sified to the same class with high confidence scores. The orange pair is marked unsafe by both properties since the points are classi-fied to different classes with high confidence scores. The blue pair, however, highlights the limitation of asymmetric confidence-based global robustness, because one blue point is classified as class 3with high confidence, while the other blue point is classified to 
+
+class 1 with low confidence. The asymmetric property flags this as a violation, whereas the symmetric property considers it safe, since the disagreement involves a low-confidence prediction that would not be trusted in practice. The figure highlights that while small perturbations may cause a change in the predicted class, such changes are often accompa-nied by a significant drop in confidence. Treating all such cases as violations, as required by the asymmetric definition, can be overly restrictive. Therefore, we propose the following symmetric prop-erty, which is more permissive in this regard: 
+
+Definition 3.1 (Symmetric Confidence-Based Global Robustness) .
+
+A DNN 𝑓 satisfies symmetric global robustness for confidence 𝜏 > 0
+
+> 5Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+
+and tolerance 𝜺 iff 
+
+∀𝒙 , 𝒚 ∈ ℐ . |𝒙 − 𝒚 | ≤ 𝜺 ∧ conf (𝑓 (𝒙 )) > 𝜏 ∧ conf (𝑓 (𝒚 )) > 𝜏 
+
+→ class (𝑓 (𝒙 )) = class (𝑓 (𝒚 )) 
+
+This property requires that for any two 𝜀 -close inputs that are both classified with high confidence, the DNN maps the inputs to the same class. For instance, consider a DNN classifying images as cats 
+
+and dogs . Assume an image of a dog is classified to class dog with 95% confidence, but tweaking it by a few pixels makes it classify as cat with confidence 60%. Definition 2.10 does not allow this and marks the DNN as unsafe. However, this is a very strong require-ment on the network, which is unlikely to be necessary in practice. If we knew the DNN was robust for inputs with confidence ≥ 80% ,it would be reasonable to reject any classifications with confidence 
+
+< 80% – a common risk limitation strategy for DNNs [ 19 ]. Doing so would in particular reject the result for the low-confidence image above, which was wrongly classified as cat. Hence, we argue adver-sarial examples may be considered permissible if they only lead to a low confidence classification. This observation is precisely covered by Definition 3.1: Symmetric confidence-based global robustness does not flag this case as a counterexample. It would, however, be unacceptable if the classification decision changes to cat with high confidence (e.g. with ≥ 80% confidence), as we then would likely accept this classification as correct. Our new property imposes a weaker requirement on the DNN and hence can be fulfilled by a broader class of DNNs than the asymmetric version. 
+
+Lemma 3.2. If a DNN satisfies asymmetric confidence-based global robustness for parameters (𝜖, 𝜏 ), then it also satisfies symmetric con-fidence-based global robustness for parameters (𝜖, 𝜏 ′), for any 𝜏 ′ ≥ 𝜏 .Conversely, for 𝜏 > 0.5, a DNN satisfying symmetric confidence-based global robustness for parameters (𝜖, 𝜏 ) does not necessarily satisfy asymmetric confidence-based global robustness for (𝜖, 𝜏 ).
+
+Proof. Assume the asymmetric confidence-based robustness property holds for parameters (𝜺 , 𝜏 ) for some DNN 𝑓 . This re-quires that for any input 𝒙 classified to class A with confidence 
+
+conf (𝑓 (𝒙 )) > 𝜏 , every input 𝒚 satisfying |𝒙 − 𝒚 | ≤ 𝜺 is also clas-sified to A. Consider a pair of inputs 𝒙 , 𝒚 such that |𝒙 − 𝒚 | ≤ 𝜺 ,
+
+conf (𝑓 (𝒙 )) > 𝜏 ′ ≥ 𝜏 , and conf (𝑓 (𝒚 )) > 𝜏 ′ ≥ 𝜏 . Then we know that 
+
+conf (𝑓 (𝒙 )) > 𝜏 as 𝜏 ′ ≥ 𝜏 . From our assumption, it follows that 𝒚 
+
+must be classified to the same class as 𝒙 . Therefore, the symmetric confidence-based global robustness property holds for threshold 𝜏 ′.To show that symmetric confidence-based global robustness for 
+
+(𝜖, 𝜏 ) does not necessarily imply asymmetric robustness for (𝜖, 𝜏 ),consider the DNN 𝑓 (𝑥 ) = (1 0)T 𝑥 . The DNN 𝑓 has confidence 
+
+conf (𝑓 (𝑥 )) ≥ 0.75 for class (𝑓 (𝑥 )) = 0 with 𝑥 ∈ [ ln (0.75 /0.25 ) , ∞) 
+
+and for class (𝑓 (𝑥 )) = 1 with 𝑥 ∈ (−∞ , − ln (0.75 /0.25 )] . More-over, 𝑓 classifies 𝑥 to class 0 iff 𝑥 ≥ 0. Hence, for 𝜏 = 0.75 and 
+
+𝜀 = 1.5 the DNN satisfies symmetric global robustness (differing high-confidence classifications are 2 ln (0.75 /0.25 ) apart), but not asymmetric global confidence ( 𝑥 = 1.1 ≥ ln (0.75 /0.25 ) is classi-fied as 0 with high confidence but −0.4 (which is 𝜀 -close to 𝑥 ) is classified as 1 with low confidence). □
+
+Verifying global robustness requires reasoning about two exe-cutions of a DNN over large input regions. Below, we introduce a zonotope-based approach leveraging differential verification to verify confidence-based robustness properties. 
+
+## 4 Robustness Verification with Differential Zonotopes 
+
+In prior work, differential zonotope-based verification has been used to verify the equivalence of two DNNs w.r.t. a given input space. Equivalence properties assert that the DNNs’ outputs are equivalent when provided with the same inputs. Hence, the inputs of the two DNNs are assumed equal across the two executions while the DNNs themselves differ . Consequently, the algorithm from Teuber et al. [53 ] by construction initializes the input zonotopes as: 
+
+𝒵 ′ = 𝒵 ′′ and 𝒵 Δ = 0
+
+In contrast, global robustness verification attempts to prove a property about two executions of the same DNN w.r.t. differing 
+
+inputs. This raises the question of how this relational property can be encoded for differential zonotope verification in a sound 
+
+and precise manner – as we show in Section 4.1, straightforward adaptations of the approach by Teuber et al. [53 ] lead to unsound or imprecise results. Below we assume a box-shaped input space. We describe pos-sible encodings w.r.t. 1-dimensional affine forms 𝔷 that can be in-dependently combined to describe multidimensional inputs. We consider an input interval [𝑙, 𝑢 ] and perturbation 𝜀 and will also use the center 𝑐 = (𝑢 + 𝑙 ) / 2 and the range 𝑟 = (𝑢 − 𝑙 ) / 2. Our ob-jective will be to construct affine forms 𝔷 ′, 𝔷 ′′ , 𝔷 Δ which ensure that 
+
+(𝑥, 𝑦 ) ∈ ⟨( 𝔷 ′, 𝔷 ′′ , 𝔷 Δ)⟩ iff 𝑥, 𝑦 ∈ [ 𝑙, 𝑢 ] and (𝑥 − 𝑦 ) ∈ [− 𝜀, 𝜀 ].As concrete values to demonstrate shortcomings of possible encodings, we will consider 𝑙 = 0.0, 𝑢 = 1.0, 𝑐 = 0.5, and 𝑟 = 0.5
+
+with 𝜀 = 0.1, corresponding to the input region of the DNN from Figure 1. 
+
+## 4.1 A Tale of Three Failed Encodings 
+
+To provide a better intuition for our encoding, we first describe three encodings which are either semantically unsound or imprecise for zonotope propagation. 
+
+Common Generators. One may be tempted to initialize 𝔷 ′ = 𝔷 ′′ =
+
+(( 𝑟, 0) , 𝑐 ) with 𝔷 Δ = (( 0, 𝜀 ) , 0). However, while 
+
+h
+
+𝔷 Δ, 𝔷 Δ
+
+i
+
+would in-deed be [− 𝜀, 𝜀 ], this is unsound, as shown by the following example: 
+
+Example 4.1. Initializing the affine forms for our example yields 
+
+𝔷 ′ = 𝔷 ′′ = (( 0.5, 0) , 0.5) and 𝔷 Δ = (( 0, 0.1) , 0). We can then compute a bound on the difference between inputs in the first NN 𝑥 and the second NN 𝑦 either via the bounds on 𝔷 Δ (yielding [− 0.1, 0.1]) or via bounds on the following difference: 
+
+𝔷 ′ − 𝔷 ′′ = (( 0.5 − 0.5, 0 − 0) , 0.5 − 0.5) = (( 0, 0) , 0) .
+
+The latter produces bounds [0, 0]. Therefore, we would only prop-agate inputs with |𝑥 − 𝑦 | = 0 through the NN which unsoundly ignores other inputs with |𝑥 − 𝑦 | ≤ 0.1 (e.g. 𝑥 = 0, 𝑦 = 0.1). 
+
+Independent generators for 𝔷 ′ and 𝔷 ′′ . It is a logical consequence of this observation that 𝔷 ′, 𝔷 ′′ require independent generators. A potential solution would be to use fully independent generator for both NNs (i.e. 𝔷 ′ = (( 𝑟, 0, 0) , 𝑐 ) and 𝔷 ′′ = (( 0, 𝑟, 0) , 𝑐 )). Two nat-ural alternatives arise: We can set 𝔷 Δ = (( 𝑟, −𝑟, 0) , 0) or we can 
+
+> 6Differential Zonotopes for Verifying Global Robustness of DNNs
+
+set 𝔷 Δ = (( 0, 0, 𝜀 ) , 0). We will explain the shortcomings of both approaches using our example: 
+
+Example 4.2. Consider 𝔷 ′ = (( 0.5, 0, 0) , 0.5), 𝔷 ′′ = (( 0, 0.5, 0) , 0.5)
+
+and 𝔷 Δ = (( 0.5, −0.5, 0) , 0): In this case, 𝔷 Δ would yield the bounds 
+
+[− 0.5 − 0.5, 0.5 + 0.5] = [− 1, 1] which are much larger than the maximal difference [− 𝜀, 𝜀 ] = [− 0.1, 0.1]. While we could reintro-duce this information after propagation by appropriately constrain-ing 𝔷 Δ (e.g. using linear programming), this would make the initial propagation of zonotopes through the NN extremely imprecise. As an alternative, we could set 𝔷 Δ = (( 0, 0, 𝜀 ) , 0) making 𝔷 Δ fully independent from the other affine forms. However, the differential propagation algorithm uses expressions such as, e.g., 𝔷 Δ −𝜆 𝔷 ′ which would result in the affine form ((− 𝜆 0.5, 0, 0.1) , −𝜆 0.5). Assuming 
+
+𝜆 = 0.5, the bounds of this affine form would be 
+
+[− 𝜆 0.5 − 0.1 − 𝜆 0.5, 0.1 + 𝜆 0.5 − 𝜆 0.5] = [− 0.6, 0.1] .
+
+As will be shown below, these bounds are less precise than the bounds achievable with our encoding. The lack of precision stems from the fact that the considered affine forms are fully independent. 
+
+An additional generator for 𝔷 ′′ . From our prior observations, it follows that neither fully dependent nor fully independent gener-ators are desirable. One may hence consider setting 𝔷 ′ = (( 𝑟, 0) , 𝑐 ),
+
+𝔷 ′′ = (( 𝑟, 𝜀 ) , 𝑐 ) and 𝔷 Δ = (( 0, −𝜀 ) , 0). While this approach is sound, it over-approximates the second DNN’s input domain: 
+
+Example 4.3. Reconsidering our example, we would obtain the affine forms 𝔷 ′ = (( 0.5, 0) , 0.5), 𝔷 ′′ = (( 0.5, 0.1) , 0.5) and 𝔷 Δ =
+
+(( 0, −0.1) , 0). In this case, 𝔷 ′′ would yield the bounds 
+
+[− 0.5 − 0.1 + 0.5, 0.5 + 0.1 + 0.5] = [− 0.1, 1.1] ⊃ [ 0, 1]
+
+which is a strict superset of the range of interest [𝑙, 𝑢 ]. Hence, this approach, while sound, over-approximates the input range of the second NN. This can also lead to spurious counterexamples (e.g. if the NN is not robust for 𝑥 = 0, 𝑦 = −0.1 < 𝑙 )Notably, this shortcoming cannot be mitigated by setting 𝔷 ′ =
+
+(( 𝑟 − 𝜀, 0) , 𝑐 ), 𝔷 ′′ = (( 𝑟 − 𝜀, 𝜀 ) , 𝑐 ): For our example this would yield the bounds [0.1, 0.9] ⊂ [ 0, 1] for 𝔷 ′, which is too restrictive and hence unsound. 
+
+A Tale of Three Lessons. Above, we have seen that we must ensure that the generators of 𝔷 ′, 𝔷 ′′ and 𝔷 Δ are (1) sufficiently independent (to ensure soundness); (2) sufficiently dependent (to ensure pre-cise propagation of zonotopes); (3) modeling the perturbation 𝜀 
+
+symbolically during propagation. Based on these observations, we introduce differential halo zonotopes , a specialized representation of input perturbations within the differential zonotopes abstract do-main which soundly and precisely encodes perturbed input points. 
+
+## 4.2 Differential Halo Zonotopes 
+
+To achieve the three objectives outlined above simultaneously, we propose differential halo zonotopes , which distribute the perturbation 
+
+𝜀 across two generators that are independent between 𝔷 ′ and 𝔷 ′′ ,while they share a common primary generator. Formally, we define a differential halo affine form as follows: 
+
+Definition 4.4 (Differential Halo Affine Form) . For lower and upper bounds 𝑙 < 𝑢 and a maximal perturbation 0 < 𝜀 < (𝑢 −𝑙 ), we                 
+
+> 𝑥 1
+> 𝑥 2
+> (𝑙 1, 𝑙 2)𝑢 1
+> 𝑢 2
+> (𝑙 1+𝜀
+> 2)(𝑢 1−𝜀
+> 2)
+> (𝑙 2+𝜀
+> 2)
+> (𝑢 2−𝜀
+> 2)
+
+𝜀 
+
+𝜀 
+
+Figure 5: Intuition for Differential Halo Zonotopes 
+
+set 𝑐 = 𝑢 +𝑙  
+
+> 2
+
+and 𝑟 = 𝑢 − 𝑐 . We then define a differential halo affine form as  𝔷 ′, 𝔷 ′′ , 𝔷 Δ :
+
+𝔷 ′ =
+
+ 
+
+𝑟 − 𝜀 
+
+2
+
+
+
+, 𝜀 
+
+2 , 0
+
+
+
+, 𝑐 
+
+
+
+𝔷 ′′ =
+
+ 
+
+𝑟 − 𝜀 
+
+2
+
+
+
+, 0, 𝜀 
+
+2
+
+
+
+, 𝑐 
+
+
+
+𝔷 Δ =
+
+ 
+
+0, 𝜀 
+
+2 , − 𝜀 
+
+2
+
+
+
+, 0
+
+
+
+We will call the first component of 𝔷 ′’s and 𝔷 ′′ ’s generator vector the primary generator while the latter two components are the 
+
+secondary generators. Differential halo affine forms come with the following guarantee (proof in Isabelle [43]): 
+
+Lemma 4.5 (Exact Encoding of Bounded Input Perturbations) . Let 
+
+𝑙, 𝑢, 𝜀 ∈ R be bounds and perturbation such that 0 < 𝜀 < (𝑢 − 𝑙 ) and let  𝔷 ′, 𝔷 ′′ , 𝔷 Δ  be their differential halo affine form (see Definition 4.4), then for all 𝑥, 𝑦 ∈ R:
+
+(𝑥, 𝑦 ) ∈ ⟨ 
+
+
+
+𝔷 ′, 𝔷 ′′ , 𝔷 Δ 
+
+⟩ iff 𝑥, 𝑦 ∈ [ 𝑙, 𝑢 ] and (𝑥 − 𝑦 ) ∈ [− 𝜀, 𝜀 ] .
+
+Example 4.6. We can observe the effect of differential halo zono-topes on our running example: Instantiating the affine forms as described in Definition 4.4 yields 𝔷 ′ = (( 0.45 , 0.05 , 0) , 0.5) , 𝔷 ′′ =
+
+(( 0.45 , 0, 0.05 ) , 0.5) , 𝔷 Δ = (( 0, 0.05 , 0.05 ) , 0). The bounds for 𝔷 ′ and 
+
+𝔷 ′′ then are [0, 1] and the bounds of 𝔷 Δ are [− 0.1, 0.1]. Additionally, we now preserve dependencies when adding affine forms: 
+
+𝔷 Δ − 𝜆 𝔷 ′ = ((− 𝜆 0.45 , (1 − 𝜆 )0.05 , 0.05 ) , −𝜆 0.5) .
+
+For 𝜆 = 0.5 the affine form above yields bounds [− 0.55 , 0.05 ] which is tighter than [− 0.6, 0.1] produced by the independent generator approach. This difference in precision increases with 𝜀 .Multiple differential halo affine forms, can be independently com-bined to a differential halo zonotope describing a multi-dimensional (box) input space as usual. Figure 5 provides an intuition for the idea behind differential halo zonotopes for the two-dimensional case: By fixing the primary generators of 𝒵 ′ and 𝒵 ′′ to a fixed value, the blue dot in Figure 5 can be reached. We can then reach any point in the yellow-orange shaded area independently with 𝒵 ′ and 𝒵 ′′ 
+
+by fixing the secondary generator. This enables us to generate a perturbation of up to 𝜀 (distributed across the secondary generators of 𝒵 ′ and 𝒵 ′′ ). At the same time, the perturbations ensure that the full input space between 𝑙 and 𝑢 is reachable, effectively produc-ing a halo of reachable points around each point reachable via the primary generators. 
+
+## 4.3 Verification Algorithm 
+
+We provide an overview of our verification algorithm in Algo-rithm 1: First, we initialize a differential halo zonotope 𝒵 in which exactly represents the inputs in our bounding box [𝑙, 𝑢 ] ⊂ R𝐼 with 
+
+> 7Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+
+Algorithm 1 Verification of Global Robustness via Differential Halo Zonotopes 
+
+Input: Neural Network 𝑓 , Lower and Upper Bounds 𝒍 , 𝒖 ∈ R𝐼 ,Dimension-wise maximal perturbations 𝜺 ∈ R𝐼 ,Confidence Bounds 𝜏 1, 𝜏 2 ∈ [ 0.5, 1)
+
+(𝜏 2 = 𝜏 1 for symmetric property; 𝜏 2 = 0.5 for asymmetric property) 
+
+procedure Verify Δ(𝑓 , 𝒍 , 𝒖 , 𝜺 , 𝜏 1, 𝜏 2)
+
+𝑄 ← { 𝒵 in } = InitZono (𝒍 , 𝒖 , 𝜺 ) ⊲ See Definition 4.4 and Lemma 4.5 
+
+while 𝑄 ≠ ∅ ∧ ¬ timeout do 
+
+𝒵 cur ← Pop (𝑄 )
+
+𝒵 out ← Reach Δ (𝑓 , 𝒵 cur ) ⊲ See Algorithm 1 in [53] 
+
+𝑟 ← CheckProp (𝑓 , 𝒵 out , 𝜏 1, 𝜏 2) ⊲ See Lemma 4.8 
+
+if r = concrete cex then return UNSAFE 
+
+if r = unknown then 
+
+𝒵 1, 𝒵 2 ← Refine (𝒵 cur ) ⊲ See Lemma 4.10 
+
+𝑄 ← 𝑄 ∪ { 𝒵 1, 𝒵 2 }
+
+if 𝑄 = ∅ then return SAFE 
+
+else return UNKNOWN ⊲ Timout reached perturbations in [− 𝜀, 𝜀 ] via the insight from Lemma 4.5 and add it to 𝑄 . Subsequently, we run a loop which pops elements from 𝑄 ,and propagates them through the DNN. The propagation is visual-ized in Figure 6: By propagating a bound on the difference between executions in lock-step with the individual zonotopes, we obtain a bound on the difference between DNN outputs. While zonotopes incur over-approximation errors through ReLU nodes (indicated by the dotted truly reachable region), the difference bound 𝒵 Δ is tighter than the bound obtained via 𝒵 ′ − 𝒵 ′′ . We then check the confidence-based robustness property on the resulting zonotope 
+
+𝒵 out (see Section 4.3.1). This procedure either proves the absence of counterexamples for the zonotope, finds a concrete counterexample, or returns unknown. In the first case, we can discard 𝒵 cur as it was proven safe. In the second case, we have a concrete violation of the property and abort the algorithm. In the final case, we refine the zonotope to make the propagation more precise (see Section 4.3.2). We now describe the approach in more detail and prove soundness. 
+
+4.3.1 Property Verification. To verify (symmetric) confidence-based global robustness, we encode the bounds obtained via Reach Δ as an LP problem that proves the absence of adversarial attacks with sufficient confidence. Using the softmax -approximation by Teuber 
+
+et al. [53 ], we encode the absence of attacks where 𝑗 is maximal in the first NN and 𝑘 is maximal in the second NN as follows: 
+
+Definition 4.7 (Symmetric Confidence LP Formulation) . Assume 
+
+𝜏 1, 𝜏 2 ∈ [ 0.5, 1) and let 
+
+𝒵 out =
+
+
+
+𝒵 ′
+
+> out
+
+, 𝒵 ′′ 
+
+> out
+
+, 𝒵 Δ
+
+> out
+
+
+
+=
+
+
+
+(𝐺 ′, 𝒄 ′) , (𝐺 ′′ , 𝒄 ′′ ) ,
+
+
+
+𝐺 Δ, 𝒄 Δ  
+
+be some differential zonotope (with aligned matrices). For 𝑗, 𝑘 ∈[1, 𝑂 ] with 𝑗 ≠ 𝑘 we define the Symmetric Confidence LP as follows: 
+
+𝐺 ′ 
+
+> 𝑙
+
+𝒙 + 𝒄 ′ 
+
+> 𝑙
+
++ ln (𝜏 1/( 1 − 𝜏 1)) ≤ 𝐺 ′ 
+
+> 𝑗
+
+𝒙 + 𝒄 ′ 
+
+> 𝑗
+
+for 𝑙 ≠ 𝑗 (1) 
+
+𝐺 ′′  
+
+> 𝑙
+
+𝒙 + 𝒄 ′′  
+
+> 𝑙
+
++ ln (𝜏 2/( 1 − 𝜏 2)) ≤ 𝐺 ′′  
+
+> 𝑘
+
+𝒙 + 𝒄 ′′  
+
+> 𝑘
+
+for 𝑙 ≠ 𝑘 (2) 
+
+𝐺 Δ𝒙 + 𝒄 Δ = (𝐺 ′𝒙 + 𝒄 ′) − ( 𝐺 ′′ 𝒙 + 𝒄 ′′ ) (3) The constraints (1) and (2) assert a distance larger than ln (𝜏 𝑖 /( 1 − 𝜏 𝑖 )) 
+
+between the maximal output ( 𝑗 or 𝑘 ) and the second largest output, which over-approximates high-confidence outputs. Constraint (3) bounds the difference between the two NN outputs with 𝒵 Δ. We can then verify global robustness with this LP (for asymmetric robustness choose 𝜏 2 = 0.5; see proof on page 14): 
+
+Lemma 4.8 (Soundness of Symmetric Confidence LP) . Assume 
+
+𝜏 1, 𝜏 2 ∈ [ 0.5, 1) and let 𝒵 out be a differential zonotope returned for 
+
+Reach Δ (𝑓 , 𝒵 in ). If for all 𝑗, 𝑘 ∈ [ 1, 𝑂 ] with 𝑗 ≠ 𝑘 the symmetric confidence LP is infeasible, then for all (𝒙 , 𝒚 ) ∈ ⟨ 𝒵 in ⟩ (where 𝜏 ∗ 
+
+> 𝑖
+
+is 0
+
+if 𝜏 𝑖 = 0.5 and otherwise 𝜏 ∗ 
+
+> 𝑖
+
+= 𝜏 𝑖 for 𝑖 ∈ { 1, 2}): 
+
+conf (𝑓 (𝒙 )) > 𝜏 ∗ 
+
+> 1
+
+∧ conf (𝑓 (𝒚 )) > 𝜏 ∗ 
+
+> 2
+
+→
+
+class (𝑓 (𝒙 )) = class (𝑓 (𝒚 )) ,
+
+The CheckProp from Algorithm 1 then consists of constructing the 𝒪  𝑂 2  LP problems and checking for infeasibility. To speed up verification, we cache already proven cases. Additionally, we first construct an LP with only Equations (1) and (3) and optimize the violation of Equation (2) for dimension 𝑗 (which is maximal in the first DNN). Then, we only construct the full LP if dimension 𝑗 is feasible. When solving the full LP, we optimize output dimension 𝑘 
+
+of the second DNN to increase the likelihood of finding counterex-amples. If a concrete counterexample (cross-checked via execution of 𝑓 ) is found, CheckProp returns concrete cex , if all LPs are infeasible it returns safe , otherwise it returns unknown .
+
+4.3.2 Zonotope Refinement. While the over-approximations of zonotopes ensure soundness, i.e. whenever we prove a DNN to be robust it is indeed robust, they can compromise completeness, i.e. there may be instances where we cannot verify the robustness of a DNN that is indeed robust. To combat this challenge, many approaches employ input splitting which partitions the input space into two regions that are approximated and verified independently. While this approach can reduce over-approximation error and hence improve the share of verifiable DNNs, special care is required when refining global robustness queries. Since robustness proper-ties consider pairs of inputs that differ by up to 𝜀 , naively splitting input spaces of both DNNs simultaneously can be unsound as this omits adversarial examples that straddle the splitting boundary. In-stead of splitting the input space, we propose to split the differential halo zonotope directly to enable sound refinement by splitting pri-mary and secondary generators instead of splitting input dimensions: 
+
+Definition 4.9 (Generator Split) . Let  𝔷 ′, 𝔷 ′′ , 𝔷 Δ  be a differential affine form, where each affine form is of the shape 𝔷 = (( 𝑔 1, 𝑔 2, 𝑔 3), 𝑐 ).The generator split of the differential affine form along generator 𝑗 ∈[1, 3] yields two differential halo affine forms 𝔷 − =  𝔷 ′− , 𝔷 ′′− , 𝔷 Δ− 
+
+and 𝔷 + =  𝔷 ′+ , 𝔷 ′′+ , 𝔷 Δ+  defined by replacing the 𝑗 -th generator 𝑔 𝑗 
+
+with ˆ𝑔 𝑗 and center 𝑐 with ˆ𝑐 in each component 𝔷 ′, 𝔷 ′′ , 𝔷 Δ as follows while leaving all other generators unchanged: 
+
+ˆ𝑔 𝑗 := 𝑔 𝑗 
+
+2 ˆ𝑐 :=
+
+(𝑐 − 𝑔 𝑗  
+
+> 2
+
+in 𝔷 −
+
+𝑐 + 𝑔 𝑗  
+
+> 2
+
+in 𝔷 +
+
+Each tuple of inputs (𝑥, 𝑦 ) contained in the original zonotope is then by construction contained in (at least) one of the resulting zonotopes (proof in Isabelle [43]):                              
+
+> 8Differential Zonotopes for Verifying Global Robustness of DNNs
+> 𝒵 ′
+> 𝒵 ′′
+> 𝒵 Δ
+> Halo 𝒵 Δencodes pertubation 𝜺
+> 𝒙 ′=𝑊 𝒙 +𝒃
+> 𝒚 ′=𝑊 𝒚 +𝒃
+> Δ=𝒙 ′−𝒚 ′
+> 𝒙 ′′ =ReLU (𝒙 ′)
+> 𝒚 ′′ =ReLU (𝒚 ′)
+> Δ′=𝒙 ′′ −𝒚 ′′
+
+Figure 6: Visualization of robustness verification with differential halo zonotopes: Dotted border represents truly reachable points, halo zonotope (blue and yellow/orange) represents computed bounds. Bounding the difference in secondary generators via 𝒵 Δ yields tighter bounds on the difference between executions. Lemma 4.10 (Soundness of Generator Splits) . Let 𝔷 =  𝔷 ′, 𝔷 ′′ , 𝔷 Δ 
+
+be a differential affine form. If we split 𝔷 along 𝑗 ∈ [ 1, 3] yielding 
+
+𝔷 − =  𝔷 ′− , 𝔷 ′′− , 𝔷 Δ−  , 𝔷 + =  𝔷 ′+ , 𝔷 ′′+ , 𝔷 Δ+ , then for any (𝑥, 𝑦 ) ∈ ⟨ 𝔷 ⟩
+
+we get (𝑥, 𝑦 ) ∈ ⟨ 𝔷 − ⟩ or (𝑥, 𝑦 ) ∈ ⟨ 𝔷 +⟩.
+
+In contrast to classical input splitting, splitting the generators of a differential halo zonotope creates a small (and in the number of splits decreasing) amount of overlap between the resulting input spaces. This overlap is necessary to preserve coverage of all possible 
+
+𝜀 -perturbations w.r.t. all possible inputs. 
+
+Input Splitting Heuristic. We adapt the input splitting heuristic from Teuber et al. [53 ]: Previously, the heuristic computed the in-fluence of each input dimension by initializing an 𝐼 -dimensional unit matrix representing the influence of each generator (column) on each input dimension (row). Subsequently, new columns were appended for each newly introduced generator. We modify the heuristic to compute the influence of initial primary and secondary generators by introducing additional rows and columns for sec-ondary generators in the initial influence matrix. Because primary and secondary generators typically operate on different magnitudes, we normalize the influence matrix by their average scale. We also extend the heuristic computation rule of [ 53 , Apx. D] with an ad-ditional normalization by the zonotope’s output range to improve numerical stability (previously, the heuristic typically reached val-ues > 10 7). The primary or secondary generator to split is then chosen by the heuristic’s maximal influence value. 
+
+4.3.3 Soundness. Using the results established above together with the results from Section 4.2, we get the following soundness result for Algorithm 1 (note that the algorithm may also return UNKNOWN 
+
+in case of a timeout): 
+
+Theorem 4.11 (Soundness of Verify Δ). If Verify Δ returns SAFE for input range [𝒍 , 𝒖 ] and perturbation 𝜺 then 𝑓 satisfies: (1) symmetric confidence-based robustness for confidence 𝜏 1 if 𝜏 2 = 𝜏 1; (2) asymmet-ric confidence-based robustness for confidence 𝜏 1 if 𝜏 2 = 0.5. UNSAFE 
+
+implies it found a concrete counterexample. 
+
+Proof sketch. The last statement (correctness of UNSAFE ) fol-lows directly from the observation that CheckProp returns concre-te cex iff it found a concrete robustness violation. For the first two statements ( SAFE ), we construct 𝑅 as the set of all zonotopes that were removed without replacement. Let ⟨𝑅 ⟩ = {( 𝑥, 𝑦 ) ∈ ⟨ 𝒵 ⟩| 𝒵 ∈ 𝑅 }.We then have two invariants: First, all points in ⟨𝑅 ⟩ have been proven robust. Secondly, ⟨𝒵 in ⟩ ⊆ ⟨ 𝑄 ⟩ ∪ ⟨ 𝑅 ⟩ is a loop invariant. It follows that we have proven robustness if 𝑄 = ∅. For a full proof see page 14. □
+
+## 5 Evaluation 
+
+We implement our verification algorithm from Section 4 on top of the propagation algorithm from VeryDiff [53 ] in Julia [ 9] using Gurobi [ 25 ] as LP backend to enable the verification of confidence-based robustness properties. We will refer to our implementation as 
+
+TwoSafe . We evaluate the performance of TwoSafe on a diverse set of publicly available DNNs. We evaluate on both the asymmetric and symmetric confidence-based global robustness properties as defined in Definitions 2.10 and 3.1, respectively. We also compare our method to the seminal work by Athavale et al. [ 3], which intro-duced the concept of confidence-based global robustness and the first verification technique thereof. We refer to their approach as the 
+
+CGR (confidence-based global robustness) baseline throughout the evaluation. We also extended CGR baseline to support symmetric confidence-based global robustness. The experiments were conducted on an AMD EPYC 7713 64-Core Processor with 32 GB RAM. The timeout was set to 2 hours. To compare to the CGR baseline, we convert DNNs to nnet format that their tool requires. Overall, we observe that the CGR baseline often generates spurious counterexamples due to the coarser approxima-tion in their implementation. For all cases where TwoSafe proves safety and the CGR baseline reports a counterexample, a manual inspection found the counterexamples generated by the baseline to be spurious. We marked these cases by ★.
+
+## 5.1 Datasets and Neural Networks 
+
+We evaluate TwoSafe on benchmarks drawn from prior literature. While numerous benchmarks exist for evaluating local robustness of DNNs, there is currently no standardized benchmark set for evaluating global robustness properties. Hence, we select a set of publicly available benchmark DNNs used in prior work on global or relational DNN verification, to cover different regimes of DNN size, input dimensionality, and output structure. Below, we describe the benchmarks in detail. In contrast to local robustness verifica-tion, for each DNN we fix a large input space box (e.g., the entire normalized input space [− 1, 1]561 for HAR) for which we globally 
+
+> 9Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+
+prove the considered robustness property (i.e., expressed as a dou-ble quantification over all possible neighboring pairs in the input space, as opposed to a single quantification over the region around a specific input, as in the case of local robustness). 
+
+Law. We use the Law benchmark from the baseline tool [ 3]. The Law School Admissions Council (LSAC) provides a dataset called Law School Admissions comprising information on law students. The dataset tracks the students’ progress through law school and predicts their likelihood of passing the bar exam [ 57 ]. The DNN is tiny with 4 inputs, 4-3 hidden neurons and 2 outputs. The normal-ized input region is [− 1, 1]4. We include this DNN despite its size for comparison because the CGR baseline was able to verify it. 
+
+LHC. Since the Law benchmark is relatively small, we evaluate our approach on a larger DNN to assess scalability. To this end, we investigate the CERN LHC benchmark [ 16 ] previously used for DNN verification [ 53 ]. The LHC benchmark consists of a DNN designed for particle classification based on high-dimensional de-tector features. It is optimized for deployment on hardware acceler-ators (e.g., FPGAs) to meet strict timing constraints. Such resource-constrained deployment environments necessitate compact net-work architectures by design. Yet, the correctness-critical nature of particle physics experiments demands strong guarantees on these networks – making them a natural target for global robustness verification. The trained DNN has 16 input features, two hidden layers with 40 ReLU s each, and 5 output classes. The normalized input domain is [− 0.5, 0.5]16 .
+
+ACAS Xu. To further evaluate our scalability, we pick VNN-COMP’s [ 30 ] most complex fully-connected DNN, namely, ACAS from Julian et al. [ 27 ]: This is a standard benchmark widely used by many DNN verification tools. The DNNs are trained for airborne collision avoidance, where they take aircraft state information as input, and output advisories corresponding to collision-avoidance maneuvers. The DNN has 5 inputs, 6 hidden layers with 50 neurons each, and 5 outputs. We use this benchmark to investigate how we perform on deeper DNNs. All inputs are scaled to the [− 1, 1] range using the standard ACAS Xu normalization prior to verification. Specifically, the normalized input domain of interest is given by: 
+
+𝑋 0 ∈ [ 0.6, 0.6799 ], 𝑋 1, 𝑋 2 ∈ [− 0.5, 0.5], 𝑋 3 ∈ [ 0.45 , 0.5], 𝑋 4 ∈[− 0.5, −0.45 ].
+
+HAR. Finally we consider the HAR benchmark [ 1 ] with its large input space. HAR is a publicly available benchmark that has been used in prior DNN verification work [ 31 , 41 , 42 ]. The Human Activ-ity Recognition (HAR) dataset tries to predict the activity of a given individual (walking, standing, etc.) from 561 sensory inputs. As HAR systems are increasingly deployed in healthcare and assisted living applications [ 10 , 15 , 38 , 46 , 47 ], where incorrect activity pre-dictions can have serious consequences making strong robustness guarantees particularly valuable. At the same time, deployment on wearable and embedded sensing devices imposes strict memory and power constraints, motivating the use of lightweight architectures, making this benchmark a challenging and practically relevant tar-get for global robustness verification. The considered DNN was trained by Kern et al. [ 31 ] and has 500 ReLU nodes. The normalized input region is [− 1, 1]561 . In contrast to the previously mentioned DNNs, this DNN was trained with L1-regularization which has been shown to be beneficial for other DNN verification problems [31]. 
+
+## 5.2 Asymmetric Confidence-Based Global Robustness 
+
+We evaluate TwoSafe for various combinations of benchmarks, ep-silon values 𝜀 , and confidence values 𝜏 on the asymmetric confidence-based robustness property. Our results can be found in Table 1. We first evaluate TwoSafe on the Law benchmark [ 3]. This is a small DNN with 4 inputs, 4-3 hidden neurons, and 2 outputs. As shown in Table 1, in this setting, both tools successfully verify the asym-metric property. However, TwoSafe achieves lower verification times, reducing runtime by approximately 30–40% compared to the baseline. Since Athavale et al. [ 3] only evaluated on DNNs with up to 15 ReLU nodes, this raises the question of whether TwoSafe can scale to large DNNs. To evaluate this question, we ran both tools on the LHC bench-mark [ 16 , 53 ], a DNN with 16 inputs, 5 outputs, and 2 hidden layers with 40 ReLU nodes each. As shown in Table 1, TwoSafe proves asymmetric confidence-based global robustness for the parameter pairs (𝜀, 𝜏 ) = (0.001 , 0.9) and (0.001 , 0.99 ) in less than 3 seconds. In contrast, the baseline tool times out after 2 hours for (0.001 , 0.99 )
+
+and otherwise reports spurious counterexamples due to the coarser 
+
+softmax approximation (since the approximation error of the CGR baseline grows linearly with the number of output classes and reaches up to 0.40 for DNNs with 5 outputs, leading to spurious violations). To scale the approach even further, we evaluate on the ACAS benchmark, a DNN with 6 hidden layers and 300 ReLU nodes. We see in Table 1 that TwoSafe is able to prove (asymmetric) robust-ness for confidence values 𝜏 ≥ 0.7 with epsilon 0.001 in 6742 sec and for confidence 𝜏 ≥ 0.99 in 182 sec. In contrast, CGR baseline times out in both cases. To further investigate scalability in the DNN’s input dimension-ality, we run both tools on the HAR benchmark, a DNN with 561 inputs, 6 output classes, and 500 ReLU nodes. As shown in Ta-ble 1, TwoSafe is capable of proving (asymmetric) robustness for 
+
+𝜀 = 0.001 and 𝜏 ≥ 0.6, while the CGR baseline exhausts memory in all cases. For (𝜀, 𝜏 ) = (0.01 , 0.99 ), TwoSafe proves (asymmetric) robustness in 2.50 seconds. The baseline tool, however, runs out of memory. 
+
+## 5.3 Symmetric Confidence-Based Robustness 
+
+We also evaluate TwoSafe for symmetric confidence-based robust-ness. Our results empirically support the motivation for introducing the symmetric formulation (see Table 1). On the HAR benchmark, the asymmetric property is inconclu-sive for both (𝜀, 𝜏 ) = (0.01 , 0.9) and (𝜀, 𝜏 ) = (0.01 , 0.6). In contrast, 
+
+TwoSafe verifies the symmetric property in the former case in approximately 11 seconds, and finds a counterexample in the lat-ter case in approximately 11 seconds. The CGR baseline exhausts memory in all cases. We observe similar results on the ACAS and LHC benchmarks: 
+
+TwoSafe verifies the symmetric property for (𝜀, 𝜏 ) = (0.001 , 0.6)
+
+on ACAS and for (𝜀, 𝜏 ) = (0.001 , 0.8) on LHC, while the asymmetric property remains inconclusive in both cases. 
+
+> 10 Differential Zonotopes for Verifying Global Robustness of DNNs
+
+Table 1: Verification results for asymmetric and symmetric confidence-based robustness with a 2h timeout ( TwoSafe is our approach, Baseline is the CGR baseline [3]). 
+
+DNN 𝜀 𝜏 Asymmetric Robustness Symmetric Robustness 
+
+TwoSafe Baseline TwoSafe Baseline 
+
+> Law
+
+10 −3 0.6 Safe (1.34s) Safe (2.21s) Safe (2.02s) Safe (1.97s) 
+
+0.1 0.6 Safe (1.45s) Safe (2.00s) Safe (1.99s) Safe (2.32s) LHC 
+
+10 −3
+
+0.6 TO Cex ★ (1.54s) TO Cex ★ (2.72s) 0.7 TO Cex ★ (1.32s) TO Cex ★ (2.68s) 0.8 TO Cex ★ (1.16s) Safe (58.35s) Cex ★ (2.67s) 0.9 Safe (0.70s) Cex ★ (1.30s) Safe (37.90s) Cex ★ (2.67) 0.99 Safe (2.35s) TO Safe (5.40s) TO ACAS 
+
+10 −3
+
+0.6 TO TO Safe (6914s) Cex ★ (5.11s) 0.7 Safe (6742s) TO Safe (6355s) Cex ★ (5.03s) 0.99 Safe (182s) TO Safe (146s) TO HAR 
+
+10 −3
+
+0.6 Safe (1.40s) MO Safe (11.05s) MO 0.7 Safe (1.39s) MO Safe (12.44s) MO 0.8 Safe (1.43s) MO Safe (10.48s) MO 0.9 Safe (1.40s) MO Safe (9.847s) MO 0.99 Safe (2.36s) MO Safe (6.25s) MO 0.01 0.6 MO MO Cex (11.32s) MO 0.7 MO MO TO MO 0.8 TO MO TO MO 0.9 TO MO Safe (10.75s) MO 0.99 Safe (2.50s) MO Safe (7.24s) MO 
+
+> ★Spurious counterexamples
+
+These results highlight the practical relevance of symmetric robustness, independently of whether the asymmetric property holds. Our new property enables meaningful robustness guarantees in parameter regimes where the asymmetric property cannot be established. This may be due to inconclusive verification or because the asymmetric requirement is too strong and may be violated, even though such violations cannot be confirmed by current verifiers. 
+
+## 5.4 Parameter Sensitivity 
+
+We analyze the effect of confidence threshold 𝜏 and perturbation bound 𝜀 on verification time and conclusiveness. 
+
+5.4.1 Effect of 𝜏 . Higher 𝜏 generally reduces verification time, as higher confidence constraints eliminate larger parts of the search space. This is clearly visible in the ACAS benchmark: for 𝜀 = 0.001 ,asymmetric verification at 𝜏 = 0.99 takes 182 sec, compared to 6742 sec at 𝜏 = 0.7, while at 𝜏 = 0.6 it times out entirely. The same trend holds for the symmetric property, where verification takes 146 sec at 𝜏 = 0.99 , 6355 sec at 𝜏 = 0.7, and 6914 sec at 𝜏 = 0.6. This suggests a smooth trade-off: as 𝜏 increases, the region of input space that must be proven robust shrinks, making the problem more tractable. 
+
+5.4.2 Effect of 𝜀 . Larger 𝜀 increases the size of secondary gener-ators, leading to greater divergence between the two executions and a higher likelihood of requiring generator splits. On the HAR benchmark, TwoSafe proves safety for all 𝜏 ≥ 0.6 at 𝜀 = 0.001 . For 
+
+𝜀 = 0.01 , the approach times out or exhausts memory for 𝜏 ≤ 0.8. No-tably, at 𝜏 = 0.9 with 𝜀 = 0.01 , the symmetric property is verifiable while the asymmetric variant times out, demonstrating the practical value of the symmetric formulation for larger perturbations. 
+
+## 5.5 Discussion 
+
+Our results demonstrate that our approach implemented in TwoSafe 
+
+is both faster and more precise than the CGR baseline, while scaling more effectively to larger DNNs. Across the ACAS, HAR, and LHC benchmarks, our tool establishes confidence-based robustness in set-tings where the baseline either times out or reports spurious coun-terexamples due to the coarse softmax approximations. In particular, for larger DNNs with many output classes, the baseline approach suffers from class-dependent approximation errors and scalability limitations, whereas TwoSafe maintains efficiency and precision. In contrast to other properties like local robustness, global ro-bustness verification must consider the DNN’s entire input space (rather than e.g. only considering minor perturbations around a single fixed datapoint). Despite this, TwoSafe is able to scale to a NN with more than 500 input dimensions (HAR), underscoring the scalability advancements achieved by differential verification. Our experiments also show that our symmetric confidence-based robustness property provides tangible practical benefits on both HAR and LHC benchmarks. The symmetric formulation enables successful verification in parameter configurations where the asym-metric property remains inconclusive. By requiring confidence con-straints on both inputs, the symmetric property allows us to recover meaningful robustness guarantees without sacrificing scalability. For example, symmetric confidence-based robustness enabled us to establish a global robustness guarantee w.r.t. perturbations of 
+
+1/200 th of the sensor ranges of HAR’s 561-dimensional input space. We note that refinement is used adaptively. In many cases (e.g., all verified HAR properties), we can verify robustness properties without splitting, underlining the precision of our abstract domain. 
+
+> 11 Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher
+
+While on ACAS, verifying the symmetric property at 𝜀 = 0.001 re-quires between 2838 (at 𝜏 = 0.99 ) and 168798 splits (at 𝜏 = 0.6). Over-all, our results highlight the combined advantages of our property and verifier in terms of efficiency, precision, and expressiveness. 
+
+Limitations. Confidence-based robustness has an inherent risk of vacuous guarantees when robustness is established for confidence levels unattainable within the input domain. TwoSafe has no ex-plicit witness search procedure, but we check propagated zonotope centers as a lightweight check for confidence attainability. For all benchmarks except ACAS, this procedure found concrete witnesses. Despite this epistemic uncertainty for ACAS, we include the ACAS results as it is a widely used and sufficiently complex VNN-COMP benchmark. 
+
+## 6 Related work 
+
+Global Robustness Verification. The work closest in spirit to ours is by Athavale et al. [3 ]. They introduce the notion of asymmetric confidence-based global robustness cited in Definition 2.10. We compare against their approach as CGR baseline which uses self-composition and employs the verifier Marabou [ 29 ] for verification. They rely on a piecewise linear approximation of softmax-based confidence constraint and verify robustness by exhaustively check-ing class-wise dominance conditions. While their method provides strong correctness guarantees, its reliance on complete solving and class-dependent reasoning limits scalability, particularly as the number of output classes grows. 
+
+Local Robustness Verification. A large body of research in the DNN safety domain tackles local robustness. A network is locally robust w.r.t. to a given input 𝒙 if all the points in the vicinity of 𝒙 map to the same output as 𝒙 .Most techniques for the verification of local robustness prop-erties either rely on static analysis [ 8 , 18 , 44 , 49 , 50 , 56 ] via over-approximations or SMT- or mixed integer programming-based ap-proaches [ 13 , 17 , 23 , 26 , 28 , 29 , 48 , 54 ] which offer greater precision at the cost of reduced scalability. Bosman et al. [12 ] accumulate local robustness results for many such 𝒙 to characterize a DNN’s over-all robustness. Orthogonally, Geng et al. [20 ] identify input space regions with identical neural activation patterns and verify classifi-cation consistency. Unlike our approach, all mentioned works stop short of providing guarantees over the entire input space. 
+
+Other Relational Properties. Recent works by Banerjee et al. [ 7] and Suresh et al. [ 51 ] study input-relational verification in the context of universal adversarial perturbations [ 40 ] (UAPs). Their formulation considers a fixed set of inputs and asks whether a single perturba-tion, applied uniformly, can cause all of them to be misclassified. The relational aspect thus arises from sharing a perturbation across discrete inputs, rather than from semantic relationships between the inputs themselves. In contrast, we reason about global 2-safety properties over a DNN’s entire input space, achieving this global perspective by incorporating prediction confidence. At a high level, our work is related to fairness verifiers. Khedr et al. [ 32 ] and Biswas et al. [ 11 ] verify individual and group fairness in DNNs. Both frameworks reason about fairness constraints de-fined with respect to sensitive attributes or population-level parity notions, and verify whether these constraints hold within struc-tured subsets of the input space. FairQuant [ 33 ] proposes a quan-titative certification procedure for fairness of DNNs, computing a lower bound on the certified percentage of fair inputs. To this end, FairQuant partitions the input space and reports the fraction of partitions verified to be fair. In contrast to our work, FairQuant does not provide a global guarantee over the entire input space, but rather a quantitative approximation of the fraction of inputs satisfying the fairness property. QEBVerif proposes a verification method for quantization error bounds in fully quantized neural networks. Like our approach, QE-BVerif performs differential analysis by propagating the difference between two network executions layer by layer, rather than inde-pendently computing output intervals and subtracting. However, QEBVerif addresses a structurally different problem: it compares a DNN with its quantized counterpart on related inputs, where the QNN input fully determines the DNN input via a fixed normaliza-tion. This means that they have one universally quantified variable, unlike our setting, where both inputs are universally quantified over the entire input space. 
+
+Zonotopes. Zonotopes are a well-established abstract domain for DNN verification used for safety and local robustness properties, for example in tools such as DeepZ [ 49 ], NNV [ 39 , 55 ], or nnenum [ 4 , 5]. Some works leverage polynomial [ 34 , 36 ] or hybrid [ 58 ] zonotopes to increase the precision of the abstract domain. While these works focus on single-DNN properties, nnenum has also been extended to equivalence verification [52] without differential verification. Teuber et al. [53 ] use zonotopes for differential verification [ 41 ,42 ] of equivalence by bounding reachable values of individual DNN executions and their differences. In contrast, we do not address equivalence (same input, different DNNs), but two-safety proper-ties (different inputs, same DNN), which require significant changes to the verification algorithm (see Section 4). We demonstrate that zonotope-based differential verification significantly improves per-formance for confidence-based global robustness properties. 
+
+## 7 Conclusion 
+
+We present a scalable framework for verifying confidence-based global robustness properties in DNNs. First, we introduce a novel property, symmetric confidence-based global robustness , which re-laxes the restrictive constraints of asymmetric confidence-based global robustness by permitting adversarial examples when they result in low-confidence predictions. Secondly, we take a first step towards bridging the gap between precision and scalability with 
+
+differential halo zonotopes , a novel technique that propagates per-turbed input pairs while precisely bounding differences between DNN executions. Our experimental evaluation confirms that our approach out-performs the baseline and that TwoSafe scales to significantly wider and deeper networks than prior methods, verifying signif-icantly wider (500 ReLUs) and deeper DNNs (6 times 50 ReLUs) while supporting larger input spaces (up to 561 dimensions). While this work focuses on proving safety, extending the frame-work with counterexample search strategies remains a natural and promising direction to accelerate the search for adversarial attacks. 
+
+> 12
+
+Differential Zonotopes for Verifying Global Robustness of DNNs 
+
+Another interesting research direction is to devise composition-ality techniques to further scale up the static analysis to larger multidimensional input spaces and more complex DNNs. 
+
+## References 
+
+[1] Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra, and Jorge Luis Reyes-Ortiz. 2013. A Public Domain Dataset for Human Activity Recognition using Smartphones. In 21st European Symposium on Artificial Neural Networks .https://www.esann.org/sites/default/files/proceedings/legacy/es2013-84.pdf [2] Shuang Ao, Stefan Rueger, and Advaith Siddharthan. 2023. Two Sides of Mis-calibration: Identifying Over and Under-Confidence Prediction for Network Calibration. In Uncertainty in Artificial Intelligence (Proceedings of Machine Learn-ing Research, Vol. 216) , Robin J. Evans and Ilya Shpitser (Eds.). PMLR, 77–87. https://proceedings.mlr.press/v216/ao23a.html [3] Anagha Athavale, Ezio Bartocci, Maria Christakis, Matteo Maffei, Dejan Nickovic, and Georg Weissenbacher. 2024. Verifying Global Two-Safety Properties in Neural Networks with Confidence. In 36th International Conference on Computer Aided Verification (LNCS, Vol. 14682) , Arie Gurfinkel and Vijay Ganesh (Eds.). Springer, 329–351. doi:10.1007/978-3-031-65630-9_17 [4] Stanley Bak. 2021. nnenum: Verification of ReLU Neural Networks with Opti-mized Abstraction Refinement. In 13th NASA Formal Methods Symposium (LNCS, Vol. 12673) , Aaron Dutle, Mariano M. Moscato, Laura Titolo, César A. Muñoz, and Ivan Perez (Eds.). Springer, 19–36. doi:10.1007/978-3-030-76384-8_2 [5] Stanley Bak, Hoang-Dung Tran, Kerianne Hobbs, and Taylor T. Johnson. 2020. Improved Geometric Path Enumeration for Verifying ReLU Neural Networks. In 
+
+32nd International Conference on Computer Aided Verification (LNCS, Vol. 12224) ,Shuvendu K. Lahiri and Chao Wang (Eds.). Springer, 66–96. doi:10.1007/978-3-030-53288-8_4 [6] Debangshu Banerjee and Gagandeep Singh. 2024. Relational DNN Verifica-tion With Cross Executional Bound Refinement. In 41st International Confer-ence on Machine Learning . OpenReview.net. https://openreview.net/forum?id= HOG80Yk4Gw [7] Debangshu Banerjee, Changming Xu, and Gagandeep Singh. 2024. Input-Relational Verification of Deep Neural Networks. Proc. ACM Program. Lang. 8, PLDI (2024), 1–27. doi:10.1145/3656377 [8] Anahita Baninajjar, Kamran Hosseini, Ahmed Rezine, and Amir Aminifar. 2023. SafeDeep: A Scalable Robustness Verification Framework for Deep Neural Net-works. In IEEE International Conference on Acoustics, Speech and Signal Processing .IEEE, 1–5. doi:10.1109/ICASSP49357.2023.10097028 [9] Jeff Bezanson, Alan Edelman, Stefan Karpinski, and Viral B. Shah. 2017. Julia: A Fresh Approach to Numerical Computing. SIAM Rev. 59, 1 (2017), 65–98. doi:10.1137/141000671 [10] Luigi Bibbo and Marley MBR Vellasco. 2023. Human activity recognition (HAR) in healthcare. 13009 pages. [11] Sumon Biswas and Hridesh Rajan. 2023. Fairify: Fairness Verification of Neural Networks. In 45th IEEE/ACM International Conference on Software Engineering, ICSE . IEEE, 1546–1558. doi:10.1109/ICSE48619.2023.00134 [12] Annelot W. Bosman, Aaron Berger, Holger H. Hoos, and Jan N. van Rijn. 2025. Robustness Distributions in Neural Network Verification. J. Artif. Intell. Res. 83 (2025). doi:10.1613/JAIR.1.18403 [13] Chih-Hong Cheng, Georg Nührenberg, and Harald Ruess. 2017. Maximum Resilience of Artificial Neural Networks. In 15th International Symposium on Automated Technology for Verification and Analysis (LNCS, Vol. 10482) , Deepak D’Souza and K. Narayan Kumar (Eds.). Springer, 251–268. doi:10.1007/978-3-319-68167-2_18 [14] Michael R Clarkson and Fred B Schneider. 2010. Hyperproperties. Journal of Computer Security 18, 6 (2010), 1157–1210. [15] Miguel Angel Alvarez de la Concepcion, Luis Miguel Soria Morillo, Juan Anto-nio Álvarez García, and Luis Gonzalez-Abril. 2017. Mobile activity recognition and fall detection system for elderly people using Ameva algorithm. Pervasive and Mobile Computing 34 (2017), 3–13. [16] Javier Duarte, Song Han, Philip Harris, Sergo Jindariani, Edward Kreinar, Ben-jamin Kreis, Jennifer Ngadiuba, Maurizio Pierini, Ryan Rivera, Nhan Tran, et al . 2018. Fast inference of deep neural networks in FPGAs for particle physics. Journal of instrumentation 13, 07 (2018), P07027. arXiv:1804.06913 doi:10.1088/1748-0221/13/07/P07027 [17] Souradeep Dutta, Susmit Jha, Sriram Sankaranarayanan, and Ashish Tiwari. 2018. Output Range Analysis for Deep Feedforward Neural Networks. In 10th NASA Formal Methods Symposium (LNCS, Vol. 10811) , Aaron Dutle, César A. Muñoz, and Anthony Narkawicz (Eds.). Springer, 121–138. doi:10.1007/978-3-319-77935-5_9 [18] Timon Gehr, Matthew Mirman, Dana Drachsler-Cohen, Petar Tsankov, Swarat Chaudhuri, and Martin T. Vechev. 2018. AI2: Safety and Robustness Certification of Neural Networks with Abstract Interpretation. In IEEE Symposium on Security and Privacy . IEEE Computer Society, 3–18. doi:10.1109/SP.2018.00058 [19] Yonatan Geifman and Ran El-Yaniv. 2017. Selective Classification for Deep Neural Networks. In Advances in Neural Information Processing Systems , Isabelle Guyon, Ulrike von Luxburg, Samy Bengio, Hanna M. Wallach, Rob Fergus, S. V. N. Vishwanathan, and Roman Garnett (Eds.). 4878–4887. [20] Chuqin Geng, Nham Le, Xiaojie Xu, Zhaoyue Wang, Arie Gurfinkel, and Xujie Si. 2023. Towards Reliable Neural Specifications. In International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 202) , Andreas Krause, Emma Brunskill, Kyunghyun Cho, Barbara Engelhardt, Sivan Sabato, and Jonathan Scarlett (Eds.). PMLR, 11196–11212. https://proceedings.mlr.press/ v202/geng23a.html [21] Khalil Ghorbal, Eric Goubault, and Sylvie Putot. 2009. The Zonotope Abstract Domain Taylor1+. In 21st International Conference on Computer Aided Verification (LNCS, Vol. 5643) , Ahmed Bouajjani and Oded Maler (Eds.). Springer, 627–633. doi:10.1007/978-3-642-02658-4_47 [22] Ian J. Goodfellow, Yoshua Bengio, and Aaron C. Courville. 2016. Deep Learning .MIT Press. http://www.deeplearningbook.org/ [23] Divya Gopinath, Guy Katz, Corina S. Pasareanu, and Clark W. Barrett. 2018. Deep-Safe: A Data-Driven Approach for Assessing Robustness of Neural Networks. In 16th International Symposium on Automated Technology for Verification and Analysis (LNCS, Vol. 11138) , Shuvendu K. Lahiri and Chao Wang (Eds.). Springer, 3–19. doi:10.1007/978-3-030-01090-4_1 [24] Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q. Weinberger. 2017. On Calibration of Modern Neural Networks. In 34th International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 70) , Doina Precup and Yee Whye Teh (Eds.). PMLR, 1321–1330. http://proceedings.mlr.press/v70/guo17a.html [25] Gurobi Optimization, LLC. 2023. Gurobi Optimizer Reference Manual. https: //www.gurobi.com [26] Xiaowei Huang, Marta Kwiatkowska, Sen Wang, and Min Wu. 2017. Safety Veri-fication of Deep Neural Networks. In 29th International Conference on Computer Aided Verification (LNCS, Vol. 10426) , Rupak Majumdar and Viktor Kuncak (Eds.). Springer, 3–29. doi:10.1007/978-3-319-63387-9_1 [27] Kyle D. Julian, Jessica Lopez, Jeffrey S. Brush, Michael P. Owen, and Mykel J. Kochenderfer. 2016. Policy compression for aircraft collision avoidance systems. In 35th IEEE/AIAA Digital Avionics Systems Conference . 1–10. doi:10.1109/DASC. 2016.7778091 [28] Guy Katz, Clark W. Barrett, David L. Dill, Kyle Julian, and Mykel J. Kochenderfer. 2017. Reluplex: An Efficient SMT Solver for Verifying Deep Neural Networks. In 
+
+29th International Conference on Computer Aided Verification (LNCS, Vol. 10426) ,Rupak Majumdar and Viktor Kuncak (Eds.). Springer, 97–117. doi:10.1007/978-3-319-63387-9_5 [29] Guy Katz, Derek A. Huang, Duligur Ibeling, Kyle Julian, Christopher Lazarus, Rachel Lim, Parth Shah, Shantanu Thakoor, Haoze Wu, Aleksandar Zeljic, David L. Dill, Mykel J. Kochenderfer, and Clark W. Barrett. 2019. The Marabou Framework for Verification and Analysis of Deep Neural Networks. In 31st Inter-national Conference on Computer Aided Verification (LNCS, Vol. 11561) , Isil Dillig and Serdar Tasiran (Eds.). Springer, 443–452. doi:10.1007/978-3-030-25540-4_26 [30] Konstantin Kaulen, Tobias Ladner, Stanley Bak, Christopher Brix, Hai Duong, Thomas Flinkow, Taylor T Johnson, Lukas Koller, Edoardo Manino, ThanhVu H Nguyen, et al . 2025. The 6th International Verification of Neural Networks Competition (VNN-COMP 2025): Summary and Results. arXiv:2512.19007 [cs.LG] https://arxiv.org/abs/2512.19007 [31] Philipp Kern, Edoardo Manino, and Carsten Sinz. 2025. Certified Error Analysis of Homomorphically Encrypted Neural Networks. In 2nd International Symposium on AI Verification (LNCS, Vol. 15947) , Mirco Giacobbe and Anna Lukina (Eds.). Springer, 156–179. doi:10.1007/978-3-031-99991-8_8 [32] Haitham Khedr and Yasser Shoukry. 2023. CertiFair: A Framework for Certified Global Fairness of Neural Networks. In 37th AAAI Conference on Artificial In-telligence , Brian Williams, Yiling Chen, and Jennifer Neville (Eds.). AAAI Press, 8237–8245. doi:10.1609/AAAI.V37I7.25994 [33] Brian Hyeongseok Kim, Jingbo Wang, and Chao Wang. 2025. FairQuant: Certi-fying and Quantifying Fairness of Deep Neural Networks. In Proceedings of the IEEE/ACM 47th International Conference on Software Engineering (Ottawa, On-tario, Canada) (ICSE ’25) . IEEE Press, 527–539. doi:10.1109/ICSE55347.2025.00016 [34] Niklas Kochdumper, Christian Schilling, Matthias Althoff, and Stanley Bak. 2023. Open- and Closed-Loop Neural Network Verification Using Polynomial Zono-topes. In 15th NASA Formal Methods Symposium (Lecture Notes in Computer Science, Vol. 13903) , Kristin Yvonne Rozier and Swarat Chaudhuri (Eds.). Springer, 16–36. doi:10.1007/978-3-031-33170-1_2 [35] Meelis Kull, Miquel Perelló-Nieto, Markus Kängsepp, Telmo de Menezes e Silva Filho, Hao Song, and Peter A. Flach. 2019. Beyond temperature scaling: Obtaining well-calibrated multi-class probabilities with Dirichlet calibration. In 
+
+Annual Conference on Neural Information Processing Systems , Hanna M. Wallach, Hugo Larochelle, Alina Beygelzimer, Florence d’Alché-Buc, Emily B. Fox, and Roman Garnett (Eds.). 12295–12305. [36] Tobias Ladner and Matthias Althoff. 2024. Exponent Relaxation of Polynomial Zonotopes and Its Applications in Formal Neural Network Verification. In 38th AAAI Conference on Artificial Intelligence , Michael J. Wooldridge, Jennifer G. Dy, and Sriraam Natarajan (Eds.). AAAI Press, 21304–21311. doi:10.1609/AAAI. V38I19.30125 13 Anagha Athavale, Samuel Teuber, Matteo Maffei, Ezio Bartocci, Dejan Nickovic, and Georg Weissenbacher 
+
+[37] Jianlin Li, Jiangchao Liu, Pengfei Yang, Liqian Chen, Xiaowei Huang, and Lijun Zhang. 2019. Analyzing Deep Neural Networks with Symbolic Propagation: Towards Higher Precision and Faster Verification. In 26th International Sympo-sium on Static Analysis (LNCS, Vol. 11822) , Bor-Yuh Evan Chang (Ed.). Springer, 296–319. doi:10.1007/978-3-030-32304-2_15 [38] Rex Liu, Albara Ah Ramli, Huanle Zhang, Erik Henricson, and Xin Liu. 2021. An overview of human activity recognition using wearable sensors: Healthcare and artificial intelligence. In International Conference on Internet of Things . Springer, 1–14. [39] Diego Manzanas Lopez, Sung Woo Choi, Hoang-Dung Tran, and Taylor T. John-son. 2023. NNV 2.0: The Neural Network Verification Tool. In 35th International Conference on Computer Aided Verification (LNCS, Vol. 13965) , Constantin Enea and Akash Lal (Eds.). Springer, 397–412. doi:10.1007/978-3-031-37703-7_19 [40] Seyed-Mohsen Moosavi-Dezfooli, Alhussein Fawzi, Omar Fawzi, and Pascal Frossard. 2017. Universal Adversarial Perturbations. In IEEE Conference on Computer Vision and Pattern Recognition . IEEE Computer Society, 86–94. doi:10. 1109/CVPR.2017.17 [41] Brandon Paulsen, Jingbo Wang, and Chao Wang. 2020. ReluDiff: differential verification of deep neural networks. In 42nd International Conference on Software Engineering , Gregg Rothermel and Doo-Hwan Bae (Eds.). ACM, 714–726. doi:10. 1145/3377811.3380337 [42] Brandon Paulsen, Jingbo Wang, Jiawei Wang, and Chao Wang. 2020. NeuroDiff: Scalable Differential Verification of Neural Networks using Fine-Grained Ap-proximation. In 35th IEEE/ACM International Conference on Automated Software Engineering . IEEE, 784–796. doi:10.1145/3324884.3416560 [43] Lawrence C. Paulson. 1994. Isabelle - A Generic Theorem Prover (with a contribu-tion by T. Nipkow) . LNCS, Vol. 828. Springer. doi:10.1007/BFB0030541 [44] Luca Pulina and Armando Tacchella. 2010. An Abstraction-Refinement Approach to Verification of Artificial Neural Networks. In 22nd International Conference on Computer Aided Verification (LNCS, Vol. 6174) , Tayssir Touili, Byron Cook, and Paul B. Jackson (Eds.). Springer, 243–257. doi:10.1007/978-3-642-14295-6_24 [45] Luca Pulina and Armando Tacchella. 2012. Challenging SMT solvers to verify neural networks. AI Commun. 25, 2 (2012), 117–135. doi:10.3233/AIC-2012-0525 [46] Ashwin Sankaran. 2025. The future of smart healthcare: how ai and har are reshaping hospital workflows. Well Testing J 34, 1 (2025), 68–92. [47] Fatemeh Serpush, Mohammad Bagher Menhaj, Behrooz Masoumi, and Babak Karasfi. 2022. Wearable sensor-based human activity recognition in the smart healthcare system. Computational intelligence and neuroscience 2022, 1 (2022), 1391906. [48] Sanjit A. Seshia, Ankush Desai, Tommaso Dreossi, Daniel J. Fremont, Shromona Ghosh, Edward Kim, Sumukh Shivakumar, Marcell Vazquez-Chanlatte, and Xi-angyu Yue. 2018. Formal Specification for Deep Neural Networks. In 16th In-ternational Symposium on Automated Technology for Verification and Analysis (LNCS, Vol. 11138) , Shuvendu K. Lahiri and Chao Wang (Eds.). Springer, 20–34. doi:10.1007/978-3-030-01090-4_2 [49] Gagandeep Singh, Timon Gehr, Matthew Mirman, Markus Püschel, and Martin T. Vechev. 2018. Fast and Effective Robustness Certification. In Annual Conference on Neural Information Processing Systems , Samy Bengio, Hanna M. Wallach, Hugo Larochelle, Kristen Grauman, Nicolò Cesa-Bianchi, and Roman Garnett (Eds.). 10825–10836. [50] Gagandeep Singh, Timon Gehr, Markus Püschel, and Martin T. Vechev. 2019. An abstract domain for certifying neural networks. Proc. ACM Program. Lang. 3, POPL (2019), 41:1–41:30. doi:10.1145/3290354 [51] Tarun Suresh, Debangshu Banerjee, and Gagandeep Singh. 2024. Relational Veri-fication Leaps Forward with RABBit. In Annual Conference on Neural Information Processing Systems , Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang (Eds.). [52] Samuel Teuber, Marko Kleine Büning, Philipp Kern, and Carsten Sinz. 2021. Geometric Path Enumeration for Equivalence Verification of Neural Networks. In 33rd IEEE International Conference on Tools with Artificial Intelligence . IEEE, 200–208. doi:10.1109/ICTAI52525.2021.00035 [53] Samuel Teuber, Philipp Kern, Marvin Janzen, and Bernhard Beckert. 2025. Re-visiting Differential Verification: Equivalence Verification with Confidence. In 
+
+31st International Conference on Tools and Algorithms for the Construction and Analysis of Systems (LNCS, Vol. 15697) , Arie Gurfinkel and Marijn Heule (Eds.). Springer, 257–278. doi:10.1007/978-3-031-90653-4_13 [54] Vincent Tjeng, Kai Yuanqing Xiao, and Russ Tedrake. 2019. Evaluating Ro-bustness of Neural Networks with Mixed Integer Programming. In 7th In-ternational Conference on Learning Representations . OpenReview.net. https: //openreview.net/forum?id=HyGIdiRqtm [55] Hoang-Dung Tran, Xiaodong Yang, Diego Manzanas Lopez, Patrick Musau, Luan Viet Nguyen, Weiming Xiang, Stanley Bak, and Taylor T. Johnson. 2020. NNV: The Neural Network Verification Tool for Deep Neural Networks and Learning-Enabled Cyber-Physical Systems. In 32nd International Conference on Computer Aided Verification (LNCS, Vol. 12224) , Shuvendu K. Lahiri and Chao Wang (Eds.). Springer, 3–17. doi:10.1007/978-3-030-53288-8_1 [56] Shiqi Wang, Huan Zhang, Kaidi Xu, Xue Lin, Suman Jana, Cho-Jui Hsieh, and J. Zico Kolter. 2021. Beta-CROWN: Efficient Bound Propagation with Per-neuron Split Constraints for Neural Network Robustness Verification. In Annual Con-ference on Neural Information Processing Systems , Marc’Aurelio Ranzato, Alina Beygelzimer, Yann N. Dauphin, Percy Liang, and Jennifer Wortman Vaughan (Eds.). 29909–29921. [57] Linda F Wightman. 1998. LSAC National Longitudinal Bar Passage Study. LSAC Research Report Series. [58] Yuhao Zhang and Xiangru Xu. 2023. Reachability Analysis and Safety Verifi-cation of Neural Feedback Systems via Hybrid Zonotopes. In American Control Conference . IEEE, 1915–1921. doi:10.23919/ACC55779.2023.10156417 
+
+## A Proofs 
+
+Lemma 4.8 (Soundness of Symmetric Confidence LP) . Assume 
+
+𝜏 1, 𝜏 2 ∈ [ 0.5, 1) and let 𝒵 out be a differential zonotope returned for 
+
+Reach Δ (𝑓 , 𝒵 in ). If for all 𝑗, 𝑘 ∈ [ 1, 𝑂 ] with 𝑗 ≠ 𝑘 the symmetric confidence LP is infeasible, then for all (𝒙 , 𝒚 ) ∈ ⟨ 𝒵 in ⟩ (where 𝜏 ∗ 
+
+> 𝑖
+
+is 0
+
+if 𝜏 𝑖 = 0.5 and otherwise 𝜏 ∗ 
+
+> 𝑖
+
+= 𝜏 𝑖 for 𝑖 ∈ { 1, 2}): 
+
+conf (𝑓 (𝒙 )) > 𝜏 ∗ 
+
+> 1
+
+∧ conf (𝑓 (𝒚 )) > 𝜏 ∗ 
+
+> 2
+
+→
+
+class (𝑓 (𝒙 )) = class (𝑓 (𝒚 )) ,
+
+Proof of Lemma 4.8. Note that via [ 53 , Theorem 2 and Corol-lary 3], 𝒵 out over-approximates the behavior of 𝑓 for the two inputs 
+
+(𝒙 , 𝒚 ) ∈ ⟨ 𝒵 in ⟩, i.e. for 𝒗 ∈ R𝑛 we know that 𝑓  𝒵 ′ 
+
+> in
+
+(𝒗 ) ∈ ⟨ 𝒵 ′ 
+
+> out
+
+(𝒗 )⟩ ,
+
+𝑓  𝒵 ′′  
+
+> in
+
+(𝒗 ) ∈ ⟨ 𝒵 ′′  
+
+> out
+
+(𝒗 )⟩ , and finally  𝑓  𝒵 ′ 
+
+> in
+
+(𝒗 ) − 𝑓  𝒵 ′′  
+
+> in
+
+(𝒗 ) ∈⟨𝒵 Δ 
+
+> out
+
+(𝒗 )⟩ with the same generator values 𝝐 . Hence, the points reachable for 𝑓  𝒵 ′′  
+
+> in
+
+(𝒗 ) can also be described by the zonotope 
+
+˜𝒵 ′′  
+
+> out
+
+=  𝐺 ′ − 𝐺 Δ, 𝒄 ′ − 𝒄 Δ  (assuming aligned matrices). Thus, any reachable values of the two executions of 𝑓 satisfy the con-straint “ 𝒵 Δ = 𝒵 ′ − 𝒵 ′′ ”, formally 𝐺 Δ𝒙 + 𝒄 Δ = (𝐺 ′𝒙 + 𝒄 ′) − (𝐺 ′′ 𝒙 + 𝒄 ′′ ). The constraint 𝐺 ′ 
+
+> 𝑙
+
+𝒙 + 𝒄 ′ 
+
+> 𝑙
+
++ ln (𝜏 1/( 1 − 𝜏 1)) ≤ 𝐺 ′ 
+
+> 𝑗
+
+𝒙 + 𝒄 ′
+
+> 𝑗
+
+(for 𝑙 ≠ 𝑗 ) then over-approximates the region where 𝑓  𝒵 ′ 
+
+> in
+
+(𝒗 )
+
+has maximum 𝑗 with a gap of at least ln (𝜏 1/( 1 − 𝜏 1)) . As per [ 53 , Lemma 4], this over-approximates the region for which 
+
+softmax 𝑗 (𝐺 ′𝒙 + 𝒄 ′) ≥ 𝜏 1. With the same argument, the constraint 
+
+𝐺 ′′  
+
+> 𝑙
+
+𝒙 + 𝒄 ′′  
+
+> 𝑙
+
++ ln (𝜏 2/( 1 − 𝜏 2)) ≤ 𝐺 ′′  
+
+> 𝑘
+
+𝒙 + 𝒄 ′′  
+
+> 𝑘
+
+then over-approximates the region for which softmax 𝑗 (𝐺 ′′ 𝒙 + 𝒄 ′′ ) ≥ 𝜏 2. Hence, for 𝑘 ≠ 𝑗 ,the infeasibility of the LP from Definition 4.7 implies there exist no 𝒗 such that conf  𝑓  𝒵 ′ 
+
+> in
+
+(𝒗 ) > 𝜏 1, conf  𝑓  𝒵 ′′  
+
+> in
+
+(𝒗 ) > 𝜏 2,
+
+class  𝑓  𝒵 ′ 
+
+> in
+
+(𝒗 ) = 𝑗 , and class  𝑓  𝒵 ′′  
+
+> in
+
+(𝒗 ) = 𝑘 . As an im-mediate consequence, there are no inputs (𝒙 , 𝒚 ) ∈ ⟨𝒵 in ⟩ such that conf (𝑓 (𝒙 )) > 𝜏 1, conf (𝑓 (𝒚 )) > 𝜏 2, class (𝑓 (𝒙 )) = 𝑗 , and 
+
+class (𝑓 (𝒚 )) = 𝑘 . Hence, if the LP infeasibility can be shown for all 𝑗, 𝑘 ∈ [1, 𝑂 ] with 𝑗 ≠ 𝑘 , then we get the implication of Lemma 4.8. Regarding the special case of 𝜏 𝑖 = 0.5, note that 
+
+ln (0.5/( 1 − 0.5)) = ln (1) = 0. Hence, for 𝜏 𝑖 = 0.5 we impose no constraint on the output of the first/second execution beyond maximality of output dimension 𝑗 /𝑘 . Hence, in this case the class invariance across the two executions holds for any confidence threshold. □
+
+Theorem 4.11 (Soundness of Verify Δ). If Verify Δ returns SAFE for input range [𝒍 , 𝒖 ] and perturbation 𝜺 then 𝑓 satisfies: (1) symmetric confidence-based robustness for confidence 𝜏 1 if 𝜏 2 = 𝜏 1; (2) asymmet-ric confidence-based robustness for confidence 𝜏 1 if 𝜏 2 = 0.5. UNSAFE 
+
+implies it found a concrete counterexample. 
+
+Proof of Theorem 4.11. As per Lemma 4.5, we know that ⟨𝒵 in ⟩
+
+exactly contains all 𝒙 , 𝒚 ∈ [ 𝑙, 𝑢 ] with (𝒙 − 𝒚 ) ∈ [− 𝜀, 𝜀 ]. We will first address the case where SAFE is returned, i.e. we can assume that 
+
+CheckProp never returns concrete cex . We identify the queue 
+
+14 Differential Zonotopes for Verifying Global Robustness of DNNs 
+
+𝑄 after the 𝑖 -th iteration as 𝑄 𝑖 (with 𝑄 1 = 𝑄 ). From Lemma 4.8 we then know that an element 𝒵 cur is removed from 𝑄 without replace-ment iff confidence-based global robustness w.r.t. 𝜏 1, 𝜏 2 has been established for all (𝒙 , 𝒚 ) ∈ ⟨ 𝒵 cur ⟩. Let 𝑅 𝑖 be the set of all 𝒵 cur re-moved in this way without replacement after the 𝑖 -th iteration (with 
+
+𝑅 1 = ∅). Then define ⟨𝑅 𝑖 ⟩ := {( 𝒙 , 𝒚 ) ∈ ⟨ 𝒵 ⟩| 𝒵 ∈ 𝑅 𝑖 } (accordingly for 
+
+𝑄 and 𝑄 𝑖 ). After any iteration 𝑖 we know that we have established confidence-based robustness w.r.t. 𝜏 1, 𝜏 2 for all (𝒙 , 𝒚 ) ∈ ⟨ 𝑅 𝑖 +1⟩. Fur-ther, in case of a split, we know that ⟨𝒵 cur ⟩ ⊆ ⟨ 𝒵 1⟩ ∪ ⟨ 𝒵 2⟩ from Lemma 4.10. Hence, we always have ⟨𝑄 𝑖 ⟩ ⊆ ⟨ 𝑄 𝑖 +1⟩ ∪ ⟨ 𝑅 𝑖 +1⟩ (in practice, this is even an equality, however this is not needed for soundness). The algorithm returns SAFE only if 𝑄 = ∅, but then 
+
+⟨𝑄 ⟩ = ∅ and hence ⟨𝑄 ⟩ ⊆ ⟨ 𝑅 𝑖 ⟩ for some 𝑅 𝑖 . But since ⟨𝑄 ⟩ = ⟨𝒵 in ⟩
+
+contains all 𝒙 , 𝒚 within bounds and with pertubations bounded by 
+
+𝜀 , we have proven confidence-based robustness w.r.t. 𝜏 1, 𝜏 2 for all such 𝒙 , 𝒚 .Regarding the case where PropCheck returns concrete cex ,the procedure always checks whether the returned counterexample is a concrete violation w.r.t. 𝑓 . Hence, any such returned values represent a concrete counterexample. □
