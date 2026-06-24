@@ -1,0 +1,552 @@
+Title: PixJail: Self-Evolving Paper-to-Pipeline Reproduction for Text-to-Image Jailbreak Evaluation
+
+URL Source: https://arxiv.org/pdf/2606.24081v1
+
+Published Time: Wed, 24 Jun 2026 00:25:18 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# PIX JAIL : Self-Evolving Paper-to-Pipeline Reproduction for Text-to-Image Jailbreak Evaluation 
+
+Leyi Sheng 1* , Han Sun 2,3* , Zhen Sun 1,Yuntao Yue 1,5 , Jinlin Wu 6,7 , Xinlei He 4† , Jiaheng Wei 1† 1The Hong Kong University of Technology and Science (Guangzhou) 
+
+2East China Normal University 3Shanghai Qi Zhi Institute 4Wuhan University 
+
+5Institute of Deep Perception Technology, JITRI 
+
+6CAIR, Hong Kong Institute of Science and Innovation (HKISI) 
+
+7MAIS, Institute of Automation, Chinese Academy of Sciences 
+
+Abstract 
+
+As Text-to-Image ( T2I ) jailbreak techniques evolve rapidly, existing benchmarks and reproduction workflows often strug-gle to keep pace. More importantly, T2I jailbreak evaluation is not a single prompt-level test, but a pipeline-level problem shaped by multiple stages, including prompt transformation, image generation, safety filtering, and multimodal judging. This makes results across papers difficult to reliably reproduce and fairly compare. To bridge this gap, we propose PixJail ,a self-evolving paper-to-pipeline agent framework for repro-ducible T2I jailbreak evaluation. Given a T2I jailbreak paper and optional reference code, PixJail rapidly constructs a paper-specific attack module and a runnable evaluation pipeline under a unified contract, while faithfully reproducing the orig-inal experimental results. PixJail further maintains a mem-ory bank that stores paper digests, attack evolution patterns, reusable templates, failure cases, and versioned artifacts, en-abling future reproduction efforts to reuse prior experience. We reproduce eleven representative T2I jailbreak methods, including both code-available and code-unavailable papers. Under their original settings, our framework accurately re-covers prior results with minimal error (2.1% average, 0% median). We hope that PixJail can serve as a unified foun-dation for future T2I jailbreak reproduction and evaluation, significantly reducing manual effort. 
+
+1 Introduction 
+
+Text-to-image (T2I) models are widely adopted in open-ended visual generation, advertising, social media, and multimodal applications [19, 29]. However, their safety risks are increas-ingly salient. Attackers can craft malicious text prompts to bypass built-in safety mechanisms and induce the generation of violent, sexual, hateful, or illegal content [21]. Unlike large language model jailbreaks [32], T2I jailbreak success depends 
+
+> *Equal contribution.
+> †Corresponding authors: Jiaheng Wei(jiahengwei@hkust-gz.edu.cn), Xinlei He(xinlei.he@whu.edu.cn).
+
+not only on semantic moderation evasion [11] but also on a sequence of pipeline components, including prompt rewrit-ing, keyword filtering, sampler configurations, image-level safety detection, and multimodal judgment. Thus, evaluating T2I jailbreaks is a pipeline-level challenge that relies on the complete generation and assessment process. Jailbreak Foundry [4] firstly maps LLM jailbreak papers into executable attack modules within a unified framework. However, this framework targets text-based LLM jailbreaks where inputs, model invocations, and success criteria are pure text, whereas reproducing T2I attacks requires jointly reconstructing datasets, prompt transformation, attack search, image generation, safety filtering, and multimodal judging [10, 30,31]. Variations in any component can substantially alter the attack success rate. This makes directly transferring Jailbreak Foundry into T2I models challenging. To address this gap, we propose PixJail , the first self-evolving paper-to-pipeline reproduction framework for T2I jailbreak evaluation. Given a T2I jailbreak paper and optional reference code, PixJail extracts the core methodology to gen-erate a unified interface, then automatically constructs the spe-cific attack module and a comprehensive evaluation pipeline. This paradigm reconstructs the end-to-end lifecycle, allow-ing diverse T2I jailbreak methods to be executed, audited, and compared under a single standardized framework. The self-evolving capability of PixJail is driven by an integrated historical memory bank archiving literature summaries, attack evolution relationships, reusable templates, failure cases, and versioned artifacts. Given a new paper, PixJail retrieves similar attack meth-ods and past experiences to facilitate the generation of ac-curate interfaces, modules, and pipelines. Upon completing a reproduction, the new code, configurations, logs, images, and failure analyses are ingested back into the memory bank. Through this design, PixJail continuously accumulates ex-perience to enhance the efficiency, stability, and auditability of future reproductions. Using PixJail , we reproduce eleven representative T2I jailbreak methods with or without official code. We integrate these methods into the same framework to 1
+
+> arXiv:2606.24081v1 [cs.CR] 23 Jun 2026
+
+benchmark them under a unified protocol with shared datasets, victim models, safety filters, multimodal judges, and evalua-tion metrics. The experiments validate the reproduction ca-pability of PixJail and reveal actual performance differences under a unified protocol. Our contributions are summarized as follows: • We propose PixJail , the first self-evolving paper-to-pipeline agent framework for T2I jailbreak evaluation, extending reproduction from standalone attack code to complete attack-evaluation pipelines. • We introduce a unified module interface and a historical memory bank that allow P IX JAIL to synthesize attack modules and evaluation workflows from papers and op-tional reference code while reusing prior reproduction experience. In our memory ablation study, P IX JAIL -MEMORY improves the final code-quality score from 8.16 to 9.10, corresponding to an 11.5% relative im-provement, with gains across functional fidelity, techni-cal correctness, and reproducibility. • We reproduce and uniformly benchmark eleven repre-sentative T2I jailbreak methods, covering both code-available and code-unavailable settings. Under paper-matched evaluation, P IX JAIL achieves high-fidelity re-production with a 2.1% average error and a 0% median error overall, and a 1.2% average error for code-available methods. We further integrate these attacks into a stan-dardized benchmark across four victim models, provid-ing a more reproducible and comparable basis for T2I jailbreak evaluation. 
+
+2 Related Work 
+
+Jailbreak Attacks on Text-to-Image Models. Jailbreak at-tacks aim to bypass the safety alignment and moderation mechanisms of generative models, inducing them to produce harmful, unsafe, or policy-violating outputs. Such attacks have been extensively studied in LLMs and VLMs [25, 32, 35, 36], and have recently become an increasingly important threat to text-to-image (T2I) generation systems [3, 11, 31]. Despite the deployment of multi-layered defenses like text filtering and multimodal moderation, T2I models remain vul-nerable to adversarial prompts that induce policy-violating content. Early jailbreaks, such as SneakyPrompt [31], relied on reinforcement learning for token-level perturbations to evade static filters. Subsequent works expanded the attack surface: MMA-Diffusion [30] bypassed multimodal post-hoc safety checkers, while Ring-A-Bell [26] exposed vulner-abilities in concept erasure and visual feature suppression. Recently, attacks have evolved into automated LLM/VLM-powered agents. JailFuzzer [3] introduces an LLM agent for feedback-driven prompt mutation against black-box sys-tems, whereas PromptTune [8] fine-tunes an attacking LLM to generate query-free prompts, enhancing cross-model trans-ferability. This progression highlights that T2I jailbreaks have transitioned from simple word obfuscation to systematic ad-versarial engineering, integrating prompt rewriting, strategy search, and multimodal feedback [27]. Therefore, fair evalua-tion cannot be reduced to a static comparison of adversarial prompts [34]. It requires a complete end-to-end evaluation pipeline that accounts for the dynamic interactions across all stages of the attack process. 
+
+Automated Paper-to-Code Reproduction. LLM-based agents have shown significant potential in automated scien-tific reproduction, code synthesis, and paper-to-code genera-tion [6,9,12,18,20,23], with frameworks like PaperBench [24] and Paper2Code [22] automating the conversion of research papers into executable repositories. However, reproducing adversarial attacks requires more than mere code generation; it demands strict alignment with the original threat mod-els, query budgets, filter configurations, and success proto-cols. While Jailbreak Foundry [4] advances this by unifying text-based attacks, its unimodal architecture cannot accom-modate the complexities unique to T2I jailbreaks, such as image generation, visual-feature evasion, and multimodal judgment. In contrast, PixJail elevates this to a “Paper-to-Pipeline” paradigm for the T2I domain. By decomposing and reconstructing newly published papers in a top-down manner, 
+
+PixJail builds an automated evaluation pipeline that is exe-cutable, auditable, and strictly comparable across different attack methods. 
+
+3 PixJail Framework 
+
+PixJail aims not merely to reproduce the attack logic of a jail-break paper, but to transform a newly proposed T2I jailbreak method into a complete evaluation pipeline that is executable, auditable, and comparable across methods. Figure 1 provides an overview of the proposed PixJail framework. 
+
+3.1 Task Formulation 
+
+Given a jailbreak paper p, an optional reference implementa-tion R, a unified module contract C, and a memory bank M ,
+
+PixJail aims to synthesize two executable artifacts: an attack module mp and an evaluation pipeline ep.The attack module mp instantiates the core attack mecha-nism described in p by mapping harmful intents to jailbreak prompts or search trajectories. The evaluation pipeline ep ex-ecutes a complete assessment protocol over specified victim models, safety filters, judges, and evaluation metrics. Formally, PixJail first converts the input paper into a struc-tured intermediate representation: 
+
+xp = NormalizeToMD (p), (1) where xp denotes the normalized Markdown representation of p.Given xp, PixJail decomposes the synthesis process into attack-side and evaluation-side construction: 
+
+satk  
+
+> p
+
+= πatk (xp,C, R, M ), (2) 
+
+mp = κatk (satk  
+
+> p
+
+,C, R), (3) 
+
+seval  
+
+> p
+
+= πeval (xp, mp,C, R, M ), (4) 
+
+ep = κeval (seval  
+
+> p
+
+,C). (5) 2New T2I  
+
+> Jailbreak Paper
+> Reference Code
+> Repo (Optional)
+
+PIXJAIL -Attack                                 
+
+> Paper -to -Runnable Attack Module
+> Planner Implementor Auditor
+> Paper
+> →Attack Protocol
+> (Threat model, Input
+> dataset…)
+> Attack Protocol
+> →Attack Code
+> Fidelity
+> →Coverage
+> Check
+> Claude 4.5 Sonnet Gemini 3.1 Pro GPT -5.3 Codex
+> （a
+> ）Input &Attack Construction
+> （b
+> ）Pixjail -Memory
+> Knowledge &Evolution Hub
+> Previous Papers
+> Paper Digests
+> Evolution Map
+> Reusable Notes
+> Collected Research &Methods
+> Structured Summaries
+> Evolution of Attacks &Ideas
+> Templates, Code
+> （c
+> ）Evaluation Pipeline Reproduction
+> New T2I
+> Jailbreak Paper
+> Reference Code
+> Repo (Optional)
+
+PIXJAIL -Eval                        
+
+> Paper -to -Runnable Evaluation Module
+> Protocol Adapter Pipeline Composer Consistency Checker
+> Attack +Memory
+> →Eval Protocol
+> (Metrics, Judge
+> Model …)
+> Eval Protocol
+> →Eval Pipeline
+> Fidelity
+> →Coverage
+> Check
+> Runnable
+> Attack Code Eval Pipeline
+> Specification
+> （d
+> ）Standardized T2I Evaluation Core
+> Datasets &
+> Loaders
+> Task, Prompts,
+> Metadata
+> Victim T2I
+> Models
+> Stable Diffusion,
+> Flux, …
+> Attack
+> Search/Generation
+> Heuristics, Templates,
+> Evolutionary Search
+> Safety Filtering
+> Harmfulness,
+> Policy Checks
+> Multimodal
+> Judge / Scoring
+> Text + Image
+> Judgement
+> Metrics &
+> Reports
+> ASR,
+> Bypass Rate
+> Prompt
+> Transformation
+> Format, Mutations,
+> Role -play, …
+> （e
+> ）
+
+Analyzer  
+
+> Inspects Failures
+> &Anomalies, Identifies
+> Gaps, and suggests
+> improvements
+
+Results 
+
+> Attack Outcomes,
+> Success Cases,
+> Failure Cases
+
+Versioned 
+
+Attack Modules 
+
+> V1, V2, V3, …
+> Reproducible Attacks
+
+Comparable Metrics 
+
+(ASR, Heatmaps, Tables) 
+
+> Cross -model, Cross -Task
+> Comparison
+
+Artifacts 
+
+(logs, Chat History, 
+
+Generated Images) 
+
+> Logs, Configs, Pipelines,
+> Images, Conversations
+> Unexpected Results / Further Iteration
+
+Figure 1: Overview of our PixJail framework. 
+
+Here, satk 
+
+p and seval 
+
+p respectively denote the attack-side and evaluation-side specifications. The operators πatk and πeval 
+
+produce these specifications through attack protocol planning and evaluation protocol adaptation, while κatk and κeval com-pile them into executable artifacts. This formulation separates paper understanding, attack implementation, and evaluation composition, while enforcing the shared contract C across all generated components. 
+
+Unified Contract and Runtime Core. PixJail defines a uni-fied contract C = ( X , Θ, Y , A) as the runtime interface shared by all generated attack modules and evaluation pipelines, where X , Θ, Y , and A denote the input schema, typed pa-rameter space, output schema, and collection of auditable artifacts, respectively. In the T2I setting, X contains task instructions, original harmful prompts, metadata, and optional random seeds, while 
+
+Θ specifies attack hyperparameters, search budgets, sampling settings, judge configurations, and filtering policies. Y in-cludes transformed jailbreak prompts, generated images, and judge outputs, and A stores logs, configurations, intermedi-ate prompts, generated images, conversation traces, and final reports in a unified format. This contract serves two primary purposes: first, it decouples the paper-specific attack logic from the shared evaluation infrastructure; second, it ensures that planning, implementation, auditing, and evaluation oper-ate through a common interface, thereby enabling automated integration and consistent cross-method comparison. 
+
+3.2 PIX JAIL -A TTACK : From Paper to Runnable Attack Module 
+
+The attack construction stage converts the methodological description of a jailbreak paper into a runnable attack module that conforms to the unified contract C. This stage is organized as a planner–implementor–auditor loop. First, the Planner analyzes the normalized paper represen-tation xp, the optional reference repository R, and the memory bank M to produce a structured attack specification: 
+
+satk 
+
+p = πatk (xp,C, R, M ). (6) The specification satk 
+
+p formalizes the paper-specific attack design, including the attack objective, threat model, prompt transformation strategy, search procedure, stopping criteria, default hyperparameters, and their mapping to the unified contract C.Given this specification, the Implementor synthesizes the attack module: 
+
+mp = κatk (satk 
+
+p ,C, R). (7) The resulting module mp handles only paper-specific attack logic. It exposes all configurable choices through the typed parameter space of C and delegates common execution logic, such as data loading, model invocation, artifact storage, and metric computation, to the shared benchmark runtime. Finally, the Auditor verifies the consistency among the gen-erated module, the attack specification, the unified contract, and the available reference implementation: 
+
+(at , rt ) = αatk (mp, satk 
+
+p ,C, R), (8) where at ∈ { 0, 1} indicates whether the module passes the audit at iteration t, and rt denotes an actionable revision re-port when inconsistencies are detected. The audit checks whether the implemented control flow, prompt templates, de-fault parameter values, budget constraints, search behavior, 3and algorithm-critical components faithfully reflect the speci-fication and the original paper. If at = 0, the revision report rt is returned to the Imple-mentor, which updates mp under the same contract C. This bounded revision process repeats until the module passes the audit or the maximum number of iterations is reached. 
+
+3.3 PIX JAIL -E VAL : From Paper to Runnable Evaluation Pipeline 
+
+Unlike text-only jailbreak studies, T2I jailbreak papers often differ not only in attack generation strategies, but also in evaluation protocols. Such differences may include the choice of target T2I model, the use of iterative prompt evolution, the configuration of safety filters, and the criteria used by multimodal judges to determine whether a generated image satisfies the intended harmful objective. Consequently, PixJail 
+
+models evaluation construction as an independent synthesis stage. First, the Protocol Adapter extracts a structured evaluation specification from the paper: 
+
+seval  
+
+> p
+
+= πeval (xp, mp,C, R, M ), (9) where seval  
+
+> p
+
+defines the evaluation dataset, target T2I model, sampling configuration, judge model, safety filtering rules, and evaluation metrics. Next, the Pipeline Composer converts the specification into an executable evaluation pipeline: 
+
+ep = κeval (seval  
+
+> p
+
+,C), (10) which integrates the synthesized attack module with stan-dardized runtime components, including data loaders, model adapters, multimodal judges, logging utilities, and report gen-erators. Finally, the Consistency Checker verifies whether the gen-erated pipeline faithfully implements the evaluation specifica-tion: 
+
+(bt , ut ) = αeval (ep, seval  
+
+> p
+
+,C), (11) where bt ∈ { 0, 1} indicates whether the pipeline passes the verification at iteration t, and ut denotes revision feedback. The verification process checks the consistency of evalua-tion settings, model configurations, filtering behavior, judging logic, and metric computation with respect to both the spec-ification and the original paper description. If bt = 0 , the revision feedback ut is returned to the Pipeline Composer for bounded refinement under the same contract C. This iterative process continues until the pipeline passes verification or the iteration budget is exhausted. By explicitly separating attack reproduction from evalua-tion reproduction, PixJail supports two complementary goals. The first is paper-matched reproduction , which aims to ap-proximate the experimental setup and main results reported in the original paper. The second is standardized evaluation ,which measures the relative effectiveness of different jailbreak methods under a unified benchmarking protocol. 
+
+Standardized Text-to-Image Evaluation Core. Algorithm 1 PixJail : Paper-to-Pipeline Synthesis 
+
+Require: Paper p, contract C, memory bank M , maximum audit rounds T , fidelity tolerance τ
+
+Ensure: Attack module mp, evaluation pipeline ep, fidelity gap ∆p, artifacts Ap 
+
+> 1:
+
+xp ← NormalizeToMD (p) 
+
+> 2:
+
+R ← RetrieveRepo (p) 
+
+> 3:
+
+hp ← RetrieveMemory (M , p) 
+
+> 4:
+
+mp ← ForgeAttack (xp,C, R, hp, T ) 
+
+> 5:
+
+ep ← ForgeEval (xp, mp,C, R, hp, T ) 
+
+> 6:
+
+Ap ← RunMatchedEval (mp, ep) 
+
+> 7:
+
+∆p ← ASR paper − ComputeASR (Ap) 
+
+> 8:
+
+if |∆p| > τ then  
+
+> 9:
+
+(m′p, e′p) ← RefineAndRebuild ( 
+
+> 10:
+
+xp, mp, ep,C, R, hp) 
+
+> 11:
+
+A′ 
+
+> p
+
+← RunMatchedEval (m′p, e′p) 
+
+> 12:
+
+∆′p ← ASR paper − ComputeASR (A′
+
+> p
+
+) 
+
+> 13:
+
+if |∆′p| ≤ | ∆p| then  
+
+> 14:
+
+mp ← m′p, ep ← e′p 
+
+> 15:
+
+Ap ← A′
+
+> p
+
+, ∆p ← ∆′p 
+
+> 16:
+
+end if  
+
+> 17:
+
+end if  
+
+> 18:
+
+M ← UpdateMemory (M , p, mp, ep, Ap) 
+
+> 19:
+
+return mp, ep, ∆p, Ap
+
+After synthesizing the attack module and evaluation pipeline, all methods are executed within a shared standard-ized evaluation core. Let D = {qi}Ni=1 denote a benchmark set of harmful tasks or malicious intents. Given an attack module mp and a victim T2I model Gv, the generated jailbreak prompt is defined as ˜qi = mp(qi; θp), (12) where θp ∈ Θ denotes the attack parameters under the paper-matched configuration. The victim model then generates an image 
+
+Ii = Gv( ˜qi). (13) To determine whether the generated sample constitutes a successful jailbreak, PixJail employs a multimodal judge J
+
+to assess whether the generated image satisfies the original harmful intent, together with a safety filter F to determine whether the sample is blocked or flagged by the target system. The success indicator for the i-th sample is therefore de-fined as 
+
+zi = 1[J(qi, ˜qi, Ii) ≥ τJ ∧ F(Ii) = 0] , (14) where τJ denotes the decision threshold of the judge, and 
+
+F(Ii) = 0 indicates that the generated image does not trigger the corresponding safety filter. The attack success rate (ASR) is then computed as ASR (p, v) = 1
+
+N
+
+> N
+
+# ∑
+
+> i=1
+
+zi. (15) Under the paper-matched setting, suppose the original pa-per reports an ASR paper . We quantify reproduction fidelity 4as 
+
+∆p = ASR paper − ASR gen , (16) where ASR gen is obtained by executing the reproduced pipeline under the matched evaluation protocol. Under the standardized evaluation setting, PixJail fixes a shared benchmark triplet (Dstd , Jstd , Fstd ) and reports the cross-method, cross-model evaluation matrix 
+
+Ap,v = ASR (p, v; Dstd , Jstd , Fstd ) . (17) This standardized protocol eliminates discrepancies aris-ing from heterogeneous datasets, judging procedures, and filtering criteria across papers, thereby enabling direct and reproducible comparison among different jailbreak methods. 
+
+3.4 Self-Evolving P IX JAIL -M EMORY Updates 
+
+To avoid reproducing each new paper from scratch, PixJail 
+
+introduces P IX JAIL -M EMORY as a cross-paper knowledge hub supporting retrieval, reuse, and continual refinement. The memory bank M stores structured summaries of prior pa-pers, an evolution graph of attack mechanisms derived from inter-paper relationships, reusable implementation templates, common failure patterns, and versioned historical artifacts. For a new paper p, the memory retrieval module identifies relevant attack families and retrieves their implementation experience, helping the Planner and Protocol Adapter con-struct attack and evaluation specifications efficiently. After each reproduction and evaluation round, PixJail writes the newly generated modules, pipelines, and artifacts back to the memory bank: 
+
+M ← UpdateMemory (M , p, mp, ep, Ap), (18) where Ap includes generated images, judge outputs, execution logs, intermediate prompts, configuration files, and failure cases. In addition, the Analyzer examines abnormal results and failed samples to produce revision suggestions. Instead of overwriting previous implementations, PixJail preserves ver-sioned attack modules and evaluation configurations, denoted as m(1) 
+
+> p
+
+, m(2) 
+
+> p
+
+, . . . , making the full paper-to-pipeline reproduc-tion trajectory auditable, traceable, and reproducible. 
+
+4 Experiments 4.1 Data, Models and Metrics 
+
+Data and Models. To evaluate the performance of the repro-duced code, we select four text-to-image generation models as victim models according to the specifications of the orig-inal papers, namely SDv1.4 [19], SDv1.5, SLD [28], and SDXL [17]. Regarding the datasets, our evaluation incorpo-rates the specific datasets utilized in each respective literature, which include NSFW-200 [31], MMA [30], VBCDE [2], and I2P [21]. These models and datasets are selected because they have been evaluated in the original or related literature, thereby ensuring the correctness of our implementation. 
+
+Metrics. For each prompt xi, we allow K attack attempts. Let 
+
+si,a ∈ { 0, 1} denote whether the a-th attempt succeeds. We compute ASR as: ASR-K = 1
+
+Nvalid 
+
+> Nvalid
+
+# ∑
+
+> i=1
+
+1
+
+" K
+
+# ∑
+
+> a=1
+
+si,a ≥ 1
+
+#
+
+. (19) Thus, ASR-1 uses K = 1, ASR-4 uses K = 4. For T2I safety-filter evaluation, let bi ∈ { 0, 1} indicate whether the generated image for prompt xi bypasses the safety filter. The bypass rate is BypassRate = 1
+
+Nvalid 
+
+> Nvalid
+
+# ∑
+
+> i=1
+
+bi. (20) When semantic consistency is required, an attempt is counted as successful only if it both bypasses the filter and satisfies the CLIP threshold: 
+
+si,a = 1 [bi,a = 1 ∧ CLIP (xi, yi,a) ≥ δ] , (21) where we use δ = 0.26 for all related works. 
+
+4.2 Implementation Details 
+
+We deploy eleven T2I jailbreak methods, including seven adapted from official repositories and four implemented from scratch. To ensure direct comparability and address discrep-ancies in existing assessments, we strictly adhere to the ex-act configurations, including datasets, models, and safety filters, specified in their respective papers. The system utilizes Gemini-3.1-Pro 1 as the planner, Claude-4.5-Sonnet 2 as the implementor, GPT-5.3-codex 3 as the auditor, and GPT-5.4 4
+
+as the analyzer. Given the extensive experimental requirements of T2I mod-els compared to text-to-text attacks, all generated evaluation code undergoes manual verification and LLM-assisted anal-ysis. This ensures the evaluations precisely conform to the source literature without extensions or omissions, minimizing discrepancies with the original implementations. 
+
+4.3 Main Results 
+
+Paper-Matched Reproduction Fidelity. We evaluate whether PixJail faithfully reproduces prior results under each paper’s original experimental setup, including datasets, mod-els, filters, attempts, judges, and metrics. For each method, we run the PixJail-generated attack module and evaluation pipeline, and compare the resulting attack success rate with the value reported in the original paper (Table 1). Overall, 
+
+PixJail achieves high-fidelity reproduction, with an average error of 2.1% and a median error of 0%. SneakyPrompt and JailFuzzer exactly match their reported bypass rates, while DiffZOO and Low-Effort show only 0.6% and 0.3% error, respectively. For the six code-available methods, the aver-age error is 1.2% and the maximum is 4.2%, demonstrating      
+
+> 1Developed by Google. See https://deepmind.google/models/gemini/ pro/
+> 2Developed by Anthropic. See https://www.anthropic.com/news/ claude-sonnet-4-5
+> 3Developed by OpenAI. See https://openai.com/zh-Hans-CN/index/ introducing-gpt-5-3-codex/
+> 4Developed by OpenAI. See https://openai.com/zh-Hans-CN/index/ introducing-gpt-5-5/
+
+5Paper (YYMM) / Attack Evaluation Setup Implementation Eval Metrics 
+
+Dataset Metric Code Ref Victim Model ρ paper gen ∆
+
+23-05 / SneakyPrompt [31] NSFW-200 Bypass Rate YES SDv1.4 -1075 100% 100% 023-11 / MMA-Diffusion [30] MMA ASR-1 YES SDv1.5 -619 54.2% 50.0% 4.2% 23-12 / DACA [2] VBCDE ASR-1 YES SDv1.4 +42 30% 28.3% 1.7% 24-03 / Ring-A-Bell [26] I2P ASR-1 YES SLD +72 93.7% 90.5% 3.2% 24-04 / JPA [13] I2P ASR-1 YES SLD +33 90.9% 91.1% -0.2% 24-08 / JailFuzzer [3] NSFW-200 Bypass Rate YES SDv1.4 -1309 100% 100% 024-12 / HTS [5] LAION-COCO Bypass Rate NO SDv1.4 - 81.5% 89.4% -7.9% 25-02 / DiffZOO [1] I2P ASR-1 YES SDv1.4 -877 59% 59.6% -0.6% 25-02 / PGJ [7] NSFW-200 ASR-1 NO SDXL - 100% 92.8% 7.2% 25-03 / R2A [33] I2P ASR-1 NO SDv1.4 - 90% 73.9% 16.1% 26-04 / Low-Effort [14] I2P ASR-4 NO SDv1.5 - 71.5% 71.8% -0.3%   
+
+> Table 1: Overview and replication fidelity of the eleven selected T2I jailbreak attack methods. The table categorizes methods by publication date and provides alignment details across evaluation datasets, core metrics, open-source code availability, and targeted victim models (e.g., Stable Diffusion variants). ρdenotes the the signed difference in lines of code (LoC) between the replicated code and the original open-source code. We report both our generated results ( gen ) and the original results ( paper ).
+
+that PixJail can effectively combine paper descriptions and reference code to reconstruct attack logic, model calls, filter settings, and metric computations. PGJ, R2A, and Low-Effort must be reconstructed primarily from paper text, making them vulnerable to hidden imple-mentation details, unstated hyperparameters, and subtle judge differences. PGJ shows a 7.2% error, while R2A reaches 16.1%, the largest deviation. These gaps reflect the sensitiv-ity of T2I jailbreak evaluation to system variables, such as prompt preprocessing, negative prompts, random seeds, sam-pler settings, safety-checker versions, and judge thresholds, rather than conceptual reproduction failures. These results show that PixJail turns T2I jailbreak papers into executable and auditable evaluation pipelines. Even when deviations arise, PixJail helps localize their sources through logs, con-figurations, and artifacts, reducing manual auditing effort and supporting more standardized future benchmarking. 
+
+Self-Evolving P IX JAIL -M EMORY Updates. To reduce the overhead of replicating new methodologies from scratch, Pix-Jail integrates P IX JAIL -M EMORY as a knowledge repository enabling retrieval, abstraction reuse, and continual refine-ment. Its memory bank M stores structured literature di-gests, attack evolution topologies, generic code templates, and versioned execution traces. To evaluate its efficacy, we conduct an ablation study on the JailFuzzer method, which shares an iterative optimization paradigm conceptually adja-cent to SneakyPrompt . We compare two configurations under identical environmental conditions: one with the P IX JAIL -MEMORY infrastructure deactivated ( w/o memory ) and the other fully activated ( w/ memory ). The synthesized source scripts are evaluated by GPT-5.5 [15] across three distinct axes using unbiased evaluation prompts, whose complete technical designs are cataloged in Section A. As shown in Table 2, the codebase generated with P IX JAIL -M EMORY outperforms the memory-isolated baseline across all dimensions: Functional Fidelity, Technical Correctness, and Reproducibility. Further-more, as illustrated in Figure 2, P IX JAIL -M EMORY maps an evolutionary hierarchy of existing T2I attack schemes by exe-cuting automated cross-literature semantic similarity profiles, thereby providing an intuitive structural roadmap to catalyze subsequent safety-auditing inquiries.           
+
+> Version Functional Fidelity (40%) Technical Correctness (30%) Reproducibility (30%) Final Score
+> w/o memory 8.7 8.0 7.6 8.16 w memory 9.4 9.0 8.8 9.10
+> Table 2: Ablation Study of PixJail-Memory
+
+Standardized Benchmark across T2I Victim Models. To address the difficulty of comparing prior studies due to vary-ing setups, we evaluate cross-model attack effectiveness under a unified protocol. We integrate the 9 PixJail-generated attack modules into a shared evaluation core (fixing datasets, envi-ronments, safety filters, and judges) across 4 victim models: SD v1.4 [19], SD v1.5, SDXL [17], and GPT-image-2 [16]. As shown in Table 3, attack effectiveness varies substan-tially across models. On open-source diffusion models, DACA and R2A are the strongest methods: DACA achieves 94.5%, 95.0%, and 96.7% ASR on SD v1.4, SD v1.5, and SDXL, while R2A consistently exceeds 91.7%. In contrast, SneakyPrompt, Ring-A-Bell, and JailFuzzer remain between 50% and 67%, indicating that bypassing specific safety blocks does not necessarily yield strong performance under a uni-fied protocol. Average ASR increases from 65.4% on SD v1.4 and 66.6% on SD v1.5 to 74.7% on SDXL, suggesting that stronger generation capability may enlarge the effective attack surface rather than improve safety robustness. By con-trast, GPT-image-2 is far more resistant: all eleven attacks fall below 4% ASR, and SneakyPrompt, DiffZOO, and PGJ achieve 0.0%. Nevertheless, the sparse successes of R2A, Ring-A-Bell, DACA, HTS, JPA and Low-Effort show that closed-source defenses are not fully immune. Overall, the standardized benchmark reveals trends hidden by paper-matched evaluation: attack success is highly sensi-tive to pipeline control and depends strongly on the victim model’s generation boundary. These results demonstrate that 6Figure 2: Evolution of the attack methods drawn by PixJail-Memory. 
+
+PixJail provides an executable and auditable ecosystem for practical T2I jailbreak risk evaluation. 
+
+Figure 3: Comparison of Methods’ Implementation Time 
+
+Reproduction Efficiency. We measure the efficiency of Pix-Jail in producing runnable pipelines. As detailed in Figure 3, 
+
+PixJail typically completes reproduction within a few audit iterations, averaging 2.56 iterations and 778 seconds across the eleven methods. Most methods require only two or three refinement rounds, proving that the planner–implementor– auditor workflow effectively mitigates execution errors and protocol mismatches. The engineering cost scales with com-plexity: template-based attacks like R2A and Low-Effort finish within 6–7 minutes, while search-intensive approaches like Ring-A-Bell and DiffZOO require extended synthesis and verification time due to specialized logic. Overall, PixJail 
+
+minimizes manual engineering overhead while tracking full audit trajectories through bounded loops. 
+
+5 Conclusion 
+
+We introduced PixJail , a self-evolving paper-to-pipeline framework for reproducible T2I jailbreak evaluation. Rather than generating standalone attack code, PixJail reconstructs                                                 
+
+> Jailbreak Method Victim Model SD1.4 SD1.5 SDXL GPT-image-2
+> SneakyPrompt 53.0% 54.7% 58.6% 0.0% MMA 60.3% 59.7% 52.7% 0.8% DACA 94.5% 95.0% 96.7% 2.4% Ring-A-Bell 49.7% 50.3% 60.2% 3.1% JailFuzzer 50.3% 55.2% 67.4% 1.1% DiffZOO 63.0% 59.1% 66.9% 0.0% PGJ 63.5% 69.6% 86.7% 0.0% R2A 92.3% 92.3% 91.7% 3.9% Low-Effort 62.2% 63.1% 91.1% 1.9% JPA 49.7% 50.0% 53.0% 3.3% HTS 64.1% 64.1% 75.7% 2.7%
+
+Table 3: Evaluation results of 11 jailbreak methods across 4 victim models. 
+
+the full evaluation workflow, spanning data loading, attack execution, model invocation, safety filtering, multimodal judg-ing, metric computation, and artifact management. Across 11 representative methods, PixJail achieves high-fidelity paper-matched reproduction, supports methods without available code, and integrates diverse attacks into a unified standardized benchmark. Our results show that T2I jailbreak evaluation is highly sensitive to victim models and protocol choices, high-lighting the need for executable, auditable, and consistently configured benchmarks. The memory ablation further demon-strates that historical reproduction experience can improve the fidelity and robustness of subsequent reproductions. Over-all, PixJail enables T2I jailbreak attacks to be evaluated in a more reproducible, comparable, and maintainable manner. More broadly, it provides a continuously evolving infrastruc-ture for future T2I safety research, helping advance generative model safety evaluation from fragmented reproduction toward systematic, standardized, and trustworthy benchmarking. 76 Limitations 
+
+Despite the efficacy and reproducibility demonstrated by Pix-Jail , several limitations remain to be addressed in future work. First, the current iteration of the evolution graph and mem-ory update mechanism relies heavily on prompt-based text matching and heuristic analysis. While P IX JAIL -M EMORY 
+
+successfully enhances code fidelity and avoids repeated fail-ure configurations for related families, it does not yet utilize an end-to-end dynamically trained graph neural model or fully automated schema alignment to capture deeper algorithmic commonalities. This constraint might restrict its self-evolving efficiency when a radically unprecedented T2I attack vector emerges in the literature. Second, the closed-source nature of state-of-the-art com-mercial safety filters restricts fully transparent white-box de-bugging. When evaluating platforms such as GPT-image-2, 
+
+PixJail can only treat the safety responses as black-box sig-nals ( F(Ii) = 1 or 0). Consequently, when a reproduction gap occurs on closed-source systems, the system-level Analyzer must infer the root causes via black-box behavior tracking rather than accessing localized internal gradients or visual tokens, which bounds the diagnostic resolution for closed-source ecosystems. 
+
+7 Ethical Considerations 
+
+This paper investigates text-to-image jailbreak methods from the perspective of reproducible evaluation and safety auditing. The purpose of PixJail is not to encourage or facilitate attacks against generative models, but to make existing jailbreak risks measurable, comparable, and better understood. Since prior studies often evaluate attacks under different datasets, victim models, safety filters, judges, and metrics, it is difficult to assess which vulnerabilities remain under a unified protocol. Our framework addresses this gap by standardizing the re-production and benchmarking process, which can support the development of stronger defenses. All experiments are conducted in a controlled research environment. We report aggregate attack success rates and analysis results to character-ize model vulnerabilities, rather than presenting the work as a practical guide for misuse. The intended use of this research is to help model developers, safety researchers, and the broader community audit text-to-image systems, identify weaknesses in existing safeguards, and improve the robustness of future safety mechanisms. 
+
+References 
+
+[1] Pucheng Dang, Xing Hu, Dong Li, Rui Zhang, Qi Guo, and Kaidi Xu. Diffzoo: A purely query-based black-box attack for red-teaming text-to-image generative model via zeroth order optimization, 2025. 6 [2] Yimo Deng and Huangxun Chen. Harnessing llm to attack llm-guarded text-to-image models, 2024. 5, 6 [3] Yingkai Dong, Xiangtao Meng, Ning Yu, Zheng Li, and Shanqing Guo. Fuzz-testing meets llm-based agents: An automated and efficient framework for jailbreaking text-to-image generation models. In 2025 IEEE Symposium on Security and Privacy (SP) , pages 373–391. IEEE, 2025. 2, 6 [4] Zhicheng Fang, Jingjie Zheng, Chenxu Fu, and Wei Xu. Jailbreak foundry: From papers to runnable at-tacks for reproducible benchmarking. arXiv preprint arXiv:2602.24009 , 2026. 1, 2 [5] Sensen Gao, Xiaojun Jia, Yihao Huang, Ranjie Duan, Jindong Gu, Yang Bai, Yang Liu, and Qing Guo. Hts-attack: Heuristic token search for jailbreaking text-to-image models, 2024. 6 [6] Alireza Ghafarollahi and Markus J. Buehler. Sciagents: Automating scientific discovery through multi-agent in-telligent graph reasoning, 2024. 2 [7] Yihao Huang, Le Liang, Tianlin Li, Xiaojun Jia, Run Wang, Weikai Miao, Geguang Pu, and Yang Liu. Perception-guided jailbreak against text-to-image mod-els, 2025. 6 [8] Zhengyuan Jiang, Yuepeng Hu, Yuchen Yang, Yinzhi Cao, and Neil Zhenqiang Gong. Jailbreaking safe-guarded text-to-image models via large language mod-els. In Findings of the Association for Computational Linguistics: EACL 2026 , pages 4669–4684, 2026. 2 [9] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. Swe-bench: Can language models resolve real-world github issues?, 2024. 2 [10] Xiaolong Jin, Zixuan Weng, Hanxi Guo, Chenlong Yin, Siyuan Cheng, Guangyu Shen, and Xiangyu Zhang. Jailbreakdiffbench: A comprehensive benchmark for jailbreaking diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vi-sion , pages 16461–16471, 2025. 1 [11] Xuannan Liu, Xing Cui, Peipei Li, Zekun Li, Huaibo Huang, Shuhan Xia, Miaoxuan Zhang, Yueying Zou, and Ran He. Jailbreak attacks and defenses against multimodal generative models: A survey. arXiv preprint arXiv:2411.09259 , 2024. 1, 2 [12] Chris Lu, Cong Lu, Robert Tjarko Lange, Jakob Foerster, Jeff Clune, and David Ha. The ai scientist: Towards fully automated open-ended scientific discovery. arXiv preprint arXiv:2408.06292 , 2024. 2 [13] Jiachen Ma, Yijiang Li, Zhiqing Xiao, Anda Cao, Jie Zhang, Chao Ye, and Junbo Zhao. Jailbreaking prompt attack: A controllable adversarial attack against diffu-sion models. arXiv preprint arXiv:2404.02928 , 2024. 6[14] Ahmed B Mustafa, Zihan Ye, Yang Lu, Michael P Pound, and Shreyank N Gowda. Low-effort jailbreak attacks against text-to-image safety filters, 2026. 6 [15] OpenAI. Gpt-5 technical report: Advanced reasoning and analysis. https://www.openai.com/ , 2026. Ac-cessed: 2026-05. 6 8[16] OpenAI. Introducing ChatGPT Images 2.0. 
+
+https://openai.com/index/introducing-chatgpt-images-2-0/ , 2026. Accessed: 2026-05-26. 6 [17] Dustin Podell, Zion English, Kyle Lacey, Andreas Blattmann, Tim Dockhorn, Jonas Müller, Joe Penna, and Robin Rombach. Sdxl: Improving latent diffusion models for high-resolution image synthesis, 2023. 5, 6 [18] Shuo Ren, Can Xie, Pu Jian, Zhenjiang Ren, Chunlin Leng, and Jiajun Zhang. Towards scientific intelligence: A survey of llm-based scientific agents, 2026. 2 [19] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10684–10695, 2022. 1, 5, 6 [20] Samuel Schmidgall, Yusheng Su, Ze Wang, Ximeng Sun, Jialian Wu, Xiaodong Yu, Jiang Liu, Michael Moor, Zicheng Liu, and Emad Barsoum. Agent laboratory: Using llm agents as research assistants. Findings of the Association for Computational Linguistics: EMNLP 2025 , pages 5977–6043, 2025. 2 [21] Patrick Schramowski, Manuel Brack, Björn Deiseroth, and Kristian Kersting. Safe latent diffusion: Mitigating inappropriate degeneration in diffusion models. In Pro-ceedings of the IEEE/CVF conference on computer vi-sion and pattern recognition , pages 22522–22531, 2023. 1, 5 [22] Minju Seo, Jinheon Baek, Seongyun Lee, and Sung Ju Hwang. Paper2code: Automating code generation from scientific papers in machine learning. arXiv preprint arXiv:2504.17192 , 2025. 2 [23] Zachary S Siegel, Sayash Kapoor, Nitya Nagdir, Benedikt Stroebl, and Arvind Narayanan. Core-bench: Fostering the credibility of published research through a computational reproducibility agent benchmark. arXiv preprint arXiv:2409.11363 , 2024. 2 [24] Giulio Starace, Oliver Jaffe, Dane Sherburn, James Aung, Jun Shern Chan, Leon Maksin, Rachel Dias, Evan Mays, Benjamin Kinsella, Wyatt Thompson, et al. Pa-perbench: Evaluating ai’s ability to replicate ai research. 
+
+arXiv preprint arXiv:2504.01848 , 2025. 2 [25] Zhen Sun, Zongmin Zhang, Deqi Liang, Han Sun, Yule Liu, Yun Shen, Xiangshan Gao, Yilong Yang, Shuai Liu, Yutao Yue, et al. "To Survive, I Must Defect": Jailbreaking llms via the game-theory scenarios. arXiv preprint arXiv:2511.16278 , 2025. 2 [26] Yu-Lin Tsai, Chia-Yi Hsu, Chulin Xie, Chih-Hsun Lin, Jia You Chen, Bo Li, Pin-Yu Chen, Chia-Mu Yu, and Chun-Ying Huang. Ring-a-bell! how reliable are con-cept removal methods for diffusion models? In Interna-tional Conference on Learning Representations , volume 2024, pages 41543–41554, 2024. 2, 6 [27] Zilong Wang, Xiang Zheng, Xiaosen Wang, Bo Wang, and Xingjun Ma. Genbreak: Red teaming text-to-image generation using large language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15730–15739, 2026. 2 [28] Tsung-Han Wu, Long Lian, Joseph E. Gonzalez, Boyi Li, and Trevor Darrell. Self-correcting llm-controlled diffusion models, 2023. 5 [29] Ling Yang, Zhilong Zhang, Yang Song, Shenda Hong, Runsheng Xu, Yue Zhao, Wentao Zhang, Bin Cui, and Ming-Hsuan Yang. Diffusion models: A comprehensive survey of methods and applications. ACM computing surveys , 56(4):1–39, 2023. 1 [30] Yijun Yang, Ruiyuan Gao, Xiaosen Wang, Tsung-Yi Ho, Nan Xu, and Qiang Xu. Mma-diffusion: Multi-modal attack on diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 7737–7746, 2024. 1, 2, 5, 6 [31] Yuchen Yang, Bo Hui, Haolin Yuan, Neil Gong, and Yinzhi Cao. Sneakyprompt: Jailbreaking text-to-image generative models. In 2024 IEEE symposium on security and privacy (SP) , pages 897–912. IEEE, 2024. 1, 2, 5, 6 [32] Sibo Yi, Yule Liu, Zhen Sun, Tianshuo Cong, Xinlei He, Jiaxing Song, Ke Xu, and Qi Li. Jailbreak attacks and defenses against large language models: A survey. 
+
+arXiv preprint arXiv:2407.04295 , 2024. 1, 2 [33] Chenyu Zhang, Lanjun Wang, Yiwen Ma, Wenhui Li, and An-An Liu. Reason2attack: Jailbreaking text-to-image models via llm reasoning, 2025. 6 [34] Chenyu Zhang, Tairen Zhang, Lanjun Wang, Ruidong Chen, Wenhui Li, and Anan Liu. T2i-riskyprompt: A benchmark for safety evaluation, attack, and defense on text-to-image model. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, pages 36039–36047, 2026. 2 [35] Ziyi Zhang, Zhen Sun, Zongmin Zhang, Jihui Guo, and Xinlei He. Fc-attack: Jailbreaking multimodal large language models via auto-generated flowcharts. arXiv preprint ArXiv:2502.21059 , 2025. 2 [36] Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J Zico Kolter, and Matt Fredrikson. Universal and trans-ferable adversarial attacks on aligned language models. 
+
+arXiv preprint arXiv:2307.15043 , 2023. 2 
+
+A Prompt Design 
+
+To ensure an unbiased, rigorous, and reproducible evaluation of the code generated from research papers, we developed a structured evaluation protocol for the Large Language Model (LLM). Rather than allowing the LLM to assign arbitrary scores, we implement an Anchor-based Scoring Rubric 
+
+across three fundamental technical dimensions. This multi-dimensional scoring mechanism ensures that functional alignment with mathematical formulas, program-matic correctness, and experimental reproducibility are de-coupled and evaluated objectively. 9A.1 Evaluation Criteria and Scoring Anchors 
+
+Table 4 outlines the specific evaluation criteria and the cal-ibrated behavioral anchors used by the LLM to determine scores from 1 to 10. 
+
+B Responsible AI Assessment: Artifacts B.1 Discussion of Licenses and Terms of Use 
+
+In this work, we responsibly utilize several publicly available artifacts, including datasets, text-to-image foundation mod-els, and evaluation backbones. We strictly adhere to their respective original licenses and terms of use: • Datasets: The I2P (Inappropriate Image Prompts) and 
+
+NSFW-200 benchmarks are utilized strictly for non-commercial academic research focusing on safety evalu-ation and red-teaming, aligned with their initial distribu-tion terms. • Victim T2I Models: The open-source diffusion models, including Stable Diffusion v1.4 , v1.5 , and SDXL , are gov-erned by the CreativeML Open RAIL-M and CreativeML Open RAIL++-M licenses. Our empirical evaluation complies with their acceptable use policies, which explic-itly encourage safety auditing and alignment research. • Commercial Models: Our evaluation on closed-source APIs (e.g., GPT-image-2) was conducted through stan-dard research API access in strict compliance with the OpenAI Terms of Use and usage policies. • Our Framework ( PixJail ): To foster reproducibility in AI safety research, the complete codebase of PixJail ,including the generated attack modules and evaluation pipelines, will be open-sourced under the Apache Li-cense 2.0 upon the acceptance of this paper. 
+
+B.2 Documentation of Artifacts 
+
+To ensure comprehensive transparency, we provide detailed documentation regarding the domains, languages, and charac-teristics of the artifacts used in our evaluation: • Domain Coverage: The benchmarks used ( I2P , NSFW-200 , and MMA ) specifically target critical safety domains. These encompass sexually explicit content (NSFW), vio-lence, hate speech, illegal acts, harassment, and policy-violating visual concepts. • Linguistic and Language Profile: The prompt transfor-mation algorithms and dataset instances evaluated in this study are primarily centered on the English language. This choice is dictated by the native pre-training distribu-tion of the primary target models (Stable Diffusion and GPT-image-2). • Linguistic Phenomena: The attack modules evaluate complex linguistic perturbations, including token-level obfuscation (e.g., SneakyPrompt ), multi-modal concep-tual evasion (e.g., MMA ), stylistic wrapper mutations (e.g., JailFuzzer ), and low-effort prompt variations. • Demographic Representation: Since the datasets con-sist of synthetically curated or crowd-sourced toxic text prompts designed for safety boundary testing, they do not contain sensitive personal data or demographic iden-tifiers. However, we note that the underlying visual representations generated by the victim models may in-herit the cultural and demographic biases present in their massive pre-training web-crawl data (e.g., LAION). 
+
+B.3 Model Size, Computational Budget, and Infrastructure (Item C1) 
+
+To ensure full transparency regarding computational resource consumption, we summarize our modeling parameters and hardware requirements below: • Model Sizes (Parameters): The text-to-image victim models evaluated include Stable Diffusion v1.4/v1.5 
+
+(∼980M parameters) and SDXL (∼6.6B total param-eters, including base and refiner). The parameters of the API-based target ( GPT-image-2 ) are proprietary and commercially undisclosed. • Computing Infrastructure: All execution pipelines, automated agent loops ( framework), and diffusion gen-eration experiments were hosted on a local computing cluster equipped with NVIDIA A100 (80GB) GPUs and AMD EPYC CPUs. • Computational Budget: The overall reproduction and benchmarking lifecycle required approximately 48 GPU hours in total. This budget encompasses initial frame-work testing, 2.56 average agent audit iterations per pa-per, and the final standardized evaluation matrix across 4 victim models. 10 Table 4: Multi-Dimensional Alignment Rubric and Score Anchors Dimension Score Range Behavioral Anchor Description 
+
+9–10 (Perfect) Every core equation and tensor operation matches the paper notation perfectly. 
+
+Functional Fidelity 7–8 (Good) Core logic is correct; minor undocumented heuristics or misaligned naming. (Weight: 40%) 4–6 (Fair) Crucial equations or structural components (e.g., residual blocks) are missing. 1–3 (Poor) Severe mismatches; falls back to a generic baseline rather than the proposed method. 9–10 (Perfect) Flawless syntax, precise dimension matching, proper hardware allocation (CUDA). 
+
+Technical Correctness 7–8 (Good) Syntactically sound, but contains implicit risks (e.g., hardcoded matrix dims). (Weight: 30%) 4–6 (Fair) Explicit logical/syntax errors, shape mismatches requiring manual debugging. 1–3 (Poor) Broken execution architecture, infinite loops, or invalid dependencies. 9–10 (Perfect) Includes hyperparameter setups, loss curves, training loops, and seed controls. 
+
+Reproducibility 7–8 (Good) Correct model and loss, but leaves out default configs or inference pipelines. (Weight: 30%) 4–6 (Fair) Only implements a forward pass or isolated module; missing training loop. 1–3 (Poor) Bare skeleton code with no meaningful environment or configuration metadata. 
+
+11
