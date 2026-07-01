@@ -1,136 +1,89 @@
 {
-  "generated_at": "2026-06-30T22:10:41.945622+00:00",
-  "updated_date": "20260630",
+  "generated_at": "2026-07-01T20:58:18.468876+00:00",
+  "updated_date": "20260701",
   "carryover_days": 9,
   "tag_states": {
     "opd": {
-      "updated_date": "20260630",
-      "carryover_days": 9,
-      "items": []
-    },
-    "l-context-rl": {
-      "updated_date": "20260630",
-      "carryover_days": 9,
-      "items": []
-    },
-    "ai-safety": {
-      "updated_date": "20260630",
+      "updated_date": "20260701",
       "carryover_days": 9,
       "items": [
         {
-          "id": "2606.29649v1",
+          "id": "2606.29863v1",
           "source": "arxiv",
-          "title": "Resolution Thresholds in VLM Detection of Harmful ASCII Art Across Construction Modes and Languages",
-          "abstract": "Large Vision-Language Models (VLMs) are increasingly deployed as content moderation tools, yet they remain vulnerable to jailbreak attacks in which harmful text is visually encoded as ASCII art. This can allow inappropriate or harmful content to bypass moderation systems. To address this vulnerability, this paper investigates how image resolution affects VLM detection of harmful ASCII art across eight character construction modes (L1-L8), ranging from dense block characters to word-embedded designs. We evaluate eight state-of-the-art VLMs on English and Chinese corpora using a pipeline that generates ASCII art images at ten resolution scales, probing whether a consistent detection-failure threshold exists across models, modes, and languages. Results indicate that detection rates decline sharply above certain resolution thresholds, and that word-based modes are the most resistant to detection across the full resolution range. These findings reveal a systematic vulnerability in VLM-based content moderation systems and motivate resolution-aware evaluation standards.",
+          "title": "KbSD: Knowledge Boundary aware Self-Distillation for Behavioral Calibration in Agentic Search",
+          "abstract": "Agentic search equips large language models with dynamic retrieval abilities, but existing reinforcement learning methods remain limited by reward sparsity in knowledge boundary calibration -- deciding when to trust parametric memory, when to rely on retrieved evidence, and when to abstain. Binary rewards can penalize undesirable outcomes, but provide little guidance on the reasoning process required to make calibrated decisions across different knowledge states. To address this, we propose KbSD (Knowledge boundary Self-Distillation), a framework that tackles this limitation through dense token-level supervision, outcome-level sparse rewards, and quadrant-adaptive optimization. KbSD constructs a hint-augmented teacher, architecturally identical to the student, that receives explicit knowledge boundary signals -- including parametric certainty, retrieval quality, and ground-truth answers -- to generate calibrated reasoning demonstrations. This information-asymmetric self-distillation enables dense supervision without requiring a larger external model. To further account for the heterogeneous reasoning distributions across knowledge states, we introduce a quadrant-adaptive distillation objective: reverse KL for concentrated integration, forward KL for diverse refusal, and Pareto-optimal bidirectional KL for asymmetric quadrants requiring both precision and coverage. Experiments on multiple benchmarks show that KbSD consistently improves both task accuracy and hallucination mitigation over strong baselines, with the largest gains appearing in the challenging quadrants where sparse rewards are least informative.",
           "authors": [
-            "Yikai Hua",
-            "Peter West"
+            "Tao Feng",
+            "Xinke Jiang",
+            "Chao Wu"
           ],
           "primary_category": "cs.CL",
           "categories": [
             "cs.CL"
           ],
-          "published": "2026-06-28T23:36:52+00:00",
-          "link": "https://arxiv.org/pdf/2606.29649v1",
+          "published": "2026-06-29T06:56:18+00:00",
+          "link": "https://arxiv.org/pdf/2606.29863v1",
           "tags": [
             "keyword:ai-safety",
-            "query:ai-safety"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "jailbreak via ASCII art and detection threshold analysis",
-          "llm_evidence_cn": "通过ASCII艺术进行越狱攻击及检测阈值分析",
-          "llm_evidence": "通过ASCII艺术进行越狱攻击及检测阈值分析",
-          "canonical_evidence": "通过ASCII艺术进行越狱攻击及检测阈值分析",
-          "llm_tldr_en": "Investigates how image resolution affects VLM detection of harmful ASCII art, revealing a consistent detection-failure threshold across models and languages.",
-          "llm_tldr_cn": "该论文针对大视觉语言模型（VLM）内容审核的漏洞，研究了图像分辨率对检测有害ASCII艺术的影响。通过八种字符构造模式和两种语言，在十种分辨率尺度下评估了八个VLM，发现存在一致的检测失败阈值。实验表明，特定分辨率下有害内容可轻易绕过审核，为越狱攻击提供了新的维度。",
-          "llm_tldr": "该论文针对大视觉语言模型（VLM）内容审核的漏洞，研究了图像分辨率对检测有害ASCII艺术的影响。通过八种字符构造模式和两种语言，在十种分辨率尺度下评估了八个VLM，发现存在一致的检测失败阈值。实验表明，特定分辨率下有害内容可轻易绕过审核，为越狱攻击提供了新的维度。",
-          "llm_tags": [
-            "query:ai-safety"
-          ],
-          "matched_query_tag": "query:ai-safety",
-          "matched_query_text": "jailbreak attacks and defenses",
-          "matched_requirement_id": "req-21",
-          "selection_source": "carryover_cache",
-          "paper_id": "2606.29649v1",
-          "carry_days": 1
-        }
-      ]
-    },
-    "eff-reason": {
-      "updated_date": "20260630",
-      "carryover_days": 9,
-      "items": [
-        {
-          "id": "2606.29712v1",
-          "source": "arxiv",
-          "title": "Why Struggle with Continuous Latents? Interpretable Discrete Latent Reasoning via Rendered Compression",
-          "abstract": "Large language models achieve high reasoning performance via explicit chain-of-thought and reinforcement learning, but require long output sequences and extended inference time. Latent reasoning reduces this cost by shifting computation into a latent space; however, continuous latent methods are hard to train, suffering from unstable and uninterpretable reasoning trajectories. We argue these issues stem from a misalignment between continuous-space reasoning and discrete symbolic supervision, as continuous states lack explicit anchors for step-by-step alignment. To resolve this, we propose \\textbf{Discrete Latent Reasoning~(DLR)}, the first method that converts continuous latent states into explicit discrete tokens. Inspired by render-based compression, we render textual chains of thought into images, extract visual features, and construct a discrete latent vocabulary via clustering-based fine-tuning. Expanding the vocabulary and output head enables standard autoregressive modeling over both natural language and latent tokens, supporting pretraining alignment, SFT, and RL. Experiments on five reasoning benchmarks and two model series~(Qwen3-VL and LLaMA-3) confirm that \\textbf{DLR} outperforms prior latent reasoning baselines with up to \\textbf{20$\\times$ compression}. Furthermore, the learned latent trajectories retain an interpretable semantic structure. Overall, discrete latent tokens provide a controllable and interpretable basis for efficient latent reasoning.",
-          "authors": [
-            "Shuochen Chang",
-            "Qingyang Liu",
-            "Shaobo Wang",
-            "Bingjie Gao",
-            "Qianli Ma",
-            "Haonan Zhao",
-            "Yibo Miao",
-            "Yulin Sun",
-            "Zelin Peng",
-            "Jiangtong Li",
-            "Li Niu"
-          ],
-          "primary_category": "cs.CL",
-          "categories": [
-            "cs.CL"
-          ],
-          "published": "2026-06-29T02:34:52+00:00",
-          "link": "https://arxiv.org/pdf/2606.29712v1",
-          "tags": [
             "keyword:eff-reason",
             "keyword:l-context-rl",
             "keyword:opd",
+            "query:ai-safety",
             "query:eff-reason",
             "query:l-context-rl",
             "query:opd"
           ],
           "llm_score": 8.0,
-          "llm_evidence_en": "improving reasoning efficiency via discrete latent reasoning, reducing long output sequences",
-          "llm_evidence_cn": "通过离散潜在推理提高推理效率，减少长输出序列",
-          "llm_evidence": "通过离散潜在推理提高推理效率，减少长输出序列",
-          "canonical_evidence": "通过离散潜在推理提高推理效率，减少长输出序列",
-          "llm_tldr_en": "Proposes Discrete Latent Reasoning (DLR) that converts continuous latents into discrete tokens for stable and interpretable latent reasoning, reducing inference cost.",
-          "llm_tldr_cn": "该论文指出现有连续潜在推理方法面临训练不稳定和推理轨迹不可解释的问题，源于连续空间与离散监督的对齐缺失。提出离散潜在推理（DLR），将连续潜在状态显式转化为离散token，从而利用大语言模型的离散推理能力。实验表明，DLR在多个推理任务上实现了更高的效率与可解释性，同时缩短了推理序列长度，显著降低了计算开销。",
-          "llm_tldr": "该论文指出现有连续潜在推理方法面临训练不稳定和推理轨迹不可解释的问题，源于连续空间与离散监督的对齐缺失。提出离散潜在推理（DLR），将连续潜在状态显式转化为离散token，从而利用大语言模型的离散推理能力。实验表明，DLR在多个推理任务上实现了更高的效率与可解释性，同时缩短了推理序列长度，显著降低了计算开销。",
+          "llm_evidence_en": "self-distillation for knowledge boundary calibration in agentic search",
+          "llm_evidence_cn": "基于自蒸馏的知识边界校准方法",
+          "llm_evidence": "基于自蒸馏的知识边界校准方法",
+          "canonical_evidence": "基于自蒸馏的知识边界校准方法",
+          "llm_tldr_en": "KbSD uses dense token-level supervision and outcome-level sparse rewards with quadrant-adaptive optimization to calibrate when to trust parametric memory, retrieval, or abstain.",
+          "llm_tldr_cn": "智能体搜索中强化学习面临奖励稀疏的问题，难以校准知识边界。KbSD通过密集令牌级监督、结果级稀疏奖励和象限自适应优化，构建增强提示的教师模型，有效指导模型在不同知识状态下做出校准决策。",
+          "llm_tldr": "智能体搜索中强化学习面临奖励稀疏的问题，难以校准知识边界。KbSD通过密集令牌级监督、结果级稀疏奖励和象限自适应优化，构建增强提示的教师模型，有效指导模型在不同知识状态下做出校准决策。",
           "llm_tags": [
-            "query:eff-reason"
+            "query:opd"
           ],
-          "matched_query_tag": "query:eff-reason",
-          "matched_query_text": "efficient reasoning methods",
-          "matched_requirement_id": "req-24",
+          "matched_query_tag": "query:opd",
+          "matched_query_text": "on policy knowledge distillation methods",
+          "matched_requirement_id": "req-9",
           "selection_source": "carryover_cache",
-          "paper_id": "2606.29712v1",
+          "paper_id": "2606.29863v1",
           "carry_days": 1
-        },
+        }
+      ]
+    },
+    "l-context-rl": {
+      "updated_date": "20260701",
+      "carryover_days": 9,
+      "items": []
+    },
+    "ai-safety": {
+      "updated_date": "20260701",
+      "carryover_days": 9,
+      "items": [
         {
-          "id": "2606.29424v1",
+          "id": "2606.31320v1",
           "source": "arxiv",
-          "title": "EntroRouter: Learning Efficient Model Routing via Entropy Regulation",
-          "abstract": "Model routing balances solution accuracy and computational cost by selecting among models of varying capabilities. While recent multi-round frameworks interleave reasoning and planning, we identify a structural failure mode termed Trust Region Collapse. We demonstrate that the deep coupling of reasoning and routing, exacerbated by the dominance of strong pre-training priors under sparse supervision, leads to degenerate local optima where capable experts are systematically suppressed. To decouple these processes, we propose $\\textbf{EntroRouter}$, a single-round routing framework that treats entropy regulation as a core objective. We first initialize the policy via Soft Supervision, fitting a distribution of suitable models to establish a high-entropy prior for exploration. Subsequently, we stabilize Reinforcement Learning using a Soft Anchor, which utilizes offline capability estimates to orchestrate controlled entropy contraction within a safe trust region. Extensive experiments demonstrate that EntroRouter retains 98.3% of the strongest expert's accuracy while reducing computational costs by 48.25%.",
+          "title": "Safe Online Learning via Smooth Safety-Structured Policy Composition",
+          "abstract": "Safe online reinforcement learning requires policies to respect safety constraints while maintaining smooth optimization dynamics. Existing approaches typically rely on either strict safety enforcement via action interventions, which introduce discontinuities in system interaction and learning, or soft safety constraint formulations, which preserve smooth learning but provide limited safety assurance. We propose AutoSafe, a safety-aware policy architecture that integrates structured safety monitoring and intervention directly into the action generation process. This design enables smooth, risk-dependent transitions between performance-driven and safety-preserving behaviors, resulting in continuous online interaction and learning dynamics. Empirical results across a suite of continuous-control benchmarks demonstrate strong safety enforcement without sacrificing learning smoothness. We further validate AutoSafe on a physical cart-pole system, highlighting its practical effectiveness for safe online learning in the real world.",
           "authors": [
-            "Kaiyi Zhang",
-            "Xueliang Zhao",
-            "Zhuocheng Gong",
-            "Wei Wu",
-            "Yankai Lin"
+            "Hongpeng Cao",
+            "Liqun Zhao",
+            "Yuliang Gu",
+            "Naira Hovakimyan",
+            "Lui Sha",
+            "Marco Caccamo"
           ],
-          "primary_category": "cs.CL",
+          "primary_category": "cs.LG",
           "categories": [
-            "cs.CL"
+            "cs.LG",
+            "cs.RO"
           ],
-          "published": "2026-06-28T14:39:06+00:00",
-          "link": "https://arxiv.org/pdf/2606.29424v1",
+          "published": "2026-06-30T08:26:50+00:00",
+          "link": "https://arxiv.org/pdf/2606.31320v1",
           "tags": [
             "keyword:ai-safety",
-            "keyword:eff-reason",
             "keyword:l-context-rl",
             "keyword:opd",
             "query:ai-safety",
@@ -138,24 +91,70 @@
             "query:opd"
           ],
           "llm_score": 8.0,
-          "llm_evidence_en": "model routing for efficient inference via entropy regulation",
-          "llm_evidence_cn": "通过熵调节实现高效模型路由",
-          "llm_evidence": "通过熵调节实现高效模型路由",
-          "canonical_evidence": "通过熵调节实现高效模型路由",
-          "llm_tldr_en": "EntroRouter uses entropy regulation to learn efficient model routing, balancing accuracy and cost, avoiding trust region collapse.",
-          "llm_tldr_cn": "论文提出EntroRouter框架，利用熵调节作为核心目标学习高效模型路由，解决多轮路由中的信任区域坍缩问题。通过软监督初始化策略，建立高熵先验，有效抑制了强预训练先验在稀疏监督下对专家模型的系统性压制，从而在保持准确性的同时降低计算成本。",
-          "llm_tldr": "论文提出EntroRouter框架，利用熵调节作为核心目标学习高效模型路由，解决多轮路由中的信任区域坍缩问题。通过软监督初始化策略，建立高熵先验，有效抑制了强预训练先验在稀疏监督下对专家模型的系统性压制，从而在保持准确性的同时降低计算成本。",
+          "llm_evidence_en": "safe online RL via smooth safety-structured policy composition",
+          "llm_evidence_cn": "通过平滑安全结构化策略组合实现安全在线强化学习",
+          "llm_evidence": "通过平滑安全结构化策略组合实现安全在线强化学习",
+          "canonical_evidence": "通过平滑安全结构化策略组合实现安全在线强化学习",
+          "llm_tldr_en": "Proposes AutoSafe, a safety-aware policy architecture that integrates structured safety monitoring into action generation for smooth, risk-dependent safe online RL.",
+          "llm_tldr_cn": "本文针对在线强化学习中的安全约束问题，提出AutoSafe策略架构。该架构将结构化安全监控直接集成到动作生成过程中，实现性能驱动与安全保护行为的平滑、风险依赖切换。实验表明，AutoSafe在保持连续学习动态的同时，有效保证了在线交互中的安全性，为安全强化学习提供了新的设计范式。",
+          "llm_tldr": "本文针对在线强化学习中的安全约束问题，提出AutoSafe策略架构。该架构将结构化安全监控直接集成到动作生成过程中，实现性能驱动与安全保护行为的平滑、风险依赖切换。实验表明，AutoSafe在保持连续学习动态的同时，有效保证了在线交互中的安全性，为安全强化学习提供了新的设计范式。",
           "llm_tags": [
-            "query:eff-reason"
+            "query:ai-safety"
           ],
-          "matched_query_tag": "query:eff-reason",
-          "matched_query_text": "efficient reasoning methods",
-          "matched_requirement_id": "req-24",
+          "matched_query_tag": "query:ai-safety",
+          "matched_query_text": "agent safety",
+          "matched_requirement_id": "req-14",
           "selection_source": "carryover_cache",
-          "paper_id": "2606.29424v1",
+          "paper_id": "2606.31320v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.29960v1",
+          "source": "arxiv",
+          "title": "IHDec: Divergence-Steered Contrastive Decoding for Securing Multi-Turn Instruction Hierarchies",
+          "abstract": "Large Language Models (LLMs) often fail to maintain instruction hierarchies (IH) when processing multi-source inputs with varying role-level priorities, paradoxically adhering to lower-priority directives during conflicts. While existing defenses mitigate this issue, they are largely restricted to single-turn scenarios and require expensive fine-tuning. In this paper, we formalize this failure mode in multi-turn contexts via a Jensen-Shannon Divergence (JSD) framework, uncovering a pervasive role-influence inversion phenomenon where subordinate inputs override superior roles. To rectify this without training, we propose IHDec (Instruction Hierarchy-steered Decoding). IHDec leverages JSD to automatically detect token-level hierarchy violations and dynamically executes contrastive decoding to suppress misaligned subordinate roles. Extensive evaluations demonstrate that IHDec outperforms training-based baselines in multi-turn conflicts while fully preserving general response quality. Furthermore, IHDec strengthens safety against adversarial prompt injections and exhibits a robust scaling synergy with larger models. The Code is available at https://github.com/nxcolelxu/IHDec.git",
+          "authors": [
+            "Nicole Geumheon Liu",
+            "Haeun Jang",
+            "Yonghyun Jun",
+            "Hwanhee Lee"
+          ],
+          "primary_category": "cs.CL",
+          "categories": [
+            "cs.CL"
+          ],
+          "published": "2026-06-29T08:37:25+00:00",
+          "link": "https://arxiv.org/pdf/2606.29960v1",
+          "tags": [
+            "keyword:ai-safety",
+            "keyword:l-context-rl",
+            "query:ai-safety",
+            "query:l-context-rl"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "contrastive decoding defense for multi-turn instruction hierarchy",
+          "llm_evidence_cn": "用于多轮指令层级安全的对比解码防御",
+          "llm_evidence": "用于多轮指令层级安全的对比解码防御",
+          "canonical_evidence": "用于多轮指令层级安全的对比解码防御",
+          "llm_tldr_en": "IHDec is a training-free defense that uses Jensen-Shannon divergence to detect and correct role-influence inversion in multi-turn instruction hierarchies.",
+          "llm_tldr_cn": "大语言模型在多源输入中常违反指令层级，优先执行低优先级指令。IHDec通过Jensen-Shannon散度检测token级层级违规，并在解码时进行纠正，无需微调即可提升多轮对话中的指令遵守安全。实验证明该方法有效恢复了正确的指令层级。",
+          "llm_tldr": "大语言模型在多源输入中常违反指令层级，优先执行低优先级指令。IHDec通过Jensen-Shannon散度检测token级层级违规，并在解码时进行纠正，无需微调即可提升多轮对话中的指令遵守安全。实验证明该方法有效恢复了正确的指令层级。",
+          "llm_tags": [
+            "query:ai-safety"
+          ],
+          "matched_query_tag": "query:ai-safety",
+          "matched_query_text": "defense mechanisms against attacks",
+          "matched_requirement_id": "req-17",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.29960v1",
           "carry_days": 1
         }
       ]
+    },
+    "eff-reason": {
+      "updated_date": "20260701",
+      "carryover_days": 9,
+      "items": []
     },
     "agent-swarm": {
       "updated_date": "20260612",
