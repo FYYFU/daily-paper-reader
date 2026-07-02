@@ -1,0 +1,403 @@
+Title: When Does Learning to Stop Help? A Cost-Aware Study of Early Exits in Reasoning Models
+
+URL Source: https://arxiv.org/pdf/2606.30852v1
+
+Published Time: Wed, 01 Jul 2026 00:09:42 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# When Does Learning to Stop Help? A Cost-Aware Study of Early Exits in Reasoning Models 
+
+Zhe Dong ∗
+
+University of Maine at Presque Isle 
+
+zhe.dong@maine.edu dongzhe181@gmail.com 
+
+Fang Qin Stanford University 
+
+fangq@stanford.edu 
+
+Manish Shah Independent Researcher 
+
+shahmh@ieee.org 
+
+July 1, 2026 
+
+Abstract 
+
+Reasoning models spend different amounts of useful computation across instances, but it remains unclear when a learned stopping rule improves over simple confidence or convergence thresholds. We study this question with LearnStop , a hidden-state-free checkpoint stopper for reasoning language models. At fixed budget checkpoints, LearnStop probes a short answer from the current reasoning prefix and predicts prefix correctness from online features such as answer confidence, entropy, prefix vote share, answer stability, and backtracking-marker density. Across 18 task–model settings spanning GSM8K, MATH-500, MMLU-Pro, AIME-90, GPQA, Qwen3, and DeepSeek-R1 distillations, the answer is task-dependent. On free-form math, learned multi-feature stopping improves the fixed-budget frontier and often beats scalar exits: on GSM8K with Qwen3-32B, the empirical frontier reaches a post-hoc peak adapt gain of +0.157, validation-selected operating points preserve positive gains, and the paired gain over the strongest scalar baseline is +0.028. On multiple-choice and very hard settings, scalar confidence, entropy, or stability rules are competitive or stronger. We therefore frame learned stopping not as a universal replacement for scalar exits, but as a tool whose value depends on trajectory structure. We further provide validation-selected operating points, paired bootstrap tests, finite-grid lost-correct risk calibration, cost accounting under KV-fork, prefix-cache, and black-box regimes, H100 serving profiles, checkpoint-schedule sweeps, transfer analyses, and robustness checks. The main practical finding is that learned stopping is useful when many questions become correct before full budget but do not exhibit a single reliable scalar stopping signal; its benefits largely disappear when confidence or answer convergence already solves the stopping problem. 
+
+Code and data. Code, processed outputs, and scripts are available at https://github.com/ dongzhe1/llm-think-stop .
+
+## 1 Introduction 
+
+Large reasoning models improve by spending more test-time compute, often generating long chains of intermediate reasoning before a final answer [ 4 , 14 ]. The same scaling creates a serving problem: 
+
+> ∗
+
+Corresponding author. 
+
+1
+
+> arXiv:2606.30852v1 [cs.AI] 29 Jun 2026
+
+a fixed token budget wastes computation on easy questions, while aggressive shortening can cut off hard questions before they self-correct. Recent systems therefore attempt to adapt the reasoning budget per instance using confidence, entropy, answer convergence, or calibrated risk constraints [5, 17, 18, 21]. This paper asks a narrower question: when does learning to stop help beyond strong scalar stopping rules? The question matters because a learned stopper is not free. It requires training data, threshold selection, probe overhead, and deployment support for pausing and probing a generation. It is only worthwhile if it captures information that a single confidence, entropy, or stability signal misses. We study this question through LearnStop , a lightweight logistic stopper over prefix-observable features. At each checkpoint, we force a short answer from the current reasoning prefix, compute output-level confidence and trace features, and stop when the predicted prefix correctness exceeds a threshold. The method deliberately avoids hidden states, making it easier to deploy across model families than hidden-state probes, but it still requires an interactive decoder that can pause, branch a probe answer, and resume the original reasoning state. Our empirical conclusion is deliberately qualified. Learned stopping helps most on free-form math tasks, especially GSM8K and MATH-500 with Qwen3 models. It helps less on MMLU-Pro and GPQA, where multiple-choice confidence is already a strong stopping signal, and it is unstable on very hard AIME-90 where many trajectories never become correct. This task dependence is not a weakness to hide; it is the central finding. A practical system should choose between a learned policy and simpler scalar exits based on the task’s trajectory structure and deployment cost model. We make four contributions. 1. We provide a controlled empirical study of learned checkpoint stopping across 18 task–model settings, including validation-selected operating points and paired bootstrap comparisons against confidence, entropy, confidence-leap, and answer-stability exits. 2. We give an overhead-aware deployment analysis: decode-only KV-fork accounting, prefix-cache accounting, pure black-box API accounting, H100 wall-clock profiles, and checkpoint-schedule sweeps. These experiments show that probe overhead can erase savings unless prefix reuse is available. 3. We calibrate thresholds with a finite-grid upper confidence bound on lost-correct risk , the probability that early stopping flips a full-thinking correct answer to an incorrect one. This risk upper-bounds accuracy loss relative to full thinking. 4. We analyze mechanisms and failure modes: trajectory decomposition, ablations, model-class comparisons, prompt and temperature robustness, transfer protocols, and cross-family results. These show why learning helps on some math settings but not universally. 
+
+## 2 Related Work 
+
+Budget control for reasoning models. Budget forcing and test-time scaling studies show that allocating more reasoning tokens can improve performance, but that the right budget varies across instances [ 6 , 11 ]. Qwen3 exposes a thinking-budget mechanism in the model family itself [ 14 ]. These approaches control length directly, while our work studies online exit decisions conditioned on partial reasoning evidence. 2Training-free early exit. DEER induces trial answers at transition points and exits when confidence is high [ 21 ]. EAT monitors entropy after an appended stop-thinking marker [ 17 ]. Confidence Leaps detects sudden jumps in answer probability [ 16 ]. Certaindex/Dynasor uses answer certainty and stabilization to allocate serving compute [ 5]. PUMA detects semantic convergence of reasoning traces rather than relying only on answer-level proxies [ 10 ]. We implement faithful output-level proxies for these signal families where possible and compare them under a common checkpoint protocol. 
+
+Learned stopping and risk control. Thought Calibration trains hidden-state probes and calibrates dynamic termination with a Learn-then-Test perspective [ 20 ]. TERMINATOR learns exit points from first-answer positions [ 12 ]. Conformal Risk Control, Conformal Language Modeling, and Conformal Thinking motivate distribution-free risk calibration for language-model outputs and reasoning budgets [ 2 , 13 , 18 ]. Our distinction is not priority over calibrated stopping. Instead, we ask when a hidden-state-free, multi-feature learned stopper adds value over scalar exits, and how that value changes under realistic overhead assumptions. 
+
+## 3 Method 
+
+3.1 Checkpoint Probing 
+
+For each question i, let B0 < · · · < B m−1 be a budget grid. At checkpoint j, we use the reasoning prefix up to Bj tokens, append a stop-thinking marker, and greedily decode a short answer of at most A tokens. Let ai,j be the forced answer and yi the gold answer. The label for training is 
+
+ci,j = ⊮{ai,j = yi}.At inference, the gold answer is unavailable. LearnStop computes a feature vector xi,j from the current prefix and previously probed checkpoints, estimates pi,j = Pr (ci,j = 1 | xi,j ), and stops at the first checkpoint with pi,j ≥ τ . If no checkpoint fires, it uses the maximum budget. 
+
+3.2 Prefix-Observable Features 
+
+The feature set contains normalized budget, normalized checkpoint index, mean answer log probabil-ity, answer-token entropy, whether the current answer matches the previous checkpoint, run length of the current answer, prefix vote share, and backtracking-marker density. The prefix vote share is computed only over checkpoints 0, . . . , j ; it never uses future checkpoints. The full experimental classifier also records whether the model has naturally emitted a thinking-end marker by the current checkpoint and the observed thinking length. Because these two features can invite concerns about length leakage, we report an eight-feature ablation that removes them; the main conclusions are unchanged. We therefore recommend the eight-feature variant for deployment and treat the ten-feature classifier as a diagnostic upper bound. 
+
+3.3 Training and Metrics 
+
+For in-distribution frontiers, we train logistic regression with grouped five-fold cross-validation, keeping all checkpoints of the same question in the same fold. We compare to a fixed-budget frontier. At threshold τ , the adapt gain is 
+
+G(τ ) = Acc adapt (τ ) − Acc fixed (Cadapt (τ )) , (1) 3where the fixed-budget accuracy is linearly interpolated at the same mean thinking-token cost. Peak gain summarizes the best point on the empirical frontier; validation-selected gains use a held-out validation split to choose the threshold before test evaluation. Probe answers add cost. Our default total-token accounting for a question stopped after checkpoint j is 
+
+Ctotal  
+
+> i
+
+= Cthink  
+
+> i
+
++ ( j + 1) A, (2) with A = 48 unless otherwise stated. This decode-token cost assumes an inference engine can reuse the prefix or fork the KV cache. We separately evaluate prefix-cache and pure black-box API regimes because repeated prefilling can dominate savings. 
+
+3.4 Lost-Correct Risk Calibration 
+
+Let Fi be full-thinking correctness and Si(τ ) stopped-answer correctness. We define lost-correct risk as 
+
+Li(τ ) = ⊮{Fi = 1 , S i(τ ) = 0 }. (3) This is not equal to accuracy drop; rather, 
+
+Acc full − Acc τ = E[Li(τ )] − Pr( Fi = 0 , S i(τ ) = 1) (4) 
+
+≤ E[Li(τ )] . (5) Thus controlling E[Li(τ )] controls an upper bound on loss relative to full thinking. For a finite threshold grid T , calibration set size n, and confidence 1 − δ, we use the simultaneous Hoeffding upper bound 
+
+U (τ ) = ̂ Rcal (τ ) + 
+
+> √
+
+log( |T | /δ )2n . (6) We select the most aggressive threshold with U (τ ) ≤ α and evaluate it on a disjoint test split. This is a finite-grid risk-control procedure under exchangeability of calibration and test examples. 
+
+## 4 Experiments 
+
+4.1 Setup 
+
+The primary models are Qwen3-8B and Qwen3-32B. Cross-family checks use DeepSeek-R1-Distill-Qwen-7B and DeepSeek-R1-Distill-Llama-8B. We evaluate GSM8K, MATH-500, MMLU-Pro, GPQA-Diamond, and AIME-90 [ 1 , 3 , 7– 9, 15 , 19 ]. MATH-500 is the 500-problem MATH evaluation subset popularized by process-supervision work. AIME-90 is the Hugging Face AI-MO/aimo-validation-aime subset: 2022, 2023, and 2024 AIME I/II, problems 1–15 from each exam, for 90 integer-answer questions scored against the public answer keys. We do not deduplicate or filter this subset. Because AIME-90 and GPQA-Diamond are small and difficult, we treat them as stress tests and do not base the main positive claim on them. The main budget grid is 
+
+[0 , 128 , 192 , 256 , 384 , 512 , 640 , 768 , 1024 , 1536] ; AIME uses a longer grid up to 6144 tokens. Baselines include confidence exit, entropy exit, confidence-leap exit, run-stability exit, DEER-style transition exit, EAT-style entropy stability, a PUMA-style convergence proxy, and TERMINATOR-light. Unless noted otherwise, CIs are question-level bootstrap intervals. 40 200 400 600 800 1000 
+
+# Mean thinking tokens 
+
+## 0.4 
+
+## 0.5 
+
+## 0.6 
+
+## 0.7 
+
+## 0.8 
+
+## 0.9 
+
+> Accuracy
+
+## peak gain +0.157 
+
+# GSM8K, Qwen3-32B 
+
+## fixed budget 
+
+## learned stopper 
+
+## full thinking Figure 1: Accuracy–cost frontier on GSM8K with Qwen3-32B. The learned stopper improves over fixed budgets across a broad cost range. The circled point is the peak adapt gain. 
+
+4.2 When Does Learning Help? 
+
+Figure 1 shows the clearest case for learning: GSM8K with Qwen3-32B. The learned frontier dominates the fixed-budget frontier over a broad token range, with peak adapt gain +0.157. Table 1 shows the broader picture. The learned stopper is strongest on free-form math. Against the strongest scalar baseline in each row, paired bootstrap intervals show a clear advantage on GSM8K-32B (+0.028 over entropy exit) and MATH-500-8B (+0.023 over entropy exit), and a positive but not significant difference on MATH-500-32B. It does not beat the strongest scalar baseline on MMLU-Pro, AIME-90, or GPQA. Validation-selected gains preserve the same qualitative pattern: positive on GSM8K and MATH-500, weak or unstable on the hardest and multiple-choice settings. Figure 2 explains the pattern. GSM8K has many early-solved questions and nontrivial answer oscillation, so confidence, stability, and trace features complement one another. MMLU-Pro has many early-solved multiple-choice questions, making confidence and confidence leaps strong. AIME-90 and GPQA have large unsolved fractions; in these settings, the safest policy is often to spend the budget or use a conservative scalar exit. 5Task Model Full Acc. Full Tok. Learned Peak Best Scalar Learned–Best Scalar 95% CI Val.-Sel. GSM8K 8B 0.888 1443 +0.047 Stable +0.063 -0.017 [-0.047,+0.014] +0.025 GSM8K 32B 0.929 1060 +0.157 Ent. +0.130 +0.028 [+0.002,+0.053] +0.136 MATH-500 8B 0.582 2819 +0.047 Ent. +0.024 +0.023 [+0.005,+0.042] +0.043 MATH-500 32B 0.604 2517 +0.086 Ent. +0.082 +0.005 [-0.019,+0.030] +0.077 MMLU-Pro 8B 0.645 1508 +0.013 Leap +0.026 -0.013 [-0.039,+0.013] +0.004 MMLU-Pro 32B 0.724 1182 +0.035 Conf. +0.048 -0.013 [-0.032,+0.006] +0.026 AIME-90 8B 0.311 7488 +0.032 Ent. +0.055 -0.024 [-0.085,+0.037] +0.044 AIME-90 32B 0.322 7283 +0.016 Stable +0.026 -0.010 [-0.033,+0.010] -0.009 GPQA 8B 0.485 2877 +0.018 Leap +0.024 -0.010 [-0.052,+0.033] +0.017 GPQA 32B 0.530 2535 +0.048 Conf. +0.051 -0.002 [-0.036,+0.031] -0.022 
+
+Table 1: Primary Qwen3 results. Peak gain is post-hoc over thresholds; Val.-Sel. is a validation-selected test gain. The paired CI compares learned stopping to the strongest scalar baseline in the row. AIME-90 and GPQA-Diamond are small, difficult stress tests, so their rows should be read as evidence against aggressive stopping rather than as precise method rankings. Learned stopping helps most on free-form math and is not uniformly better than scalar exits. GSM8K 
+
+> 8B
+> GSM8K
+> 32B
+> MATH-500
+> 8B
+> MATH-500
+> 32B
+> MMLU-Pro
+> 8B
+> MMLU-Pro
+> 32B
+> AIME
+> 8B
+> AIME
+> 32B
+> GPQA
+> 8B
+> GPQA
+> 32B
+> −0.075
+> −0.050
+> −0.025
+> 0.000
+> 0.025
+> 0.050
+> Learned - best scalar gain
+
+(a) Learning helps mainly on free-form math 
+
+> GSM8K
+> MATH-500
+> MMLU-Pro
+> AIME
+> GPQA
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Questions (%)
+
+(b) Trajectory types, Qwen3-32B 
+
+> early solved
+> beneficial thinking
+> harmful overthink
+> unsolved
+> oscillating
+
+Figure 2: Why the result is task-dependent. Left: paired difference between learned stopping and the strongest scalar baseline. Right: trajectory decomposition for Qwen3-32B. GSM8K has many early-solved and oscillating trajectories, creating room for multi-feature stopping; AIME and GPQA contain many unsolved or harmful trajectories, where aggressive learned stopping is harder to justify. 
+
+4.3 Ablations and Model Classes 
+
+Ablations support two claims. First, the potentially ambiguous length/end features are not re-sponsible for the gains: removing them changes peak gain by less than 0.007 across the primary settings, so the eight-feature model is our recommended deployment variant. Second, no single feature family explains all math gains. On GSM8K-32B, confidence-only gives +0.088, entropy-only +0.136, stability-only +0.093, and the full feature set +0.157. Gradient boosting and MLP slightly improve GSM8K-32B (+0.174 and +0.176), but logistic regression is best on MATH-500 and remains competitive elsewhere. We therefore use logistic regression as the default because it is simpler and easier to calibrate. 
+
+4.4 Risk-Controlled Operating Points 
+
+Table 2 reports finite-grid lost-correct risk calibration at α = 0 .15 , δ = 0 .05 . All selected thresholds satisfy the calibration upper bound and all held-out test risks are below the target. The savings 6Task Model U Risk Acc. Think Total GSM8K 32B 0.139 0.040 0.915 54.4 32.5 GSM8K 8B 0.131 0.040 0.878 54.4 34.8 MATH-500 32B 0.149 0.040 0.577 60.4 46.0 MATH-500 8B 0.149 0.043 0.573 67.7 55.5 MMLU-Pro 32B 0.149 0.035 0.694 54.3 31.6 MMLU-Pro 8B 0.124 0.023 0.617 47.2 22.1 
+
+Table 2: Lost-correct risk control at α = 0 .15 , δ = 0 .05 . U is the finite-grid calibration upper bound. Think and Total are percent savings relative to full thinking; Total includes probe answers. 4-linear     
+
+> 6-log
+> 6-linear
+> 8-hybrid
+> 8-linear
+> 14-dense
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> Peak adapt gain
+> 73% 78%
+> 96% 91%
+> 100%
+> 109%
+> (a) Checkpoint schedule sweep
+> 4710
+> Number of checkpoints
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> Latency / question (s)
+> 3.6s
+> 6.5s
+> 10.2s
+> (b) H100 profile, 32B, answer cap 48
+
+Figure 3: Deployment sensitivity. Left: checkpoint schedule sweep on GSM8K-32B. Six linear checkpoints retain 96% of the ten-checkpoint gain. Right: H100 latency grows roughly with the number of probes for Qwen3-32B at answer cap 48; latency includes checkpoint probe answer generation under the same answer cap. are substantial but smaller after probe accounting. For GSM8K-32B, the α = 0 .15 operating point has test risk 0.040, accuracy 0.915, 54.4% think-token saving, and 32.5% total-token saving. This is the right deployment interpretation: risk calibration can provide a user-facing knob, but probe overhead changes the practical savings. 
+
+4.5 Deployment Cost and Checkpoint Schedules 
+
+LearnStop is hidden-state-free, but not cost-free. A pure black-box API that requires resending the entire prefix at every checkpoint can eliminate or reverse savings. The favorable regime is an inference engine with KV-cache fork/resume or prefix-cache reuse. To quantify this, we profiled Qwen3 models on an H100 PCIe. For Qwen3-32B with batch size one and answer cap 48, 4, 7, and 10 checkpoints take 3.59, 6.51, and 10.20 seconds per question, respectively. Checkpoint density therefore matters. Figure 3 shows a practical schedule sweep on GSM8K-32B. A six-checkpoint linear schedule recovers 96% of the ten-checkpoint gain while reducing maximum probe-answer overhead from 480 to 288 tokens. A denser 14-checkpoint schedule improves peak gain to +0.171, but at much higher probing cost. This motivates a deployment recipe: begin with a small linear checkpoint grid, use the eight-feature stopper, and calibrate the threshold to a user-specified lost-correct risk. 74.6 Transfer, Robustness, and Cross-Family Checks 
+
+Transfer experiments distinguish source-threshold zero-shot transfer, target-calibrated transfer, and target-trained upper bounds. The strongest asymmetry appears from harder math to easier math: MATH-500 to GSM8K with Qwen3-32B obtains target-calibrated gain +0.179, close to or above target-trained performance in the same split. Easy-to-hard transfer is weaker, and transfer to AIME is unreliable. Cross-model transfer is also asymmetric: Qwen3-8B to Qwen3-32B on GSM8K benefits from target calibration, while transfer from Qwen3 to DeepSeek-R1 distillations is weak. These results support target-calibrated reuse within related model families, not universal zero-shot portability. Robustness checks are consistent with the main finding. On GSM8K-32B, sampling at tempera-ture 0.6 over three seeds gives peak gains 0.148–0.179, close to the greedy gain 0.157. Probe-template choice matters: a terse answer template and a no-reasoning template both preserve gains, but a brittle “the answer is” template collapses full accuracy to 0.230. Concise prompting is a useful diagnostic, not a replacement: it improves GSM8K and MATH token cost, but damages MMLU-Pro, AIME-90, and GPQA. 
+
+## 5 Discussion and Limitations 
+
+The strongest conclusion is not that learned stopping dominates existing early-exit methods. It does not. The useful conclusion is conditional: learning helps when prefix correctness depends on multiple partially independent signals. Free-form math often has this property; multiple-choice tasks often do not. This reframes learned stopping as a task-aware component in a serving stack, not a universal early-exit rule. There are several limitations. First, peak gain is a frontier summary, not a deployable number; validation-selected and risk-calibrated points are more conservative. Second, our method requires an interactive inference interface with prefix reuse. Under pure black-box repeated-prefill accounting, probe overhead can exceed savings. Third, AIME-90 and GPQA have small or difficult test sets, so negative results there should be interpreted as evidence against aggressive stopping rather than as a precise ranking of methods. Fourth, our PUMA and Thought Calibration comparisons are constrained by available artifacts: PUMA is approximated by an output-level convergence proxy, and Thought Calibration requires hidden states not collected by our hidden-state-free pipeline. Finally, the AIME-90 subset is useful as a hard stress test, but conclusions about AIME should be treated as preliminary until the exact subset definition is standardized across runs. 
+
+## 6 Responsible Use 
+
+Early stopping changes the amount of reasoning a model performs and can therefore change which errors are exposed or hidden. We do not recommend deploying aggressive stopping policies in high-stakes settings without task-specific validation, lost-correct risk targets, and a full-thinking fallback. Risk tolerance should be chosen by the application owner rather than tuned only for average accuracy or cost. Systems should also monitor whether premature-stop risk is uneven across domains, question formats, or user groups, especially when the task distribution differs from the calibration set. 87 Conclusion 
+
+We presented LearnStop, a prefix-observable learned stopper for reasoning models, and used it to study when learning to stop is worthwhile. Across 18 task–model settings and multiple baselines, the answer is not universal. Learned stopping is most useful on free-form math, where confidence, stability, and trace features provide complementary evidence. It is less useful on multiple-choice or very hard settings, where scalar exits or conservative budgets are competitive. Risk calibration and cost accounting are essential: user-facing stopping policies should control lost-correct risk and report savings under the deployment regime they actually assume. This perspective turns early stopping from a single-method race into a design question: choose the simplest stopping signal that captures the trajectory structure of the target task under the real serving cost model. 9Appendix Overview 
+
+This appendix contains implementation details, complete frontier tables, validation-selected operating points, extended baseline proxies, ablations, calibration diagnostics, serving profiles, transfer analyses, and robustness checks. It is integrated into the arXiv version for completeness. 
+
+## A Implementation Summary 
+
+The experiments use a unified checkpoint protocol. At each budget checkpoint, the system branches a short answer probe from the current reasoning prefix, extracts output-level features, and either stops or continues generation. The default answer cap is 48 tokens; all latency profiles that vary checkpoint count include checkpoint probe-answer generation under this cap. Reported confidence intervals are question-level bootstrap intervals unless stated otherwise. Peak gains summarize empirical frontiers; validation-selected gains and risk-controlled operating points are the deployment-oriented quantities. 
+
+Cost regimes. KV-fork assumes that an inference engine can branch a probe answer and then resume the unmodified reasoning state. Prefix-cache accounting assumes prefix reuse but additional serving overhead. Pure black-box API accounting assumes repeated prefilling and can make probing uneconomical. 
+
+## B Dataset Subsets 
+
+MATH-500 denotes the 500-problem MATH evaluation subset used by process-supervision evalua-tions. AIME-90 is drawn from the Hugging Face AI-MO/aimo-validation-aime dataset and contains 2022, 2023, and 2024 AIME I and AIME II problems 1–15, for 90 total integer-answer problems. We score against the provided public answer keys and do not deduplicate or filter the subset. We report AIME-90 as a hard stress test rather than as the primary source of positive claims. 
+
+## C Full In-Distribution Frontier Summary                                                                                                
+
+> Task Model Full Acc. Mean Think Peak Gain 95% CI GSM8K Qwen3-8B 0.888 1443 0.047 [0.029, 0.063] GSM8K Qwen3-32B 0.929 1060 0.157 [0.132, 0.183] MATH-500 Qwen3-8B 0.582 2819 0.047 [0.024, 0.073] MATH-500 Qwen3-32B 0.604 2517 0.086 [0.056, 0.117] MMLU-Pro Qwen3-8B 0.645 1508 0.013 [-0.002, 0.026] MMLU-Pro Qwen3-32B 0.724 1182 0.035 [0.014, 0.058] AIME-90 Qwen3-8B 0.311 7488 0.032 [0.004, 0.061] AIME-90 Qwen3-32B 0.322 7283 0.016 [-0.006, 0.039] GSM8K DS-R1-Qwen-7B 0.824 207 0.098 [0.062, 0.134] GSM8K DS-R1-Llama-8B 0.420 165 0.000 [0.000, 0.000] MATH-500 DS-R1-Qwen-7B 0.592 1789 0.060 [0.027, 0.092] MATH-500 DS-R1-Llama-8B 0.332 1381 0.015 [0.003, 0.028] MMLU-Pro DS-R1-Qwen-7B 0.502 1666 0.024 [0.004, 0.043] MMLU-Pro DS-R1-Llama-8B 0.401 1632 0.001 [-0.008, 0.010] GPQA Qwen3-8B 0.485 2877 0.018 [-0.011, 0.042] GPQA Qwen3-32B 0.530 2535 0.048 [-0.002, 0.100] GPQA DS-R1-Qwen-7B 0.348 2730 0.020 [-0.031, 0.081] GPQA DS-R1-Llama-8B 0.313 2778 0.000 [-0.015, 0.015]
+
+10 D Validation-Selected Operating Points 
+
+Task Model Policy τval Test Gain Test Acc. Test Tok. GSM8K Qwen3-8B LearnStop 0.800 0.025 0.843 608 GSM8K Qwen3-8B Confidence 0.983 -0.036 0.848 918 GSM8K Qwen3-8B Entropy 0.252 0.006 0.357 157 GSM8K Qwen3-8B Run-stability 2.000 0.066 0.527 249 GSM8K Qwen3-32B LearnStop 0.600 0.136 0.733 274 GSM8K Qwen3-32B Confidence 0.902 0.084 0.678 270 GSM8K Qwen3-32B Entropy 0.239 0.119 0.713 270 GSM8K Qwen3-32B Run-stability 2.000 0.082 0.638 235 MATH-500 Qwen3-8B LearnStop 0.550 0.043 0.573 995 MATH-500 Qwen3-8B Confidence 0.983 0.017 0.573 1202 MATH-500 Qwen3-8B Entropy 0.074 0.022 0.570 1134 MATH-500 Qwen3-8B Run-stability 7.000 0.004 0.560 1198 MATH-500 Qwen3-32B LearnStop 0.300 0.077 0.417 300 MATH-500 Qwen3-32B Confidence 0.875 0.019 0.337 154 MATH-500 Qwen3-32B Entropy 0.285 0.043 0.357 195 MATH-500 Qwen3-32B Run-stability 4.000 0.051 0.520 679 MMLU-Pro Qwen3-8B LearnStop 0.500 0.004 0.490 135 MMLU-Pro Qwen3-8B Confidence 0.905 -0.003 0.483 109 MMLU-Pro Qwen3-8B Entropy 0.041 0.006 0.627 781 MMLU-Pro Qwen3-8B Run-stability 3.000 0.006 0.494 160 MMLU-Pro Qwen3-32B LearnStop 0.650 0.026 0.615 297 MMLU-Pro Qwen3-32B Confidence 0.952 0.042 0.656 411 MMLU-Pro Qwen3-32B Entropy 0.245 0.033 0.621 289 MMLU-Pro Qwen3-32B Run-stability 4.000 0.009 0.594 266 AIME-90 Qwen3-8B LearnStop 0.300 0.044 0.315 4936 AIME-90 Qwen3-8B Confidence 0.778 0.018 0.018 66 AIME-90 Qwen3-8B Entropy 0.471 0.018 0.018 199 AIME-90 Qwen3-8B Run-stability 2.000 0.037 0.056 806 AIME-90 Qwen3-32B LearnStop 0.350 -0.009 0.259 4852 AIME-90 Qwen3-32B Confidence 0.673 0.006 0.018 90 AIME-90 Qwen3-32B Entropy 0.716 0.011 0.018 152 AIME-90 Qwen3-32B Run-stability 6.000 0.033 0.296 4758 GPQA Qwen3-8B LearnStop 0.400 0.017 0.445 334 GPQA Qwen3-8B Confidence 0.855 -0.004 0.420 97 GPQA Qwen3-8B Entropy 0.316 -0.007 0.420 119 GPQA Qwen3-8B Run-stability 9.000 0.008 0.521 1108 GPQA Qwen3-32B LearnStop 0.400 -0.022 0.361 334 GPQA Qwen3-32B Confidence 0.855 0.005 0.420 492 GPQA Qwen3-32B Entropy 0.657 -0.021 0.370 142 GPQA Qwen3-32B Run-stability 2.000 -0.005 0.387 141 
+
+## E Extended Baselines 
+
+The main text compares against scalar confidence, entropy, confidence-leap, and stability exits. The table below gives additional implemented proxies for recent methods: DEER-style transition confidence, EAT-style entropy stability, PUMA-style convergence, and TERMINATOR-light. These are output-level proxies under our common checkpoint protocol, not exact end-to-end reproductions of all original systems; their purpose is to compare signal families under identical probes, schedules, and cost accounting. 
+
+Task Model DEER EAT PUMA TERM-light AIME-90 Qwen3-32B 0.022 0.001 0.031 0.004 AIME-90 Qwen3-8B 0.046 0.048 0.050 0.032 GPQA Qwen3-32B 0.049 0.035 0.050 0.005 GPQA Qwen3-8B 0.039 0.007 0.017 0.009 GSM8K Qwen3-32B 0.092 0.015 0.093 0.161 GSM8K Qwen3-8B 0.007 0.001 0.065 0.062 MATH-500 Qwen3-32B 0.062 0.020 0.048 0.072 
+
+11 Task Model DEER EAT PUMA TERM-light MATH-500 Qwen3-8B 0.021 0.016 0.021 0.052 MMLU-Pro Qwen3-32B 0.045 0.024 0.026 0.025 MMLU-Pro Qwen3-8B 0.017 0.001 0.037 0.005 
+
+## F Feature Ablations 
+
+Task Model Conf. Ent. Conf+Ent Stability 8 feat. 10 feat. AIME-90 Qwen3-32B 0.006 0.008 0.015 0.010 0.009 0.016 AIME-90 Qwen3-8B 0.019 0.018 0.017 0.007 0.034 0.032 GPQA Qwen3-32B 0.050 0.025 0.026 0.000 0.041 0.048 GPQA Qwen3-8B 0.012 0.012 0.017 0.000 0.018 0.018 GSM8K Qwen3-32B 0.088 0.136 0.154 0.093 0.157 0.157 GSM8K Qwen3-8B 0.007 0.019 0.018 0.071 0.046 0.047 MATH-500 Qwen3-32B 0.063 0.072 0.065 0.055 0.088 0.086 MATH-500 Qwen3-8B 0.017 0.031 0.030 0.025 0.049 0.047 MMLU-Pro Qwen3-32B 0.044 0.044 0.043 0.022 0.039 0.035 MMLU-Pro Qwen3-8B 0.013 0.011 0.008 0.011 0.013 0.013 
+
+## G Classifier Class Comparison 
+
+Task Model Logistic RF GBT MLP AIME-90 Qwen3-32B 0.009 0.012 0.019 0.007 AIME-90 Qwen3-8B 0.034 0.035 0.018 0.028 GPQA Qwen3-32B 0.041 0.051 0.039 0.045 GPQA Qwen3-8B 0.018 0.018 0.013 0.008 GSM8K Qwen3-32B 0.157 0.170 0.174 0.176 GSM8K Qwen3-8B 0.046 0.066 0.058 0.062 MATH-500 Qwen3-32B 0.088 0.078 0.071 0.073 MATH-500 Qwen3-8B 0.049 0.045 0.035 0.042 MMLU-Pro Qwen3-32B 0.039 0.042 0.050 0.041 MMLU-Pro Qwen3-8B 0.013 0.027 0.035 0.031 
+
+## H Risk-Controlled Operating Points 
+
+Table reports held-out risk-control selections from the finite-grid lost-correct risk procedure. Savings are percentages relative to full thinking. 
+
+Task Model α U Risk Acc. Think Save Total Save GSM8K Qwen3-32B 0.10 0.094 0.000 0.943 29.1 -0.7 GSM8K Qwen3-32B 0.15 0.139 0.040 0.915 54.4 32.5 GSM8K Qwen3-32B 0.20 0.191 0.082 0.878 60.8 41.5 GSM8K Qwen3-8B 0.10 0.096 0.013 0.893 43.1 20.7 GSM8K Qwen3-8B 0.15 0.131 0.040 0.878 54.4 34.8 GSM8K Qwen3-8B 0.20 0.196 0.113 0.815 63.3 46.0 MATH-500 Qwen3-32B 0.15 0.149 0.040 0.577 60.4 46.0 MATH-500 Qwen3-32B 0.20 0.199 0.093 0.533 75.1 64.5 MATH-500 Qwen3-8B 0.15 0.149 0.043 0.573 67.7 55.5 MATH-500 Qwen3-8B 0.20 0.194 0.083 0.537 71.1 59.8 MMLU-Pro Qwen3-32B 0.15 0.149 0.035 0.694 54.3 31.6 MMLU-Pro Qwen3-32B 0.20 0.199 0.058 0.673 64.4 45.7 MMLU-Pro Qwen3-8B 0.15 0.124 0.023 0.617 47.2 22.1 MMLU-Pro Qwen3-8B 0.20 0.162 0.056 0.590 58.8 37.5 
+
+12 GSM8K 
+
+> 32B
+> GSM8K
+> 8B
+> MATH
+> 32B
+> MATH
+> 8B
+> MMLU
+> 32B
+> MMLU
+> 8B
+> 0
+> 20
+> 40
+> 60
+> Saving vs full (%)
+
+(a) Savings at risk tolerance α = 0.15        
+
+> think-token
+> with probes
+> 0.08 0.10 0.12 0.14 0.16 0.18 0.20
+> Risk tolerance α
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Held-out lost-correct risk
+
+(b) Test risk is below target 
+
+> GSM8K
+> MATH-500
+> MMLU-Pro
+> target
+
+Figure 4: Risk-control summary for Qwen3-32B. Left: savings at 
+
+alpha = 0 .15 . Right: held-out test risk versus target risk. 
+
+## I Cost and Serving Profiles 
+
+Task Model KV-fork Prefix-cache Black-box API AIME-90 Qwen3-32B 24.0 -44.3 -198.9 AIME-90 Qwen3-8B 26.5 -38.9 -187.2 GPQA Qwen3-32B 53.9 21.5 -64.8 GPQA Qwen3-8B 82.2 72.8 45.9 GSM8K Qwen3-32B 63.9 53.1 10.7 GSM8K Qwen3-8B 32.2 -4.3 -120.9 MATH-500 Qwen3-32B 82.2 73.7 46.9 MATH-500 Qwen3-8B 52.5 21.3 -67.5 MMLU-Pro Qwen3-32B 61.6 41.7 -18.4 MMLU-Pro Qwen3-8B 81.7 76.7 59.8 
+
+I.1 H100 Serving Profile 
+
+Model Checkpoints Mean Latency (s) Std. (s) Peak Mem. (GB) Qwen3-32B 4 3.590 1.992 61.78 Qwen3-32B 7 6.514 3.301 61.78 Qwen3-32B 10 10.202 5.223 61.78 Qwen3-8B 4 3.049 0.755 15.69 Qwen3-8B 7 4.855 1.361 15.69 Qwen3-8B 10 6.624 1.938 15.69 
+
+I.2 Checkpoint Schedule Sweep 
+
+Schedule N Budgets Peak Gain Retention Max Overhead 4-linear 4 [0, 256, 512, 1536] 0.114 72.5 192 6-linear 6 [0, 192, 384, 512, 768, 1536] 0.151 96.3 288 6-log 6 [0, 64, 192, 512, 1024, 1536] 0.122 77.8 288 8-hybrid 8 [0, 64, 128, 256, 384, 640, 1024, 1536] 0.143 90.7 384 8-linear 8 [0, 128, 256, 384, 512, 768, 1024, 1536] 0.157 100.1 384 14-dense 14 [0, 64, 128, 192, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1536] 0.171 108.7 672 
+
+13 0.00 0.05 0.10 0.15 
+
+Adapt gain on target 
+
+> GSM8K→MATH 8B
+> GSM8K→MATH 32B
+> GSM8K→MMLU 8B
+> GSM8K→MMLU 32B
+> MATH→GSM8K 8B
+> MATH→GSM8K 32B
+> MMLU→GSM8K 8B
+> MMLU→GSM8K 32B
+> MATH→MMLU 8B
+> MATH→MMLU 32B
+> MMLU→MATH 8B
+> MMLU→MATH 32B
+> AIME→GSM8K 8B
+> AIME→GSM8K 32B
+> GSM8K→AIME 8B
+> GSM8K→AIME 32B
+
+Cross-task transfer protocols 
+
+> zero-shot threshold
+> target-calibrated
+> target-trained
+
+Figure 5: Transfer protocols across selected source-target pairs. 
+
+## J Transfer Protocols 
+
+Zero-shot transfer uses the source-trained classifier and the source threshold. Target-calibrated transfer uses the source-trained classifier but calibrates a threshold on target calibration data. Target-trained is the same protocol with a target-trained classifier. 
+
+Label Type Source In-dist Zero-shot Target-cal. Target-trained GSM8K →MATH500 8B cross_task 0.046 0.028 0.028 0.029 GSM8K →MATH500 32B cross_task 0.157 0.065 0.081 0.080 GSM8K →MMLU-Pro 8B cross_task 0.046 0.005 0.006 0.008 GSM8K →MMLU-Pro 32B cross_task 0.157 0.013 0.021 0.025 MATH500 →GSM8K 8B cross_task 0.049 0.028 0.045 0.017 MATH500 →GSM8K 32B cross_task 0.088 0.159 0.179 0.169 MMLU-Pro →GSM8K 8B cross_task 0.013 0.052 0.043 0.017 MMLU-Pro →GSM8K 32B cross_task 0.039 0.116 0.115 0.169 MATH500 →MMLU-Pro 8B cross_task 0.049 -0.017 0.002 0.008 MATH500 →MMLU-Pro 32B cross_task 0.088 0.028 0.011 0.025 MMLU-Pro →MATH500 8B cross_task 0.013 0.021 0.032 0.029 MMLU-Pro →MATH500 32B cross_task 0.039 0.069 0.106 0.080 AIME →GSM8K 8B cross_task 0.034 -0.004 0.003 0.017 AIME →GSM8K 32B cross_task 0.009 0.014 0.023 0.169 GSM8K →AIME 8B cross_task 0.046 0.000 -0.011 0.032 GSM8K →AIME 32B cross_task 0.157 -0.033 -0.037 0.004 Qwen3-8B →32B GSM8K cross_model 0.046 0.066 0.184 0.169 Qwen3-32B →8B GSM8K cross_model 0.157 0.046 0.068 0.017 Qwen3-8B →DSR1-7B GSM8K cross_model 0.046 -0.001 0.004 0.085 Qwen3-8B →DSR1-Llama GSM8K cross_model 0.046 0.000 -0.009 -0.014 Qwen3-32B →DSR1-7B GSM8K cross_model 0.157 -0.003 0.071 0.085 
+
+14 K Prompt and Decoding Robustness 
+
+Task Model Template Full Acc. Peak Gain Mean Think GSM8K Qwen3-32B terse 0.924 0.177 1052 GSM8K Qwen3-32B no_reasoning 0.947 0.124 1064 GSM8K Qwen3-32B the_answer_is 0.230 0.092 1069 
+
+K.1 Temperature Sweep 
+
+Temp. Seed N Full Acc. Peak Gain Note 0.0 0 1000 0.929 0.157 reference (greedy, main run) 0.6 42 500 0.920 0.148 sampled 0.6 123 500 0.928 0.157 sampled 0.6 999 500 0.938 0.179 sampled 
+
+## L Probability Calibration 
+
+Task Model ECE Brier GSM8K Qwen3-8B 0.023 0.131 GSM8K Qwen3-32B 0.021 0.120 MATH-500 Qwen3-8B 0.026 0.187 MATH-500 Qwen3-32B 0.018 0.199 MMLU-Pro Qwen3-8B 0.016 0.236 MMLU-Pro Qwen3-32B 0.026 0.194 AIME-90 Qwen3-8B 0.019 0.051 AIME-90 Qwen3-32B 0.029 0.047 GSM8K DS-R1-Qwen-7B 0.032 0.114 GSM8K DS-R1-Llama-8B 0.028 0.192 MATH-500 DS-R1-Qwen-7B 0.032 0.175 MATH-500 DS-R1-Llama-8B 0.036 0.145 MMLU-Pro DS-R1-Qwen-7B 0.023 0.207 MMLU-Pro DS-R1-Llama-8B 0.009 0.179 GPQA Qwen3-8B 0.039 0.239 GPQA Qwen3-32B 0.033 0.230 GPQA DS-R1-Qwen-7B 0.072 0.218 GPQA DS-R1-Llama-8B 0.036 0.196 
+
+## References 
+
+[1] AI-MO. AI-MO/aimo-validation-aime, 2024. URL https://huggingface.co/datasets/AI-MO/aimo-validation-aime . Hugging Face dataset containing AIME 2022–2024 problems. [2] Anastasios N. Angelopoulos, Stephen Bates, Adam Fisch, Lihua Lei, and Tal Schuster. Confor-mal risk control. In International Conference on Learning Representations , 2024. [3] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 ,2021. [4] DeepSeek-AI. DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning, 2025. 15 [5] Yichao Fu, Junda Chen, Siqi Zhu, Zheyu Fu, Zhongdongming Dai, Yonghao Zhuang, Yian Ma, Aurick Qiao, Tajana S. Rosing, Ion Stoica, and Hao Zhang. Efficiently scal-ing LLM reasoning programs with Certaindex. In Advances in Neural Information Pro-cessing Systems , 2025. URL https://papers.nips.cc/paper_files/paper/2025/hash/ d037fd021c9aace128b8ce25001cdb6c-Abstract-Conference.html .[6] Tingxu Han, Zhenting Wang, Chunrong Fang, Shiyu Zhao, Shiqing Ma, and Zhenyu Chen. Token-budget-aware LLM reasoning. In Findings of the Association for Computational Lin-guistics: ACL 2025 , pages 24842–24855, 2025. doi: 10.18653/v1/2025.findings-acl.1274. [7] Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Jacob Steinhardt. Measuring mathematical problem solving with the MATH dataset. In Advances in Neural Information Processing Systems , 2021. [8] Hunter Lightman, Vineet Kosaraju, Yuri Burda, Harrison Edwards, Bowen Baker, Teddy Lee, Jan Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. Let’s verify step by step. In 
+
+International Conference on Learning Representations , 2024. URL https://openreview.net/ forum?id=v8L0pN6EOi .[9] Mathematical Association of America. MAA invitational competitions: American invitational mathematics examination, 2026. URL https://maa.org/maa-invitational-competitions/ .[10] Dehai Min, Giovanni Vaccarino, Huiyi Chen, Yongliang Wu, Gal Yona, and Lu Cheng. Stop when reasoning converges: Semantic-preserving early exit for reasoning models, 2026. [11] Niklas Muennighoff, Zitong Yang, Weijia Shi, Xiang Lisa Li, Li Fei-Fei, Hannaneh Hajishirzi, Luke Zettlemoyer, Percy Liang, Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 20275–20321, 2025. doi: 10.18653/v1/2025.emnlp-main.1025. URL 
+
+https://aclanthology.org/2025.emnlp-main.1025/ .[12] Alliot Nagle, Jakhongir Saydaliev, Dhia Garbaya, Michael Gastpar, Ashok Vardhan Makkuva, and Hyeji Kim. TERMINATOR: Learning optimal exit points for early stopping in chain-of-thought reasoning, 2026. [13] Victor Quach, Adam Fisch, Tal Schuster, Adam Yala, Jae Ho Sohn, Tommi Jaakkola, and Regina Barzilay. Conformal language modeling. In International Conference on Learning Representations , 2024. [14] Qwen Team. Qwen3 technical report, 2025. [15] David Rein, Betty Li Hou, Asa Cooper Stickland, Jackson Petty, Richard Yuanzhe Pang, Julien Dirani, Julian Michael, and Samuel R. Bowman. GPQA: A graduate-level google-proof q&a benchmark, 2023. [16] Pavel Tikhonov, Ivan V. Oseledets, and Elena Tutubalina. Confidence leaps in LLM reasoning: Early stopping and cross-model transfer. In Proceedings of the 2026 Conference of the European Chapter of the Association for Computational Linguistics: Short Papers , 2026. [17] Xi Wang, James McInerney, Lequn Wang, and Nathan Kallus. Entropy after < /Think > for reasoning model early exiting, 2025. 16 [18] Xi Wang, Anushri Suresh, Alvin Zhang, Rishi More, William Jurayj, Benjamin Van Durme, Mehrdad Farajtabar, Daniel Khashabi, and Eric Nalisnick. Conformal thinking: Risk control for reasoning on a compute budget, 2026. [19] Yubo Wang, Xueguang Ma, Ge Zhang, Yuansheng Ni, Abhranil Chandra, Shiguang Guo, Weiming Ren, Aaran Arulraj, Xuan He, Ziyan Jiang, Tianle Li, Max Ku, Kai Wang, Alex Zhuang, Rongqi Fan, Xiang Yue, and Wenhu Chen. MMLU-Pro: A more robust and challenging multi-task language understanding benchmark. In Advances in Neural Information Processing Systems Datasets and Benchmarks Track , 2024. [20] Menghua Wu, Cai Zhou, Stephen Bates, and Tommi Jaakkola. Thought calibration: Efficient and confident test-time scaling. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , 2025. [21] Chenxu Yang, Qingyi Si, Yongjie Duan, Zheliang Zhu, Chenyu Zhu, Qiaowei Li, Minghui Chen, Zheng Lin, and Weiping Wang. Dynamic early exit in reasoning models. In International Conference on Learning Representations , 2026. URL https://openreview.net/forum?id= NpU7ZXafRi .17

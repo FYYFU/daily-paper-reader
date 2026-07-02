@@ -8,110 +8,97 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-01
-- 运行时间：2026-07-01 21:12:15 UTC
+- 最新运行日期：2026-07-02
+- 运行时间：2026-07-02 21:00:11 UTC
 - 运行状态：成功
-- 本次总论文数：30
-- 精读区：16
+- 本次总论文数：25
+- 精读区：11
 - 速读区：14
 
 ### 今日简报（AI）
-今日精读16篇、速读14篇，重点聚焦自蒸馏与多教师蒸馏、智能体记忆系统两大方向。值得关注的是满分论文《PHF》提出的特权隐式流自蒸馏方法，以及《MOPD》多教师蒸馏整合LLM能力。建议优先阅读这两篇10分论文理解蒸馏前沿，对智能体感兴趣可跟进《ReM-MoA》等记忆论文。
-- 详情：[/202607/01/README](/202607/01/README)
+1) 今日精读两篇满分论文，聚焦AI安全评估与行为克隆优化。
+2) 值得关注对抗语用学评估框架和带噪专家反馈下的在线策略蒸馏理论。
+3) 建议优先阅读精读列表中的两篇10分论文，它们对理解AI安全与模仿学习前沿至关重要。
+- 详情：[/202607/02/README](/202607/02/README)
 
 ### 精读区论文标签
-1. [PHF: Privileged Hidden Flow for On-Policy Self-Distillation](/202607/01/2606.29340v1-phf-privileged-hidden-flow-for-on-policy-self-distillation)  
+1. [Behavior Cloning is Not All You Need: The Optimality of On-Policy Distillation for Noisy Expert Feedback](/202607/02/2606.30923v1-behavior-cloning-is-not-all-you-need-the-optimality-of-on-policy-distillation-for-noisy-expert-feedback)  
    标签：评分：10.0/10、query:opd
-   evidence：具有特权隐藏流的在线策略自蒸馏
-2. [MOPD: Multi-Teacher On-Policy Distillation for Capability Integration in LLM Post-Training](/202607/01/2606.30406v1-mopd-multi-teacher-on-policy-distillation-for-capability-integration-in-llm-post-training)  
-   标签：评分：10.0/10、query:opd
-   evidence：多教师在线蒸馏用于LLM后训练中的能力整合，使用RL教师
-3. [Behavior Cloning is Not All You Need: The Optimality of On-Policy Distillation for Noisy Expert Feedback](/202607/01/2606.30923v1-behavior-cloning-is-not-all-you-need-the-optimality-of-on-policy-distillation-for-noisy-expert-feedback)  
-   标签：评分：10.0/10、query:opd
-   evidence：在线策略蒸馏理论最优性
-4. [What Intermediate Layers Know: Detecting Jailbreaks from Entropy Dynamics](/202607/01/2606.25182v1-what-intermediate-layers-know-detecting-jailbreaks-from-entropy-dynamics)  
+   evidence：直接研究噪声专家反馈下在线策略蒸馏的最优性
+2. [Adversarial Pragmatics for AI Safety Evaluation: A Benchmark for Instruction Conflict, Embedded Commands, and Policy Ambiguity](/202607/02/2607.01153v1-adversarial-pragmatics-for-ai-safety-evaluation-a-benchmark-for-instruction-conflict-embedded-commands-and-policy-ambiguity)  
+   标签：评分：10.0/10、query:ai-safety
+   evidence：面向指令冲突的AI安全评估基准
+3. [SafePyramid: A Hierarchical Benchmark for In-context Policy Guardrailing](/202607/02/2606.29887v1-safepyramid-a-hierarchical-benchmark-for-in-context-policy-guardrailing)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：基于熵动力学检测越狱攻击
-5. [Efficient and Trainable Language Model Test-Time Scaling via Local Branch Routing](/202607/01/2606.25354v2-efficient-and-trainable-language-model-test-time-scaling-via-local-branch-routing)  
+   evidence：安全基准，分层政策护栏
+4. [Building Multi-Task Agentic LLMs via Two-Phase Distillation](/202607/02/2606.30044v1-building-multi-task-agentic-llms-via-two-phase-distillation)  
+   标签：评分：9.0/10、query:opd
+   evidence：多任务智能体大模型中的on-policy蒸馏
+5. [Securing the AI Agent: A Unified Framework for Multi-Layer Agent Red Teaming](/202607/02/2606.31227v1-securing-the-ai-agent-a-unified-framework-for-multi-layer-agent-red-teaming)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：面向AI安全的多层智能体红队框架
+6. [ECHO: Prune to act, trace to learn with selective turn memory in agentic RL](/202607/02/2606.31650v1-echo-prune-to-act-trace-to-learn-with-selective-turn-memory-in-agentic-rl)  
+   标签：评分：9.0/10、query:l-context-rl
+   evidence：通过选择性回合记忆实现长时域智能体强化学习中的上下文管理
+7. [ReShift: Aha-Moment-Driven Reasoning-Level Backdoor Attacks on Vision-Language Models](/202607/02/2607.00361v1-reshift-aha-moment-driven-reasoning-level-backdoor-attacks-on-vision-language-models)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：视觉语言模型的推理层后门攻击
+8. [Beyond the Prompt: Jailbreaking Function-Calling LLMs via Simulated Moderation Traces](/202607/02/2607.00481v1-beyond-the-prompt-jailbreaking-function-calling-llms-via-simulated-moderation-traces)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：针对函数调用LLM的越狱攻击
+9. [CAT: Confidence-Adaptive Thinking for Efficient Reasoning of Large Reasoning Models](/202607/02/2607.00862v1-cat-confidence-adaptive-thinking-for-efficient-reasoning-of-large-reasoning-models)  
    标签：评分：9.0/10、query:eff-reason
-   evidence：通过局部分支路由实现高效推理的测试时扩展
-6. [Robust Harmful Features Under Jailbreak Attacks: Mechanistic Evidence from Attention Head Specialization in Large Language Models](/202607/01/2606.28153v2-robust-harmful-features-under-jailbreak-attacks-mechanistic-evidence-from-attention-head-specialization-in-large-language-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：大型语言模型中的越狱攻击机制
-7. [Agent Safety Is Action Alignment](/202607/01/2606.28739v1-agent-safety-is-action-alignment)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：智能体安全与行为对齐
-8. [EntroRouter: Learning Efficient Model Routing via Entropy Regulation](/202607/01/2606.29424v1-entrorouter-learning-efficient-model-routing-via-entropy-regulation)  
+   evidence：通过自信度自适应调整推理长度以提升效率
+10. [Message Passing Enables Efficient Reasoning](/202607/02/2607.01077v1-message-passing-enables-efficient-reasoning)  
    标签：评分：9.0/10、query:eff-reason
-   evidence：通过熵调控实现高效模型路由以提升推理效率
-9. [UCOB: Learning to Utilize and Evolve Agentic Skills via Credit-Aware On-Policy Bidirectional Self-Distillation](/202607/01/2606.29502v1-ucob-learning-to-utilize-and-evolve-agentic-skills-via-credit-aware-on-policy-bidirectional-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：基于在策略双向自蒸馏的智能体技能学习
-10. [SafePyramid: A Hierarchical Benchmark for In-context Policy Guardrailing](/202607/01/2606.29887v1-safepyramid-a-hierarchical-benchmark-for-in-context-policy-guardrailing)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：用于上下文策略护栏的分层安全基准
-11. [Building Multi-Task Agentic LLMs via Two-Phase Distillation](/202607/01/2606.30044v1-building-multi-task-agentic-llms-via-two-phase-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：比较离线与在线蒸馏在多任务RL专家聚合中的表现，提出两阶段蒸馏
-12. [Sparse Sensor Placement in Multi-Agent Reinforcement Learning Control of Rayleigh-Bénard Convection](/202607/01/2606.30238v1-sparse-sensor-placement-in-multi-agent-reinforcement-learning-control-of-rayleigh-bnard-convection)  
-   标签：评分：9.0/10、query:opd
-   evidence：从专家策略蒸馏稀疏学徒策略
-13. [DRIFT: Difficulty Routing Self-DIstillation with Rhythm-Gated Exploration and Success BuFfer Training](/202607/01/2606.30345v1-drift-difficulty-routing-self-distillation-with-rhythm-gated-exploration-and-success-buffer-training)  
-   标签：评分：9.0/10、query:opd
-   evidence：面向大语言模型的在线自蒸馏策略优化框架
-14. [When Does Learning to Stop Help? A Cost-Aware Study of Early Exits in Reasoning Models](/202607/01/2606.30852v1-when-does-learning-to-stop-help-a-cost-aware-study-of-early-exits-in-reasoning-models)  
+   evidence：通过消息传递实现高效推理
+11. [Diffusion-GR2: Diffusion Generative Reasoning Re-ranker](/202607/02/2607.01170v1-diffusion-gr2-diffusion-generative-reasoning-re-ranker)  
    标签：评分：9.0/10、query:eff-reason
-   evidence：推理模型中代价感知的提前退出以提升推理效率
-15. [Securing the AI Agent: A Unified Framework for Multi-Layer Agent Red Teaming](/202607/01/2606.31227v1-securing-the-ai-agent-a-unified-framework-for-multi-layer-agent-red-teaming)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：多层AI智能体红队测试安全框架
-16. [A Lifecycle and Application-Stack Survey of Large Language Model Vulnerabilities: Attacks, Risks, Defenses, and Open Problems](/202607/01/2606.31639v1-a-lifecycle-and-application-stack-survey-of-large-language-model-vulnerabilities-attacks-risks-defenses-and-open-problems)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：关于大语言模型漏洞（攻击与防御）的全面综述
+   evidence：基于扩散的生成式推理重排序器，加速推理
 
 ### 速读区论文标签
-1. [ReM-MoA: Reasoning Memory Sustains Mixture-of-Agents Scaling](/202607/01/2606.24437v1-rem-moa-reasoning-memory-sustains-mixture-of-agents-scaling)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：记忆增强的混合智能体框架以实现持续扩展
-2. [TRUSTMEM: Learning Trustworthy Memory Consolidation for LLM Agents with Long-Term Memory](/202607/01/2606.25161v1-trustmem-learning-trustworthy-memory-consolidation-for-llm-agents-with-long-term-memory)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：面向LLM智能体长期记忆的可信内存巩固
-3. [HyphaeDB: A Living Knowledge Topology for Agent-First Memory](/202607/01/2606.28781v1-hyphaedb-a-living-knowledge-topology-for-agent-first-memory)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：面向多智能体知识传播的智能体原生记忆基础设施
-4. [Preventing Error Propagation in Multi-Agent AI through Runtime Monitoring](/202607/01/2606.29026v1-preventing-error-propagation-in-multi-agent-ai-through-runtime-monitoring)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：提出运行时监控以阻止多智能体系统中的错误传播
-5. [ThinkProbe: Beyond Accuracy -- Structural Profiling of Open-Ended LLM Reasoning Traces via Non-Generative Thought Graphs](/202607/01/2606.29067v1-thinkprobe-beyond-accuracy----structural-profiling-of-open-ended-llm-reasoning-traces-via-non-generative-thought-graphs)  
+1. [Efficient and Trainable Language Model Test-Time Scaling via Local Branch Routing](/202607/02/2606.25354v2-efficient-and-trainable-language-model-test-time-scaling-via-local-branch-routing)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：通过思维图进行推理效率剖析
-6. [Resolution Thresholds in VLM Detection of Harmful ASCII Art Across Construction Modes and Languages](/202607/01/2606.29649v1-resolution-thresholds-in-vlm-detection-of-harmful-ascii-art-across-construction-modes-and-languages)  
+   evidence：高效的测试时扩展方法用于推理
+2. [HyphaeDB: A Living Knowledge Topology for Agent-First Memory](/202607/02/2606.28781v1-hyphaedb-a-living-knowledge-topology-for-agent-first-memory)  
+   标签：评分：8.0/10、query:agent-swarm
+   evidence：面向多智能体系统的原生记忆基础设施，支持知识传播和涌现行为
+3. [HiComm: Hierarchical Communication for Multi-agent Reinforcement Learning](/202607/02/2606.29126v2-hicomm-hierarchical-communication-for-multi-agent-reinforcement-learning)  
+   标签：评分：8.0/10、query:agent-swarm
+   evidence：多智能体强化学习中的分层通信
+4. [KbSD: Knowledge Boundary aware Self-Distillation for Behavioral Calibration in Agentic Search](/202607/02/2606.29863v1-kbsd-knowledge-boundary-aware-self-distillation-for-behavioral-calibration-in-agentic-search)  
+   标签：评分：8.0/10、query:opd
+   evidence：基于强化学习的智能体搜索中通过自蒸馏进行策略校准
+5. [IHDec: Divergence-Steered Contrastive Decoding for Securing Multi-Turn Instruction Hierarchies](/202607/02/2606.29960v1-ihdec-divergence-steered-contrastive-decoding-for-securing-multi-turn-instruction-hierarchies)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：通过ASCII艺术进行越狱攻击及检测阈值分析
-7. [Why Struggle with Continuous Latents? Interpretable Discrete Latent Reasoning via Rendered Compression](/202607/01/2606.29712v1-why-struggle-with-continuous-latents-interpretable-discrete-latent-reasoning-via-rendered-compression)  
+   evidence：用于多轮指令层级安全的对比解码防御
+6. [When Does Learning to Stop Help? A Cost-Aware Study of Early Exits in Reasoning Models](/202607/02/2606.30852v1-when-does-learning-to-stop-help-a-cost-aware-study-of-early-exits-in-reasoning-models)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：离散潜变量推理提升效率
-8. [Invariant Reasoning Directions in Latent Trajectories of Language Models](/202607/01/2606.29164v1-invariant-reasoning-directions-in-latent-trajectories-of-language-models)  
+   evidence：推理模型中基于成本意识的早期退出策略
+7. [Safe Online Learning via Smooth Safety-Structured Policy Composition](/202607/02/2606.31320v1-safe-online-learning-via-smooth-safety-structured-policy-composition)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：安全在线学习中的策略组合
+8. [Distill on a Diet: Efficient Knowledge Distillation via Learnable Data Pruning](/202607/02/2606.25488v1-distill-on-a-diet-efficient-knowledge-distillation-via-learnable-data-pruning)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：不变推理方向提升推理效率
-9. [The Complexity Ceiling Benchmark: A Multi-Domain Evaluation of Sequential Reasoning Under Depth Scaling](/202607/01/2606.29278v1-the-complexity-ceiling-benchmark-a-multi-domain-evaluation-of-sequential-reasoning-under-depth-scaling)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：评估大语言模型随深度扩展推理衰减的基准
-10. [LatentRevise: Learning from Zero-Hit Reasoning](/202607/01/2606.29938v1-latentrevise-learning-from-zero-hit-reasoning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：通过潜在修订零命中提示提高推理效率
-11. [Diffusion Fine-tuning with Rewarded Moment Matching Distillation](/202607/01/2606.30414v1-diffusion-fine-tuning-with-rewarded-moment-matching-distillation)  
+   evidence：通过可学习数据剪枝提升知识蒸馏效率，进而降低推理成本
+9. [RolloutPipe: Overlapping Pipelined Rollout and Training in Disaggregated On-Policy LLM Reinforcement Learning](/202607/02/2606.26997v1-rolloutpipe-overlapping-pipelined-rollout-and-training-in-disaggregated-on-policy-llm-reinforcement-learning)  
    标签：评分：7.0/10、query:opd
-   evidence：结合RL微调的蒸馏技术及在线策略适应
-12. [Experience Augmented Policy Optimization for LLM Reasoning](/202607/01/2606.30420v1-experience-augmented-policy-optimization-for-llm-reasoning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：带经验增强的RLVR方法提升大语言模型推理效率
-13. [Accelerating Q-learning through Efficient Value-Sharing across Actions](/202607/01/2606.29806v1-accelerating-q-learning-through-efficient-value-sharing-across-actions)  
+   evidence：基于流水线式rollout和训练的on-policy LLM强化学习
+10. [QueenBee Planner: Skill-Evolving Communication Topologies for Token-Efficient LLM Multi-Agent Systems](/202607/02/2606.27492v1-queenbee-planner-skill-evolving-communication-topologies-for-token-efficient-llm-multi-agent-systems)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：令牌高效的LLM多智能体系统，通过学习演化通信拓扑
+11. [Representational Depth of Evaluation Awareness Shifts With Scale in Open-Weight Language Models](/202607/02/2606.29196v1-representational-depth-of-evaluation-awareness-shifts-with-scale-in-open-weight-language-models)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：语言模型评估意识影响AI安全基准
+12. [FlowAWR: Online Adaptive Flow Reinforcement via Advantage-Weighted Rectification](/202607/02/2606.30376v1-flowawr-online-adaptive-flow-reinforcement-via-advantage-weighted-rectification)  
+   标签：评分：7.0/10、query:opd
+   evidence：基于优势加权修正的在线自适应流强化
+13. [A Contextual-Bandit Oversight Game with Two-Sided Informational Asymmetry](/202607/02/2607.00155v1-a-contextual-bandit-oversight-game-with-two-sided-informational-asymmetry)  
+   标签：评分：6.0/10、query:ai-safety
+   evidence：基于双向信息不对称的人机监督博弈，与智能体安全性相关
+14. [Efficient Multilingual Reasoning Transfer via Progressive Code-Switching](/202607/02/2607.00485v1-efficient-multilingual-reasoning-transfer-via-progressive-code-switching)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：通过跨动作值共享加速Q学习
-14. [Staged Hybridisation for Visual Quantum Reinforcement Learning via Knowledge Distillation](/202607/01/2606.30520v1-staged-hybridisation-for-visual-quantum-reinforcement-learning-via-knowledge-distillation)  
-   标签：评分：6.0/10、query:opd
-   evidence：面向视觉量子强化学习的知识蒸馏
+   evidence：通过代码切换的高效多语言推理迁移
 
 
 <div class="dpr-home-promo-card">
