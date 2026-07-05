@@ -8,80 +8,55 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-04
-- 运行时间：2026-07-04 20:46:20 UTC
+- 最新运行日期：2026-07-05
+- 运行时间：2026-07-05 21:07:05 UTC
 - 运行状态：成功
-- 本次总论文数：20
-- 精读区：9
-- 速读区：11
+- 本次总论文数：11
+- 精读区：6
+- 速读区：5
 
 ### 今日简报（AI）
-今日推荐20篇论文，精读9篇，重点聚焦语言模型评估意识和智能体策略合规性验证。最值得关注精读列表中两篇9分高分论文《Representational Depth of Evaluation Awareness...》与《PolicyGuard》，分别揭示模型规模与自我评估能力的关系、以及对话式策略安全监控方法。建议优先阅读这两篇精读论文，再拓展速读中多任务智能体蒸馏、测试时计算扩展及在线安全监控等方向。
-- 详情：[/202607/04/README](/202607/04/README)
+1) 今日聚焦 LLM 安全防护与自我改进，同时探索推理结构分析与语义查询规划。  
+2) 最值得看的两篇是零信任多门框架《Cognitive Firewall》和在线反思蒸馏《Procedural Memory Distillation》，均获 9.0 高分。  
+3) 建议优先精读这两篇论文，并关注 RAG 结合查询规划的速读成果，以拓展实际应用视野。
+- 详情：[/202607/05/README](/202607/05/README)
 
 ### 精读区论文标签
-1. [Representational Depth of Evaluation Awareness Shifts With Scale in Open-Weight Language Models](/202607/04/2606.29196v1-representational-depth-of-evaluation-awareness-shifts-with-scale-in-open-weight-language-models)  
+1. [Cognitive Firewall: A Proactive, Zero-Trust, Multi-Gate Framework for LLM Safety](/202607/05/2607.01277v1-cognitive-firewall-a-proactive-zero-trust-multi-gate-framework-for-llm-safety)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：评估意识作为AI安全问题
-2. [PolicyGuard: A Dialogue-Grounded Sub-Agent Verifier for Policy Adherence in LLM Agents](/202607/04/2606.29225v1-policyguard-a-dialogue-grounded-sub-agent-verifier-for-policy-adherence-in-llm-agents)  
+   evidence：主动零信任多门LLM安全框架
+2. [Procedural Memory Distillation: Online Reflection for Self-Improving Language Models](/202607/05/2607.01480v1-procedural-memory-distillation-online-reflection-for-self-improving-language-models)  
+   标签：评分：9.0/10、query:opd
+   evidence：通过程序性记忆进行在线策略蒸馏
+3. [Fast Multi-dimensional Refusal Subspaces via RFM-AGOP](/202607/05/2607.02396v1-fast-multi-dimensional-refusal-subspaces-via-rfm-agop)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：基于对话的LLM智能体策略遵守验证器
-3. [Procedural Memory Distillation: Online Reflection for Self-Improving Language Models](/202607/04/2607.01480v1-procedural-memory-distillation-online-reflection-for-self-improving-language-models)  
-   标签：评分：9.0/10、query:opd
-   evidence：通过强化学习进行过程记忆蒸馏以自改进语言模型
-4. [Evidence-State Rewards for Long-Context Reasoning](/202607/04/2607.02073v1-evidence-state-rewards-for-long-context-reasoning)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：针对长上下文推理的强化学习框架，包含证据状态奖励
-5. [Purified OPSD: On-Policy Self-Distillation Without Losing How to Think](/202607/04/2607.02234v1-purified-opsd-on-policy-self-distillation-without-losing-how-to-think)  
-   标签：评分：9.0/10、query:opd
-   evidence：净化在线策略自蒸馏提升LLM推理
-6. [Neuron-Aware Data Selection for Annotation-Free LLM Self-Distillation](/202607/04/2607.02460v1-neuron-aware-data-selection-for-annotation-free-llm-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：基于神经元感知的数据选择在线策略自蒸馏
-7. [Safety from Honesty in a Disinterested AI Predictor](/202607/04/2606.29657v1-safety-from-honesty-in-a-disinterested-ai-predictor)  
+   evidence：快速识别拒绝子空间用于安全
+4. [Safety from Honesty in a Disinterested AI Predictor](/202607/05/2606.29657v1-safety-from-honesty-in-a-disinterested-ai-predictor)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：为不干预AI预测器提供形式化安全论证，避免隐式代理
-8. [RoAd-RL: A Unified Library and Benchmark for Robust Adversarial Reinforcement Learning](/202607/04/2606.29867v1-road-rl-a-unified-library-and-benchmark-for-robust-adversarial-reinforcement-learning)  
+   evidence：针对AI预测器的形式化安全论证，避免隐式代理
+5. [MESA: Prioritizing Vulnerable Communication Channels for Securing Multi-Agent Systems](/202607/05/2606.30602v1-mesa-prioritizing-vulnerable-communication-channels-for-securing-multi-agent-systems)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：RL安全基准与防御评估框架
-9. [ReShift: Aha-Moment-Driven Reasoning-Level Backdoor Attacks on Vision-Language Models](/202607/04/2607.00361v1-reshift-aha-moment-driven-reasoning-level-backdoor-attacks-on-vision-language-models)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：针对视觉语言模型的推理级后门攻击，威胁模型安全
+   evidence：优先保护多智能体系统的脆弱通信通道
+6. [Scaling with Confidence: Calibrating Confidence of LLMs for Adaptive Test Time Scaling](/202607/05/2607.01612v1-scaling-with-confidence-calibrating-confidence-of-llms-for-adaptive-test-time-scaling)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：基于强化学习的置信度校准，用于自适应测试时缩放以减少过度思考
 
 ### 速读区论文标签
-1. [Building Multi-Task Agentic LLMs via Two-Phase Distillation](/202607/04/2606.30044v1-building-multi-task-agentic-llms-via-two-phase-distillation)  
-   标签：评分：8.0/10、query:opd
-   evidence：基于RL专家的两阶段蒸馏构建多任务智能体LLM
-2. [ELASTIC: Efficiently Learning to Adaptively Scale Test-Time Compute for Generative Control Policies](/202607/04/2606.31132v1-elastic-efficiently-learning-to-adaptively-scale-test-time-compute-for-generative-control-policies)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：学习自适应扩展测试时计算以提升效率
-3. [Online Safety Monitoring for LLMs](/202607/04/2607.02510v1-online-safety-monitoring-for-llms)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：在线安全监控，红队测试，LLM安全
-4. [Preventing Error Propagation in Multi-Agent AI through Runtime Monitoring](/202607/04/2606.29026v1-preventing-error-propagation-in-multi-agent-ai-through-runtime-monitoring)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：运行时监控防止多智能体AI错误传播，提升智能体安全性
-5. [LatentRevise: Learning from Zero-Hit Reasoning](/202607/04/2606.29938v1-latentrevise-learning-from-zero-hit-reasoning)  
+1. [ThinkProbe: Beyond Accuracy -- Structural Profiling of Open-Ended LLM Reasoning Traces via Non-Generative Thought Graphs](/202607/05/2606.29067v1-thinkprobe-beyond-accuracy----structural-profiling-of-open-ended-llm-reasoning-traces-via-non-generative-thought-graphs)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：通过从零命中推理中恢复信号来提高RLVR效率
-6. [Think in English, Answer in Korean: Efficient Adaptation of Multilingual Tool-Using Agents](/202607/04/2606.31648v1-think-in-english-answer-in-korean-efficient-adaptation-of-multilingual-tool-using-agents)  
+   evidence：通过思维图分析推理轨迹并包含效率指标
+2. [CADENZA in Action: Breaking the Monolith with Intent-Dependent Plan Spaces for Semantic Queries](/202607/05/2607.01468v1-cadenza-in-action-breaking-the-monolith-with-intent-dependent-plan-spaces-for-semantic-queries)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：使用强化学习和量化高效适配多语言工具使用智能体
-7. [Efficient Multilingual Reasoning Transfer via Progressive Code-Switching](/202607/04/2607.00485v1-efficient-multilingual-reasoning-transfer-via-progressive-code-switching)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：通过渐进式代码切换实现高效的多语言推理迁移，避免昂贵蒸馏
-8. [Cache Merging as a Convergent Replicated State for Multi-Agent Latent Reasoning](/202607/04/2607.01308v1-cache-merging-as-a-convergent-replicated-state-for-multi-agent-latent-reasoning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：用于高效多智能体潜在推理的缓存合并
-9. [Z-1: Efficient Reinforcement Learning for Vision-Language-Action Models](/202607/04/2606.31846v1-z-1-efficient-reinforcement-learning-for-vision-language-action-models)  
+   evidence：通过分解意图并选择实现优化语义查询
+3. [When RAG Meets Query Planning: Logical Query Trees for Resolving Exploratory Reasoning Problems](/202607/05/2607.00508v1-when-rag-meets-query-planning-logical-query-trees-for-resolving-exploratory-reasoning-problems)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：面向视觉-语言-动作模型的高效强化学习
-10. [Query-Centric Optimization of AI Workflows via Approximate Query Processing and Proxy Models](/202607/04/2607.00254v1-query-centric-optimization-of-ai-workflows-via-approximate-query-processing-and-proxy-models)  
+   evidence：通过查询规划进行高效推理
+4. [Cache Merging as a Convergent Replicated State for Multi-Agent Latent Reasoning](/202607/05/2607.01308v1-cache-merging-as-a-convergent-replicated-state-for-multi-agent-latent-reasoning)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：面向多智能体潜在推理的缓存合并
+5. [ReContext: Recursive Evidence Replay as LLM Harness for Long-Context Reasoning](/202607/05/2607.02509v1-recontext-recursive-evidence-replay-as-llm-harness-for-long-context-reasoning)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：以查询为中心的优化减少AI工作流中的昂贵模型调用
-11. [A Task-State Representation for Long-Horizon Mobile GUI Agents](/202607/04/2607.00502v1-a-task-state-representation-for-long-horizon-mobile-gui-agents)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：长时移动GUI代理，上下文负担，任务状态表示
+   evidence：提出一种无需训练的长上下文推理推理方法
 
 
 <div class="dpr-home-promo-card">

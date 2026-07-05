@@ -1,0 +1,38 @@
+# 日报 · 2026-07-05
+
+- 生成时间：2026-07-05 21:07:05 UTC
+- 当次推荐总数：11
+- 精读区：6
+- 速读区：5
+
+## 今日简报（AI）
+今日推荐11篇论文，精读6篇，重点关注LLM安全框架与自我改进模型。高分论文《Cognitive Firewall》提出多门零信任防御体系，《Procedural Memory Distillation》实现在线反思式自我提升。建议普通读者优先阅读RAG与查询规划相关论文，提升语义搜索效率。
+
+## 精读区
+1. [Cognitive Firewall: A Proactive, Zero-Trust, Multi-Gate Framework for LLM Safety](/202607/05/2607.01277v1-cognitive-firewall-a-proactive-zero-trust-multi-gate-framework-for-llm-safety) （9.0/10）
+   evidence：主动零信任多门LLM安全框架
+2. [Procedural Memory Distillation: Online Reflection for Self-Improving Language Models](/202607/05/2607.01480v1-procedural-memory-distillation-online-reflection-for-self-improving-language-models) （9.0/10）
+   evidence：通过程序性记忆进行在线策略蒸馏
+3. [Fast Multi-dimensional Refusal Subspaces via RFM-AGOP](/202607/05/2607.02396v1-fast-multi-dimensional-refusal-subspaces-via-rfm-agop) （9.0/10）
+   evidence：快速识别拒绝子空间用于安全
+4. [Safety from Honesty in a Disinterested AI Predictor](/202607/05/2606.29657v1-safety-from-honesty-in-a-disinterested-ai-predictor) （8.0/10）
+   evidence：针对AI预测器的形式化安全论证，避免隐式代理
+5. [MESA: Prioritizing Vulnerable Communication Channels for Securing Multi-Agent Systems](/202607/05/2606.30602v1-mesa-prioritizing-vulnerable-communication-channels-for-securing-multi-agent-systems) （8.0/10）
+   evidence：优先保护多智能体系统的脆弱通信通道
+6. [Scaling with Confidence: Calibrating Confidence of LLMs for Adaptive Test Time Scaling](/202607/05/2607.01612v1-scaling-with-confidence-calibrating-confidence-of-llms-for-adaptive-test-time-scaling) （8.0/10）
+   evidence：基于强化学习的置信度校准，用于自适应测试时缩放以减少过度思考
+
+## 速读区
+1. [ThinkProbe: Beyond Accuracy -- Structural Profiling of Open-Ended LLM Reasoning Traces via Non-Generative Thought Graphs](/202607/05/2606.29067v1-thinkprobe-beyond-accuracy----structural-profiling-of-open-ended-llm-reasoning-traces-via-non-generative-thought-graphs) （7.0/10）
+   evidence：通过思维图分析推理轨迹并包含效率指标
+2. [CADENZA in Action: Breaking the Monolith with Intent-Dependent Plan Spaces for Semantic Queries](/202607/05/2607.01468v1-cadenza-in-action-breaking-the-monolith-with-intent-dependent-plan-spaces-for-semantic-queries) （7.0/10）
+   evidence：通过分解意图并选择实现优化语义查询
+3. [When RAG Meets Query Planning: Logical Query Trees for Resolving Exploratory Reasoning Problems](/202607/05/2607.00508v1-when-rag-meets-query-planning-logical-query-trees-for-resolving-exploratory-reasoning-problems) （6.0/10）
+   evidence：通过查询规划进行高效推理
+4. [Cache Merging as a Convergent Replicated State for Multi-Agent Latent Reasoning](/202607/05/2607.01308v1-cache-merging-as-a-convergent-replicated-state-for-multi-agent-latent-reasoning) （6.0/10）
+   evidence：面向多智能体潜在推理的缓存合并
+5. [ReContext: Recursive Evidence Replay as LLM Harness for Long-Context Reasoning](/202607/05/2607.02509v1-recontext-recursive-evidence-replay-as-llm-harness-for-long-context-reasoning) （6.0/10）
+   evidence：提出一种无需训练的长上下文推理推理方法
+
+---
+使用键盘方向键可在日报/论文之间快速切换。
