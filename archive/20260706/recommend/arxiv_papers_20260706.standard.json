@@ -1,0 +1,622 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-06T21:08:03.198322+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 4,
+    "deep_divecandidates": 6,
+    "deep_cap": 9,
+    "deep_selected": 6,
+    "quick_candidates": 8,
+    "quick_skim_target": 14,
+    "quick_selected": 8
+  },
+  "deep_dive": [
+    {
+      "id": "2607.00422v1",
+      "source": "arxiv",
+      "title": "KidnapRAG: A Black-Box Attack for Hijacking Reasoning in Agentic Retrieval-Augmented Generation Systems",
+      "abstract": "Retrieval-Augmented Generation (RAG) systems are vulnerable to poisoning attacks that inject malicious documents into the retrieval process to manipulate model outputs. Recent Agentic RAG systems are more robust to such attacks because they iteratively perform retrieval and reasoning, allowing them to ignore weakly relevant poisoned documents and preserve the reasoning chain induced by the user query. However, existing attacks on Agentic RAG systems often assume white-box access to system prompts, reasoning traces, retrievers, or model parameters, limiting their applicability in realistic settings. In this paper, we study black-box poisoning attacks against Agentic RAG systems, where the attacker can only publish externally retrievable poisoned documents. We propose KidnapRAG, a sequential poisoning attack that hijacks the agent's multi-step reasoning chain using three role-specific documents: Bait, Chain-Link, and Mal-Ins, which attract initial retrieval, induce query reformulation, and provide attacker-controlled evidence, respectively. Experiments across multiple Agentic RAG frameworks, LLM backbones, and benchmarks show that KidnapRAG consistently outperforms existing poisoning baselines under black-box conditions. Further analyses show that KidnapRAG progressively weakens the original retrieval intent, redirects retrieval behavior, and increases reliance on attacker-controlled evidence. Our code is publicly available at https://github.com/chanwoochoi316/KidnapRAG.",
+      "authors": [
+        "Chanwoo Choi",
+        "Euntae Kim",
+        "Kyuho Lee",
+        "Youngsam Chun",
+        "Jinhee Jeong",
+        "Eunmi Kim",
+        "Myunggyo Oh",
+        "Junseo Jang",
+        "Buru Chang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-07-01T04:32:17+00:00",
+      "link": "https://arxiv.org/pdf/2607.00422v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "query:ai-safety",
+        "query:eff-reason"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "black-box poisoning attack on Agentic RAG systems",
+      "llm_evidence_cn": "针对智能体检索增强生成系统的黑盒投毒攻击",
+      "llm_evidence": "针对智能体检索增强生成系统的黑盒投毒攻击",
+      "canonical_evidence": "针对智能体检索增强生成系统的黑盒投毒攻击",
+      "llm_tldr_en": "KidnapRAG introduces a black-box poisoning attack against Agentic RAG systems that injects malicious documents to hijack reasoning, demonstrating vulnerabilities in realistic settings without white-box access.",
+      "llm_tldr_cn": "针对当前Agentic RAG系统的安全性挑战，KidnapRAG提出一种黑盒投毒攻击方法，攻击者仅需发布外部文档即可操纵系统推理。该方法不依赖系统提示、推理轨迹或模型参数的白盒访问，更贴近真实场景。实验揭示了Agentic RAG系统在面对此类攻击时的脆弱性。",
+      "llm_tldr": "针对当前Agentic RAG系统的安全性挑战，KidnapRAG提出一种黑盒投毒攻击方法，攻击者仅需发布外部文档即可操纵系统推理。该方法不依赖系统提示、推理轨迹或模型参数的白盒访问，更贴近真实场景。实验揭示了Agentic RAG系统在面对此类攻击时的脆弱性。",
+      "llm_tags": [
+        "query:ai-safety:composite"
+      ],
+      "matched_query_tag": "query:ai-safety:composite",
+      "matched_query_text": "Papers central to 帮我找一下safety相关的论文，比如agent safety以及model本身的safety，jailbreak， defense以及benchmark等, especially work that connects or combines: agent safety; model safety; jailbreak attacks; defense mechanisms against attacks; safety benchmarks; red teaming; safety issues in large language models; jailbreak attacks and defenses; benchmarks for model safety evaluation; agent safety in reinforcement learning.",
+      "matched_requirement_id": "req-composite-ai-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.00481v1",
+      "source": "arxiv",
+      "title": "Beyond the Prompt: Jailbreaking Function-Calling LLMs via Simulated Moderation Traces",
+      "abstract": "Jailbreak attacks remain a critical threat to the safe deployment of large language models (LLMs). While prior work has primarily studied attacks and defenses at the prompt level, we show that this prompt-centric paradigm overlooks a structural vulnerability in stateful, function-calling environments. In such applications, developer-defined schemas, structured arguments, and untrusted tool outputs are interleaved into a single shared model context. This architecture expands the attack surface by blurring the boundary between trusted control logic and untrusted data, allowing adversarial intent to be distributed across a multi-turn execution path. We exploit this architectural flaw through SMT, a black-box attack framework based on Simulated Moderation Traces. Departing from purely prompt-based interactions, SMT constructs a multi-turn trajectory that simulates a legitimate moderation-auditing workflow. Within this trajectory, a fabricated moderation frame leverages red-team testing as a pretext to elicit harmful generations. The subsequent validation feedback treats safety refusals as execution failures, prompting refinements that gradually weaken the model's safety constraints and ultimately trigger harmful outputs. Extensive empirical evaluations on prominent commercial LLMs from five different providers across two standardized safety benchmarks show that SMT consistently achieves the highest average attack success rate and HarmScore while requiring a near-minimal number of queries, substantially outperforming existing baselines. These findings demonstrate that prompt-level sanitization alone is fundamentally insufficient for defending tool-enabled LLM systems and highlight the urgent need for context-aware validation across schemas, arguments, tool outputs, and accumulated conversation state. The code is available at https://github.com/liujlong27/SMT.",
+      "authors": [
+        "Junlong Liu",
+        "Haobo Wang",
+        "Weiqi Luo",
+        "Xiaojun Jia"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-07-01T06:08:07+00:00",
+      "link": "https://arxiv.org/pdf/2607.00481v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "jailbreak attack framework for function-calling LLMs",
+      "llm_evidence_cn": "针对函数调用LLM的越狱攻击框架",
+      "llm_evidence": "针对函数调用LLM的越狱攻击框架",
+      "canonical_evidence": "针对函数调用LLM的越狱攻击框架",
+      "llm_tldr_en": "Introduces SMT, a black-box jailbreak attack exploiting structural vulnerability in function-calling environments via simulated moderation traces.",
+      "llm_tldr_cn": "现有越狱攻击主要聚焦提示词层面，但函数调用环境中开发者定义的架构、结构化参数和不可信工具输出共享同一上下文，扩大了攻击面。本文提出SMT，一种基于模拟审核痕迹的黑盒越狱攻击框架，利用多轮执行路径分布式部署对抗意图。实验证明SMT能有效绕过现有防御，揭示函数调用LLM特有的安全漏洞。",
+      "llm_tldr": "现有越狱攻击主要聚焦提示词层面，但函数调用环境中开发者定义的架构、结构化参数和不可信工具输出共享同一上下文，扩大了攻击面。本文提出SMT，一种基于模拟审核痕迹的黑盒越狱攻击框架，利用多轮执行路径分布式部署对抗意图。实验证明SMT能有效绕过现有防御，揭示函数调用LLM特有的安全漏洞。",
+      "llm_tags": [
+        "query:ai-safety:composite"
+      ],
+      "matched_query_tag": "query:ai-safety:composite",
+      "matched_query_text": "Papers central to 帮我找一下safety相关的论文，比如agent safety以及model本身的safety，jailbreak， defense以及benchmark等, especially work that connects or combines: agent safety; model safety; jailbreak attacks; defense mechanisms against attacks; safety benchmarks; red teaming; safety issues in large language models; jailbreak attacks and defenses; benchmarks for model safety evaluation; agent safety in reinforcement learning.",
+      "matched_requirement_id": "req-composite-ai-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.01859v1",
+      "source": "arxiv",
+      "title": "Safety Targeted Embedding Exploit via Refinement",
+      "abstract": "Safety training for large language models (LLMs) is conducted predominantly in English, leaving uncertain how well safety mechanisms generalize to low-resource languages and mixed-language code-switching. We show that this creates an epistemic gap in which models confidently generate harmful responses for inputs that fall outside the distribution of their safety training. To study this phenomenon, we introduce STEER (Safety Targeted Embedding Exploit via Refinement), a gradient-guided attack that identifies words contributing most strongly to the model's refusal behavior and iteratively translates them into low-resource languages to suppress refusal while preserving harmful intent. Across six open-source 8B-parameter models, STEER achieves attack success rates of up to 93.0% on JailbreakBench and 96.7% on AdvBench, outperforming random code-switching and Greedy Coordinate Gradient (GCG). The resulting prompts also transfer to GPT-4o-mini, achieving a 35.5% attack success rate without requiring access to the target model, suggesting that the underlying weakness is not specific to a single architecture. These findings demonstrate that safety mechanisms aligned primarily on English cannot be assumed to generalize across multilingual inputs. We argue that improving multilingual safety requires broader coverage during alignment and mechanisms that explicitly detect and abstain on out-of-distribution inputs.",
+      "authors": [
+        "Joshua Adrian Cahyono"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-07-02T08:17:57+00:00",
+      "link": "https://arxiv.org/pdf/2607.01859v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "query:ai-safety",
+        "query:l-context-rl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "gradient-guided jailbreak attack via low-resource language translation",
+      "llm_evidence_cn": "通过低资源语言翻译的梯度引导越狱攻击",
+      "llm_evidence": "通过低资源语言翻译的梯度引导越狱攻击",
+      "canonical_evidence": "通过低资源语言翻译的梯度引导越狱攻击",
+      "llm_tldr_en": "Introduces STEER, a gradient-guided attack that translates refusal-inducing words into low-resource languages to suppress refusal, achieving up to 93% ASR across 8B models.",
+      "llm_tldr_cn": "该论文提出梯度引导攻击STEER，通过识别导致模型拒绝的关键词并迭代翻译为低资源语言，从而压制拒绝行为。在六个8B模型上最高达到93%的攻击成功率，揭示了多语言安全性的薄弱环节。",
+      "llm_tldr": "该论文提出梯度引导攻击STEER，通过识别导致模型拒绝的关键词并迭代翻译为低资源语言，从而压制拒绝行为。在六个8B模型上最高达到93%的攻击成功率，揭示了多语言安全性的薄弱环节。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "jailbreak attacks",
+      "matched_requirement_id": "req-16",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.29126v1",
+      "source": "arxiv",
+      "title": "HiComm: Hierarchical Communication for Multi-agent Reinforcement Learning",
+      "abstract": "Cooperative multi-agent reinforcement learning (MARL) often relies on communication to mitigate partial observability, yet most existing protocols treat messages as flat dense vectors detached from the structure of the observations they summarize. This design overlooks an important source of inductive bias in many cooperative environments, where observations naturally follow a hierarchy such as groups and entities. We propose \\textsc{HiComm}, a plug-in communication module that grounds messages in the sender's hierarchical observation. \\textsc{HiComm} is receiver-driven: the receiver issues a query, and the hierarchy is resolved through a three-stage decoding process that first selects a group, then a sender, and then an entity within that group, returning the corresponding feature slice as the message. This converts communication from unstructured vector transmission into structured information retrieval over the sender's observation hierarchy. We instantiate this mechanism with Straight-Through Gumbel-Softmax for differentiable discrete selection and a lightweight shared projection design that attaches to standard MARL pipelines. Experiments across cooperative MARL tasks with different observation structures and coordination demands show that \\textsc{HiComm} matches or outperforms representative learned communication baselines while reducing communication volume by up to $23\\times$ per receiver per episode.",
+      "authors": [
+        "Runze Zhao",
+        "Dongruo Zhou",
+        "Sumit Kumar Jha",
+        "Nathaniel D. Bastian",
+        "Ankit Shah"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-28T00:29:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.29126v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "proposes hierarchical communication for multi-agent RL, enabling dynamic coordination",
+      "llm_evidence_cn": "提出多智能体强化学习中的层次化通信，支持动态协调",
+      "llm_evidence": "提出多智能体强化学习中的层次化通信，支持动态协调",
+      "canonical_evidence": "提出多智能体强化学习中的层次化通信，支持动态协调",
+      "llm_tldr_en": "HiComm introduces a receiver-driven hierarchical communication module for MARL, grounding messages in sender's observation hierarchy to improve coordination efficiency.",
+      "llm_tldr_cn": "该论文指出多智能体强化学习中的通信通常忽略观察的层次结构，提出HiComm模块。该模块采用接收者驱动模式，通过三层解码（组、发送者、实体）实现结构化消息传递。实验表明，HiComm在多个合作任务中提升了协调效率和团队奖励。这一工作为智能体集群的通信协调提供了重要的结构归纳偏置。",
+      "llm_tldr": "该论文指出多智能体强化学习中的通信通常忽略观察的层次结构，提出HiComm模块。该模块采用接收者驱动模式，通过三层解码（组、发送者、实体）实现结构化消息传递。实验表明，HiComm在多个合作任务中提升了协调效率和团队奖励。这一工作为智能体集群的通信协调提供了重要的结构归纳偏置。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.31748v1",
+      "source": "arxiv",
+      "title": "Addressing Over-Refusal in LLMs with Competing Rewards",
+      "abstract": "Safety training on language models often induces over-refusal: improved safety on harmful prompts at the cost of increased refusal on harmless ones. Though this trade-off can be mitigated by training models with reinforcement learning (RL) to reason before answering, it does not remove the underlying problem that reasoning can often be a \"rubber stamp\" for a predetermined response. In this paper, we address the safety-refusal trade-off by rethinking how models are trained to reason about safety. Our key insight is that unsafe reasoning can itself serve as a useful exploratory signal. Rather than preemptively blocking harmful thoughts, we encourage the model to sufficiently explore unsafe reasoning but produce a safe response. The harmful exploration improves the model's ability to distinguish harmful from harmless prompts by resolving ambiguity, allowing it to remain safe while complying only when appropriate. We cast this as an adversarial optimization problem in which a reasoning player explores strategies for producing an unsafe response and an answer player ensures that the final output is safe. We train a single model with dense rewards to play both roles within one chain-of-thought, across different segments. To achieve this, we find that process rewards are crucial for stable optimization of competing objectives. Our resulting model SEAR deliberately engages in harmful reasoning as exploration while reliably flipping back to a safe answer. We demonstrate that this behavior helps mitigate over-refusal and defend against attacks that directly manipulate the reasoning to be harmful.",
+      "authors": [
+        "Taeyoun Kim",
+        "Aviral Kumar"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-30T14:38:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.31748v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL to train safe reasoning without over-refusal",
+      "llm_evidence_cn": "使用RL训练安全推理而不过度拒绝",
+      "llm_evidence": "使用RL训练安全推理而不过度拒绝",
+      "canonical_evidence": "使用RL训练安全推理而不过度拒绝",
+      "llm_tldr_en": "This paper uses competing rewards in RL to encourage unsafe reasoning exploration but produce safe responses, improving the safety-refusal trade-off.",
+      "llm_tldr_cn": "论文通过竞争奖励机制解决安全训练中的过度拒绝问题。关键思想是鼓励模型探索不安全推理但最终产生安全响应，从而改善安全性与可用性之间的权衡。实验表明该方法在保持安全性的同时减少了过度拒绝。",
+      "llm_tldr": "论文通过竞争奖励机制解决安全训练中的过度拒绝问题。关键思想是鼓励模型探索不安全推理但最终产生安全响应，从而改善安全性与可用性之间的权衡。实验表明该方法在保持安全性的同时减少了过度拒绝。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "model safety",
+      "matched_requirement_id": "req-15",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.30893v1",
+      "source": "arxiv",
+      "title": "Sampling-Based Coordination-Informed Multi-Objective Multi-Robot Reinforcement Learning",
+      "abstract": "Multi-robot systems must simultaneously optimize competing objectives while maintaining coordinated behavior. Existing multi-agent reinforcement learning approaches often rely on fixed or centralized coordination, which limits adaptability and violates distributed constraints. This work introduces the Coordination-Informed Multi-Objective Reinforcement Learning (CIMORL) framework, integrating a distributed weight prediction mechanism, a privileged expert training strategy, and theoretical guarantees for Pareto-optimal solutions. We present the base CIMORL method alongside two sampling-based variants, CIMORL-TS (Tree Search) and CIMORL-MPPI (MPPI), which leverage privileged global information during training to enable fully decentralized deployment. Experimental validation in cooperative and adversarial scenarios demonstrates a $21.2\\%$ hypervolume improvement and superior policy stability compared to state-of-the-art baselines. Real-world experiments with Crazyflie drones further validate the framework's robustness in resource allocation and multi-attacker multi-defend scenarios under partial observability.",
+      "authors": [
+        "Antonio Marino",
+        "Esteban Restrepo",
+        "Soon-jo Chung",
+        "Paolo Robuffo Giordano",
+        "Claudio Pacchierotti"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.MA"
+      ],
+      "published": "2026-06-29T20:31:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.30893v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multi-robot coordination with distributed multi-objective RL",
+      "llm_evidence_cn": "多机器人分布式多目标强化学习协调",
+      "llm_evidence": "多机器人分布式多目标强化学习协调",
+      "canonical_evidence": "多机器人分布式多目标强化学习协调",
+      "llm_tldr_en": "Introduces CIMORL, a sampling-based coordination-informed multi-objective RL framework for multi-robot systems, achieving decentralized Pareto-optimal policies with privileged expert training.",
+      "llm_tldr_cn": "多机器人系统需同时优化多个竞争目标并保持协调，现有方法依赖固定或集中式协调。CIMORL框架集成了分布式权重预测机制和特权专家训练策略，通过两种采样变体CIMORL-TS和CIMORL-MPPI实现完全分布式部署，理论保证帕累托最优性。在仿真实验中和真实机器人平台上验证了方法的有效性。",
+      "llm_tldr": "多机器人系统需同时优化多个竞争目标并保持协调，现有方法依赖固定或集中式协调。CIMORL框架集成了分布式权重预测机制和特权专家训练策略，通过两种采样变体CIMORL-TS和CIMORL-MPPI实现完全分布式部署，理论保证帕累托最优性。在仿真实验中和真实机器人平台上验证了方法的有效性。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.31372v1",
+      "source": "arxiv",
+      "title": "Failure-Based Testing for Deep Reinforcement Learning Agents",
+      "abstract": "Deep Reinforcement Learning (DRL) agents have been widely adopted across diverse domains to address challenging decision-making problems, such as autonomous driving and robotic control. Given that many of these applications are safety- and security-critical, rigorous testing of DRL agents is indispensable. Existing testing methods are typically guided by reward signals to detect failures. However, for well-trained agents, whose performance approaches optimal levels in standard operating conditions, reward signals remain generally high, making current methods ineffective at uncovering critical failures.   To address these challenges, we propose a novel failure-based method that leverages task-induced failure insights to enhance failure detection capability while reducing the number of tests required. Since DRL agents are inherently designed with human-defined tasks, they provide valuable cues about task difficulty. Intuitively, a DRL agent is more likely to fail when confronted with a more difficult task; therefore, PRT prioritizes these tasks. Building on this foundation, we propose Prior Random Testing, a black-box failure-based testing method that enables targeted prioritization while preserving the diversity of generated test cases. Guided by task-induced failure insights, PRT prioritizes failure-prone regions of the input domain, thereby facilitating efficient failure detection.   PRT is evaluated on four widely used benchmarks and compared with different state-of-the-art methods including fuzzing, search-based and generative-based methods. PRT ranks among the top performers in terms of both the cost of finding the first failure and the diversity of test cases. Notably, compared to random testing, PRT achieves better diversity and reduces the testing cost by over 50%.",
+      "authors": [
+        "Weibin Lin",
+        "Jiangtao Meng",
+        "Zheng Zheng"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE"
+      ],
+      "published": "2026-06-30T09:05:29+00:00",
+      "link": "https://arxiv.org/pdf/2606.31372v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "failure-based testing for DRL agents safety-critical",
+      "llm_evidence_cn": "基于失败的深度强化学习智能体测试",
+      "llm_evidence": "基于失败的深度强化学习智能体测试",
+      "canonical_evidence": "基于失败的深度强化学习智能体测试",
+      "llm_tldr_en": "A failure-based method leverages task-failure insights to enhance DRL agent testing, crucial for safety.",
+      "llm_tldr_cn": "该论文提出一种基于失败模式的DRL智能体测试方法，通过挖掘任务固有的失败知识，有效检测传统奖励导向方法难以发现的危险行为，对安全关键应用至关重要。",
+      "llm_tldr": "该论文提出一种基于失败模式的DRL智能体测试方法，通过挖掘任务固有的失败知识，有效检测传统奖励导向方法难以发现的危险行为，对安全关键应用至关重要。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety in reinforcement learning",
+      "matched_requirement_id": "req-23",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.29155v1",
+      "source": "arxiv",
+      "title": "OASIF: An Efficient Obfuscation-Aware Self-Improving Framework for LLM-Based Assembly Code Instruction Following and Comprehension",
+      "abstract": "Large Language Models (LLMs) have recently shown promise in automated binary analysis, yet they remain brittle under commercial-grade obfuscation. We present OASIF, an Obfuscation-Aware Self-evolving Instruction-Following framework for obfuscated assembly comprehension. OASIF couples a token-efficient assembly encoder with a lightweight projector to expose long obfuscated code to a pretrained code LLM under a bounded context budget and follows a three-phase training: (i) feature-space alignment, (ii) supervised instruction fine-tuning, and (iii) online self-evolving reinforcement learning with hybrid rewards, enabling continual adaptation with minimal manual verification. On VMISA-Bench, a challenging out-of-distribution suite featuring three commercial VM-based obfuscators, OASIF consistently improves open-source backbones; Qwen2.5-Coder-Instruct-14B attains Success Rate gains of +15.9, +5.8, and +16.9 percentage points (pp) on Code Virtualizer, Themida (v3.0.7), and VMProtect (v3.5), respectively, and improves the OASIF-Bench average by +9.8. OASIF further delivers stable gains across seven standard BCSD benchmarks while preserving general and domain-relevant capabilities on HumanEval, VulBench, and HumanEval-Decompile.",
+      "authors": [
+        "Xinyi Wang",
+        "Rongze Chen",
+        "Ke Wang",
+        "Qiyuan Chen",
+        "Yanming Liu",
+        "Xiang Li",
+        "Chunfu Jia"
+      ],
+      "primary_category": "cs.SE",
+      "categories": [
+        "cs.SE"
+      ],
+      "published": "2026-06-28T02:28:10+00:00",
+      "link": "https://arxiv.org/pdf/2606.29155v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "query:ai-safety"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-evolving RL framework for obfuscated assembly comprehension",
+      "llm_evidence_cn": "用于混淆汇编理解的自我进化强化学习框架",
+      "llm_evidence": "用于混淆汇编理解的自我进化强化学习框架",
+      "canonical_evidence": "用于混淆汇编理解的自我进化强化学习框架",
+      "llm_tldr_en": "OASIF uses self-evolving reinforcement learning with hybrid rewards to improve LLM understanding of obfuscated assembly code under limited context.",
+      "llm_tldr_cn": "本文针对LLM在商业级混淆汇编代码分析中表现脆弱的问题，提出OASIF框架。它结合高效令牌编码器、投影器和三阶段训练（对齐、微调、在线自我进化RL），在有限上下文下提升混淆代码理解。在VMISA-Bench上取得了显著改进。",
+      "llm_tldr": "本文针对LLM在商业级混淆汇编代码分析中表现脆弱的问题，提出OASIF框架。它结合高效令牌编码器、投影器和三阶段训练（对齐、微调、在线自我进化RL），在有限上下文下提升混淆代码理解。在VMISA-Bench上取得了显著改进。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "teacher student framework reinforcement learning distillation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.02192v1",
+      "source": "arxiv",
+      "title": "Reference-Governed Distributed Safe Gradient Flow for Safe Optimal Output Agreement of Multi-Agent Systems",
+      "abstract": "This paper studies safe optimal output agreement for nonlinear multi-agent systems with output safety constraints. Existing safe feedback optimization methods often implement gradient-flow dynamics directly through the plant input, which may require high-order control barrier functions (HOCBFs). The resulting derivative-chain design is tuning-sensitive and can introduce additional equilibrium conditions that alter the steady-state optimal solution. We propose a reference-governed two-layer architecture that separates lower-layer output regulation from upper-layer distributed optimization. The upper layer filters the reference gradient flow through first-order control barrier function constraints, which are easier to tune and preserve the steady-state optimality structure of the original agreement problem. The lower layer uses an internal-model-based output regulator with a reference-dependent Lyapunov function, from which dynamic safety margins (DSMs) are constructed to certify transient output safety. We prove forward invariance, optimal-solution preservation under DSM-compatibility conditions, and convergence via a Lyapunov small-gain argument. Simulations validate safe convergence, show advantages over HOCBF-based feedback optimization, and demonstrate adaptive tangential objective shaping for escaping spurious equilibria induced by nonconvex obstacles.",
+      "authors": [
+        "Zhanglin Shangguan",
+        "Wei Xiao",
+        "Bo Yang",
+        "Xinping Guan"
+      ],
+      "primary_category": "eess.SY",
+      "categories": [
+        "eess.SY"
+      ],
+      "published": "2026-07-02T14:00:39+00:00",
+      "link": "https://arxiv.org/pdf/2607.02192v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "safe optimal output agreement for multi-agent systems with safety constraints",
+      "llm_evidence_cn": "多智能体系统安全最优输出协议，含安全约束",
+      "llm_evidence": "多智能体系统安全最优输出协议，含安全约束",
+      "canonical_evidence": "多智能体系统安全最优输出协议，含安全约束",
+      "llm_tldr_en": "Proposes a two-layer architecture with reference-governed gradient flow for safe optimal output agreement, using first-order CBF constraints.",
+      "llm_tldr_cn": "针对非线性多智能体系统输出安全约束下的最优一致性问题，提出参考调控两层架构：上层通过一阶控制障碍函数过滤参考梯度流，下层实现输出调节。该方法避免了高阶CBF的敏感性和平衡点偏移，在仿真中实现安全最优输出一致，为多智能体安全RL提供了新途径。",
+      "llm_tldr": "针对非线性多智能体系统输出安全约束下的最优一致性问题，提出参考调控两层架构：上层通过一阶控制障碍函数过滤参考梯度流，下层实现输出调节。该方法避免了高阶CBF的敏感性和平衡点偏移，在仿真中实现安全最优输出一致，为多智能体安全RL提供了新途径。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety in reinforcement learning",
+      "matched_requirement_id": "req-23",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.30966v1",
+      "source": "arxiv",
+      "title": "HyPOLE: Hyperproperty-Guided Multi-Agent Reinforcement Learning under Partial Observation",
+      "abstract": "Formal specification is a powerful tool to guide the learning process and provides significant advantages over reward shaping: (1) mathematical rigor; (2) expressiveness to specify objectives and constraints, and (3) the ability to define tactics to achieve objectives. However, these benefits remain largely unexplored in the context of Multi-Agent Reinforcement Learning (MARL). This paper introduces HyPOLE, a novel framework for MARL under partial observability, where learning is guided by the expressive power of the so-called hyperproperties and, in particular, the temporal logic HyperLTL. We integrate Centralized Training for Decentralized Execution (CTDE) techniques with HyPOLE to synthesize decentralized policies, and our evaluation on SMAC, MessySMAC, and WildFire benchmark demonstrates clear advantages over baselines.",
+      "authors": [
+        "Arshia Rafieioskouei",
+        "Tzu-Han Hsu",
+        "Matthew Lucas",
+        "Borzoo Bonakdarpour"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LO",
+        "cs.MA"
+      ],
+      "published": "2026-06-29T23:03:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.30966v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "multi-agent RL partial observation formal specification",
+      "llm_evidence_cn": "多智能体部分观测形式化规范",
+      "llm_evidence": "多智能体部分观测形式化规范",
+      "canonical_evidence": "多智能体部分观测形式化规范",
+      "llm_tldr_en": "HyPOLE uses hyperproperties to guide multi-agent reinforcement learning under partial observation.",
+      "llm_tldr_cn": "该论文提出了HyPOLE框架，利用超属性（HyperLTL）引导多智能体强化学习，在部分可观测环境下通过集中训练分散执行合成策略，展示了形式化规范在智能体安全约束方面的潜力。",
+      "llm_tldr": "该论文提出了HyPOLE框架，利用超属性（HyperLTL）引导多智能体强化学习，在部分可观测环境下通过集中训练分散执行合成策略，展示了形式化规范在智能体安全约束方面的潜力。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety in reinforcement learning",
+      "matched_requirement_id": "req-23",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.02440v1",
+      "source": "arxiv",
+      "title": "EvoPolicyGym: Evaluating Autonomous Policy Evolution in Interactive Environments",
+      "abstract": "Autonomous agents are increasingly expected to improve executable policies through feedback, yet existing evaluations often collapse this process into a final score or confound it with open-ended software-engineering progress. We introduce Autonomous Policy Evolution, a controlled evaluation setting in which a harness-model agent repeatedly edits an executable policy system under a fixed interaction budget. We instantiate this setting in EvoPolicyGym, a benchmark built from compact interactive RL environments that evaluates how agents iteratively improve explored policies. On the EvoPolicyGym suite, GPT-5.5 achieves the strongest aggregate rank score and top-two performance on all 16 environments. Beyond leaderboard results, EvoPolicyGym also provides trajectory-level diagnostics that distinguish how agents allocate budget, convert feedback into parametric tuning. These analyses show that strong autonomous policy evolution depends not only on isolated task wins, but on discovering task-appropriate mechanisms and refining policies under bounded feedback.",
+      "authors": [
+        "Zhilin Wang",
+        "Han Song",
+        "Runzhe Zhan",
+        "Jusen Du",
+        "Jiacheng Chen",
+        "Tianle Li",
+        "Qingyu Yin",
+        "Yulun Wu",
+        "Zhennan Shen",
+        "Tong Zhu",
+        "Yanshu Li",
+        "Guanjie Chen",
+        "Derek F. Wong",
+        "Yafu Li",
+        "Yu Cheng",
+        "Yang Yang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-07-02T17:10:13+00:00",
+      "link": "https://arxiv.org/pdf/2607.02440v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "policy evolution in RL environments with agent iteration",
+      "llm_evidence_cn": "RL环境中的策略进化与智能体迭代",
+      "llm_evidence": "RL环境中的策略进化与智能体迭代",
+      "canonical_evidence": "RL环境中的策略进化与智能体迭代",
+      "llm_tldr_en": "EvoPolicyGym introduces a benchmark for evaluating autonomous policy evolution in RL environments, where agents iteratively improve policies.",
+      "llm_tldr_cn": "本文提出EvoPolicyGym，一个用于评估自主策略进化的基准，在紧凑的交互式RL环境中评测智能体如何迭代改进策略。实验显示GPT-5.5在全部16个环境中均取得前两名。该工作为策略学习与进化提供了标准化评估。",
+      "llm_tldr": "本文提出EvoPolicyGym，一个用于评估自主策略进化的基准，在紧凑的交互式RL环境中评测智能体如何迭代改进策略。实验显示GPT-5.5在全部16个环境中均取得前两名。该工作为策略学习与进化提供了标准化评估。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.00339v1",
+      "source": "arxiv",
+      "title": "TRACE: State-Aware Query Processing over Temporal Evidence Graphs for Conversational Data",
+      "abstract": "Conversational data is increasingly used as a persistent source of user state for long-running assistants and AI agents. However, querying this data remains challenging because conversations naturally evolve: plans are revised, preferences change, and later messages frequently supersede or contradict earlier information. Existing long-memory pipelines largely treat memories as independent text or vector objects. This approach often retrieves semantically similar but stale evidence, offering limited support for state-aware reasoning. To address this problem, we present TRACE, a query processing framework over temporal evidence graphs for evolving conversational data. TRACE models conversations as a hierarchical graph spanning events, sessions, and topics, enriched with typed temporal, causal, update, and contradiction relations. Crucially, the framework maintains validity annotations so obsolete facts remain accessible for historical queries but are discounted for current-state answers. At query time, TRACE combines vector-based note retrieval with graph-guided evidence search, generating validity-aware support paths and a hybrid context for answer generation. This design separates lexical recall from evidence reconstruction, enabling bounded query-time reasoning over long conversational histories. Experiments on long-conversation query-answering (QA) benchmarks show that TRACE improves temporal and multi-hop reasoning, with ablations highlighting the importance of hierarchy, update-aware seeding, and path-grounded evidence.",
+      "authors": [
+        "Maolin Wang",
+        "Yu Wang",
+        "Zichun Liu",
+        "Baiyuan Qiu",
+        "Chenbin Zhang",
+        "Jiguang Shen",
+        "Haoran Yang",
+        "Hao Miao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-07-01T02:28:47+00:00",
+      "link": "https://arxiv.org/pdf/2607.00339v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "query processing over long conversational data",
+      "llm_evidence_cn": "长对话数据的查询处理",
+      "llm_evidence": "长对话数据的查询处理",
+      "canonical_evidence": "长对话数据的查询处理",
+      "llm_tldr_en": "TRACE models conversations as temporal evidence graphs to enable state-aware query processing over evolving conversational data, addressing stale evidence retrieval.",
+      "llm_tldr_cn": "本文针对对话数据随时间演变导致检索过时证据的问题，提出TRACE框架。它将对话建模为时间证据图，支持状态感知的查询处理，避免检索语义相似但已过时的记忆。实验表明该方法在动态对话场景中能更准确地提取用户当前状态信息。",
+      "llm_tldr": "本文针对对话数据随时间演变导致检索过时证据的问题，提出TRACE框架。它将对话建模为时间证据图，支持状态感知的查询处理，避免检索语义相似但已过时的记忆。实验表明该方法在动态对话场景中能更准确地提取用户当前状态信息。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "research papers on reinforcement learning for long context language models",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.01308v1",
+      "source": "arxiv",
+      "title": "Cache Merging as a Convergent Replicated State for Multi-Agent Latent Reasoning",
+      "abstract": "Multi-agent latent reasoning composes agents' KV-caches into one context for a final agent. Prior work (Agent Primitives) does this by concatenating caches along the sequence axis with RoPE re-encoding, which we call BagMerge. BagMerge is non-commutative, and the best input ordering is unpredictable, shifting with the regime, the latent-step budget, and the model scale. We make this exchange a convergent replicated state. First, CanonicalMerge fixes the layout by content: ordering caches by mean K-norm at a middle layer renders the merged cache byte-identical under any input permutation, verified algorithmically (arity N<=5) and bit-for-bit on real Qwen3-1.7B and 4B state. Second, we separate the replicated state from decode-time layout: the state is a set of content-addressed latent fragments whose merge is set union, a state-based CvRDT (commutative, associative, idempotent, absorbing), and CanonicalMerge is its deterministic render. Because the render is byte-equivalent, every N=2 accuracy number carries over unchanged and re-delivered duplicates are absorbed rather than re-concatenated. On a partitioned-reasoning benchmark, CanonicalMerge matches the best BagMerge ordering in every regime-by-budget-by-ordering cell without knowing which order is best, trading a small, statistically insignificant accuracy margin for an unconditional structural guarantee. The behaviour transfers to real multi-document QA (HotpotQA), while the closest training-free output-fusion baseline (PackLLM) loses by 45 points at matched budget, placing cache-level merging in a regime distinct from output-level fusion. Finally, at k>2 the approach transports and colocates latent traces but does not by itself compose them, which we characterize to motivate future work.",
+      "authors": [
+        "Carlos Baquero",
+        "Luís Brito"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA"
+      ],
+      "published": "2026-07-01T17:05:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.01308v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cache merging method for efficient multi-agent latent reasoning",
+      "llm_evidence_cn": "用于高效多智能体潜在推理的缓存合并方法",
+      "llm_evidence": "用于高效多智能体潜在推理的缓存合并方法",
+      "canonical_evidence": "用于高效多智能体潜在推理的缓存合并方法",
+      "llm_tldr_en": "Proposes CanonicalMerge to make KV-cache merging commutative and bit-identical across orders, improving efficiency and predictability in multi-agent latent reasoning.",
+      "llm_tldr_cn": "该论文研究多智能体潜在推理中的KV缓存合并问题。提出CanonicalMerge方法，按内容排序缓存使得合并结果与输入顺序无关，实现字节级别的确定性输出，避免了原非交换方法的不确定性和性能波动。",
+      "llm_tldr": "该论文研究多智能体潜在推理中的KV缓存合并问题。提出CanonicalMerge方法，按内容排序缓存使得合并结果与输入顺序无关，实现字节级别的确定性输出，避免了原非交换方法的不确定性和性能波动。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.01480v1",
+      "source": "arxiv",
+      "title": "Procedural Memory Distillation: Online Reflection for Self-Improving Language Models",
+      "abstract": "Reinforcement learning with verifiable rewards (RLVR), along with recent selfdistillation variants such as SDPO, evaluates each rollout against a verifier and updates the policy from that episode-level signal. However, the richer procedural information in the rollout is rarely retained or reused. Across episodes and epochs, the model repeatedly encounters related problems under a changing policy, producing cross-episode signals that episode-local updates cannot capture: which strategies consistently pass verification, which failure modes persist, which patterns recur. We propose Procedural Memory Distillation (PMD), which converts these crossepisode signals into reusable procedural memory and distills it into the policy's weights during training. This memory functions as a training scaffold, absorbed into the policy itself, yielding a memory-free model at inference. PMD organizes the memory at three levels of abstraction: raw trajectories, self-reflected strategies and lessons, and higher-level behavioral patterns that recur across problems, all extracted online from the model's own trajectories. A memory-conditioned self-teacher draws on the accumulated experience to supervise the student on its own rollouts, enabling student to progressively internalize procedural knowledge within its parameters. The central design principle is co-evolution: the policy generates rollouts that update the memory, and memory shapes the supervision that updates the policy. Empirically, across Qwen3-8B and OLMo3-Instruct-7B, PMD improves over SDPO by 3.8-5.5% on SCIKNOWEVAL and 7.9-13.6% on LIVECODEBENCH. Co-evolution powers these gains: freezing either the memory or the policy trails PMD by more than 10% across SCIKNOWEVAL domains.",
+      "authors": [
+        "Ye Liu",
+        "Srijan Bansal",
+        "Bo Pang",
+        "Yang Li",
+        "Zeyu Leo Liu",
+        "Yifei Ming",
+        "Zixuan Ke",
+        "Shafiq Joty",
+        "Semih Yavuz"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-01T21:20:57+00:00",
+      "link": "https://arxiv.org/pdf/2607.01480v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "distills cross-episode procedural memory into policy",
+      "llm_evidence_cn": "将跨回合过程记忆蒸馏到策略中",
+      "llm_evidence": "将跨回合过程记忆蒸馏到策略中",
+      "canonical_evidence": "将跨回合过程记忆蒸馏到策略中",
+      "llm_tldr_en": "Procedural Memory Distillation (PMD) converts cross-episode signals into reusable memory and distills it into policy weights for self-improvement.",
+      "llm_tldr_cn": "该论文提出过程记忆蒸馏（PMD），解决RLVR中回合级更新无法利用跨回合策略模式的问题。PMD将多个回合中产生的验证信号、成功策略和失败模式转化为可重用的过程记忆，并通过蒸馏技术注入模型权重。实验表明，PMD显著提升了自我改进效率，尤其适用于需要多次尝试的任务。该方法与现有自蒸馏方法互补，拓展了蒸馏技术在RL中的应用边界。",
+      "llm_tldr": "该论文提出过程记忆蒸馏（PMD），解决RLVR中回合级更新无法利用跨回合策略模式的问题。PMD将多个回合中产生的验证信号、成功策略和失败模式转化为可重用的过程记忆，并通过蒸馏技术注入模型权重。实验表明，PMD显著提升了自我改进效率，尤其适用于需要多次尝试的任务。该方法与现有自蒸馏方法互补，拓展了蒸馏技术在RL中的应用边界。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "distillation techniques reinforcement learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
