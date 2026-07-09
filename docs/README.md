@@ -8,105 +8,91 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-08
-- 运行时间：2026-07-08 22:01:55 UTC
+- 最新运行日期：2026-07-09
+- 运行时间：2026-07-09 22:02:17 UTC
 - 运行状态：成功
-- 本次总论文数：27
-- 精读区：13
+- 本次总论文数：23
+- 精读区：9
 - 速读区：14
 
 ### 今日简报（AI）
-今日27篇论文精读13篇，重点推荐《Trust Region Policy Distillation》与《Forged Reasoning Attacks on LLM Agent Memory》两篇满分研究。
-
-值得关注强化学习知识蒸馏前沿方法，以及LLM智能体记忆的伪造推理攻击与防御方向。
-
-建议优先精读这两篇满分论文，并速读VLM越狱与企业代理AI治理相关研究，以把握最新安全趋势。
-- 详情：[/202607/08/README](/202607/08/README)
+今日精选23篇论文，弱到强泛化与自动驾驶验证蒸馏领跑高分。  
+重点看《Weak-to-Strong Generalization via Direct On-Policy Distillation》和《CritiqueDriveVLM》两大方向，前者直指AI对齐核心难题，后者将验证引导强化学习用于驾驶感知。  
+普通读者可优先追踪弱到强泛化方法的实际效果，同时留意RAG知识库投毒防御与CoT审计框架的安全价值。
+- 详情：[/202607/09/README](/202607/09/README)
 
 ### 精读区论文标签
-1. [Trust Region Policy Distillation](/202607/08/2607.04751v1-trust-region-policy-distillation)  
+1. [Weak-to-Strong Generalization via Direct On-Policy Distillation](/202607/09/2607.05394v2-weak-to-strong-generalization-via-direct-on-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：直接提出带有理论保证的on-policy蒸馏方法TOP-D
-2. [Your Agent's Memories Are Not Its Own: Forged Reasoning Attacks on LLM Agent Memory and Defenses](/202607/08/2607.05029v1-your-agents-memories-are-not-its-own-forged-reasoning-attacks-on-llm-agent-memory-and-defenses)  
-   标签：评分：10.0/10、query:ai-safety
-   evidence：针对LLM智能体记忆的越狱攻击
-3. [TurnOPD: Making On-Policy Distillation Turn-Aware for Efficient Long-Horizon Agent Training](/202607/08/2607.05804v1-turnopd-making-on-policy-distillation-turn-aware-for-efficient-long-horizon-agent-training)  
-   标签：评分：10.0/10、query:opd
-   evidence：面向长周期智能体训练的在线策略蒸馏
-4. [Incentivizing Vision Language Models to Search for Long Video Question Answering](/202607/08/2607.02959v1-incentivizing-vision-language-models-to-search-for-long-video-question-answering)  
+   evidence：直接在线策略蒸馏用于RL中弱到强泛化
+2. [CritiqueDriveVLM: From Verifier-Guided Reinforcement Learning to Latent Thought Distillation for Autonomous Driving](/202607/09/2607.04179v1-critiquedrivevlm-from-verifier-guided-reinforcement-learning-to-latent-thought-distillation-for-autonomous-driving)  
+   标签：评分：9.0/10、query:opd
+   evidence：结合强化学习与蒸馏技术用于自动驾驶，核心为潜思蒸馏
+3. [A Few Teacher Steps Go a Long Way: Cost-Efficient On-Policy Data Augmentation for Agent Post-Training](/202607/09/2607.04574v1-a-few-teacher-steps-go-a-long-way-cost-efficient-on-policy-data-augmentation-for-agent-post-training)  
+   标签：评分：9.0/10、query:opd
+   evidence：教师学生框架强化学习蒸馏；利用教师步骤的在线数据增强
+4. [Trust Region Policy Distillation](/202607/09/2607.04751v1-trust-region-policy-distillation)  
+   标签：评分：9.0/10、query:opd
+   evidence：直接针对在线策略蒸馏提出信任区域策略蒸馏方法
+5. [CompactionRL: Reinforcement Learning with Context Compaction for Long-Horizon Agents](/202607/09/2607.05378v1-compactionrl-reinforcement-learning-with-context-compaction-for-long-horizon-agents)  
    标签：评分：9.0/10、query:l-context-rl
-   evidence：强化学习后训练用于长视频问答，涉及长上下文检索
-5. [CritiqueDriveVLM: From Verifier-Guided Reinforcement Learning to Latent Thought Distillation for Autonomous Driving](/202607/08/2607.04179v1-critiquedrivevlm-from-verifier-guided-reinforcement-learning-to-latent-thought-distillation-for-autonomous-driving)  
+   evidence：利用上下文压缩实现长时程智能体的强化学习训练
+6. [Behavior Leverage Imbalance in Multi-Teacher On-Policy Distillation](/202607/09/2607.07050v1-behavior-leverage-imbalance-in-multi-teacher-on-policy-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：基于验证器的强化学习潜在思维蒸馏
-6. [Knowledge Base Poisoning Attacks and Defense for Policy-Aware LLM-RAG Framework](/202607/08/2607.04379v1-knowledge-base-poisoning-attacks-and-defense-for-policy-aware-llm-rag-framework)  
+   evidence：多教师策略蒸馏中的行为偏差
+7. [Operational Reframing and Approval-Framed Delegation in Multi-Agent LLM Safety](/202607/09/2607.07097v1-operational-reframing-and-approval-framed-delegation-in-multi-agent-llm-safety)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：针对LLM-RAG的知识库投毒攻击与防御
-7. [UI-MOPD: Multi-Platform On-Policy Distillation for Continual GUI Agent Learning](/202607/08/2607.04425v1-ui-mopd-multi-platform-on-policy-distillation-for-continual-gui-agent-learning)  
+   evidence：多智能体大模型安全，安全基准，红队测试
+8. [ORCAID: Oblique Rule-Based Continuous-Action Interpretation for Deep RL Policies](/202607/09/2607.07235v1-orcaid-oblique-rule-based-continuous-action-interpretation-for-deep-rl-policies)  
    标签：评分：9.0/10、query:opd
-   evidence：标题明确包含on-policy蒸馏，应用于GUI智能体
-8. [dOPSD: On-Policy Self-Distillation for Diffusion Language Models](/202607/08/2607.04428v1-dopsd-on-policy-self-distillation-for-diffusion-language-models)  
-   标签：评分：9.0/10、query:opd
-   evidence：扩散语言模型的基于策略自蒸馏
-9. [CompactionRL: Reinforcement Learning with Context Compaction for Long-Horizon Agents](/202607/08/2607.05378v1-compactionrl-reinforcement-learning-with-context-compaction-for-long-horizon-agents)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：基于上下文压缩的长程智能体强化学习
-10. [Self-Review Reinforcement Learning (SRRL) with Cross-Episode Memory and Policy Distillation](/202607/08/2607.05541v1-self-review-reinforcement-learning-srrl-with-cross-episode-memory-and-policy-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：标题和方法均明确包含策略蒸馏
-11. [Beyond Refusal: A Same-Lineage Study of Aligned and Abliterated LLMs for Vulnerability Analysis](/202607/08/2607.05842v1-beyond-refusal-a-same-lineage-study-of-aligned-and-abliterated-llms-for-vulnerability-analysis)  
+   evidence：从深度强化学习智能体中蒸馏可解释的规则策略，与策略蒸馏直接相关
+9. [Institutional Red-Teaming: Deployment Rules, Not Just Models, Causally Shape Multi-Agent AI Safety](/202607/09/2607.07695v1-institutional-red-teaming-deployment-rules-not-just-models-causally-shape-multi-agent-ai-safety)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：对齐与消融模型安全状态的研究
-12. [AEGIS: A Mechanism-Guided Defense against Visual Synonym Jailbreaks in Text-to-Image Models](/202607/08/2607.06120v1-aegis-a-mechanism-guided-defense-against-visual-synonym-jailbreaks-in-text-to-image-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：针对文本到图像模型中视觉同义词越狱攻击的防御
-13. [DT-Guard: Intent-Driven Reasoning-Active Training for Reasoning-Free LLM Safety Guardrail](/202607/08/2607.06326v1-dt-guard-intent-driven-reasoning-active-training-for-reasoning-free-llm-safety-guardrail)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：面向LLM的安全护栏，兼顾推理效率
+   evidence：多智能体AI安全的机构红队测试方法
 
 ### 速读区论文标签
-1. [Overloading Large Vision-Language Models for Jailbreaking](/202607/08/2607.02961v1-overloading-large-vision-language-models-for-jailbreaking)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：通过信息过载攻击LVLM实现越狱，直接涉及越狱攻击
-2. [CAGE-1: Control, Assurance, and Governance Evaluation for Enterprise Agentic AI](/202607/08/2607.03510v1-cage-1-control-assurance-and-governance-evaluation-for-enterprise-agentic-ai)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：智能体AI的安全性评估基准
-3. [Swarm-Driven Multi-Agent Reasoning for Smart City Security](/202607/08/2607.03628v1-swarm-driven-multi-agent-reasoning-for-smart-city-security)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：用于安全的群智驱动多智能体推理
-4. [Look Before You Leap: Distilling Tree Search into Action Evaluation for Frozen VLA Models](/202607/08/2607.03751v1-look-before-you-leap-distilling-tree-search-into-action-evaluation-for-frozen-vla-models)  
+1. [Nemotron-Labs-3-Puzzle-75B-A9B: Compressing Hybrid MoE LLMs](/202607/09/2607.04371v2-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms)  
    标签：评分：8.0/10、query:opd
-   evidence：将树搜索蒸馏为冻结VLA模型的动作评估
-5. [From Passive Retrieval to Active Memory Navigation: Learning to Use Memory as a Structured Action Space](/202607/08/2607.05794v1-from-passive-retrieval-to-active-memory-navigation-learning-to-use-memory-as-a-structured-action-space)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：将记忆作为结构化动作空间用于长上下文RL
-6. [PolicyShiftGuard: Benchmarking and Improving Policy-Adaptive Image Guardrails](/202607/08/2607.05910v1-policyshiftguard-benchmarking-and-improving-policy-adaptive-image-guardrails)  
+   evidence：知识蒸馏与强化学习用于MoE模型压缩
+2. [Knowledge Base Poisoning Attacks and Defense for Policy-Aware LLM-RAG Framework](/202607/09/2607.04379v1-knowledge-base-poisoning-attacks-and-defense-for-policy-aware-llm-rag-framework)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：策略自适应图像安全护栏的基准测试
-7. [SoK: Attack and Defense Landscape of Mobile On-device AI Systems](/202607/08/2607.00362v1-sok-attack-and-defense-landscape-of-mobile-on-device-ai-systems)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：移动设备AI安全攻击与防御综述
-8. [ProLaViT: Learning Progressive Latent Visual Thoughts in Structured Latent Space](/202607/08/2607.02907v1-prolavit-learning-progressive-latent-visual-thoughts-in-structured-latent-space)  
+   evidence：越狱攻击与防御；针对LLM-RAG的知识库投毒攻击与防御
+3. [Reasoning Consistency Scanning: A Framework for Auditing Chain-of-Thought Validity in AI Safety Evaluations](/202607/09/2607.07229v1-reasoning-consistency-scanning-a-framework-for-auditing-chain-of-thought-validity-in-ai-safety-evaluations)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：AI安全评估审计框架
+4. [Safe Reinforcement Learning using Ideas from Model Predictive Control](/202607/09/2607.07252v1-safe-reinforcement-learning-using-ideas-from-model-predictive-control)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：强化学习中的智能体安全性；结合MPC形式化安全保证的安全RL
+5. [From Atomic Actions to Standard Operating Procedures: Iterative Tool Optimization for Self-Evolving LLM Agents](/202607/09/2607.07321v1-from-atomic-actions-to-standard-operating-procedures-iterative-tool-optimization-for-self-evolving-llm-agents)  
+   标签：评分：8.0/10、query:agent-swarm
+   evidence：智能体工具优化与自演化框架
+6. [Incentivizing Vision Language Models to Search for Long Video Question Answering](/202607/09/2607.02959v1-incentivizing-vision-language-models-to-search-for-long-video-question-answering)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：RL后训练用于长视频问答，契合长上下文RL训练
+7. [Look Before You Leap: Distilling Tree Search into Action Evaluation for Frozen VLA Models](/202607/09/2607.03751v1-look-before-you-leap-distilling-tree-search-into-action-evaluation-for-frozen-vla-models)  
    标签：评分：7.0/10、query:opd
-   evidence：用于视觉推理的潜在自蒸馏机制
-9. [MUTE: Return-Preserving Communication Unlearning for Efficient Multi-Agent Coordination](/202607/08/2607.03473v1-mute-return-preserving-communication-unlearning-for-efficient-multi-agent-coordination)  
-   标签：评分：7.0/10、query:agent-swarm
-   evidence：通信遗忘用于高效多智能体协调
-10. [CDCP: Conditional Diffusion Model with Contextual Prompts for Multi-task Offline Safe Reinforcement Learning](/202607/08/2607.03903v1-cdcp-conditional-diffusion-model-with-contextual-prompts-for-multi-task-offline-safe-reinforcement-learning)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：多任务离线安全强化学习
-11. [Nemotron-Labs-3-Puzzle-75B-A9B: Compressing Hybrid MoE LLMs](/202607/08/2607.04371v1-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms)  
-   标签：评分：7.0/10、query:opd
-   evidence：在大模型压缩中使用知识蒸馏和强化学习
-12. [Nemotron-Labs-3-Puzzle-75B-A9B: Compressing Hybrid MoE LLMs](/202607/08/2607.04371v2-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms)  
-   标签：评分：6.0/10、query:opd
-   evidence：在压缩流程中使用了知识蒸馏和强化学习
-13. [Beyond the Leaderboard: A Synthesis of Tool-Use, Planning, and Reasoning Failures in Large Language Model Agents](/202607/08/2607.05775v1-beyond-the-leaderboard-a-synthesis-of-tool-use-planning-and-reasoning-failures-in-large-language-model-agents)  
+   evidence：将树搜索蒸馏为动作评估
+8. [STAPO: Selective Trajectory-Aware Policy Optimization for LLM Agent Training](/202607/09/2607.04963v1-stapo-selective-trajectory-aware-policy-optimization-for-llm-agent-training)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：针对长时程LLM智能体训练中的轨迹忽略问题的强化学习方法
+9. [Adaptive Inference Batching using Policy Gradients](/202607/09/2607.05272v1-adaptive-inference-batching-using-policy-gradients)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：人工智能中的推理效率；基于强化学习的自适应批处理提升推理服务吞吐量
+10. [Information Gain-based Rollout Policy Optimization: An Adaptive Tree-Structured Rollout Approach for Multi-Turn LLM Agents](/202607/09/2607.06223v1-information-gain-based-rollout-policy-optimization-an-adaptive-tree-structured-rollout-approach-for-multi-turn-llm-agents)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：基于信息增益的展开优化，提升多轮大模型智能体推理效率
+11. [Reward Granularity in RLVR: Comparing Process and Outcome Reward Structures for Mathematical Reasoning in Small Language Models](/202607/09/2607.02869v1-reward-granularity-in-rlvr-comparing-process-and-outcome-reward-structures-for-mathematical-reasoning-in-small-language-models)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：RL奖励结构比较以提升小语言模型推理效率
+12. [KARMA: Knowledge graph-based Automated Reasoning Materialization and Alignment](/202607/09/2607.03166v1-karma-knowledge-graph-based-automated-reasoning-materialization-and-alignment)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：基于知识图谱的自动化推理方法提升对比候选生成效率
+13. [Akashic: A Low-Overhead LLM Inference Service with MemAttention](/202607/09/2607.05708v1-akashic-a-low-overhead-llm-inference-service-with-memattention)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：低开销长上下文推理内存系统
+14. [Gimitest: A Comprehensive Tool for Testing Reinforcement Learning Policies](/202607/09/2607.07029v1-gimitest-a-comprehensive-tool-for-testing-reinforcement-learning-policies)  
    标签：评分：6.0/10、query:ai-safety
-   evidence：智能体安全失败的综合分类
-14. [MoWorld: A Flash World Model](/202607/08/2607.06216v1-moworld-a-flash-world-model)  
-   标签：评分：6.0/10、query:opd
-   evidence：用于强化学习中高效世界模型推理的蒸馏技术
+   evidence：用于测试RL策略安全性和鲁棒性的综合工具
 
 
 <div class="dpr-home-promo-card">
