@@ -8,91 +8,93 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-09
-- 运行时间：2026-07-09 22:02:17 UTC
+- 最新运行日期：2026-07-10
+- 运行时间：2026-07-10 21:42:33 UTC
 - 运行状态：成功
 - 本次总论文数：23
 - 精读区：9
 - 速读区：14
 
 ### 今日简报（AI）
-今日精选23篇论文，弱到强泛化与自动驾驶验证蒸馏领跑高分。  
-重点看《Weak-to-Strong Generalization via Direct On-Policy Distillation》和《CritiqueDriveVLM》两大方向，前者直指AI对齐核心难题，后者将验证引导强化学习用于驾驶感知。  
-普通读者可优先追踪弱到强泛化方法的实际效果，同时留意RAG知识库投毒防御与CoT审计框架的安全价值。
-- 详情：[/202607/09/README](/202607/09/README)
+今日精选23篇论文，精读9篇、速读14篇，强化学习蒸馏与高效推理成焦点。
+
+最值得看精读满分《Trust Region Policy Distillation》与《Weak-to-Strong Generalization via Direct On-Policy Distillation》，速读可关注自适应信用策略优化及量化推理。
+
+建议优先精读两篇蒸馏论文，速读关注ACPO和Qwen3.5-4B量化推理，夯实RL与效率优化基础。
+- 详情：[/202607/10/README](/202607/10/README)
 
 ### 精读区论文标签
-1. [Weak-to-Strong Generalization via Direct On-Policy Distillation](/202607/09/2607.05394v2-weak-to-strong-generalization-via-direct-on-policy-distillation)  
+1. [Trust Region Policy Distillation](/202607/10/2607.04751v1-trust-region-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：直接在线策略蒸馏用于RL中弱到强泛化
-2. [CritiqueDriveVLM: From Verifier-Guided Reinforcement Learning to Latent Thought Distillation for Autonomous Driving](/202607/09/2607.04179v1-critiquedrivevlm-from-verifier-guided-reinforcement-learning-to-latent-thought-distillation-for-autonomous-driving)  
-   标签：评分：9.0/10、query:opd
-   evidence：结合强化学习与蒸馏技术用于自动驾驶，核心为潜思蒸馏
-3. [A Few Teacher Steps Go a Long Way: Cost-Efficient On-Policy Data Augmentation for Agent Post-Training](/202607/09/2607.04574v1-a-few-teacher-steps-go-a-long-way-cost-efficient-on-policy-data-augmentation-for-agent-post-training)  
-   标签：评分：9.0/10、query:opd
-   evidence：教师学生框架强化学习蒸馏；利用教师步骤的在线数据增强
-4. [Trust Region Policy Distillation](/202607/09/2607.04751v1-trust-region-policy-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：直接针对在线策略蒸馏提出信任区域策略蒸馏方法
-5. [CompactionRL: Reinforcement Learning with Context Compaction for Long-Horizon Agents](/202607/09/2607.05378v1-compactionrl-reinforcement-learning-with-context-compaction-for-long-horizon-agents)  
+   evidence：直接通过信任区域方法解决on-policy蒸馏的不稳定性
+2. [Weak-to-Strong Generalization via Direct On-Policy Distillation](/202607/10/2607.05394v2-weak-to-strong-generalization-via-direct-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：直接在线策略蒸馏用于带验证奖励强化学习
+3. [CompactionRL: Reinforcement Learning with Context Compaction for Long-Horizon Agents](/202607/10/2607.05378v1-compactionrl-reinforcement-learning-with-context-compaction-for-long-horizon-agents)  
    标签：评分：9.0/10、query:l-context-rl
-   evidence：利用上下文压缩实现长时程智能体的强化学习训练
-6. [Behavior Leverage Imbalance in Multi-Teacher On-Policy Distillation](/202607/09/2607.07050v1-behavior-leverage-imbalance-in-multi-teacher-on-policy-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：多教师策略蒸馏中的行为偏差
-7. [Operational Reframing and Approval-Framed Delegation in Multi-Agent LLM Safety](/202607/09/2607.07097v1-operational-reframing-and-approval-framed-delegation-in-multi-agent-llm-safety)  
+   evidence：用于长程智能体的上下文压缩强化学习
+4. [When Agents Go Rogue: Activation-Based Detection of Malicious Behaviors in Multi-Agent Systems](/202607/10/2607.06807v1-when-agents-go-rogue-activation-based-detection-of-malicious-behaviors-in-multi-agent-systems)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：多智能体大模型安全，安全基准，红队测试
-8. [ORCAID: Oblique Rule-Based Continuous-Action Interpretation for Deep RL Policies](/202607/09/2607.07235v1-orcaid-oblique-rule-based-continuous-action-interpretation-for-deep-rl-policies)  
+   evidence：多智能体系统中的恶意行为检测
+5. [Geometric Self-Distillation for Reasoning Generalization](/202607/10/2607.06855v1-geometric-self-distillation-for-reasoning-generalization)  
    标签：评分：9.0/10、query:opd
-   evidence：从深度强化学习智能体中蒸馏可解释的规则策略，与策略蒸馏直接相关
-9. [Institutional Red-Teaming: Deployment Rules, Not Just Models, Causally Shape Multi-Agent AI Safety](/202607/09/2607.07695v1-institutional-red-teaming-deployment-rules-not-just-models-causally-shape-multi-agent-ai-safety)  
+   evidence：用于在线蒸馏和推理的几何自蒸馏
+6. [Uncertainty-gated selection for block-sparse attention](/202607/10/2607.07724v1-uncertainty-gated-selection-for-block-sparse-attention)  
+   标签：评分：9.0/10、query:eff-reason
+   evidence：通过不确定性门控注意力提高长上下文变换器的推理效率
+7. [Persuasion Attacks Can Decrease Effectiveness of CoT Monitoring](/202607/10/2607.08066v1-persuasion-attacks-can-decrease-effectiveness-of-cot-monitoring)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：多智能体AI安全的机构红队测试方法
+   evidence：通过说服对思维链监控器进行越狱攻击
+8. [Switch-Reasoner: Learn When to Think in Multitask Mixtures via Reinforcement Learning](/202607/10/2607.08572v1-switch-reasoner-learn-when-to-think-in-multitask-mixtures-via-reinforcement-learning)  
+   标签：评分：9.0/10、query:eff-reason
+   evidence：通过RL自适应选择推理模式以提高效率
+9. [OPSD-V: On-Policy Self-Distillation for Post-Training Few-Step Autoregressive Video Generators](/202607/10/2607.08766v1-opsd-v-on-policy-self-distillation-for-post-training-few-step-autoregressive-video-generators)  
+   标签：评分：9.0/10、query:opd
+   evidence：自回归视频生成中的在线自蒸馏
 
 ### 速读区论文标签
-1. [Nemotron-Labs-3-Puzzle-75B-A9B: Compressing Hybrid MoE LLMs](/202607/09/2607.04371v2-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms)  
+1. [ACPO: Adaptive Credit Policy Optimization via Fine-Grained Surrogate Entropy](/202607/10/2607.03126v2-acpo-adaptive-credit-policy-optimization-via-fine-grained-surrogate-entropy)  
    标签：评分：8.0/10、query:opd
-   evidence：知识蒸馏与强化学习用于MoE模型压缩
-2. [Knowledge Base Poisoning Attacks and Defense for Policy-Aware LLM-RAG Framework](/202607/09/2607.04379v1-knowledge-base-poisoning-attacks-and-defense-for-policy-aware-llm-rag-framework)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：越狱攻击与防御；针对LLM-RAG的知识库投毒攻击与防御
-3. [Reasoning Consistency Scanning: A Framework for Auditing Chain-of-Thought Validity in AI Safety Evaluations](/202607/09/2607.07229v1-reasoning-consistency-scanning-a-framework-for-auditing-chain-of-thought-validity-in-ai-safety-evaluations)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：AI安全评估审计框架
-4. [Safe Reinforcement Learning using Ideas from Model Predictive Control](/202607/09/2607.07252v1-safe-reinforcement-learning-using-ideas-from-model-predictive-control)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：强化学习中的智能体安全性；结合MPC形式化安全保证的安全RL
-5. [From Atomic Actions to Standard Operating Procedures: Iterative Tool Optimization for Self-Evolving LLM Agents](/202607/09/2607.07321v1-from-atomic-actions-to-standard-operating-procedures-iterative-tool-optimization-for-self-evolving-llm-agents)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：智能体工具优化与自演化框架
-6. [Incentivizing Vision Language Models to Search for Long Video Question Answering](/202607/09/2607.02959v1-incentivizing-vision-language-models-to-search-for-long-video-question-answering)  
+   evidence：通过代理熵进行策略蒸馏的在线强化学习
+2. [Quantize the Target, Quantize the Drafter: Efficient Inference with Qwen3.5-4B](/202607/10/2607.04244v2-quantize-the-target-quantize-the-drafter-efficient-inference-with-qwen35-4b)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：量化和推测解码提升推理效率
+3. [When Does In-Context Search Help? A Sampling-Complexity Theory of Reflection-Driven Reasoning](/202607/10/2607.06720v1-when-does-in-context-search-help-a-sampling-complexity-theory-of-reflection-driven-reasoning)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：反思驱动推理中推理时采样复杂度的理论分析
+4. [UP: Unbounded Positive Asymmetric Optimization for Breaking the Exploration-Stability Dilemma](/202607/10/2607.06987v1-up-unbounded-positive-asymmetric-optimization-for-breaking-the-exploration-stability-dilemma)  
+   标签：评分：8.0/10、query:opd
+   evidence：在线策略优化中的探索-稳定困境
+5. [Interpretable Uncertainty for Adaptive Retrieval and Reasoning in Question Answering](/202607/10/2607.07380v1-interpretable-uncertainty-for-adaptive-retrieval-and-reasoning-in-question-answering)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：不确定性感知自适应检索提高推理效率
+6. [Incentivizing Vision Language Models to Search for Long Video Question Answering](/202607/10/2607.02959v1-incentivizing-vision-language-models-to-search-for-long-video-question-answering)  
    标签：评分：7.0/10、query:l-context-rl
-   evidence：RL后训练用于长视频问答，契合长上下文RL训练
-7. [Look Before You Leap: Distilling Tree Search into Action Evaluation for Frozen VLA Models](/202607/09/2607.03751v1-look-before-you-leap-distilling-tree-search-into-action-evaluation-for-frozen-vla-models)  
+   evidence：强化学习用于长视频理解
+7. [Securing Multi-Tool AI Agent Chains With Dynamic, Real-Time Compositional Policies](/202607/10/2607.03423v1-securing-multi-tool-ai-agent-chains-with-dynamic-real-time-compositional-policies)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：多工具智能体链的组合安全策略
+8. [Swarm-Driven Multi-Agent Reasoning for Smart City Security](/202607/10/2607.03628v1-swarm-driven-multi-agent-reasoning-for-smart-city-security)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：提出群体驱动的多智能体推理系统，与智能体集群架构需求一致
+9. [Agent Reinforcement Learning via Pivotal-Aware Self-Feedback Retry](/202607/10/2607.03702v1-agent-reinforcement-learning-via-pivotal-aware-self-feedback-retry)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：长程智能体任务的自反馈重试
+10. [Look Before You Leap: Distilling Tree Search into Action Evaluation for Frozen VLA Models](/202607/10/2607.03751v1-look-before-you-leap-distilling-tree-search-into-action-evaluation-for-frozen-vla-models)  
    标签：评分：7.0/10、query:opd
-   evidence：将树搜索蒸馏为动作评估
-8. [STAPO: Selective Trajectory-Aware Policy Optimization for LLM Agent Training](/202607/09/2607.04963v1-stapo-selective-trajectory-aware-policy-optimization-for-llm-agent-training)  
-   标签：评分：7.0/10、query:l-context-rl
-   evidence：针对长时程LLM智能体训练中的轨迹忽略问题的强化学习方法
-9. [Adaptive Inference Batching using Policy Gradients](/202607/09/2607.05272v1-adaptive-inference-batching-using-policy-gradients)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：人工智能中的推理效率；基于强化学习的自适应批处理提升推理服务吞吐量
-10. [Information Gain-based Rollout Policy Optimization: An Adaptive Tree-Structured Rollout Approach for Multi-Turn LLM Agents](/202607/09/2607.06223v1-information-gain-based-rollout-policy-optimization-an-adaptive-tree-structured-rollout-approach-for-multi-turn-llm-agents)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：基于信息增益的展开优化，提升多轮大模型智能体推理效率
-11. [Reward Granularity in RLVR: Comparing Process and Outcome Reward Structures for Mathematical Reasoning in Small Language Models](/202607/09/2607.02869v1-reward-granularity-in-rlvr-comparing-process-and-outcome-reward-structures-for-mathematical-reasoning-in-small-language-models)  
+   evidence：将树搜索蒸馏到冻结VLA模型的动作评估中
+11. [ProLaViT: Learning Progressive Latent Visual Thoughts in Structured Latent Space](/202607/10/2607.02907v1-prolavit-learning-progressive-latent-visual-thoughts-in-structured-latent-space)  
+   标签：评分：6.0/10、query:opd
+   evidence：多模态大模型中的自蒸馏机制
+12. [MUTE: Return-Preserving Communication Unlearning for Efficient Multi-Agent Coordination](/202607/10/2607.03473v1-mute-return-preserving-communication-unlearning-for-efficient-multi-agent-coordination)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：多智能体通信减少以提升协调效率
+13. [Turning Off-Policy Tokens On-Policy: A Plug-in Approach for Improving LLM Alignment](/202607/10/2607.04728v1-turning-off-policy-tokens-on-policy-a-plug-in-approach-for-improving-llm-alignment)  
+   标签：评分：6.0/10、query:opd
+   evidence：提出将离策略令牌转为在策略以改善大语言模型对齐，与在线策略训练相关
+14. [Retrieving a Set, Not Independent Passages: Set-Level Compatibility Learning for Efficient Set Exploration](/202607/10/2607.05712v1-retrieving-a-set-not-independent-passages-set-level-compatibility-learning-for-efficient-set-exploration)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：RL奖励结构比较以提升小语言模型推理效率
-12. [KARMA: Knowledge graph-based Automated Reasoning Materialization and Alignment](/202607/09/2607.03166v1-karma-knowledge-graph-based-automated-reasoning-materialization-and-alignment)  
-   标签：评分：6.0/10、query:eff-reason
-   evidence：基于知识图谱的自动化推理方法提升对比候选生成效率
-13. [Akashic: A Low-Overhead LLM Inference Service with MemAttention](/202607/09/2607.05708v1-akashic-a-low-overhead-llm-inference-service-with-memattention)  
-   标签：评分：6.0/10、query:eff-reason
-   evidence：低开销长上下文推理内存系统
-14. [Gimitest: A Comprehensive Tool for Testing Reinforcement Learning Policies](/202607/09/2607.07029v1-gimitest-a-comprehensive-tool-for-testing-reinforcement-learning-policies)  
-   标签：评分：6.0/10、query:ai-safety
-   evidence：用于测试RL策略安全性和鲁棒性的综合工具
+   evidence：通过集合级兼容性学习提高多跳检索效率，支持高效推理
 
 
 <div class="dpr-home-promo-card">
