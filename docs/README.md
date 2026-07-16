@@ -8,95 +8,99 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 21:48:56 UTC
+- 最新运行日期：2026-07-16
+- 运行时间：2026-07-16 21:28:34 UTC
 - 运行状态：成功
 - 本次总论文数：25
 - 精读区：11
 - 速读区：14
 
 ### 今日简报（AI）
-今日精读两篇9分论文：《DeepSearch-World》提出可验证环境下自蒸馏方法提升搜索Agent性能，《Mach-Mind-4-Flash》发布多模态技术报告。速读中《SPARK》关于大模型潜在推理状态引导、《Route, Communicate, and Reason》高效多智能体推理、《Learning Linear Temporal Specifications》从数据中学习时序规范均达8分。建议优先关注深度搜索智能体的自蒸馏技术，对实际构建可靠Agent最有直接价值。
-- 详情：[/202607/15/README](/202607/15/README)
+今日共收录25篇论文，精读两篇满分工作：聚焦工具调用边界漂移的诊断与校准，以及Mach-Mind-4-Flash技术报告。
+
+最值得关注的方向：工具调用边界漂移的多教师蒸馏校准方法，以及大模型后训练中置信度变化的三个阶段分析。
+
+建议普通读者优先阅读两篇精读论文，了解前沿校准技术；速读中的延迟感知多Agent编排也值得跟进。
+- 详情：[/202607/16/README](/202607/16/README)
 
 ### 精读区论文标签
-1. [DeepSearch-World: Self-Distillation for Deep Search Agents in a Verifiable Environment](/202607/15/2607.07820v2-deepsearch-world-self-distillation-for-deep-search-agents-in-a-verifiable-environment)  
+1. [Diagnosing and Calibrating Tool-Call Boundary Drift in Multi-Teacher On-Policy Distillation](/202607/16/2607.07050v2-diagnosing-and-calibrating-tool-call-boundary-drift-in-multi-teacher-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：诊断并校准多教师同策略蒸馏中的工具调用边界漂移
+2. [Mach-Mind-4-Flash Technical Report](/202607/16/2607.09375v1-mach-mind-4-flash-technical-report)  
+   标签：评分：10.0/10、query:opd
+   evidence：统一的RL/OPD训练基础设施，动态多教师调度
+3. [Beware of Agentic Botnets: Scalable Untargeted Promptware Attacks via Universal and Transferable Adversarial HalluSquatting](/202607/16/2607.07433v1-beware-of-agentic-botnets-scalable-untargeted-promptware-attacks-via-universal-and-transferable-adversarial-hallusquatting)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：利用对抗性幻觉实现大规模提示软件攻击
+4. [PVDetector: Detecting Prompt Injection Attacks on Purpose-Specific LLM Agents through Policy-Violation Concept Analysis](/202607/16/2607.12624v1-pvdetector-detecting-prompt-injection-attacks-on-purpose-specific-llm-agents-through-policy-violation-concept-analysis)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：通过政策违反概念检测LLM智能体上的提示注入攻击
+5. [Learning Safe Agent Behaviour from Human Preferences and Justifications via World Models](/202607/16/2607.13172v1-learning-safe-agent-behaviour-from-human-preferences-and-justifications-via-world-models)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：通过世界模型从人类偏好学习安全智能体行为
+6. [SteinGate: Tail-Sensitive Safe Reinforcement Learning via Stein Discrepancy](/202607/16/2607.13175v1-steingate-tail-sensitive-safe-reinforcement-learning-via-stein-discrepancy)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：使用斯坦因散度的尾敏感安全强化学习
+7. [Demystifying On-Policy Distillation: Roles, Pathologies, and Regulations](/202607/16/2607.13399v1-demystifying-on-policy-distillation-roles-pathologies-and-regulations)  
    标签：评分：9.0/10、query:opd
-   evidence：面向网络智能体的自蒸馏框架，属于在线策略蒸馏
-2. [Mach-Mind-4-Flash Technical Report](/202607/15/2607.09375v1-mach-mind-4-flash-technical-report)  
-   标签：评分：9.0/10、query:opd
-   evidence：统一的RL/OPD训练基础设施与动态多教师调度
-3. [ANCHOR: Automated Alignment Auditing for CLI Agents on Real-World Harm](/202607/15/2607.10455v1-anchor-automated-alignment-auditing-for-cli-agents-on-real-world-harm)  
+   evidence：对在线策略蒸馏的角色、病理和调节的系统研究
+8. [Distributionally Robust and Safe Imitation Learning](/202607/16/2607.13436v1-distributionally-robust-and-safe-imitation-learning)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：针对CLI智能体的自动化红队框架，测试非法任务
-4. [MJ: Multi-turn LLM Jailbreaking via Decomposed Credit Assignment](/202607/15/2607.11070v1-mj-multi-turn-llm-jailbreaking-via-decomposed-credit-assignment)  
+   evidence：具有分布鲁棒性的安全模仿学习
+9. [Adversarial Prompting Framework for AI Safety Assessment](/202607/16/2607.13453v1-adversarial-prompting-framework-for-ai-safety-assessment)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：多轮越狱与分解信用分配
-5. [OS-Pruner: Pruning Chains-of-Thought of Reasoning Models via Optimal Stopping](/202607/15/2607.11089v1-os-pruner-pruning-chains-of-thought-of-reasoning-models-via-optimal-stopping)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：通过最优停止修剪思维链以提高效率
-6. [Track, Rank, Crack: Epistemic Working Memory Scales Multi-Hop Reasoning in Language Agents](/202607/15/2607.12267v1-track-rank-crack-epistemic-working-memory-scales-multi-hop-reasoning-in-language-agents)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：结构化工作记忆实现高效多跳推理
-7. [Isolation as a First-Class Principle for LLM-Agent System Safety: Concepts, Taxonomy, Challenges and Future Directions](/202607/15/2607.12406v1-isolation-as-a-first-class-principle-for-llm-agent-system-safety-concepts-taxonomy-challenges-and-future-directions)  
+   evidence：面向AI安全评估的对抗提示框架
+10. [SAFETY SENTRY: Context-Aware Human Intervention via EXECUTE-ASK-REFUSE Routing](/202607/16/2607.13594v1-safety-sentry-context-aware-human-intervention-via-execute-ask-refuse-routing)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：LLM智能体安全综述
-8. [PVDetector: Detecting Prompt Injection Attacks on Purpose-Specific LLM Agents through Policy-Violation Concept Analysis](/202607/15/2607.12624v1-pvdetector-detecting-prompt-injection-attacks-on-purpose-specific-llm-agents-through-policy-violation-concept-analysis)  
+   evidence：LLM智能体的上下文感知安全路由
+11. [Agent Skill Security: Threat Models, Attacks, Defenses, and Evaluation](/202607/16/2607.13987v1-agent-skill-security-threat-models-attacks-defenses-and-evaluation)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：通过策略违反概念分析检测LLM智能体的提示注入攻击
-9. [Directional Constraints for Efficient Exploration in Safe Reinforcement Learning](/202607/15/2607.12784v1-directional-constraints-for-efficient-exploration-in-safe-reinforcement-learning)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：带方向性约束的安全强化学习
-10. [Do We Really Need Multimodal Emotion Language Models Larger Than 1B Parameters?](/202607/15/2607.12787v1-do-we-really-need-multimodal-emotion-language-models-larger-than-1b-parameters)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：探究多模态情感识别是否必需大模型以实现高效推理
-11. [Silent Alarm: A J-Space Protocol for Comparing Danger Recognition Across Models and Quantization Levels](/202607/15/2607.12792v1-silent-alarm-a-j-space-protocol-for-comparing-danger-recognition-across-models-and-quantization-levels)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：越狱鲁棒性研究，危险识别协议
+   evidence：对智能体技能的越狱攻击与防御进行系统性评估
 
 ### 速读区论文标签
-1. [SPARK: Susceptibility-Guided Profiling and Steering of Latent Reasoning States in Large Language Models](/202607/15/2607.10296v1-spark-susceptibility-guided-profiling-and-steering-of-latent-reasoning-states-in-large-language-models)  
+1. [Learning Latency-Aware Orchestration for Multi-Agent Systems](/202607/16/2607.13359v1-learning-latency-aware-orchestration-for-multi-agent-systems)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：诊断并引导潜在推理状态以提升效率
-2. [Route, Communicate, and Reason: Gated Routing and Adaptive Depth for Efficient Multi-Agent Reasoning](/202607/15/2607.10836v1-route-communicate-and-reason-gated-routing-and-adaptive-depth-for-efficient-multi-agent-reasoning)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：门控路由和自适应深度实现高效多智能体推理
-3. [Learning Linear Temporal Specifications from Demonstrations with Uncertainty](/202607/15/2607.10918v1-learning-linear-temporal-specifications-from-demonstrations-with-uncertainty)  
+   evidence：延迟感知的多智能体系统编排以提高推理效率
+2. [Post-Training Shifts Confidence: A Three-Stage Analysis of How SFT, RL, and OPD Shape Pre-, Intra-, and Post-CoT Calibration](/202607/16/2607.13753v1-post-training-shifts-confidence-a-three-stage-analysis-of-how-sft-rl-and-opd-shape-pre--intra--and-post-cot-calibration)  
+   标签：评分：8.0/10、query:opd
+   evidence：分析包括OPD在内的后训练方法对信心校准的影响
+3. [SPyCE: Skill-Policy Co-evolution for Multimodal Agents](/202607/16/2607.13854v1-spyce-skill-policy-co-evolution-for-multimodal-agents)  
+   标签：评分：8.0/10、query:opd
+   evidence：提出SPyCE框架，将多模态推理轨迹蒸馏为可重用技能，与策略协同进化
+4. [Discriminative Barrier Functions for Safe Adversarial Imitation Learning from Observation](/202607/16/2607.13938v1-discriminative-barrier-functions-for-safe-adversarial-imitation-learning-from-observation)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：学习LTL规范用于安全关键系统
-4. [Think When It Matters: Conditional VLM Reasoning for Social Navigation with RL Policies](/202607/15/2607.10991v1-think-when-it-matters-conditional-vlm-reasoning-for-social-navigation-with-rl-policies)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：条件性VLM推理以降低推理成本
-5. [Beyond the Eye: Efficient Multimodal Reasoning via Self-Regulated Implicit Visual Tools](/202607/15/2607.11106v1-beyond-the-eye-efficient-multimodal-reasoning-via-self-regulated-implicit-visual-tools)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：通过隐式视觉工具实现高效多模态推理
-6. [SCOPE-RL: Optimizing Reasoning Paths Before and After Success](/202607/15/2607.11506v1-scope-rl-optimizing-reasoning-paths-before-and-after-success)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：通过RL优化LLM推理路径效率
-7. [Think Through a Bottleneck: Hourglass Reasoning for Rigorous Induction](/202607/15/2607.11696v1-think-through-a-bottleneck-hourglass-reasoning-for-rigorous-induction)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：用于高效归纳推理的上下文隔离沙漏推理方法
-8. [Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques](/202607/15/2607.12829v1-accelerating-masked-diffusion-large-language-models-a-survey-of-efficient-inference-techniques)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：扩散大语言模型高效推理技术综述
-9. [From Atomic Actions to Standard Operating Procedures: Iterative Tool Optimization for Self-Evolving LLM Agents](/202607/15/2607.07321v1-from-atomic-actions-to-standard-operating-procedures-iterative-tool-optimization-for-self-evolving-llm-agents)  
+   evidence：使用障碍函数的安全对抗模仿学习
+5. [Think Big, Search Small: Where Capacity Matters in Hierarchical Search Agents?](/202607/16/2607.07548v1-think-big-search-small-where-capacity-matters-in-hierarchical-search-agents)  
    标签：评分：7.0/10、query:agent-swarm
-   evidence：自进化智能体将原子动作合成为可复用的标准操作程序
-10. [ARCANA: A Reflective Multi-Agent Program Synthesis Framework for ARC-AGI-2 Reasoning](/202607/15/2607.09059v1-arcana-a-reflective-multi-agent-program-synthesis-framework-for-arc-agi-2-reasoning)  
+   evidence：研究层次多智能体搜索架构中的容量分配
+6. [Unlearning to Protect: A Distilled Reinforcement Learning Framework with Privacy-Preserving Feature Unlearning and XAI for IoT Security](/202607/16/2607.07635v2-unlearning-to-protect-a-distilled-reinforcement-learning-framework-with-privacy-preserving-feature-unlearning-and-xai-for-iot-security)  
+   标签：评分：7.0/10、query:opd
+   evidence：使用知识蒸馏的强化学习框架
+7. [Latent Memory Palace: Reasoning for Control as Autoregressive Variational Inference](/202607/16/2607.08724v1-latent-memory-palace-reasoning-for-control-as-autoregressive-variational-inference)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：通过潜在自回归推理提高控制策略的推理效率
+8. [ARCANA: A Reflective Multi-Agent Program Synthesis Framework for ARC-AGI-2 Reasoning](/202607/16/2607.09059v1-arcana-a-reflective-multi-agent-program-synthesis-framework-for-arc-agi-2-reasoning)  
    标签：评分：7.0/10、query:agent-swarm
-   evidence：多智能体框架，含学习元控制器，用于任务分解
-11. [Shortcut Trajectory Planning for Efficient Offline Reinforcement Learning](/202607/15/2607.09336v1-shortcut-trajectory-planning-for-efficient-offline-reinforcement-learning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：短路轨迹规划提升离线强化学习效率
-12. [Agora: Enhancing LLM Agent Reasoning Via Auction-Based Task Allocation](/202607/15/2607.09600v1-agora-enhancing-llm-agent-reasoning-via-auction-based-task-allocation)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：基于拍卖的任务分配增强LLM智能体推理
-13. [Task-Specific Multimodal Question Answering Agents via Confidence Calibration and Incremental Reasoning for QANTA 2026](/202607/15/2607.09623v1-task-specific-multimodal-question-answering-agents-via-confidence-calibration-and-incremental-reasoning-for-qanta-2026)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：增量推理与置信校准实现高效问答
-14. [RecRec: Latent Interests Recursive Reasoning for Sequential Recommendation](/202607/15/2607.12945v1-recrec-latent-interests-recursive-reasoning-for-sequential-recommendation)  
+   evidence：多智能体推理框架，与智能体集群架构相关
+9. [ToolAtlas: Learning Once, Reusing Everywhere with Tool-Side Memory](/202607/16/2607.11126v1-toolatlas-learning-once-reusing-everywhere-with-tool-side-memory)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：LLM智能体工具侧记忆实现可复用性
+10. [Proxy Exploration and Reusable Guidance: A Modular LLM Post-Training Paradigm via Proxy-Guided Update Signals](/202607/16/2607.11505v1-proxy-exploration-and-reusable-guidance-a-modular-llm-post-training-paradigm-via-proxy-guided-update-signals)  
+   标签：评分：7.0/10、query:opd
+   evidence：代理模型作为教师提供指导信号
+11. [From Atomic Actions to Standard Operating Procedures: Iterative Tool Optimization for Self-Evolving LLM Agents](/202607/16/2607.07321v1-from-atomic-actions-to-standard-operating-procedures-iterative-tool-optimization-for-self-evolving-llm-agents)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：LLM智能体迭代优化工具为标准操作流程以实现自我进化
+12. [Agentic-DPO: From Imitation to Agentic Policy Optimization on Expert Trajectories](/202607/16/2607.10601v1-agentic-dpo-from-imitation-to-agentic-policy-optimization-on-expert-trajectories)  
+   标签：评分：6.0/10、query:opd
+   evidence：从专家轨迹优化智能体策略，与在线策略蒸馏的师生模仿相关
+13. [Do AI Agents Know When a Task Is Simple? Toward Complexity-Aware Reasoning and Execution](/202607/16/2607.13034v1-do-ai-agents-know-when-a-task-is-simple-toward-complexity-aware-reasoning-and-execution)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：无强化学习的递归推理提升推荐推理效率
+   evidence：复杂度感知执行框架E3减少冗余上下文，实现高效推理
+14. [LAPO: Leave-One-Turn Attribution for Self-Generated Process Rewards in Multi-Turn Search Reasoning](/202607/16/2607.13501v1-lapo-leave-one-turn-attribution-for-self-generated-process-rewards-in-multi-turn-search-reasoning)  
+   标签：评分：6.0/10、query:l-context-rl
+   evidence：多轮搜索推理中RL的自生成过程奖励
 
 
 <div class="dpr-home-promo-card">
