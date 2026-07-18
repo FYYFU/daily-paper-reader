@@ -1,0 +1,1014 @@
+Title: Looped State-Space Language Models with Adaptive Exit-State Selection
+
+URL Source: https://arxiv.org/pdf/2607.10110v1
+
+Published Time: Tue, 14 Jul 2026 00:23:23 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# Looped State-Space Language Models with Adaptive Exit-State Selection 
+
+Zhenxuan Yu *
+
+Rikkyo University 
+
+Yutaka Matsuo †
+
+The University of Tokyo 
+
+Takeshi Kojima †
+
+The University of Tokyo 
+
+Yusuke Iwasawa †
+
+The University of Tokyo 
+
+Abstract 
+
+Recent work on looped language models sug-gests that many reasoning problems bene-fit from greater computational depth rather than from additional independent parameters. Existing studies, however, focus almost ex-clusively on Transformer backbones, leaving open whether this principle also applies to state-space language models. We investigate Looped Mamba and Looped Hybrid Mamba– Transformer architectures, which repeatedly apply a shared Mamba (or hybrid) block to introduce explicit finite-depth recurrent com-putation. On two controlled reasoning tasks— Mano (modular-arithmetic manipulation) and p-hop induction—Looped Mamba consistently outperforms parameter-matched non-looped baselines and, in several settings, matches or exceeds non-looped models of equal effec-tive depth. We then extend the study to lan-guage model pre-training under matched iso-parameter and iso-FLOPs protocols, which jointly disentangle the effects of parameter sharing and effective depth: looped models re-main competitive on downstream benchmarks with substantially fewer distinct parameters, al-though deeper non-looped models retain an ad-vantage in validation perplexity under strict iso-FLOPs comparisons. Finally, we adapt Ouro’s two-stage exit gate to Looped Mamba for threshold-controlled selection among recurrent-step outputs. Since all recurrent steps are still executed, the selected exit step represents pre-diction depth rather than reduced wall-clock computation. At the scales studied, adaptive exit-state selection improves downstream per-formance at intermediate depths, while actual inference-time savings require additional state-handling mechanisms. 1   
+
+> *E-mail: 24wr006m@rikkyo.ac.jp
+> †Email: {t.kojima, matsuo, iwasawa}@weblab.t.u-tokyo.ac.jp
+> 1Code will be released publicly.
+
+1 Introduction 
+
+Large Language Models (LLMs) have achieved re-markable progress in language understanding, text generation, and complex reasoning (DeepSeek-AI et al., 2025; Yang et al., 2025). However, these ad-vances have largely been driven by scaling model size, training data, and compute-intensive train-ing and test-time inference (Hoffmann et al., 2022; Snell et al., 2024). This scaling paradigm intro-duces substantial challenges for practical deploy-ment: model weights and intermediate activations increase memory consumption, while Transformer-based self-attention requires maintaining large key-value caches during long-context inference, leading to rapidly growing inference costs as context length increases (Beltagy et al., 2020). Improving model capability under fixed parameter, FLOP, or memory budgets has therefore become a central problem in the design of efficient LLM architectures. State Space Models (SSMs), particularly Mamba-2 (Gu and Dao, 2024; Dao and Gu, 2024), provide an efficient alternative to attention with fa-vorable long-context scaling, and Hybrid Mamba-Transformer designs (Lieber et al., 2024; Waleffe et al., 2024; Blakeman et al., 2025) have further emerged as practical backbones for modern LLMs. Orthogonally, Looped Transformers reuse a shared block across depth to gain effective computational depth without extra parameters, and recent work shows that this benefits reasoning (Dehghani et al., 2019; Saunshi et al., 2025). Our core idea is to share the parameters of Mamba or hybrid blocks across layers and apply them repeatedly through explicit finite-depth loops, constructing a deeper effective computational path without increasing the number of distinct trainable parameters. This design allows us to disentangle the effects of parameter count, compute budget, and effective depth. We validate Looped Mamba on controlled syn-1arXiv:2607.10110v1 [cs.AI] 11 Jul 2026 thetic reasoning tasks (Mano and p-hop induction) that require compositional computation and recur-sive retrieval, and then extend to language-model pre-training under controlled iso-parameter and iso-FLOPs protocols, which together let us separate the contributions of parameter sharing, additional compute, and effective depth. We further evalu-ate downstream reasoning benchmarks and com-pare Looped Mamba with Looped Transformer and Looped Hybrid Mamba-Transformer. We also adapt the post-training Exit Gate mech-anism from Ouro (Zhu et al., 2025) to Looped Mamba, enabling threshold-controlled adaptive exit-state selection. Empirically, the exit-gated variant achieves higher downstream performance than fixed-depth inference at comparable selected prediction depths, while introducing only minimal additional parameters. The main contributions of this work are as fol-lows. First, we present a controlled empirical study of explicit finite-depth looping for Mamba-based and Hybrid Mamba-Transformer language mod-els, under matched iso-parameter and iso-FLOPs protocols against both Mamba and Transformer baselines; the two protocols jointly disentangle the effects of parameter sharing, compute budget, and effective depth. Second, we present empiri-cal results on controlled reasoning tasks (Mano, p-hop induction) and on language-model pre-training with downstream benchmarks, showing that re-current depth improves compositional and recur-sive computation under fixed parameter budgets. Third, we introduce an adaptive exit-state selection mechanism for looped state-space language mod-els, adapting the post-training Exit Gate of Ouro to Mamba and hybrid backbones, and show that threshold-controlled adaptive exit-state selection can improve downstream performance at compara-ble selected prediction depths. 
+
+2 Related Work 
+
+State Space Models and Mamba. State Space Models (SSMs), particularly Mamba and Mamba-2, offer a promising alternative to the efficiency bottlenecks of pure Transformer architectures (Gu and Dao, 2024). Prior work has shown that Mamba-style models can match or outperform Transform-ers at small to medium scales in language modeling, while Mamba-2 further establishes a connection between SSMs and attention through structured state space duality and introduces a more efficient core layer design (Dao and Gu, 2024). Owing to their favorable sequence-modeling and memory-efficiency characteristics compared with standard attention, Mamba-based architectures provide an attractive path toward efficient long-sequence lan-guage modeling and inference. Meanwhile, Hybrid Mamba-Transformer (Lieber et al., 2024; Waleffe et al., 2024) architectures have begun to appear in recent LLM systems; for example, Nemotron 3 combines Mamba, Transformer, and Mixture-of-Experts components to improve throughput and support long-context modeling (Blakeman et al., 2025). These developments suggest that Mamba and hybrid Mamba-Transformer designs are be-coming important components of modern efficient LLM architectures. 
+
+Recursive Mamba models. A closely related re-cent study also explores Mamba-2 in a recursive reasoning setting. Wang and Reid (2026) replace the attention blocks in the Tiny Recursive Model (TRM) (Jolicoeur-Martineau, 2025) with Mamba-2 attention-hybrid blocks and evaluate the result-ing model on ARC-AGI. Their results show that Mamba-2 hybrid operators can preserve, and in some settings improve, recursive reasoning capabil-ity within a tiny task-specialized model. However, their focus is on a small TRM-style architecture with approximately 7M parameters trained specifi-cally for ARC-AGI-style abstract reasoning. In con-trast, we study general-purpose pre-trained Mamba-based language models at 50M–370M scale and evaluate on standard downstream benchmarks. 
+
+Implicit and self-iterated language models. 
+
+Closely related work by Schöne et al. (2025) stud-ies implicit SSMs that self-iterate toward a fixed point; their iterations act as a fixed-point solver with phantom-gradient training, whereas we study explicit, gradient-tracked finite-depth loops over an entire Mamba (or hybrid) backbone, enabling con-trolled iso-parameter and iso-FLOPs comparisons. 
+
+Other Loop models. Looped or recurrent-depth architectures have a long history in sequence mod-eling. Universal Transformers apply the same trans-formation recurrently over sequence representa-tions, combining the parallelism and global recep-tive field of Transformers with a recurrent induc-tive bias; they also introduce adaptive computation mechanisms for dynamic halting (Dehghani et al., 2019). More recently, Saunshi et al. (2025) study Looped Transformers for reasoning and show that 2a k-layer Transformer looped L times can nearly match, and sometimes outperform, a non-looped 
+
+kL -layer model on synthetic and downstream rea-soning tasks, while using far fewer distinct param-eters. These results suggest that many reasoning tasks may require effective depth more than inde-pendent parameters. However, these studies fo-cus primarily on Transformer backbones. In con-trast, we investigate whether the same looped-depth principle applies to Mamba and Hybrid Mamba-Transformer architectures. Building on this line of work, Ouro (Zhu et al., 2025) further introduces an entropy-regularized exit gate that learns a token-level distribution over recurrent steps for adaptive exit-state selection on Looped Transformers; we adapt this mechanism to Looped Mamba and Hy-brid Mamba-Transformer backbones and study its selected-depth–performance trade-off. 
+
+Concurrent work on looped subquadratic mod-els. Concurrently with this work, LT2 (Deng et al., 2026) studies looped architectures with lin-ear and sparse attention, and additionally pre-trains looped Mamba-2 models at the 0.6B–1.3B scale, observing that purely Mamba-2-based looped mod-els trail attention-based looped models on down-stream tasks and can exhibit training instabilities. Notably, LT2 deliberately avoids adaptive compu-tation at scale. Our study is complementary along three axes: (i) we perform tightly controlled iso-parameter and iso-FLOPs comparisons that dis-entangle parameter sharing from effective depth, including on synthetic compositional-reasoning tasks; (ii) we study Hybrid Mamba–Transformer backbones in which attention layers are looped jointly with Mamba layers; and (iii) we intro-duce an adaptive exit-state selection mechanism for looped state-space models, which LT2 leaves unaddressed. 
+
+3 Proposed Method 
+
+3.1 Overall Architecture Looped Mamba models. We study the stan-dard looped-model construction with Mamba back-bones, following the notation of looped mod-els (Saunshi et al., 2025). For any sequence-to-sequence function f , let 
+
+f (R) = f ◦ f ◦ · · · ◦ f
+
+| {z } 
+
+> Rtimes
+
+denote the function obtained by applying f recur-rently for R steps. In this work, f corresponds to an N -layer Mamba backbone Mθ, and we denote the resulting Looped Mamba model by N ⊗ R,where N is the number of independently param-eterized Mamba layers and R is the number of recurrent steps. The effective depth is therefore 
+
+N R . Since the same N -layer backbone is reused across recurrent steps, the parameter budget scales with N , while the FLOP budget scales with N R .Thus, N ⊗ 1 corresponds to a standard non-looped model, N ⊗ R is iso-parameter with N ⊗ 1, and it is iso-FLOPs with the non-looped model N R ⊗ 1.Given input tokens x, we compute 
+
+h(0) = emb( x),h(r) = Mθ(h(r−1) ), r = 1 , . . . , R. 
+
+and obtain the final language-model distribution from 
+
+p(R) 
+
+> θ
+
+(· | x≤t) = softmax 
+
+
+
+lmhead( h(R) 
+
+> t
+
+)
+
+
+
+.
+
+During pre-training, we optimize only the final recurrent step for a sequence of length T :
+
+Lfinal = Ex
+
+"T −1X
+
+> t=1
+
+− log p(R) 
+
+> θ
+
+(xt+1 | x≤t)
+
+#
+
+.
+
+Looped Hybrid Mamba-Transformer models. 
+
+We also extend the same looped construction to Hybrid Mamba-Transformer backbones. In this setting, the recurrent backbone Mθ is still an N -layer parameterized block, but a small subset of its layers is implemented as causal self-attention while the remaining layers are Mamba-2 layers. The full attention configurations are provided in Appendix E.4. For the 140M hybrid model, we replace the layers with indices {5, 10 , 15 , 20 } with causal attention layers; for the 370M hybrid model, we replace the layers with indices {6, 18 , 30 , 42 }.Importantly, looping is applied to the entire hybrid backbone rather than only to the Mamba layers: 
+
+h(r) = M hybrid  
+
+> θ
+
+(h(r−1) ), r = 1 , . . . , R. 
+
+This choice follows the standard looped-model for-mulation, where the loop is applied to a complete sequence-to-sequence block rather than to a single submodule. It also allows both Mamba state-space updates and attention-based token interactions to be revisited at every recurrent step. Thus, each loop performs another round of interaction between the Mamba and attention components, enabling itera-tive refinement of the hidden representation. This 3design allows us to evaluate whether recurrent pa-rameter sharing remains effective when a small number of attention layers are inserted into an oth-erwise Mamba-based backbone. 
+
+Three-stage training pipeline. We train Looped Mamba models in three stages. First, we pre-train the base looped model with the final-loop objec-tive above, without an exit gate. Second, we con-tinue training with an entropy-regularized adaptive-computation objective adapted from Ouro (Zhu et al., 2025), jointly using the outputs of all recur-rent steps to learn a token-level distribution over exit depths. Third, we freeze the Mamba backbone and the language-modeling head, and train only the exit-gate parameters with a focused adaptive gate objective that encourages continuation only when the next recurrent step improves the token-level prediction loss. The detailed objectives for the two exit-gate stages are provided in Appendix B. 
+
+Exit-gated inference. When the exit gate is en-abled, each token’s exit step is selected as the smallest r whose cumulative exit probability ex-ceeds a threshold q (Appendix B). Unlike attention-based looped models, looped SSMs impose a state-continuity constraint: the recurrent scan at step 
+
+r+1 consumes the step-(r+1) SSM state of every preceding position, so a token cannot simply be dropped from later recurrent steps without affect-ing all subsequent tokens. We therefore adopt an 
+
+output-selection semantics in this work: the state chain of all R recurrent steps is preserved, and the gate selects, per token, which recurrent step’s hidden state is passed to the language-modeling head. Under this semantics, the average exit step re-ported in our experiments (Iter) measures the aver-age depth selected for prediction rather than a wall-clock compute reduction; realizing actual decode-time savings requires additional state-handling poli-cies for exited tokens (e.g., state pass-through), which we leave to future work. 
+
+4 Looped Models on Simple Reasoning Tasks 
+
+Looped model notation. We use the N ⊗ R no-tation defined in Section 3, where N denotes the number of independently parameterized Mamba layers and R denotes the number of recurrent steps. This notation is used consistently for all simple reasoning experiments below. 
+
+4.1 Mano Task Setup. We first evaluate the knowledge manipu-lation capability of Looped Mamba on the Mano task (Allen-Zhu, 2025). Mano is a synthetic modular-arithmetic reasoning task where the model must directly output the final answer without pro-ducing any explicit intermediate steps. Solving this task requires the model to apply arithmetic rules modulo 23 and to parse the tree structure encoded by the prefix expression in order to compose multi-ple intermediate computations. To thoroughly evaluate manipulation capability, we consider test accuracy across different difficulty levels, determined by the maximum expression length L, i.e., the number of operations in each sample. During training, expression lengths ℓ are sampled from [1 , L ]; during evaluation, we test only on the hardest expressions with ℓ = L. We use three difficulty levels, L ∈ { 10 , 16 , 24 }, and com-pare non-looped Mamba baselines with Looped Mamba models. Specifically, we train 4 ⊗ 1, 6 ⊗ 1,and 12 ⊗ 1 as iso-parameter baselines, and com-pare them with looped models 4 ⊗ 6, 6 ⊗ 4, and 
+
+12 ⊗ 2, respectively. We additionally include 24 ⊗ 1
+
+as a non-looped iso-FLOPs reference for all three looped models. All three looped models have effec-tive depth 24 and are therefore iso-FLOPs with the 
+
+24 ⊗ 1 non-looped baseline, while using only 1/6,
+
+1/4, and 1/2 of its parameterized layers, respec-tively. More details are provided in Appendix C. 
+
+Results. Table 1 reports the exact-match accu-racy on the Mano task. Under the iso-parameter comparison, Looped Mamba consistently outper-forms its non-looped counterpart across all model sizes and difficulty levels. For example, on the hardest setting L = 24 , the 4 ⊗ 1, 6 ⊗ 1, and 
+
+12 ⊗ 1 baselines achieve only 7.50%, 8.00%, and 22.70% accuracy, respectively, whereas their looped counterparts improve to 99.35%, 59.85%, and 38.40%. These results indicate that recurrently reusing Mamba layers substantially improves the model’s ability to parse arithmetic tree structures and compose modular computations, without in-creasing the number of trainable parameters. We further compare models under the same ef-fective depth of 24. In this iso-FLOPs setting, the best looped model, 4 ⊗ 6, outperforms the 24 ⊗ 1
+
+non-looped baseline on all difficulty levels, while using only one sixth of the parameterized layers. In particular, on L = 24 , 4 ⊗ 6 improves accu-racy from 37.45% to 99.35%. This comparison 4Table 1: Accuracy (%) of looped/non-looped Mamba models on the Mano task. Bold indicates the better result within each iso-parameter group.                                                                              
+
+> Model Params / FLOPs L= 10 L= 16 L= 24
+> Baseline model
+> Base (24 ⊗1) 24 ×/24 ×96.10 89.45 37.45
+> 4-layer model
+> Base (4 ⊗1) 4×/4×55.60 12.85 7.50 Loop (4 ⊗6) 4×/24 ×99.21 99.61 99.35 6-layer model
+> Base (6 ⊗1) 6×/6×86.33 18.35 8.00 Loop (6 ⊗4) 6×/24 ×97.90 82.42 59.85 12-layer model
+> Base (12 ⊗1) 12 ×/12 ×92.97 59.70 22.70 Loop (12 ⊗2) 12 ×/24 ×95.70 82.03 38.40
+
+shows that the gain is not simply due to using more computation: with matched effective depth, param-eter sharing through recurrent loops can provide a stronger inductive bias for knowledge manipula-tion than increasing the number of unshared layers. Moreover, among the effective-depth-24 looped models, performance improves as the number of recurrent steps increases, from 12 ⊗ 2 to 6 ⊗ 4
+
+and further to 4 ⊗ 6. This suggests that, for Mano, repeated application of a smaller Mamba block is particularly effective for learning reusable algorith-mic computation. 
+
+4.2 p-hop Task Setup. We further evaluate the recursive retrieval capability of Looped Mamba on the p-hop induc-tion task. This task is a multi-step generalization of the induction-head problem. Given a sequence 
+
+v = ( v1, . . . , v n), 1-hop induction starts from the last token vn, finds its previous occurrence in the sequence, and outputs the token immediately fol-lowing that occurrence. The p-hop task recursively applies this operation p times, requiring the model to repeatedly backtrack through the context and retrieve the final answer. We replace the Trans-former backbone in the original p-hop experiments with a Mamba-2 backbone while keeping the same looped-model protocol. We use an alphabet of size 4, sequence length n = 256 , and evaluate two difficulty levels, p = 16 and p = 32 . Follow-ing the Looped Transformer setup, we compare non-looped baselines, iso-parameter looped mod-els, and iso-FLOPs baselines. Since the answer is one of four alphabet tokens, random guessing obtains roughly 25% accuracy. 
+
+Results. Table 2 reports the results of Looped Mamba on p-hop induction. Shallow non-looped Mamba models struggle on this task: for instance, the 1 ⊗ 1 model obtains only 38.32% and 41.08% accuracy for p = 16 and p = 32 , respectively, while the 2 ⊗ 1 model reaches 63.51% and 67.22%. In contrast, adding recurrent loops dramatically improves performance. The 1 ⊗ 6 model already reaches 99.51% and 98.78%, and the 1 ⊗ 12 model further improves to 99.70% and 99.89%. Similarly, 
+
+2 ⊗ 6, 3 ⊗ 4, and 4 ⊗ 3 all achieve near-perfect accuracy under both difficulty settings. These results suggest that p-hop induction pri-marily requires recursive computational depth rather than a large number of distinct parameters. Even one- or two-layer Mamba-2 backbones, when given sufficient effective depth via looping, can learn recursive backtracking and answer retrieval. Consistent with the findings for Looped Transform-ers, Looped Mamba substantially outperforms the iso-parameter baseline and matches or exceeds the performance of deeper non-looped baselines. This indicates that Mamba’s selective state-update mech-anism can also benefit from recurrent parameter sharing and can perform multi-step latent retrieval with far fewer parameters. 
+
+5 Language Modeling with Looped Models 
+
+5.1 Setup Models We pre-trained looped language models based on LLaMA-2 Transformer (Touvron et al., 2023) and Mamba-2 architectures, with model sizes ranging from 50M to 370M parameters. All models follow the GPT-like autoregressive decoder pre-training methodology (Brown et al., 2020). In Table 5, we compare LLaMA-2 Transformer and Mamba-2 models under iso-parameter and iso-FLOPs settings. In Table 4, we further evaluate LLaMA-2, Mamba-2, Mamba-2 Hybrid, and exit-gate variants. 
+
+Training settings Models in Table 5 are pre-trained for 100B tokens, corresponding to 50,000 iterations, from the Nemotron-ClimbMix dataset (Diao et al., 2025). For the models in Table 4, we use a three-stage training procedure. First, all mod-els are pre-trained for 150B tokens, corresponding to 75,000 iterations, from the same dataset. Second, the exit-gate variants are continued with Exit-Gate Stage 1 training for 5.2B tokens, corresponding to 2,500 iterations. Third, Exit-Gate Stage 2 further 5Table 2: Accuracy (%) of looped/non-looped Mamba models on the p-hop induction task.                                                                                                                  
+
+> Model Params / FLOPs
+> p=16 ,n=256
+> p=32 ,n=256
+> Base (12 ⊗1) 12 ×/12 ×99.95 99.87
+> 1-layer model
+> Base (1 ⊗1) 1×/1×38.32 41.08 Loop (1 ⊗6) 1×/6×99.51 98.78 Loop (1 ⊗12) 1×/12 ×99.70 99.89
+> 2-layer model
+> Base (2 ⊗1) 2×/2×63.51 67.22 Loop (2 ⊗3) 2×/6×99.55 98.39 Loop (2 ⊗6) 2×/12 ×99.93 99.84
+> 3-layer model
+> Base (3 ⊗1) 3×/3×87.18 77.38 Loop (3 ⊗2) 3×/6×99.74 98.55 Loop (3 ⊗4) 3×/12 ×99.92 99.80
+> 4-layer model
+> Base (4 ⊗1) 4×/4×97.99 89.39 Loop (4 ⊗3) 4×/12 ×99.89 99.84
+> 6-layer model
+> Base (6 ⊗1) 6×/6×99.81 99.38 Loop (6 ⊗2) 6×/12 ×99.97 99.91
+
+trains the gate for 1.2B tokens, corresponding to 600 iterations. We use the Mistral-7B-v0.1 tok-enizer (Jiang et al., 2023) with a vocabulary size of 32,000 and set the context length to 2048 to-kens. All experiments are conducted on 8 H100 GPUs with an effective global batch size of 1024 sequences. Architecture-specific configurations, optimizer settings, and detailed results are provided in Appendix E. 
+
+Evaluation For downstream evaluation, we report performance on a set of common-sense and reasoning benchmarks, including PIQA (Bisk et al., 2020), BoolQ (Clark et al., 2019), WinoGrande (Sakaguchi et al., 2021), OpenBookQA (Mihaylov et al., 2018), Hel-laSwag (Zellers et al., 2019), ARC-Challenge, and ARC-Easy (Clark et al., 2018). We follow a fixed few-shot evaluation protocol: PIQA, BoolQ, Wino-Grande, and OpenBookQA are evaluated with 5-shot prompting; HellaSwag with 10-shot prompt-ing; ARC-Challenge with 25-shot prompting; and ARC-Easy with 8-shot prompting. 
+
+5.2 iso-FLOPs Evaluation 
+
+Table 3 reports validation perplexity and down-stream performance. The table supports two com-plementary comparisons. First, under the iso-parameter setting, looped models consistently im-prove validation perplexity over their non-looped counterparts with the same number of parameter-ized layers, for both Mamba-2 and LLaMA-2 back-bones. This indicates that recurrently reusing the 
+
+Table 3: iso-FLOPs evaluation of Mamba-2 and LLaMA-2 Transformer models trained on 100B tokens. PPL denotes validation perplexity, and Avg. denotes the average score over seven downstream tasks. Full per-task results are reported in Appendix A. 
+
+Model Params / FLOPs PPL Avg. Mamba-2 
+
+Base (6 ⊗ 1) 6 × /6× 21.96 35.31 Loop (6 ⊗ 4) 6 × /24 × 19.98 37.39 Base (12 ⊗ 1) 12 × /12 × 18.66 38.12 
+
+Loop (12 ⊗ 2) 12 × /24 × 18.21 38.02 Base (24 ⊗ 1) 24 × /24 × 16.15 37.57 
+
+LLaMA-2 Transformer 
+
+Base (6 ⊗ 1) 6 × /6× 21.48 38.19 Loop (6 ⊗ 4) 6 × /24 × 19.75 38.45 Base (12 ⊗ 1) 12 × /12 × 18.53 38.71 Loop (12 ⊗ 2) 12 × /24 × 18.06 39.04 
+
+Base (24 ⊗ 1) 24 × /24 × 16.40 37.21 
+
+same backbone improves language modeling per-formance when the trainable parameter budget is fixed. For the LLaMA-2 Transformer backbone, each parameterized layer contains both causal self-attention and a gated MLP, whereas each Mamba-2 layer uses a Mamba-2 mixer without an external MLP. In Table 3, both backbones are compared using the same layer counts N ∈ { 6, 12 , 24 } and the same loop notation N ⊗ R. Thus, the com-parison aligns the number of parameterized layers and effective depth, while architectural details such as attention, MLPs, and Mamba mixing remain backbone-specific. Second, under the strict iso-FLOPs setting, the deeper non-looped 24 ⊗ 1 models still achieve the best validation perplexity. Although looped models match the effective depth of 24 ⊗ 1, they use sub-stantially fewer distinct parameters and do not fully close the perplexity gap. This behavior is consis-tent with prior observations for Looped Transform-ers, where looped language models improve over iso-parameter baselines but remain worse than iso-FLOPs non-looped models in perplexity (Saunshi et al., 2025). Notably, downstream performance does not fol-low validation perplexity exactly. Despite their worse perplexity relative to the 24 ⊗ 1 baselines, looped models remain competitive on the down-stream average and in some cases outperform the deeper non-looped baseline. This suggests that re-current depth may provide a parameter-efficient in-ductive bias that is not fully captured by perplexity alone, although the strength of this effect depends on the backbone and task. 65.3 iso-Parameter Evaluation and Adaptive Exit 
+
+In addition to the iso-FLOPs comparison above, we evaluate looped models under an iso-parameter setting. Here, the number of independently param-eterized layers is fixed, while the number of recur-rent loops is varied. Thus, an N ⊗ R model has the same number of trainable parameters as its N ⊗ 1
+
+baseline, but uses a larger effective computation depth at inference time. This setting allows us to examine whether recurrent computation improves language modeling and downstream performance under a fixed parameter budget. Note that the 140M and 370M models use different backbone depths: the 140M models contain 24 parameterized layers, whereas the 370M models contain 48 parameter-ized layers. Consequently, loop4 corresponds to an effective depth of 96 layers for 140M models and 192 layers for 370M models. Therefore, the 140M and 370M results should be interpreted as separate iso-parameter comparisons within each model scale, rather than as directly depth-matched comparisons across scales. Table 4 reports results for LLaMA-2 Trans-former, Mamba-2, and Mamba-2 Hybrid back-bones. For exit-gated models, we select a represen-tative threshold from q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}.We choose the threshold that yields an average selected exit step below four while achieving the highest downstream average among such lower-selected-depth configurations. The full threshold sweep is reported in Appendix G. The iso-parameter results show that recurrent depth is generally useful, especially for valida-tion perplexity. For example, the 140M LLaMA-2 loop4 model improves Avg. from 37.79 to 38.41 over the non-looped baseline, and fixed-loop Mamba-2 variants also reduce PPL. However, downstream performance is not monotonic with the number of loops. The 140M Mamba-2 loop2 model improves PPL but suffers a large drop on BoolQ, and the loop4 model achieves the best PPL among fixed-loop variants while its downstream average remains close to the non-looped baseline. This suggests that validation perplexity alone is in-sufficient to determine the optimal recurrent depth for downstream use. The fixed-loop inference ablation in Table 12 further shows that, under the final-loop pre-training objective, intermediate recurrent steps are poorly calibrated with respect to the language-modeling head: forcing fewer than R loops at inference time yields severely degraded perplexity, while different downstream tasks prefer different effective depths within r ≤ R. Naively truncating a fixed-loop model at inference time is therefore not a viable way to save computation, and no single forced depth is optimal for all tasks. This motivates adap-tive exit-state selection instead of always using the maximum recurrent depth. We therefore attach a lightweight exit gate to pre-trained fixed-loop checkpoints and continue train-ing with the adaptive objectives described in Ap-pendix B. At inference time, the gate predicts a distribution over recurrent exit steps for each token, and the threshold q controls the selected-depth– performance trade-off. Smaller q values select ear-lier recurrent-step outputs, while larger values se-lect later recurrent-step outputs. Thus, exit-gated inference can exploit intermediate recurrent states and avoid forcing all tokens to use the same fixed depth. For the 140M Mamba-2 model, exit gating im-proves both downstream performance and exit-state selection effectiveness. The fixed loop4 model ob-tains an Avg. of 37.79 with a fixed prediction depth of 4. In contrast, the Stage 1 exit gate reaches 38.57 Avg. with an average selected exit step of 2.82 at 
+
+q = 0 .4, and the Stage 2 gate further improves to 38.87 Avg. with an average selected exit step of 3.00 at q = 0 .8. A similar pattern appears for the 140M Mamba-2 Hybrid model: although fixed loop4 achieves the best PPL, its Avg. is only 35.93, while Stage 1 exit gating improves Avg. to 37.44 with an average selected exit step of 2.81. These results indicate that adaptive exit can outperform fixed full-loop inference by selecting more suitable recurrent depths. For the 370M models, the effect is different. The best downstream average remains concentrated near fixed loop4: 370M Mamba-2 reaches 38.51 Avg., and 370M Mamba-2 Hybrid reaches 38.91 Avg. The corresponding exit-gated variants do not surpass these peak fixed-loop4 scores. This sug-gests that larger models may rely more strongly on the final recurrent step, or that the current post-training gate is not yet sufficiently calibrated for larger-scale models. Nevertheless, Figure 1 shows that exit gating pro-vides a controllable selected-depth–performance frontier. For the 140M models, the exit-gated vari-ants can exceed fixed-depth baselines at smaller average selected exit steps. For the 370M models, 7Table 4: Downstream evaluation of Mamba-2, Mamba-2 Hybrid, and LLaMA-2 Transformer models. PPL denotes validation perplexity, and Avg. denotes the average score over the seven downstream tasks shown in the table. Iter denotes the average exit step selected by the gate (Section 3), averaged across downstream evaluation tasks. Bold numbers indicate the best result within each model group; ties are broken by a smaller Iter.                                                                                                                                                                                                                                                 
+
+> Model Exit qIter PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. 140M LLaMA-2
+> llama2-140m-baseline no –1.00 15.96 50.98 56.51 50.59 27.60 25.48 29.44 23.91 37.79 llama2-140m-loop4 no –4.00 14.75 51.09 60.83 51.70 25.60 25.88 27.56 26.18 38.41 140M Mamba-2
+> Mamba-2-140m-baseline no –1.00 15.80 49.95 55.38 51.22 28.00 26.11 29.44 25.55 37.95 Mamba-2-140m-loop2 no –2.00 15.41 51.52 39.66 49.01 28.00 26.06 27.82 26.94 35.57 Mamba-2-140m-loop4 no –4.00 14.68 52.34 58.87 48.22 27.00 25.21 28.07 24.83 37.79 Mamba-2-140m-loop4-exitgate-stage1 yes 0.4 2.82 15.57 52.50 62.23 50.67 24.60 26.12 28.84 25.04 38.57 Mamba-2-140m-loop4-exitgate-stage2 yes 0.8 3.00 15.54 52.99 62.23 50.20 26.00 26.01 28.92 25.72 38.87 140M Mamba-2 Hybrid
+> Mamba-2-hybrid-140m-baseline no –1.00 15.27 51.09 37.83 50.28 27.00 25.71 28.50 26.35 35.25 Mamba-2-hybrid-140m-loop4 no –4.00 14.37 51.31 45.87 47.43 26.80 25.07 28.92 26.09 35.93 Mamba-2-hybrid-140m-loop4-exitgate-stage1 yes 0.4 2.81 15.07 51.74 54.77 49.96 26.80 25.29 28.16 25.34 37.44
+> Mamba-2-hybrid-140m-loop4-exitgate-stage2 yes 0.8 3.29 15.07 50.38 54.80 49.25 26.40 25.39 27.73 26.68 37.23
+> 370M Mamba-2
+> Mamba-2-370m-baseline no –1.00 12.72 48.20 61.30 49.60 27.20 24.60 28.90 25.70 37.93 Mamba-2-370m-loop4 no –4.00 12.06 51.90 61.96 48.15 27.80 24.72 29.10 25.93 38.51
+> Mamba-2-370m-loop4-exitgate-stage1 yes 0.60 3.40 12.54 52.07 59.24 49.88 24.40 25.09 26.96 26.47 37.73 Mamba-2-370m-loop4-exitgate-stage2 yes 0.80 3.18 12.55 52.34 57.61 50.59 24.80 24.77 26.88 26.09 37.58
+> 370M Mamba-2 Hybrid
+> Mamba-2-hybrid-370m-baseline no –1.00 12.22 52.39 60.06 50.59 26.20 24.95 29.35 26.01 38.51 Mamba-2-hybrid-370m-loop4 no –4.00 11.59 51.74 61.22 49.33 28.00 25.97 29.86 26.26 38.91
+> Mamba-2-hybrid-370m-loop4-exitgate-stage1 yes 0.60 3.34 12.12 51.03 39.54 50.67 27.60 26.36 30.63 25.84 35.95 Mamba-2-hybrid-370m-loop4-exitgate-stage2 yes 0.80 3.01 12.12 51.09 39.45 50.04 27.40 25.84 30.29 26.09 35.74
+
+although the exit-gated variants do not surpass the peak fixed-loop4 scores, they remain advantageous in the intermediate-selected-depth regime. At av-erage selected exit steps near three, the exit-gated 370M Mamba-2 and Hybrid models outperform forced fixed-depth inference with r = 3 by 2.89 and 1.20 percentage points, respectively. We note that forced fixed-depth inference at r < R is inher-ently miscalibrated under the final-loop objective (Appendix F); this comparison therefore shows that gate training recovers usable intermediate-depth predictions, rather than demonstrating a reduction in executed computation. Overall, these results suggest that recurrent depth can support adaptive selection among recurrent-step outputs rather than a fixed maximum depth that is always fully used. 
+
+6 Conclusion 
+
+We presented Looped Mamba, a recurrent-depth extension of Mamba-based language models that repeatedly applies a shared Mamba or Hybrid Mamba–Transformer backbone to increase effec-tive depth without adding distinct trainable param-eters. On Mano and p-hop induction, Looped Mamba consistently improves over iso-parameter non-looped baselines and, in several reasoning set-tings, matches or exceeds deeper models with com-parable effective depth, suggesting that recurrent parameter sharing benefits compositional compu-tation and recursive retrieval. In language-model pre-training, recurrent depth improves validation perplexity under fixed parameter budgets, although deeper non-looped models still perform better un-der strict iso-FLOPs comparisons. Nevertheless, looped models remain competitive on downstream benchmarks. Finally, exit-gated Looped Mamba enables threshold-controlled adaptive exit-state se-lection and improves performance through adaptive selection among recurrent-step outputs, especially at the 140M scale. Overall, at the scales we study, recurrent depth offers a promising, parameter-efficient scaling axis for Mamba and hybrid lan-guage models. 81.0 1.5 2.0 2.5 3.0 3.5 4.0  
+
+> Average Exit Round
+> 0.375
+> 0.380
+> 0.385
+> 0.390
+> Accuracy (avg)
+> q=0.2
+> q=0.4
+> q=0.6
+> q=1.0
+> q=0.2
+> q=0.4
+> q=0.6
+> q=0.8
+> q=1.0
+> Early Exit Strategy Comparison 140M
+> Fixed Exit Depth
+> R1 Baseline
+> Exit Gate Stage 1
+> Exit Gate Stage 2
+
+(a) 140M 1.0 1.5 2.0 2.5 3.0 3.5 4.0   
+
+> Average Exit Round
+> 0.350
+> 0.355
+> 0.360
+> 0.365
+> 0.370
+> 0.375
+> 0.380
+> Accuracy (avg)
+> q=0.2
+> q=0.4
+> q=0.6
+> q=1.0
+> q=0.2
+> q=0.4
+> q=0.6
+> q=0.8
+> q=1.0
+> Early Exit Strategy Comparison 140M-hybrid
+> Fixed Exit Depth
+> R1 Baseline
+> Exit Gate Stage 1
+> Exit Gate Stage 2
+
+(b) 140M (hybrid) 1.0 1.5 2.0 2.5 3.0 3.5 4.0  
+
+> Average Exit Round
+> 0.345
+> 0.350
+> 0.355
+> 0.360
+> 0.365
+> 0.370
+> 0.375
+> 0.380
+> 0.385
+> 0.390
+> Accuracy (avg)  q=0.2
+> q=0.4
+> q=0.6
+> q=1.0
+> q=0.2
+> q=0.4
+> q=0.6
+> q=0.8
+> q=1.0
+> Early Exit Strategy Comparison 370M
+> Fixed Exit Depth
+> R1 Baseline
+> Exit Gate Stage 1
+> Exit Gate Stage 2
+
+(c) 370M 1.0 1.5 2.0 2.5 3.0 3.5 4.0    
+
+> Average Exit Round
+> 0.345
+> 0.350
+> 0.355
+> 0.360
+> 0.365
+> 0.370
+> 0.375
+> 0.380
+> 0.385
+> 0.390
+> Accuracy (avg)
+> q=0.2
+> q=0.4
+> q=0.6
+> q=0.8
+> q=0.2 q=0.4
+> q=0.6
+> q=0.8
+> q=1.0
+> Early Exit Strategy Comparison 370M hybrid
+> Fixed Exit Depth
+> R1 Baseline
+> Exit Gate Stage 1
+> Exit Gate Stage 2
+
+(d) 370M (hybrid) 
+
+Figure 1: Accuracy–selected-depth trade-off of exit-gated Looped Mamba and Looped Mamba Hybrid models under different thresholds q. The x-axis denotes the average exit step selected by the gate, and the y-axis denotes the downstream average accuracy. Exit-gated models trace a threshold-controlled trade-off curve, while fixed-depth inference corresponds to discrete forced-loop points. “Fixed Exit Depth” denotes forced fixed-depth inference of the looped model, and “R1 Baseline” denotes the non-looped ( R=1 ) baseline. 
+
+Limitations 
+
+This work has several limitations. First, our exper-iments are limited to models up to 370M param-eters, and we have not yet validated the scaling behavior of Looped Mamba at billion-parameter or larger scales. Second, our language-model pre-training budget is 100B–150B tokens, which is modest compared with modern large-scale LLM training regimes. Thus, our results should be in-terpreted as controlled empirical evidence rather than a complete characterization of large-scale per-formance. Third, Mano and p-hop induction are synthetic reasoning tasks. Although they isolate compositional computation and recursive retrieval, they may not fully represent open-ended real-world reasoning. Finally, our Exit Gate experiments use fixed global thresholds q to control the selected recurrent-step output, but do not reduce the number of recurrent steps actually executed. Realizing and optimizing compute savings per token, example, or task requires additional state-handling mechanisms. Future work should evaluate larger models, longer training runs, more realistic reasoning benchmarks, and more fine-grained adaptive-compute strategies. 
+
+References 
+
+Zeyuan Allen-Zhu. 2025. Physics of language models: Part 4.1, architecture design and the magic of canon layers. SSRN preprint. Available at SSRN. Iz Beltagy, Matthew E. Peters, and Arman Cohan. 2020. Longformer: The long-document transformer. 
+
+Preprint , arXiv:2004.05150. Yonatan Bisk, Rowan Zellers, Jianfeng Gao, Yejin Choi, and 1 others. 2020. Piqa: Reasoning about physical commonsense in natural language. In Proceedings of the AAAI conference on artificial intelligence , vol-ume 34, pages 7432–7439. Aaron Blakeman, Aaron Grattafiori, Aarti Basant, Ab-hibha Gupta, Abhinav Khattar, Adi Renduchintala, Aditya Vavre, Akanksha Shukla, Akhiad Bercovich, Aleksander Ficek, and 1 others. 2025. Nvidia nemotron 3: Efficient and open intelligence. arXiv preprint arXiv:2512.20856 .Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, 
+
+9Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, and 12 others. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems , volume 33, pages 1877–1901. Curran Associates, Inc. Christopher Clark, Kenton Lee, Ming-Wei Chang, Tom Kwiatkowski, Michael Collins, and Kristina Toutanova. 2019. Boolq: Exploring the surprising difficulty of natural yes/no questions. arXiv preprint arXiv:1905.10044 .Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and Oyvind Tafjord. 2018. Think you have solved question an-swering? try arc, the ai2 reasoning challenge. arXiv preprint arXiv:1803.05457 .Tri Dao and Albert Gu. 2024. Transformers are ssms: Generalized models and efficient algorithms through structured state space duality. arXiv preprint arXiv:2405.21060 .DeepSeek-AI, Aixin Liu, Bei Feng, Bing Xue, Bingx-uan Wang, Bochao Wu, Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan, Damai Dai, Daya Guo, Dejian Yang, Deli Chen, Dongjie Ji, Erhang Li, Fangyun Lin, Fucong Dai, and 181 others. 2025. Deepseek-v3 technical report. 
+
+Preprint , arXiv:2412.19437. Mostafa Dehghani, Stephan Gouws, Oriol Vinyals, Jakob Uszkoreit, and Łukasz Kaiser. 2019. Universal transformers. Preprint , arXiv:1807.03819. Chunyuan Deng, Yizhe Zhang, Rui-Jie Zhu, Yuanyuan Xu, Jiarui Liu, T. S. Eugene Ng, and Hanjie Chen. 2026. Lt2: Linear-time looped transformers. 
+
+Preprint , arXiv:2605.20670. Shizhe Diao, Yu Yang, Yonggan Fu, Xin Dong, Dan Su, Markus Kliegl, Zijia Chen, Peter Belcak, Yoshi Suhara, Hongxu Yin, Mostofa Patwary, Celine Lin, Jan Kautz, and Pavlo Molchanov. 2025. Climb: Clustering-based iterative data mixture bootstrapping for language model pre-training. arXiv preprint .Albert Gu and Tri Dao. 2024. Mamba: Linear-time sequence modeling with selective state spaces. 
+
+Preprint , arXiv:2312.00752. Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, Tom Hennigan, Eric Noland, Katie Millican, George van den Driessche, Bogdan Damoc, Aurelia Guy, Simon Osindero, Karen Si-monyan, Erich Elsen, and 3 others. 2022. Training compute-optimal large language models. Preprint ,arXiv:2203.15556. Albert Q. Jiang, Alexandre Sablayrolles, Arthur Men-sch, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guil-laume Lample, Lucile Saulnier, Lélio Renard Lavaud, Marie-Anne Lachaux, Pierre Stock, Teven Le Scao, Thibaut Lavril, Thomas Wang, Timothée Lacroix, and William El Sayed. 2023. Mistral 7b. Preprint ,arXiv:2310.06825. Alexia Jolicoeur-Martineau. 2025. Less is more: Re-cursive reasoning with tiny networks. Preprint ,arXiv:2510.04871. Opher Lieber, Barak Lenz, Hofit Bata, Gal Cohen, Jhonathan Osin, Itay Dalmedigos, Erez Safahi, Shaked Meirom, Yonatan Belinkov, Shai Shalev-Shwartz, Omri Abend, Raz Alon, Tomer Asida, Amir Bergman, Roman Glozman, Michael Gokhman, Avashalom Manevich, Nir Ratner, Noam Rozen, and 3 others. 2024. Jamba: A hybrid transformer-mamba language model. Preprint , arXiv:2403.19887. Todor Mihaylov, Peter Clark, Tushar Khot, and Ashish Sabharwal. 2018. Can a suit of armor conduct elec-tricity? a new dataset for open book question answer-ing. In EMNLP .Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavat-ula, and Yejin Choi. 2021. Winogrande: An adver-sarial winograd schema challenge at scale. Commu-nications of the ACM , 64(9):99–106. Nikunj Saunshi, Nishanth Dikkala, Zhiyuan Li, San-jiv Kumar, and Sashank J Reddi. 2025. Reasoning with latent thoughts: On the power of looped trans-formers. In International Conference on Learning Representations , volume 2025, pages 14855–14881. Mark Schöne, Babak Rahmani, Heiner Kremer, Fabian Falck, Hitesh Ballani, and Jannes Gladrow. 2025. Implicit language models are rnns: Bal-ancing parallelization and expressivity. Preprint ,arXiv:2502.07827. Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Ku-mar. 2024. Scaling llm test-time compute optimally can be more effective than scaling model parameters. 
+
+Preprint , arXiv:2408.03314. Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. 2023. Roformer: En-hanced transformer with rotary position embedding. 
+
+Preprint , arXiv:2104.09864. Hugo Touvron, Louis Martin, Kevin Stone, Peter Al-bert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu, Wenyin Fu, and 49 oth-ers. 2023. Llama 2: Open foundation and fine-tuned chat models. Preprint , arXiv:2307.09288. Roger Waleffe, Wonmin Byeon, Duncan Riach, Bran-don Norick, Vijay Korthikanti, Tri Dao, Albert Gu, Ali Hatamizadeh, Sudhakar Singh, Deepak Narayanan, and 1 others. 2024. An empirical study of mamba-based language models. arXiv preprint arXiv:2406.07887 .
+
+10 Wenlong Wang and Fergal Reid. 2026. Tiny recursive reasoning with mamba-2 attention hybrid. Preprint ,arXiv:2602.12078. An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, Chujie Zheng, Day-iheng Liu, Fan Zhou, Fei Huang, Feng Hu, Hao Ge, Haoran Wei, Huan Lin, Jialong Tang, and 41 others. 2025. Qwen3 technical report. Preprint ,arXiv:2505.09388. Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. 2019. Hellaswag: Can a machine really finish your sentence? arXiv preprint arXiv:1905.07830 .Rui-Jie Zhu, Zixuan Wang, Kai Hua, Tianyu Zhang, Ziniu Li, Haoran Que, Boyi Wei, Zixin Wen, Fan Yin, He Xing, and 1 others. 2025. Scaling latent rea-soning via looped language models. arXiv preprint arXiv:2510.25741 .
+
+A Full Results for iso-FLOPs Evaluation 
+
+Table 5 presents the full iso-FLOPs evaluation results for Mamba-2 and LLaMA-2-style Trans-former models trained on 100B tokens. PPL de-notes validation perplexity, while Avg. denotes the average score across the seven downstream tasks reported in the table. These per-task results comple-ment the main-text analysis by showing how each architecture and looping configuration performs under matched parameter and compute budgets. 
+
+B Details of Two-Stage Exit-Gate Training 
+
+Exit-Gate Stage 1: adaptive exit-state selection. 
+
+Following the entropy-regularized adaptive com-putation objective of Ouro (Zhu et al., 2025), we attach an exit gate to the Looped Mamba model. Unlike the final-loop objective used in base pre-training, this stage uses the outputs from all re-current steps. The exit gate operates at the token level: for token position i and recurrent step r with 
+
+r = 1 , . . . , R − 1, it predicts an instantaneous exit probability 
+
+λ(r) 
+
+> i
+
+= σ
+
+
+
+Linear ϕ(h(r) 
+
+> i
+
+)
+
+
+
+∈ (0 , 1) ,
+
+where h(r) 
+
+> i
+
+is the hidden state of token i after the 
+
+r-th recurrent step, ϕ denotes the gate parameters, and σ(·) is the sigmoid function. The final recur-rent step does not require a separate gate, since it receives all remaining probability mass. For each token position, we define the survival probability as the probability of not exiting before a given recurrent step: 
+
+S(0)  
+
+> i
+
+= 1 , S(r) 
+
+> i
+
+=
+
+> r
+
+Y
+
+> j=1
+
+
+
+1 − λ(j)
+
+> i
+
+
+
+.
+
+The probability that token i exits exactly at recur-rent step r is 
+
+π(r) 
+
+> i
+
+= pϕ(zi = r | x)= λ(r) 
+
+> i
+
+S(r−1)  
+
+> i
+
+, r = 1 , . . . , R − 1.
+
+(1) where zi denotes the latent exit step for token i. For the final recurrent step, we assign the remaining probability mass: 
+
+π(R) 
+
+> i
+
+= pϕ(zi = R | x) = S(R−1)  
+
+> i
+
+.
+
+This defines a valid token-level distribution over recurrent steps: 
+
+> R
+
+X
+
+> r=1
+
+π(r) 
+
+> i
+
+= 1 .
+
+Let 
+
+ℓ(r) 
+
+> i
+
+= − log p(r) 
+
+> θ
+
+(xi+1 | x≤i)
+
+be the token-level next-token loss at recurrent step 
+
+r. To avoid collapse to a single recurrent depth, we add an entropy regularizer over the token-level exit distribution: 
+
+Hi = −
+
+> R
+
+X
+
+> r=1
+
+π(r) 
+
+> i
+
+log π(r) 
+
+> i
+
+.
+
+The Stage 1 objective is therefore 
+
+Lstage1 = Ex
+
+"
+
+1
+
+M
+
+> M
+
+X
+
+> i=1
+> R
+
+X
+
+> r=1
+
+π(r) 
+
+> i
+
+ℓ(r) 
+
+> i
+
+− βH i
+
+!# 
+
+,
+
+where β controls the strength of entropy regulariza-tion, and M denotes the number of valid next-token prediction positions. This objective encourages the gate to explore different recurrent depths while weighting each recurrent-step loss by the probabil-ity of exiting at that step. At inference time, we use the cumulative exit probability 
+
+CDF i(r | x) = 
+
+> r
+
+X
+
+> j=1
+
+π(j)
+
+> i
+
+11 Table 5: iso-FLOPs evaluation of Mamba-2 and LLaMA2-style Transformer models trained on 100B tokens. PPL denotes validation perplexity, and Avg. denotes the average score over the seven downstream tasks shown in the table.                                                                                                                                                                            
+
+> Arch. Model Params / FLOPs PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. Mamba-2
+> Mamba-2 Base (6 ⊗1) 6×/6×21.96 51.52 39.57 50.28 26.80 26.36 27.39 25.25 35.31 Mamba-2 Loop (6 ⊗4) 6×/24 ×19.98 52.77 50.61 51.14 28.00 25.91 27.99 25.29 37.39 Mamba-2 Base (12 ⊗1) 12 ×/12 ×18.66 52.88 61.93 48.86 24.20 26.02 27.39 25.59 38.12 Mamba-2 Loop (12 ⊗2) 12 ×/24 ×18.21 49.89 62.11 49.49 23.40 25.80 28.58 26.85 38.02 Mamba-2 Base (24 ⊗1) 24 ×/24 ×16.15 51.90 57.37 48.07 26.40 25.46 28.41 25.38 37.57
+> LLaMA-2
+> Transformer Base (6 ⊗1) 6×/6×21.48 52.94 59.30 47.99 25.80 25.75 28.92 26.64 38.19 Transformer Loop (6 ⊗4) 6×/24 ×19.75 52.67 57.98 49.64 27.80 26.17 28.24 26.64 38.45 Transformer Base (12 ⊗1) 12 ×/12 ×18.53 51.47 62.05 50.59 26.00 26.02 29.01 25.84 38.71 Transformer Loop (12 ⊗2) 12 ×/24 ×18.06 52.72 62.17 50.59 28.60 25.62 27.05 26.56 39.04
+> Transformer Base (24 ⊗1) 24 ×/24 ×16.40 50.92 49.54 51.14 28.80 26.02 28.75 25.29 37.21
+
+to determine the selected output step. Given a threshold q ∈ [0 , 1] , token i selects recurrent step 
+
+zi(q) = min {r ∈ { 1, . . . , R } : CDF i(r | x) ≥ q} .
+
+The threshold q controls the selected-depth– accuracy trade-off: smaller values favor earlier recurrent-step outputs, while larger values select later recurrent-step outputs. 
+
+Exit-Gate Stage 2: focused exit-gate training. 
+
+Following the focused adaptive gate training stage of Ouro (Zhu et al., 2025), we further calibrate the exit gate after entropy-regularized training. In this stage, the Mamba backbone and the language-modeling head are frozen, and only the exit-gate pa-rameters ϕ are updated. The goal is to train the gate to decide whether continuing to the next recurrent step is useful, based on the realized improvement in next-token loss. We first detach the per-step token losses from the computation graph: 
+
+¯ℓ(r) 
+
+> i
+
+= sg 
+
+
+
+ℓ(r)
+
+> i
+
+
+
+,
+
+where sg( ·) denotes the stop-gradient operator. For each non-final recurrent step r ∈ { 1, . . . , R − 1},we define the improvement obtained by continuing from step r to step r + 1 as 
+
+I(r) 
+
+> i
+
+= max 
+
+
+
+0, ¯ℓ(r) 
+
+> i
+
+− ¯ℓ(r+1) 
+
+> i
+
+
+
+.
+
+A larger I(r) 
+
+> i
+
+means that the additional recurrent step reduces the loss, suggesting that the model should continue rather than exit. We convert this improvement into a soft continu-ation target: 
+
+w(r) 
+
+> i
+
+= σ
+
+
+
+κ
+
+
+
+I(r) 
+
+> i
+
+− γ
+
+ 
+
+,
+
+where κ controls the sharpness of the target and γ
+
+is the minimum improvement threshold. When the improvement is larger than γ, w(r) 
+
+> i
+
+is close to 1 and the gate is encouraged to continue; otherwise, it is encouraged to exit. Since λ(r) 
+
+> i
+
+is the predicted exit probability, the predicted continuation probability is 1 − λ(r) 
+
+> i
+
+. We train the gate by matching this predicted continua-tion probability to w(r) 
+
+> i
+
+using binary cross-entropy: 
+
+L(r)adapt = − 1
+
+M
+
+> M
+
+X
+
+> i=1
+
+h
+
+w(r) 
+
+> i
+
+log 
+
+
+
+1 − λ(r)
+
+> i
+
+
+
++
+
+
+
+1 − w(r)
+
+> i
+
+
+
+log λ(r)
+
+> i
+
+i
+
+.
+
+(2) The total Stage 2 objective averages over all non-final recurrent steps: 
+
+Lstage2 = 1
+
+R − 1
+
+> R−1
+
+X
+
+> r=1
+
+L(r)adapt .
+
+This objective penalizes early exits when another recurrent step would substantially reduce the loss, while also penalizing unnecessary continuation when the additional step provides little improve-ment. At inference time, the calibrated gate is used with the same cumulative-probability threshold rule as in Stage 1. 
+
+C Mano: Knowledge Manipulation 
+
+Dataset. We use the Mano task to evaluate the model’s ability to manipulate knowledge stored in its parameters without explicit intermediate reason-ing. The dataset consists of arithmetic expressions over the finite field F23 . Each instance corresponds 12 to a tree-structured expression with ℓ binary oper-ations, where ℓ ≤ L and L denotes the maximum expression length. During training, ℓ is uniformly sampled from [1 , L ]; during evaluation, we use only the hardest expressions with ℓ = L. The expres-sions are presented in prefix notation. A length-3 instance is written as 
+
+<bos> <len_3> - * a b + c d <ans> ans .
+
+All operations are performed in F23 , and the task uses only the operators {+, −, ∗} . The vocabulary consists of the numbers 0, . . . , 22 , the three opera-tors, the special tokens <bos> , <ans> , <eos> , and 
+
+<pad> , and length tokens <len_i> for i ∈ [0 , L ].
+
+Model. We replace the Transformer blocks in the looped-model architecture with Mamba-2 blocks and study recurrent parameter sharing in this ar-chitecture. A model is denoted by N ⊗ R, where 
+
+N is the number of independently parameterized Mamba layers and R is the number of recurrent steps. Thus, R = 1 corresponds to a standard non-looped Mamba model, while R > 1 corre-sponds to a Looped Mamba model. All models use hidden dimension 1024. Training and evalua-tion are performed using only the output from the final recurrent step. Since our Mamba implemen-tation disables the feed-forward sublayer, we use two consecutive Mamba-2 mixer blocks as a proxy for the two-sub-layer structure of a Transformer block, namely attention followed by an MLP. This design matches the number of residual transforma-tions at a coarse level, but should not be interpreted as an exact architectural equivalence. We there-fore report results under explicit effective-depth, iso-parameter, and iso-FLOPs comparisons. 
+
+Training details. We use the AdamW optimizer with β1, β 2 = 0 .9, 0.98 , ϵ = 10 −6, weight decay 0.1, and gradient clipping with maximum norm 1.0. We employ 1000 warmup steps followed by a co-sine learning-rate schedule whose minimum learn-ing rate is 0.1 of the peak learning rate. Training uses bf16, sequence packing, context length 1024, and global batch size 128. For the three difficulty levels, we train for 80K, 110K, and 200K steps, re-spectively. The corresponding peak learning rates are 5·10 −4, 1·10 −4, and 5·10 −5. Training samples are generated online, and multiple Mano instances are packed into each 1024-token chunk. For each configuration, we train the model three times with different random seeds and report the run with the maximum average evaluation accuracy on the test set. We adopt this best-of-three reporting proto-col because our goal is to study the expressivity power of the model under a given configuration, rather than to characterize average training stability across random seeds. 
+
+Evaluation. During evaluation, each sample con-tains a single expression of length ℓ = L, without packing. Since the final answer is a single token in 
+
+F23 , we report exact-match accuracy at the answer position. Specifically, the model predicts the single answer token following <ans> , and the prediction is counted as correct if it matches the ground-truth answer. For each difficulty level, we evaluate on 2000 deterministic samples generated with a fixed random seed. 
+
+D p-hop Induction 
+
+Dataset. We use the p-hop induction task to eval-uate recursive contextual retrieval. Given a se-quence v = ( v1, . . . , v n) of length n = 256 , each token is sampled from an alphabet Σ of size 4. A 1-hop induction step starts from the final position, finds a previous occurrence of the target token, and returns the token immediately following that oc-currence. The p-hop task recursively applies this operation p times. We evaluate two difficulty levels, 
+
+p ∈ { 16 , 32 }. To ensure that every instance has a valid answer, our implementation uses a chain-first construction: it first samples a valid hop chain of length p, fills the remaining positions subject to constraints, and then verifies that the actual hop trace exactly matches the constructed chain. 
+
+Model. We use the same Looped Mamba archi-tecture as in the Mano experiments. A model is denoted by N ⊗ R, where N is the number of in-dependently parameterized Mamba-2 layers and R
+
+is the number of recurrent steps. Therefore, the number of parameters scales with N , while FLOPs scale with the effective depth N R . All p-hop ex-periments use hidden dimension d = 256 . The final recurrent step is used for both training loss and evaluation. 
+
+Training details. We train with AdamW, weight decay 0.1, and maximum gradient norm 1.0. We use 2000 warmup steps followed by a cosine learning-rate schedule. The peak learning rate is 2 × 10 −4, and the minimum learning rate is 
+
+2 × 10 −5, i.e., 0.1 of the peak value. Training uses bf16. The context length is set to 272. Since each 13 p-hop sample has length 1 + 256 + 3 = 260 , this setting effectively corresponds to using one p-hop instance per training sequence rather than packing multiple instances into a longer context. The loss is applied only to the answer token position. For each configuration, we train the model three times with different random seeds and report the run with the maximum average evaluation accuracy on the test set. We adopt this best-of-three reporting pro-tocol because our goal is to study the expressivity power of the model under a given configuration, rather than to characterize average training stability across random seeds. 
+
+Evaluation. The evaluation set contains 10,000 deterministic samples generated with a fixed ran-dom seed. During evaluation, each sample is fed independently into the model, and we compute exact-match accuracy at the answer position after 
+
+<ans> . Specifically, the prediction is the argmax of the logits at the answer position, and it is counted as correct if it matches the ground-truth answer y.Since the answer is one of four alphabet tokens, random guessing gives approximately 25% accu-racy. 
+
+E Language Model Training Details 
+
+E.1 Common Language Model Pre-training Details Overall procedure. Our language-model exper-iments are organized into three steps. First, we pre-train fixed-loop language models without exit gates. This pre-training setting is shared by the LLaMA-2 Transformer, Mamba-2, and Mamba-2 Hybrid models described in Sections E.2, E.3, and E.4, respectively. Second, we evaluate the pretrained fixed-loop models under the correspond-ing architecture and loop configurations. Third, for the exit-gate experiments, we initialize from a pretrained fixed-loop checkpoint and continue training with the exit gate enabled, as described in Section E.5. 
+
+Pre-training configuration. Unless otherwise specified, the 140M models use dmodel = 768 
+
+and 24 layers. Larger 370M models modify only the architecture-specific dimensions and depth, as listed in the corresponding architecture tables. The shared pre-training hyperparameters are summa-rized in Table 6. 
+
+Parameter Value 
+
+Context length 2048 Vocabulary size 32,000 Optimizer AdamW AdamW betas (0 .9, 0.95) 
+
+Weight decay 0.1 Learning rate schedule cosine Maximum scheduler LR 8.0 × 10 −4
+
+Minimum scheduler LR 8.0 × 10 −5
+
+Warmup ratio 0.1 Gradient clipping 1.0 Precision bfloat16 Random seed 3407  
+
+> Table 6: Common pre-training hyperparameters for the fixed-loop language models. The LLaMA-2 Trans-former, Mamba-2, and Mamba-2 Hybrid models are first pretrained under this shared setting before any exit-gate continued training.
+
+E.2 LLaMA-2 Transformer Details Architecture. For the LLaMA-2 Transformer ex-periments, we use the Transformer ablation branch of our looped language model implementation. The model replaces the Mamba-2 mixer with LLaMA-style causal self-attention while keeping the same looped backbone interface. Unless otherwise speci-fied, the Transformer models use a model dimen-sion of dmodel = 768 . To make the Transformer baseline comparable to the Mamba-2 model with 
+
+dmodel = 768 under a similar parameter budget, we set the gated MLP intermediate dimension to 
+
+dintermediate = 640 . This intermediate dimension is not intended to follow the standard LLaMA MLP expansion ratio; instead, it is chosen as a parameter-matching configuration for comparison with Mamba-2. The configuration is summarized in Table 7. 
+
+E.3 Mamba-2 Details Architecture. For the Mamba-2 experiments, we use the same looped language model interface as the LLaMA-2 Transformer baseline, but replace the Transformer self-attention mixer with a Mamba-2 mixer. The 140M Mamba-2 model uses dmodel =768 with 24 layers, while the 370M model in-creases the model dimension to dmodel = 1024 and uses 48 layers. For both sizes, we set the external MLP intermediate dimension to dintermediate = 0 ,since the Mamba-2 block already contains its own sequence mixing and channel projection compo-14 Parameter Value 
+
+Architecture LLaMA-2 
+
+dmodel 768 
+
+dintermediate 640 Layers 6, 12, or 24 Attention head dimension 64 Number of attention heads 12 Position embedding RoPE Normalization RMSNorm Fused add-norm yes Residual in FP32 yes Tied embeddings no Context length 2048 Vocabulary size 32,000 
+
+> Table 7: LLaMA-2 Transformer architecture configura-tion.
+
+Parameter 140M 370M 
+
+Architecture Mamba-2 Mamba-2 
+
+dmodel 768 1024 Number of layers 24 48 External MLP no no Attention layers no no Normalization RMSNorm RMSNorm Fused add-norm yes yes Residual in FP32 yes yes Tied embeddings no no Context length 2048 2048 Vocabulary size 32,000 32,000 
+
+> Table 8: Mamba-2 architecture configurations.
+
+nents. The configuration is summarized in Table 8. 
+
+E.4 Mamba-2 Hybrid Details Architecture. For the Mamba-2 Hybrid exper-iments, we use the same looped language model interface as the Mamba-2 models, but replace a small number of Mamba-2 layers with causal atten-tion layers. The attention layers are specified by the 0-based indices in attn_layer_idx ; all remaining layers use the Mamba-2 mixer. The detailed con-figurations are summarized in Table 9. The hybrid models do not use learned position embeddings, while the inserted attention layers use RoPE (Su et al., 2023) with rotary dimension 64. 
+
+140M 370M 
+
+dmodel 768 1024 Layers 24 48 Attention indices [5 , 10 , 15 , 20] [6 , 18 , 30 , 42] 
+
+Attention heads 12 × 64 16 × 64 
+
+RoPE dim. 64 64 
+
+> Table 9: Mamba-2 Hybrid architecture configurations. Attention layer indices are 0-based. All non-attention layers are Mamba-2 layers. The models use no external MLP and no learned position embedding; RoPE is used only in the inserted attention layers.
+
+E.5 Continued Training: Exit-Gate Stage-1 Training Details Training procedure. For the exit-gate experi-ments, we initialize from a pretrained fixed-loop checkpoint and continue training with the exit gate enabled. The backbone architecture is kept un-changed, while a lightweight linear gate is added on top of the hidden states to predict whether each token should exit at each recurrent loop. The exit-gate bias is initialized to −2.0, giving a conserva-tive initial exit probability. The configuration is summarized in Table 10. 
+
+β ablation. We conduct a stage-1 ablation on the entropy coefficient β for the exit-gate continuation training. In this ablation, we focus on the loop-4 setting with the maximum number of recurrent loops R = 4 . For each token, the exit gate defines an exit distribution over recurrent loops: 
+
+pi,r = λi,r 
+
+Y
+
+> j<r
+
+(1 − λi,j ), λi,r = σ(g(hi,r )) ,
+
+for r < R , and the remaining probability mass is assigned to the final loop: 
+
+pi,R = Y
+
+> j<R
+
+(1 − λi,j ).
+
+The exit entropy for token i is computed as 
+
+Hi = −
+
+> R
+
+X
+
+> r=1
+
+pi,r log( pi,r + ϵ),
+
+and the exit entropy is averaged over valid tokens: 
+
+¯Hexit = 1
+
+|V| 
+
+X
+
+> i∈V
+
+Hi,
+
+where V denotes the set of valid non-padding to-kens. For R = 4 , the maximum possible entropy 15 Parameter Value 
+
+Exit-gate bias initialization −2.0
+
+Entropy coefficient β 0.25 Learning rate schedule cosine Maximum learning rate 1.5 × 10 −4
+
+Minimum learning rate 8.0 × 10 −5
+
+Warmup ratio 0.002 Optimizer AdamW AdamW betas (0 .9, 0.95) 
+
+Weight decay 0.1 Gradient clipping 0.6 
+
+Table 10: Exit-gate continuation training configuration. The exit-gate models are initialized from pretrained fixed-loop checkpoints and trained with an expected loop loss plus entropy regularization. 
+
+is 
+
+Hmax = log R = log 4 ≈ 1.386 ,
+
+which is achieved when the exit distribution is uni-form over the four loops. In practice, however, a fully uniform exit distribution is not ideal because it does not sufficiently favor later, more accurate loops. We therefore regard an exit entropy around 
+
+1.0 as a desirable regime: the distribution remains non-collapsed, while still allocating more probabil-ity mass to later recurrent loops. We also monitor the expected selected exit step. For a token i, this is 
+
+si =
+
+RX
+
+r=1 
+
+r p i,r .
+
+The logged metric is the average of this quantity over valid tokens: 
+
+¯s = 1
+
+|V| 
+
+X
+
+i∈V 
+
+si,
+
+For the loop-4 exit-gate models, we find that an av-erage expected step around 3.2 is a good operating point, since it provides adaptive exit-state selection while favoring later recurrent-step outputs. The continuation stage is sensitive to the entropy coeffi-cient β: too small a value can lead to a collapsed exit distribution, whereas too large a value can over-regularize the exit behavior. Based on the stage-1 ablation, we use β = 0 .25 as the final condition for the exit-gate continuation experiments. 
+
+E.6 Continued Training: Exit-Gate Stage-2 Training Details Training procedure. In Stage-2, we further re-fine the exit gate after the Stage-1 continuation 0 200 400 600 800 1000 1200 1400  
+
+> Training step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> Exit entropy
+> Exit-gate stage-1 ablation: exit entropy
+> = 0.015
+> = 0.25
+> = 0.40
+> reference 1.0
+> log 4 = 1.386
+
+Figure 2: Exit entropy during stage-1 exit-gate contin-uation training for different entropy coefficients β. All curves are truncated to the common training range. For 
+
+R = 4 , the maximum entropy is log 4 ≈ 1.386 , and we use an entropy around 1.0 as a practical reference for a non-collapsed exit distribution. 0 200 400 600 800 1000 1200 1400  
+
+> Training step
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> Expected steps
+> Exit-gate stage-1 ablation: expected steps
+> = 0.015
+> = 0.25
+> = 0.40
+
+Figure 3: Expected selected exit step during stage-1 exit-gate continuation training for different entropy co-efficients β. We use this metric as a diagnostic for the prediction depth selected by the exit gate. 
+
+training. We initialize the model from the Stage-1 exit-gate checkpoint and keep the architecture unchanged. Unlike Stage-1, all parameters except the exit gate are frozen, including the token em-bedding, recurrent backbone, final normalization, and language modeling head. Thus, Stage-2 only updates the lightweight exit-gate parameters. The configuration is summarized in Table 11. 16 Parameter Value 
+
+Improvement threshold γ 0.005 Sharpness k 50 Learning rate schedule cosine Maximum learning rate 1.5 × 10 −4
+
+Minimum learning rate 1.5 × 10 −5
+
+Warmup ratio 0.01 Optimizer AdamW AdamW betas (0 .9, 0.95) 
+
+Weight decay 0.1 Gradient clipping 1.0 
+
+> Table 11: Exit-gate Stage-2 continued training configu-ration. Stage-2 freezes the pretrained language model and refines only the exit gate using an adaptive continu-ation objective.
+
+F Fixed-Loop Inference Ablation 
+
+Tables 12–15 report the fixed-loop inference ab-lation results for the 140M and 370M Mamba-2 and Mamba-2 Hybrid looped models. Each model is trained as a 4-loop model without an exit gate and evaluated by forcing r ∈ { 1, 2, 3, 4} recurrent loops at inference time. PPL denotes validation perplexity, and Avg. denotes the average score over the seven downstream tasks shown in the tables. Across all models, forcing fewer than four loops yields severely degraded perplexity, indicating that intermediate recurrent steps are not calibrated with the language-modeling head under the final-loop pre-training objective; this motivates the gate-based adaptive-depth training described in Appendix B. 
+
+G Exit-Gate Threshold Sweeps 
+
+We provide the full exit-gate threshold sweep re-sults for the four looped models studied in the main text. Starting from fixed-loop checkpoints, we at-tach a lightweight exit gate and continue training the models with the adaptive-depth objectives de-scribed in Appendix B. We report results for both Stage 1 and Stage 2 exit-gate training. For each stage, we evaluate inference with threshold values 
+
+q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}, where smaller thresh-olds select earlier recurrent-step outputs, whereas larger thresholds select later recurrent-step outputs. Tables 16, 17, 18, and 19 report the down-stream performance of the 140M Mamba-2, 140M Mamba-2 Hybrid, 370M Mamba-2, and 370M Mamba-2 Hybrid models, respectively. These sweeps illustrate how the exit threshold controls the selected-depth–performance trade-off after gate training, and show that the best threshold is not uni-versal across model scales, architectures, or down-stream tasks. As in the fixed-loop ablation, dif-ferent tasks can prefer different effective recurrent depths, which motivates adaptive exit instead of using a single fixed loop count for all inputs. 17 Table 12: Fixed-loop inference ablation for the 140M Mamba-2 looped model. The model is trained as a 4-loop model without an exit gate, and evaluated by forcing different numbers of recurrent loops at inference time. Avg. denotes the average score over the seven downstream tasks shown in the table.                                              
+
+> Forced Loops PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg.
+> 146374.62 52.34 61.96 47.67 25.20 25.49 27.05 24.03 37.68 212906.86 51.41 61.93 47.59 25.00 25.22 28.24 23.74 37.59 3464.82 52.34 61.41 49.49 25.60 25.92 27.13 24.92 38.12 414.68 52.34 58.87 48.22 27.00 25.21 28.07 24.83 37.79
+
+Table 13: Fixed-loop inference ablation for the 140M Mamba-2 Hybrid looped model. The model is trained as a 4-loop model without an exit gate, and evaluated by forcing different numbers of recurrent loops at inference time. Avg. denotes the average score over the seven downstream tasks shown in the table.                                              
+
+> Forced Loops PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg.
+> 124061.87 53.21 37.83 50.20 25.80 26.06 27.73 26.01 35.26 212304.00 52.18 37.83 51.22 25.80 25.62 29.01 26.14 35.40 3508.38 52.61 37.83 50.67 25.80 25.68 27.65 25.80 35.15 414.37 51.31 45.87 47.43 26.80 25.07 28.92 26.09 35.93
+
+Table 14: Fixed-loop inference ablation for the 370M Mamba-2 looped model. The model is trained as a 4-loop model without an exit gate, and evaluated by forcing different numbers of recurrent loops at inference time. Avg. denotes the average score over the seven downstream tasks shown in the table.                                              
+
+> Forced Loops PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg.
+> 11933.70 50.92 48.99 49.64 26.00 24.16 27.90 26.14 36.25 21906.49 51.69 37.83 49.49 27.20 21.97 28.41 25.42 34.57 3832.53 51.09 38.04 50.43 25.40 23.07 28.75 26.05 34.69 412.06 51.90 61.96 48.15 27.80 24.72 29.10 25.93 38.51
+
+Table 15: Fixed-loop inference ablation for the 370M Mamba-2 Hybrid looped model. The model is trained as a 4-loop model without an exit gate, and evaluated by forcing different numbers of recurrent loops at inference time. Avg. denotes the average score over the seven downstream tasks shown in the table.                                              
+
+> Forced Loops PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg.
+> 13282.60 51.47 60.80 49.01 26.00 24.54 26.62 25.17 37.66 24692.78 49.89 44.31 50.04 25.60 21.27 27.30 24.83 34.75 31660.17 51.41 37.77 51.14 25.40 23.23 27.82 25.04 34.54 411.59 51.74 61.22 49.33 28.00 25.97 29.86 26.26 38.91
+
+Table 16: Threshold sweep for the 140M Mamba-2 exit-gated model. We report Stage 1 and Stage 2 exit-gate models with q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}. Iter denotes the average exit step selected by the gate. 
+
+Stage q Iter PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. 
+
+Stage 1 1.00 4.00 15.54 52.18 61.59 50.51 26.80 24.60 28.07 25.00 38.39 Stage 1 0.80 4.00 15.54 52.18 61.59 50.04 26.60 25.27 27.90 25.17 38.39 Stage 1 0.60 3.43 15.54 51.47 62.23 47.75 26.80 24.67 29.78 25.04 38.25 Stage 1 0.40 2.82 15.57 52.50 62.23 50.67 24.60 26.12 28.84 25.04 38.57 Stage 1 0.20 2.38 16.22 52.72 62.17 47.04 24.40 26.14 28.50 24.75 37.96 Stage 2 1.00 4.00 15.54 52.18 61.59 49.88 26.60 25.32 27.90 25.17 38.38 Stage 2 0.80 3.00 15.54 52.99 62.23 50.20 26.00 26.01 28.92 25.72 38.87 
+
+Stage 2 0.60 2.63 15.78 53.05 62.17 49.09 24.60 26.36 28.33 25.21 38.40 Stage 2 0.40 2.27 16.50 52.61 62.17 48.86 24.20 26.11 28.58 24.71 38.18 Stage 2 0.20 1.92 18.14 52.39 62.17 50.20 26.40 26.34 27.47 24.41 38.48 
+
+18 Table 17: Threshold sweep for the 140M Mamba-2 Hybrid exit-gated model. We report Stage 1 and Stage 2 exit-gate models with q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}. Iter denotes the average exit step selected by the gate. 
+
+Stage q Iter PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. 
+
+Stage 1 1.00 4.00 15.07 50.71 47.58 49.80 26.40 25.36 27.90 26.26 36.29 Stage 1 0.80 4.00 15.07 50.71 47.61 49.33 26.40 25.28 27.99 26.26 36.23 Stage 1 0.60 3.55 15.05 50.76 48.01 49.25 27.00 25.61 28.24 26.56 36.49 Stage 1 0.40 2.81 15.07 51.74 54.77 49.96 26.80 25.29 28.16 25.34 37.44 Stage 1 0.20 2.35 15.66 52.39 40.55 50.20 26.20 25.29 28.50 25.84 35.57 Stage 2 1.00 4.00 15.07 50.60 47.55 50.04 26.40 25.34 27.99 26.35 36.32 Stage 2 0.80 3.29 15.07 50.38 54.80 49.25 26.40 25.39 27.73 26.68 37.23 Stage 2 0.60 2.64 15.28 51.47 54.65 47.91 27.00 25.19 27.90 25.42 37.08 Stage 2 0.40 2.27 15.95 52.72 38.26 50.43 26.00 25.57 28.84 25.67 35.36 Stage 2 0.20 1.93 17.56 52.61 37.98 49.72 24.80 25.66 28.50 26.01 35.04 
+
+Table 18: Threshold sweep for the 370M Mamba-2 exit-gated model. We report Stage 1 and Stage 2 exit-gate models with q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}. Iter denotes the average exit step selected by the gate. 
+
+Stage q Iter PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. 
+
+Stage 1 1.00 4.00 12.55 52.56 61.04 50.04 26.40 25.19 28.24 26.30 38.54 
+
+Stage 1 0.80 4.00 12.55 52.72 61.10 50.04 26.40 25.13 27.90 26.22 38.50 Stage 1 0.60 3.40 12.54 52.07 59.24 49.88 24.40 25.09 26.96 26.47 37.73 Stage 1 0.40 2.64 12.58 50.71 55.99 49.41 24.00 25.14 26.96 26.30 36.93 Stage 1 0.20 1.91 13.21 51.14 57.83 49.88 24.00 24.81 28.41 26.30 37.48 Stage 2 1.00 4.00 12.55 52.50 60.80 50.04 26.40 25.14 27.30 26.22 38.34 Stage 2 0.80 3.18 12.55 52.34 57.61 50.59 24.80 24.77 26.88 26.09 37.58 Stage 2 0.60 2.53 12.69 50.54 56.21 50.75 24.20 25.49 28.07 26.05 37.33 Stage 2 0.40 1.94 13.17 50.87 57.49 49.49 24.00 24.76 27.30 25.13 37.01 Stage 2 0.20 1.67 14.41 50.60 57.22 49.49 24.60 24.32 27.90 25.59 37.10 
+
+Table 19: Threshold sweep for the 370M Mamba-2 Hybrid exit-gated model. We report Stage 1 and Stage 2 exit-gate models with q ∈ { 0.2, 0.4, 0.6, 0.8, 1.0}. Iter denotes the average exit step selected by the gate. 
+
+Stage q Iter PPL PIQA BoolQ WG OBQA HS ARC-C ARC-E Avg. 
+
+Stage 1 1.00 4.00 12.13 52.01 57.00 51.14 27.80 25.63 30.12 25.46 38.45 Stage 1 0.80 4.00 12.13 52.29 56.88 51.14 27.80 25.73 30.12 25.59 38.51 
+
+Stage 1 0.60 3.34 12.12 51.03 39.54 50.67 27.60 26.36 30.63 25.84 35.95 Stage 1 0.40 2.74 12.15 51.03 39.42 49.41 28.80 25.24 31.48 25.34 35.82 Stage 1 0.20 2.24 12.66 51.31 42.02 50.59 29.40 25.39 31.14 25.88 36.53 Stage 2 1.00 4.00 12.13 52.18 57.00 51.38 27.80 25.63 30.12 25.59 38.53 Stage 2 0.80 3.01 12.12 51.09 39.45 50.04 27.40 25.84 30.29 26.09 35.74 Stage 2 0.60 2.57 12.21 51.14 39.51 50.04 28.20 25.36 31.23 25.80 35.90 Stage 2 0.40 2.22 12.60 51.69 41.96 48.86 29.40 25.15 31.06 25.88 36.29 Stage 2 0.20 1.88 13.62 51.20 41.99 50.28 29.20 25.03 30.97 25.80 36.35 
+
+19
