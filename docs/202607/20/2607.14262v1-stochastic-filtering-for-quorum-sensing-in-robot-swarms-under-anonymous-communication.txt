@@ -1,0 +1,317 @@
+Title: Stochastic Filtering for Quorum Sensing in Robot Swarms under Anonymous Communication
+
+URL Source: https://arxiv.org/pdf/2607.14262v1
+
+Published Time: Fri, 17 Jul 2026 00:21:38 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Stochastic Filtering for Quorum Sensing in Robot Swarms under Anonymous Communication 
+
+Fabio Oddi 1,2[0009 −0001 −8379 −0209] , Andreagiovanni Reina 3,4,5[0000 −0003 −4745 −992 X], and Vito Trianni 2[0000 −0002 −9114 −8486]  
+
+> 1
+
+DIAG, Sapienza University of Rome, Italy  
+
+> 2
+
+ISTC, National Research Council, Rome, Italy  
+
+> 3
+
+Centre for the Advanced Study of Collective Behaviour, University of Konstanz, Konstanz, Germany  
+
+> 4
+
+Department of Computer and Information Science, University of Konstanz, Konstanz, Germany  
+
+> 5
+
+Max Planck Institute of Animal Behavior, Konstanz, Germany 
+
+oddi@diag.uniroma1.it, andreagiovanni.reina@uni-konstanz.de, vito.trianni@istc.cnr.it 
+
+Abstract. Quorum Sensing (QS) is a key capability for robot swarms, useful for coordination of activities at the group level. Effective communi-cation is instrumental for individuals to estimate the quorum level of the entire swarm. Anonymous communication protocols where individuals exchange local information without revealing unique identities are helpful to support quorum estimates by sampling information from neighbours and maintain scalability of the QS process. However, because anony-mous protocols cannot distinguish message sources, repeated messages from the same sender may be double-counted, thereby biasing collective quorum estimates. In this study, we introduce a stochastic filtering proto-col inspired by k-priority sampling to improve estimate stability ( AN kt ), and we compare it with a baseline anonymous protocols ( AN ) and a randomised variant designed to improve accuracy ( AN t). We find that the baseline protocol AN provides a parsimonious and fast solution, but remains highly inaccurate due to double-counting bias. The AN t vari-ant improves accuracy but suffers from information inertia, resulting in slower convergence. Finally, actively filtering the message buffer via the 
+
+AN kt protocol successfully decreases temporary errors and stabilises the estimate, at the cost of an increased time of recovery from errors. 
+
+Keywords: Quorum Sensing · Anonymous Communication · Stochastic Filter-ing · Swarm Robotics 
+
+## 1 Introduction 
+
+In decentralised systems, global coordination emerges from local, anonymous in-teractions, a phenomenon widely observed in biological collectives. Natural pop-ulations, such as bacterial colonies and social insects, rely on quorum sensing arXiv:2607.14262v1 [cs.RO] 15 Jul 2026 2 F. Oddi et al. 
+
+(QS) to execute group-level tasks. For instance, bacteria produce and accumu-late diffusible autoinducer molecules to assess their surroundings, which subse-quently triggers synchronised shifts in gene expression [9,3]. Chemical communi-cation is crucial also for social insects like ants, which also combine pheromones with vibro-acoustic stridulation to enhance the precision of their communica-tions [2,7]. Furthermore, species such as Temnothorax albipennis rely on the rate of direct tactile encounters with nest-mates to gauge local population density, employing a physical QS mechanism during nest relocation [15]. By contrast, honeybees employ modulatory vibrational signals to synchronise labour and the selection of nest sites [18]. Drawing inspiration from biological mechanisms, swarm robotics systems have utilised QS to support “best-of-n” decision making, where a swarm must collectively choose the highest-quality option from a set of alternatives [8,10]. To successfully reach a consensus and prevent decision deadlocks, swarms employ strategies such as cross-inhibition [21] and interaction modulation [19]. Recent research also suggests that the introduction of measurement errors or miscom-munication amongst robots can occasionally enhance the overall accuracy of the group during such decisions [22]. Crucially, the efficacy of these high-level con-sensus strategies to drive coordinated action fundamentally depends on a robust underlying protocol for QS. Indeed, without an accurate and robust mechanism for QS, individual robots within the swarm cannot detect the achievement of consensus by themselves, and therefore cannot act accordingly. If QS is not ac-curate, the swarm faces the risk of splitting and coordination may get lost. When deploying QS onto physical robots, achieving accurate QS presents a practical challenge. To ensure scalability, minimalist approaches require to operate with anonymous communication protocols, hence avoiding to share in-formation about the sender identity and therefore also minimising the amount of information to store. 1 Yet, in the context of QS, the absence of unique identifiers inherently leads to the double-counting of opinions from neighbours [11], result-ing in estimation biases. More precisely, if the robot interaction network does not change frequently, it is likely that multiple messages broadcast by some robot are received and stored as if they were different messages, due to their anonymity. Any protocol that systematically uses duplicate messages will therefore suffer from a loss in accuracy due to ineffective sampling. To address message redun-dancy without unique identifiers, distributed systems often draw from distinct element estimation and probabilistic counting streaming frameworks [1,6]. In previous work, we introduced a baseline protocol ( AN ) and its accuracy-enhancing variant ( AN t) [12]. The baseline AN is based on a FIFO buffer that gets updated every time a new message is received. By simply reshuffling this buffer, AN t demonstrates improved accuracy at the cost of retaining old information, resulting in slower updates. Here, we introduce the AN kt protocol to mitigate the estimation instability arising from double-counting. Adapting the concept of k-priority sampling—initially formulated to estimate subset sums within data streams [5,4,20]—this protocol modulates the adverse effects of local   
+
+> 1See [12] for a wide comparison between anonymous and identity-aware protocols. Quorum Sensing in Robot Swarms under Anonymous Communication 3
+
+data redundancy. By neglecting a portion of the messages that are closest to expiration, the AN kt protocol operates on the assumption that the discarded data points are likely redundant and remain represented within the buffer by more recent duplicate messages. The paper is organised as follows: Section 2 formalises the QS process along with the anonymous protocols and the proposed stochastic filtering. Section 3 outlines the experimental methodology and analyses the simulation results, eval-uating the protocols across multiple metrics. Finally, Section 4 summarises the main findings and discusses the fundamental trade-offs identified in the study. 
+
+## 2 Quorum Sensing and Stochastic Filtering 
+
+We consider a swarm of N robots operating under anonymous communication, meaning messages are collected with no sender identity. A fraction G ∈ [0 , 1] of the swarm—referred to as the ground truth —is initialised in the committed state. We compute the fraction of robots Q ∈ [0 , 1] that recognise when the percentage of the swarm being committed surpasses a given threshold τ ∈ [0 , 1] . Ideally, as shown in previous work [11,12], perfect QS corresponds to Q = 1 ⇐⇒ G ≥ τ
+
+and Q = 0 ⇐⇒ G < τ .To estimate the ground truth G, robots broadcast messages containing their state to neighbours within a radius r while moving across the working area. Each robot i stores received messages in a buffer Bi of maximum capacity BM . After each update of Bi, the robot evaluates the fraction of messages received from 
+
+committed robots against the threshold τ . To ensure a sufficient sample size, we impose a minimum buffer size Bm. The individual robot’s one-bit quorum detection state bq (i) and the global population estimation Q are computed at each iteration as follows: 
+
+bq (i) = |B i| ≥ Bm ∧ X
+
+> m∈B i
+
+bc(m) ≥ τ |B i|, (1) 
+
+Q = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+bq (i), (2) where bc(m) ∈ { 0, 1} is the commitment state stored in message m. The vari-able bq (i) fluctuates between 0 and 1 depending on the messages stored in Bi.When available information is insufficient ( |B i| < B m), the quorum is considered undetected ( bq (i) = 0 ). 
+
+2.1 Baseline Anonymous Protocols 
+
+To implement the baseline anonymous protocol AN , the message m must only contain the robot state bc(m). Received messages are managed via a standard FIFO logic. Therefore, the maximum memory required by this protocol is BM
+
+bits. A variant protocol ( AN t) is designed to improve estimation accuracy by reordering the messages stored in Bi. To this end, upon reception of a message 4 F. Oddi et al. 
+
+m, a random timeout t(m) is drawn from an exponential distribution with aver-age Tm. These timeouts are updated over time for messages stored in the buffer, and govern the insertion of newly received messages so that the buffer remains sorted in descending order of timeout. In this protocol, the information stored for each message is the tuple ⟨bc(m), t (m)⟩. When the buffer fills and a new message arrives, rather than discarding the oldest entry, the protocol removes the mes-sage with the lowest remaining timeout. Because timeouts are drawn randomly from an exponential distribution, message insertion practically corresponds to random shuffling of the buffer, which breaks the temporal correlation inherent in receiving continuous, redundant broadcasts from the same nearby neighbour. By scrambling message retention, the AN t protocol enables the buffer to maintain greater source diversity, effectively gathering a wider spatial sample. By up-dating timeouts as time passes, the AN t protocol can simulate different buffer behaviours: from a normal FIFO (when Tm is much smaller than the insertion rate) to random insertion (when Tm is large). Using one bit for the commitment state and Bt bits for timeouts, this protocol requires at most BM (Bt + 1) bits. 
+
+2.2 Stochastic Filtering 
+
+To address the stability limitations observed in the previous protocols without compromising anonymity, we introduce a second variant protocol ( AN kt ) de-signed specifically to improve estimate stability. While AN t leverages timeouts solely for buffer replacement, the AN kt protocol actively integrates these tem-poral values into the estimation logic itself. When the buffer Bi reaches its maximum capacity BM , this protocol treats the random message timeouts t(m) as stochastic weights. Specifically, while com-puting the quorum fraction, the k elements with the lowest residual timeout are systematically neglected from the calculation. Crucially, these elements are not deleted from the memory; they are merely masked during the current evalua-tion cycle. The underlying assumption is that messages closest to expiration are statistically more likely to be redundant duplicates of information already repre-sented in the buffer by messages with longer timeouts. By continuously filtering out this expiring tail of data, the AN kt protocol acts as a low-pass filter on the incoming information stream. It systematically smooths out the high-frequency fluctuations caused by double-counting, trading a slight reduction in the effective sample size for enhanced consensus stability. 
+
+## 3 Analysis of Experimental Results 
+
+We conducted simulations within the ARGoS framework [14,13], employing the Kilobot [17] as our reference swarm platform. These robots operate under severe hardware constraints, featuring a maximum velocity of 1 cm /s, a message trans-mission range r = 10 cm , a frequency bounded at 2 Hz , and a memory capacity of one kilobyte. Kilobots move within the arena following a random waypoint model, exploiting the Augmented Reality for Kilobots (ARK) system [16,13] to Quorum Sensing in Robot Swarms under Anonymous Communication 5
+
+provide absolute positioning information. More specifically, knowing the arena boundaries, the robot uniformly samples a random target location and proceeds towards it in a straight line. A new destination is generated whenever an agent arrives at its target or becomes physically stuck. To identify stationary stalling, the protocol imposes a temporal limit on every journey: robots are allotted the theoretical time required to traverse the distance at maximum speed, supple-mented by a 33% tolerance margin. Alongside this passive timeout mechanism, robots utilise a proactive collision-resolution strategy powered by the ARK sys-tem. By monitoring their position, robots compare the current distance to the destination against the smallest value reached so far. If this distance increases by 1 cm or more, the robot infers it is being pushed backwards by peers. Upon detecting this active displacement, the robot engages a stochastic evasive ma-noeuvre, randomly electing to steer left, steer right, or forge straight ahead until it registers a clear reduction in its distance to the goal. After disengagement, the robot recalculates a trajectory to its original target waypoint. Robots are initially randomly placed in a square arena and assigned a static commitment state they never change: ⌈GN ⌉ robots are initialised as commit-ted, while ⌊(1 − G)N ⌋ robots are uncommitted. This static commitment choice allows us to focus exclusively on the raw quorum sensing and estimation pro-cess, decoupling it from the consensus-building dynamics. We tested 13 values for the ground truth G ranging from 0.52 to 1 with a step of 0.04 , while the threshold τ varied between 0.5 and 1 with steps of 0.01 . We study three deploy-ment scenarios—HD25, LD25 and HD100—that vary both swarm size and arena size. In the HD25 case, a small swarm of 25 robots operates in a high-density scenario being placed in a small arena of 0.25 m 2. In the LD25 case, the same 25-robot swarm operates in low-density scenarios, being placed in a large arena of 1 m 2. Finally, in the HD100 case, a larger swarm of 100 robots operates in high-density scenarios (same as for HD25) being placed in a large arena of 1 m 2.All anonymous protocols use a buffer size BM = N − 1 and a minimum number of messages Bm = 5 . To evaluate the impact of the stochastic filtering, we inves-tigated three values for the parameter k within the AN kt protocol. Specifically, we examined the system’s performance across k1 = 1 , k2 = N 
+
+> 5
+
+, k3 = 2N 
+
+> 5
+
+.
+
+3.1 Message Diversity 
+
+We first study the fraction M of unique messages in the buffer, displayed in Figure 1, which serves as an indicator of the useful information available to each robot. Higher message diversity generally corresponds to better information regarding the swarm, yielding higher QS accuracy. Note that robots have no mean to evaluate M , but this measure is useful to evaluate the ability of the protocols to collect and retain information from different sources. Since the baseline protocol AN lacks a timeout mechanism and relies on a strict FIFO replacement policy, its buffer is rapidly saturated by redundant messages from immediate neighbours. Consequently, the number of unique mes-sages M remains small across different densities and is unaffected by Tm. The accuracy variant protocol AN t mitigates this loss of information by shuffling the 6 F. Oddi et al. 0.0               
+
+> 0.5
+> 1.0
+> M
+> LD25 HD25
+> Tm = 60  s
+> HD100
+> 0.0
+> 0.5
+> 1.0
+> M
+> Tm = 180  s
+> 0300 600 900
+> T
+> 0.0
+> 0.5
+> 1.0
+> M
+> 0300 600 900
+> T
+> 0300 600 900
+> T
+> Tm = 600  s
+> AN AN tAN k1
+> tAN k2
+> tAN k3
+> t
+
+Fig. 1. Evolution over time of the average message diversity M . The different scenarios (LD25, HD25, HD100) are sorted by columns from left to right. Different timeout values (Tm) are sorted by rows in ascending order. 
+
+buffer. High values of Tm allow it to preserve older, unique messages, yielding improved diversity compared to AN . In the short timeout regime ( Tm = 60 s), 
+
+AN t exhibits a more rapid message turnover, which reduces diversity, though it retains more unique messages than the baseline AN . By filtering the lowest-priority data, the stability variant protocol AN kt maintains a lower fraction of unique identifiers within the buffer compared to AN t (especially for k2 and k3). By looking at the different density scenarios, we note that message diversity is mainly determined by the arena size rather than by the density. For all protocols, 
+
+M is higher is the high-density, small-arena scenario HD25, meaning that robots communicate and mix more effectively thanks to the reduced distances to be covered. On the contrary, diversity is low in both LD25 and HD100 scenarios, due to the dominance of local interactions. 
+
+3.2 QS Accuracy 
+
+To determine the accuracy of the QS process, we consider two decision thresh-olds. When at least a fraction Q = 0 .8 of the swarm recognises that quorum is achieved, we flag a detection. When at most a fraction Q = 0 .2 of the swarm recognises that the quorum is achieved, we flag a rejection. In Figure 2 we plot the boundaries of these regions as isolines: solid for Q = 0 .8, dashed for Q = 0 .2.The proximity of these boundaries to the ideal dividing line G = τ defines overall accuracy, because the region in which the swarm is undecided is minimised. Quorum Sensing in Robot Swarms under Anonymous Communication 70.5                      
+
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> G
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> G
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> G
+> 0.5 0.6 0.7 0.8 0.9 1.0 0.5 0.6 0.7 0.8 0.9 1.0
+> LD25 HD100
+> Tm = 60  s Tm = 180  s Tm = 600  s
+> HD25
+> AN AN tAN k1
+> tAN k2
+> tAN k3
+> t
+
+Fig. 2. Isolines of the average quorum detection for Q = 0 .8 (solid lines) and Q = 0 .2
+
+(dashed lines). The different scenarios (LD25, HD25, HD100) are sorted by columns from left to right. Different timeout values ( Tm) are sorted by rows in ascending order. 
+
+The baseline protocol AN demonstrates a systemic bias across all density sce-narios, requiring a committed majority much larger than the nominal threshold to trigger detection reliably. Additionally, when G > 0.9, this protocols suffers from false positives, where detection is observed for conditions in which G < τ .This inaccuracy results from low message diversity and highly redundant local information. The variant protocol AN t generally narrows the uncertainty gap and limits the occurrence of false positives, which are observed only for small swarm sizes (LD25 and HD25). Notably, the AN kt protocol does not solve the double-counting problem due to spatial correlations. Indeed, the constraints of identifier-free communication impose that spatial correlation cannot be entirely eliminated. Still, we note that there is no significant loss of accuracy with respect to AN t despite the lower messages diversity M observed in Figure 1. 8 F. Oddi et al. 
+
+3.3 QS Latency 
+
+Figure 3 evaluates the median recognition latency Tc, defined as the time required for 80% of the swarm to converge on a quorum detection (i.e., Q ≥ 0.8) in challenging conditions. We consider here all configurations where Q ≥ 0.8 and the ground truth exceeds the decision threshold by a margin of at least 0.1 (i.e., 
+
+G − τ ≥ 0.1). From these configurations, we select the one with the smallest value of G. Hence, for different values of τ , the difference G − τ varies due to the discrete sampling we performed. This causes artificial oscillations in the latency 
+
+Tc shown in the plot, because the closer τ is to G, the slower the QS process is. The baseline AN appears rapid in converging to detection. However, this speed is a symptom of structural overconfidence; the unchecked double-counting of local opinions accelerates convergence toward premature and biased decisions. The AN t protocol generally exhibits longer latencies, as it requires more time to gather diverse spatial samples due to the information inertia related to persis-tence of old messages in the buffer. However, configuring it with shorter timeouts can artificially increase its speed at the direct expense of its accuracy. The AN kt
+
+protocols show similar latencies as AN t, confirming that the loss in message diversity does not impact accurate QS. 0                    
+
+> 25
+> 50
+> 75
+> 100
+> 125
+> Tc
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 0
+> 25
+> 50
+> 75
+> 100
+> 125
+> Tc
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> 0
+> 25
+> 50
+> 75
+> 100
+> 125
+> Tc
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> LD25 HD100
+> Tm = 60  s Tm = 180  s Tm = 600  s
+> HD25
+> AN AN tAN k1
+> tAN k2
+> tAN k3
+> t
+
+Fig. 3. Median recognition latency, computed as the time needed for the swarm to reliably detect the quorum ( Q ≥ 0.8). Data are the average over R = 100 simulation runs. The different scenarios (LD25, HD25, HD100) are sorted by columns from left to right. Different timeout values ( Tm) are sorted by rows in ascending order. Quorum Sensing in Robot Swarms under Anonymous Communication 9
+
+For all protocols, latency inversely correlates with the decision threshold τ
+
+and the corresponding ground truth G. When the population is very heteroge-neous in terms of commitment states (lower τ and G), statistical noise induces frequent opinion fluctuations, prolonging the time required for collective stabi-lization. Conversely, homogeneous populations naturally suppress these fluctu-ations. Latency is also impacted by density, with the high-density, small arena scenario HD25 resulting in fastest processes, followed by HD100. 
+
+3.4 System Resilience 
+
+To quantify protocol resilience, we isolated experimental runs where the fixed ground truth G was close to the decision threshold τ , bounded by |G−τ | ≤ 0.05 .This boundary represents conditions where the swarm is vulnerable to transient misclassification. We tracked individual quorum estimates and extracted two metrics: the average per-robot error rate Er , and the average time required to recover from an erroneous state Tr . To characterise the error recovery dynamics and account for right-censored data—such as instances where the simulation concludes before a robot successfully exits an erroneous state—we employed the Kaplan-Meier (KM) estimator to compute the empirical cumulative distribution function of the recovery times. Building upon this estimation, the mean recovery time Tr was subsequently computed from a Weibull distribution fitted to the empirical distribution across R = 100 runs. Figure 4 visualises the relationship between these metrics. The baseline and accuracy-focused protocols ( AN and AN t) frequently disperse along the Er axis, exhibiting higher temporary error rates, particularly in dense scenarios where spatial double-counting is pronounced. By applying the stability variant protocol (AN kt ), small values of k (e.g., k = 1 ) can be utilised to modify the consistency of quorum estimates, especially for high-density conditions and long timeout values. Configuring the system with a minimal filter systematically compresses the error distributions and decreases the average error rate ( Er ) compared to 
+
+AN t. However, this stabilisation implies a clear operational cost: the reduction in temporary errors causes the recovery time ( Tr ) to increase, highlighting a fundamental trade-off between transient responsiveness and steady-state preci-sion. The enhanced stability explains why, despite a lower message diversity, the sampling protocols maintain a good accuracy. Indeed, errors can get reduced consistently in number, however, when they occur, they last longer in general. 
+
+## 4 Conclusion 
+
+This study provides an analysis of QS dynamics under anonymous communi-cation, highlighting the structural vulnerabilities of such approaches and evalu-ating the efficacy of stochastic filtering. The baseline anonymous protocol AN ,while offering a parsimonious and fast solution, inherently suffers from double-counting. This limitation introduces a severe bias, resulting in structural over-confidence and inaccurate estimations. In real-world robotic deployments, such 10 F. Oddi et al. 10 1        
+
+> 10 2
+> 10 3
+> Tr
+> LD25 HD25
+> Tm = 60 s
+> HD100
+> 10 1
+> 10 2
+> 10 3
+> Tr
+> Tm = 180 s
+> 10 010 1
+> Er
+> 10 1
+> 10 2
+> 10 3
+> Tr
+> 10 010 1
+> Er
+> 10 010 1
+> Er
+> Tm = 600 s
+> AN AN tAN k1
+> tAN k2
+> tAN k3
+> t
+
+Fig. 4. Scatter plot illustrating the trade-off between the average error rate ( Er ) and the median recovery time ( Tr ) under hard decision conditions ( |G − τ | ≤ 0.05 ). The different scenarios (LD25, HD25, HD100) are sorted by columns from left to right. Different timeout values ( Tm) are sorted by rows in ascending order. 
+
+inaccuracies can be deeply problematic: if just a subset of the swarm successfully detects the quorum threshold, the group risks fragmentation, division of labour failures, or incoherent collective actions. By introducing two variant protocols, we demonstrated how anonymous mes-sage buffers can be managed to improve the QS process. The AN t protocol mit-igates the problem from spatial correlations that results in duplicated messages, improving the message diversity and the overall accuracy. This comes at the cost of operational speed, suffering from information inertia due to old messages re-maining in the buffer for longer times. Meanwhile, the AN kt protocol implements a filtering technique, inspired by k-priority sampling, directly into the message Quorum Sensing in Robot Swarms under Anonymous Communication 11 
+
+buffers to modulate the stability of the swarm’s estimates. This stabilisation introduces a distinct operational trade-off within the system’s resilience profile: 
+
+AN kt (k = 1 ) compresses temporary errors ( Er ) at the expense of a length-ened recovery window ( Tr ) compared to AN t. Such a trade-off is particularly valuable in high-stakes robotic deployments, such as collective search-and-rescue missions, where robots must reliably detect a structural hazard before triggering an irreversible evacuation or containment protocol. In these scenarios, initiating a critical group response based on a transient false positive carries considerable costs, making the stability and lower error rates of AN kt far more desirable de-spite the longer recovery window. Conversely, applications that tolerate minor temporary mistakes in favour of rapid, agile recovery may find the unmasked dynamics of AN t more suitable. However, a too large value of k triggers “data starvation”, where useful information is discarded alongside duplicates, thereby losing the stabilisation effect. Hence, exploiting the filtering technique with small values of k is particularly effective when transient individual errors are costly. Ultimately, these findings demonstrate that anonymous communication buffers can be actively managed to balance accuracy, steady-state decision sta-bility, and transient recovery dynamics. Although stochastic filtering cannot cir-cumvent the absolute bounds on accuracy dictated by the lack of unique iden-tities, it provides a tunable protocol to tailor the reliability of QS in minimalist robot swarms. 
+
+Acknowledgments. This work has been supported by the Horizon Europe, PathFinder Open European Innovation Council Work Programme for the project BABOTS under grant agreement No 101098722, by the Italian Ministry of Uninversity and Research MUR for the PNRR project FAIR (PE0000013-FAIR) and by the DFG under Germany’s Excellence Strategy, EXC 2117-422037984. 
+
+Disclosure of Interests. The authors declare that they have no conflicts of interest. 
+
+## References 
+
+1. Bar-Yossef, Z., Jayram, T., Kumar, R., Sivakumar, D., Trevisan, L.: Counting distinct elements in a data stream. In: International Workshop on Randomization and Approximation Techniques in Computer Science. pp. 1–10. Springer (2002) 2. Ciaralli, S., Barbero, F., Casacci, L.P.: Multimodal communication in ants (hy-menoptera: Formicidae): the interplay of chemical and vibro-acoustic signals. Myrmecological News 36 , 25–28 (2026) 3. Cornforth, D.M., Popat, R., McNally, L., Gurney, J., Scott-Phillips, T.C., Ivens, A., Diggle, S.P., Brown, S.P.: Combinatorial quorum sensing allows bacteria to resolve their social and physical environment. Proceedings of the National Academy of Sciences 111 (11), 4280–4284 (2014) 4. Daliri, M., Freire, J., Musco, C., Santos, A., Zhang, H.: Simple analysis of priority sampling. In: 2024 Symposium on Simplicity in Algorithms (SOSA). pp. 224–229. SIAM (2024) 5. Duffield, N., Lund, C., Thorup, M.: Priority sampling for estimation of arbitrary subset sums. Journal of the ACM 54 (6), 32–es (2007) 12 F. Oddi et al. 6. Flajolet, P., Fusy, G., Gandouet, O., Meunier, F.: Hyperloglog: the analysis of a near-optimal cardinality estimation algorithm. In: DMTCS Proceedings vol. AH, 2007 Conference on Analysis of Algorithms (AofA 07). Discrete Mathematics & Theoretical Computer Science, vol. 3545, pp. 127–146 (2007) 7. Golden, T., Hill, P.: The evolution of stridulatory communication in ants, revisited. Insectes Sociaux 63 (2), 309–319 (2016) 8. Martinez S., F.H., Martinez S., F., Montiel A., H.: Bacterial quorum sensing applied to the coordination of autonomous robot swarms. Bulletin of Electrical Engineering and Informatics 9(1), 67–74 (2020) 9. Miller, M.B., Bassler, B.L.: Quorum sensing in bacteria. Annual Reviews in Mi-crobiology 55 (1), 165–199 (2001) 10. Oddi, F., Cristofaro, A., Trianni, V.: Best-of-n collective decisions on a hierarchy. In: Swarm Intelligence: 13th International Conference, ANTS 2022, Proceedings. Lecture Notes in Computer Science, vol. 13491, pp. 66–78. Springer (2022) 11. Oddi, F., Reina, A., Trianni, V.: Minimalist protocols for quorum sensing in robot swarms. In: Swarm Intelligence: 14th International Conference, ANTS 2024, Pro-ceedings. Lecture Notes in Computer Science, vol. 14987, pp. 141–154. Springer (2024) 12. Oddi, F., Reina, A., Trianni, V.: Quorum sensing in swarm robotics (2026), preprint at Research Square, https://doi.org/10.21203/rs.3.rs-9966853/v1 13. Pinciroli, C., Talamali, M.S., Reina, A., Marshall, J.A.R., Trianni, V.: Simulating kilobots within ARGoS: Models and experimental validation. In: Swarm Intelli-gence: 11th International Conference, ANTS 2018, Proceedings. Lecture Notes in Computer Science, vol. 11172, pp. 176–187. Springer (2018) 14. Pinciroli, C., Trianni, V., O’Grady, R., Pini, G., Brutschy, A., Brambilla, M., Math-ews, N., Ferrante, E., Di Caro, G., Ducatelle, F., et al.: ARGoS: a modular, parallel, multi-engine simulator for multi-robot systems. Swarm intelligence 6(4), 271–295 (2012) 15. Pratt, S.C.: Quorum sensing by encounter rates in the ant Temnothorax Albipennis .Behavioral Ecology 16 (2), 488–496 (2005) 16. Reina, A., Cope, A.J., Nikolaidis, E., Marshall, J.A.R., Sabo, C.: ARK: Augmented reality for kilobots. IEEE Robotics and Automation Letters 2(3), 1755–1761 (2017) 17. Rubenstein, M., Ahler, C., Hoff, N., Cabrera, A., Nagpal, R.: Kilobot: A low cost robot with scalable operations designed for collective behaviors. Robotics and Au-tonomous Systems 62 (7), 966–975 (2014) 18. Schneider, S.S., Lewis, L.A.: The vibration signal, modulatory communication and the organization of labor in honey bees, Apis Mellifera . Apidologie 35 (2), 117–131 (2004) 19. Talamali, M.S., Marshall, J.A., Bose, T., Reina, A.: Improving collective decision accuracy via time-varying cross-inhibition. In: 2019 International Conference on Robotics and Automation (ICRA). pp. 9652–9659. IEEE (2019) 20. Thorup, M.: Bottom-k and priority sampling, set similarity and subset sums with minimal independence. In: Proceedings of the forty-fifth annual ACM symposium on Theory of computing. pp. 371–380. ACM (2013) 21. Zakir, R., Dorigo, M., Reina, A.: Robot swarms break decision deadlocks in col-lective perception through cross-inhibition. In: Swarm Intelligence: 13th Interna-tional Conference, ANTS 2022, Proceedings. Lecture Notes in Computer Science, vol. 13491, pp. 209–221. Springer (2022) 22. Zakir, R., Dorigo, M., Reina, A.: Miscommunication between robots can improve group accuracy in best-of-n decision-making. In: 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). pp. 9014–9021. IEEE (2024)

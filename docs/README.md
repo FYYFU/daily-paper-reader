@@ -8,78 +8,88 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-19
-- 运行时间：2026-07-19 20:59:56 UTC
+- 最新运行日期：2026-07-20
+- 运行时间：2026-07-20 21:32:32 UTC
 - 运行状态：成功
-- 本次总论文数：18
+- 本次总论文数：22
 - 精读区：9
-- 速读区：9
+- 速读区：13
 
 ### 今日简报（AI）
-我们今日精读9篇、速读9篇，总览18篇论文，聚焦强化学习与LLM智能体行为。
-
-最值得关注的是RL的可验证奖励泛化界（10分）与LLM代理何时不采取行动（9分），分别突破理论上下界和智能体决策边界。
-
-普通读者可优先精读这两篇高评论文，速读中的SCOPE-RL与鲁棒模仿学习也值得留意。
-- 详情：[/202607/19/README](/202607/19/README)
+今日精选两篇9分论文，分别探讨无标签自蒸馏与LLM安全日志上下文污染。
+自蒸馏方法引入共识作为特权上下文实现无标签蒸馏；安全日志分析需警惕被动提示注入污染。
+建议关注LLM安全实践中上下文污染的防御，以及自蒸馏在少标签场景的应用潜力。
+- 详情：[/202607/20/README](/202607/20/README)
 
 ### 精读区论文标签
-1. [Non-vacuous Generalization Bounds for Reinforcement Learning with Verifiable Rewards](/202607/19/2607.14506v1-non-vacuous-generalization-bounds-for-reinforcement-learning-with-verifiable-rewards)  
-   标签：评分：10.0/10、query:opd
-   evidence：提出集成on-policy蒸馏的渐进式RLVR框架
-2. [AgentAbstain: Do LLM Agents Know When Not to Act?](/202607/19/2607.10059v1-agentabstain-do-llm-agents-know-when-not-to-act)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：评估LLM智能体何时不行动的能力，关注智能体安全
-3. [SingGuard-NSFA: Extensible Guardrails for Agentic AI via Generative Reasoning and Real-Time Classification](/202607/19/2607.13081v1-singguard-nsfa-extensible-guardrails-for-agentic-ai-via-generative-reasoning-and-real-time-classification)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：护栏框架与安全基准套件
-4. [Safe Execution of RL Policies Via Acceleration-Based CBF-QP Constraint Enforcement for Real-World Robotic Deployments](/202607/19/2607.14488v1-safe-execution-of-rl-policies-via-acceleration-based-cbf-qp-constraint-enforcement-for-real-world-robotic-deployments)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：通过CBF-QP安全过滤器实现RL策略的安全执行
-5. [SEED: Self-Evolving On-Policy Distillation for Agentic Reinforcement Learning](/202607/19/2607.14777v1-seed-self-evolving-on-policy-distillation-for-agentic-reinforcement-learning)  
+1. [Consensus as Privileged Context for Label-Free Self-Distillation](/202607/20/2607.13643v1-consensus-as-privileged-context-for-label-free-self-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：提出自演化在线策略蒸馏用于智能体强化学习
-6. [LongStraw: Long-Context RL Beyond 2M Tokens under a Fixed GPU Budget](/202607/19/2607.14952v1-longstraw-long-context-rl-beyond-2m-tokens-under-a-fixed-gpu-budget)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：长上下文RL后训练，使用GRPO
-7. [SMC-ES: Automated synthesis of formally verified control policies](/202607/19/2607.15003v1-smc-es-automated-synthesis-of-formally-verified-control-policies)  
+   evidence：利用共识作为token级监督的无标签自蒸馏
+2. [Context Contamination in LLM Analysis of Network Security Logs: Poison with Passive Prompt Injection and Mitigation Evaluation](/202607/20/2607.14493v1-context-contamination-in-llm-analysis-of-network-security-logs-poison-with-passive-prompt-injection-and-mitigation-evaluation)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：针对自主系统的形式化安全验证控制策略
-8. [DataShield: Uncovering Risky Fine-Tuning Data Across LLMs Through Consensus Subspace Alignment](/202607/19/2607.15081v1-datashield-uncovering-risky-fine-tuning-data-across-llms-through-consensus-subspace-alignment)  
+   evidence：大语言模型安全日志中的被动提示注入及基准评估
+3. [SeerGuard: A Safety Framework for Mobile GUI Agents via World Model Prediction](/202607/20/2607.15550v1-seerguard-a-safety-framework-for-mobile-gui-agents-via-world-model-prediction)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：提出DataShield框架，识别削弱LLM安全能力的微调数据
-9. [[AAFLOW+] Stateful Operator Abstraction with Zero-Copy Distributed KV Cache Orchestration for Multi-Agent Workflows](/202607/19/2607.10987v1-aaflow-stateful-operator-abstraction-with-zero-copy-distributed-kv-cache-orchestration-for-multi-agent-workflows)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：多智能体工作流的KV缓存编排
+   evidence：面向移动GUI智能体的执行前安全框架
+4. [Better Starts, Better Ends: Bootstrapped Iterative Self-Reasoning Distillation for Compressed Reasoning](/202607/20/2607.15736v1-better-starts-better-ends-bootstrapped-iterative-self-reasoning-distillation-for-compressed-reasoning)  
+   标签：评分：9.0/10、query:opd
+   evidence：基于策略的自蒸馏用于压缩推理
+5. [Refusal is Not Safety! Benchmarking Latent Safety Risks of LLM-Driven Content Humorization](/202607/20/2607.15977v1-refusal-is-not-safety-benchmarking-latent-safety-risks-of-llm-driven-content-humorization)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：LLM幽默化带来的安全风险，涉及越狱和前缀注入
+6. [Harmonizing AI Safety Thresholds](/202607/20/2607.16112v1-harmonizing-ai-safety-thresholds)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：统一不同AI安全阈值标准
+7. [Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Stateful Personal Agents](/202607/20/2607.10526v1-agents-dont-just-agree-they-remember-benchmarking-persistent-sycophancy-in-stateful-personal-agents)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：面向有状态个人智能体的持久谄媚基准
+8. [Operational Evidence Gaps for LLMs in Fraud Detection and Trust-and-Safety Workflows](/202607/20/2607.13078v1-operational-evidence-gaps-for-llms-in-fraud-detection-and-trust-and-safety-workflows)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：LLM在信任与安全工作流中的操作安全证据缺口
+9. [Robust Peak-cost Constrained Reinforcement Learning](/202607/20/2607.15457v1-robust-peak-cost-constrained-reinforcement-learning)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：峰值成本约束强化学习用于安全关键场景
 
 ### 速读区论文标签
-1. [SCOPE-RL: Optimizing Reasoning Paths Before and After Success](/202607/19/2607.11506v2-scope-rl-optimizing-reasoning-paths-before-and-after-success)  
+1. [Efficient Test-Time Optimization for Multi-Agent Proof Autoformalization](/202607/20/2607.11307v1-efficient-test-time-optimization-for-multi-agent-proof-autoformalization)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：用强化学习优化推理路径以提高效率
-2. [Distributionally Robust and Safe Imitation Learning](/202607/19/2607.13436v1-distributionally-robust-and-safe-imitation-learning)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：分布式鲁棒且安全的模仿学习方法
-3. [A Distributed Framework for Compiling and Reasoning with d-DNNF](/202607/19/2607.13642v1-a-distributed-framework-for-compiling-and-reasoning-with-d-dnnf)  
+   evidence：多智能体证明推理的高效测试时优化
+2. [Where Should RL Post-Training Compute Go? Model Size, Search, Learning, and Feedback](/202607/20/2607.13389v1-where-should-rl-post-training-compute-go-model-size-search-learning-and-feedback)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：通过分布式知识编译实现高效推理
-4. [Post-Training Shifts Confidence: A Three-Stage Analysis of How SFT, RL, and OPD Shape Pre-, Intra-, and Post-CoT Calibration](/202607/19/2607.13753v1-post-training-shifts-confidence-a-three-stage-analysis-of-how-sft-rl-and-opd-shape-pre--intra--and-post-cot-calibration)  
+   evidence：研究RL后训练中的计算分配以提升效率，与推理效率改进相关。
+3. [T^2MLR: Transformer with Temporal Middle-Layer Recurrence](/202607/20/2607.15178v2-t2mlr-transformer-with-temporal-middle-layer-recurrence)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：用于推理效率的transformer隐式推理架构
+4. [From Black Box to Executable Logic: Explainable Reinforcement Learning through Prolog Expert Systems](/202607/20/2607.15459v1-from-black-box-to-executable-logic-explainable-reinforcement-learning-through-prolog-expert-systems)  
    标签：评分：8.0/10、query:opd
-   evidence：研究在线策略蒸馏如何影响LLM的置信度校准
-5. [TRACE: Turn-level Reward Assignment via Credit Estimation for Long-Horizon Agents](/202607/19/2607.13988v1-trace-turn-level-reward-assignment-via-credit-estimation-for-long-horizon-agents)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：长周期智能体强化学习的信用分配
-6. [Enhancing Small Language Models Reasoning through Knowledge Graph Grounding](/202607/19/2607.14149v1-enhancing-small-language-models-reasoning-through-knowledge-graph-grounding)  
+   evidence：从冻结的PPO教师提取规则到Prolog程序，类似知识蒸馏
+5. [[AAFLOW+] Stateful Operator Abstraction with Zero-Copy Distributed KV Cache Orchestration for Multi-Agent Workflows](/202607/20/2607.10987v1-aaflow-stateful-operator-abstraction-with-zero-copy-distributed-kv-cache-orchestration-for-multi-agent-workflows)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：知识图谱增强小语言模型推理效率
-7. [Agentic-DPO: From Imitation to Agentic Policy Optimization on Expert Trajectories](/202607/19/2607.10601v1-agentic-dpo-from-imitation-to-agentic-policy-optimization-on-expert-trajectories)  
-   标签：评分：6.0/10、query:opd
-   evidence：从专家轨迹进行离线智能体策略优化
-8. [LOTAPO: Leave-One-Turn Attribution for Self-Generated Process Rewards in Multi-Turn Search Reasoning](/202607/19/2607.13501v2-lotapo-leave-one-turn-attribution-for-self-generated-process-rewards-in-multi-turn-search-reasoning)  
+   evidence：KV缓存编排提升推理效率
+6. [Dynamically Feasible Planning and Control in Complex Environments: a Scalable Systematic Approach](/202607/20/2607.12178v1-dynamically-feasible-planning-and-control-in-complex-environments-a-scalable-systematic-approach)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：安全集生成与参考调度器提供安全保证
+7. [Multi-Head Latent Control: A Unified Interface for LLM Agent Decision Making](/202607/20/2607.14277v1-multi-head-latent-control-a-unified-interface-for-llm-agent-decision-making)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：通过潜在控制决策提升推理效率
+8. [Leveraging Instruction Tuning and Merging for Reasoning Model Adaptation](/202607/20/2607.14895v1-leveraging-instruction-tuning-and-merging-for-reasoning-model-adaptation)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：使用指令微调和模型合并来适应推理模型，提升效率。
+9. [Are All Tokens Necessary for Visual Place Recognition? An Empirical Study of Token Reduction for Efficient Inference](/202607/20/2607.15563v1-are-all-tokens-necessary-for-visual-place-recognition-an-empirical-study-of-token-reduction-for-efficient-inference)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：视觉地点识别中的令牌缩减以实现高效推理
+10. [ToolVerse: Unlocking Massive Environments and Long-Horizon Tasks for Agentic Reinforcement Learning](/202607/20/2607.15660v1-toolverse-unlocking-massive-environments-and-long-horizon-tasks-for-agentic-reinforcement-learning)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：扩展RL环境以支持长时域智能体任务
+11. [Tool-Adaptive LLM Reranker](/202607/20/2607.10555v1-tool-adaptive-llm-reranker)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：提出多轮搜索推理中的自生成过程奖励，通过轮次归因提升推理效率
-9. [ToolAnchor: Anchoring Counterfactual Context to Boost Agentic Tool-use Capability](/202607/19/2607.14145v1-toolanchor-anchoring-counterfactual-context-to-boost-agentic-tool-use-capability)  
-   标签：评分：6.0/10、query:opd
-   evidence：教师模型用于智能体工具使用的反事实上下文注入
+   evidence：通过智能体马尔可夫决策过程优化重排序效率
+12. [Stochastic Filtering for Quorum Sensing in Robot Swarms under Anonymous Communication](/202607/20/2607.14262v1-stochastic-filtering-for-quorum-sensing-in-robot-swarms-under-anonymous-communication)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：提出机器人蜂群群体感知的随机滤波方法
+13. [Reachability-Aware Pretraining for Efficient Target-Oriented Path Exploration in Temporal Knowledge Graph Reasoning](/202607/20/2607.14886v1-reachability-aware-pretraining-for-efficient-target-oriented-path-exploration-in-temporal-knowledge-graph-reasoning)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：时序知识图谱推理中可达性感知预训练实现高效路径探索
 
 
 <div class="dpr-home-promo-card">
