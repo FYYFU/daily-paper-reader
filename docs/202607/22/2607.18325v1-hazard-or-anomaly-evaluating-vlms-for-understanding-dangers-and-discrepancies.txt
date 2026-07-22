@@ -1,0 +1,300 @@
+Title: Hazard or Anomaly? Evaluating VLMs for Understanding Dangers and Discrepancies
+
+URL Source: https://arxiv.org/pdf/2607.18325v1
+
+Published Time: Wed, 22 Jul 2026 00:07:38 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Hazard or Anomaly? Evaluating VLMs for Understanding Dangers and Discrepancies 
+
+Murali Indukuri 1∗, Mohammad Eskandari 1∗, Sree Nitya Kollu 1, Stephanie Lukin 2, Cynthia Matuszek 1†
+
+Abstract — Modern safety-critical systems increasingly rely on human–robot interaction to reduce disaster risk and support decision-making during emergencies. Vision–Language Models (VLMs) are promising for these settings because they can inter-pret complex scenes and communicate safety-relevant informa-tion, but they still require careful evaluation to ensure reliable safety reasoning. In particular, current evaluations often frame danger recognition as a binary decision (Safe/Unsafe), making it unclear whether a model is identifying true physical hazards or merely reacting to unusual scene elements. We address this limi-tation by introducing an explicit distinction between hazard and 
+
+anomaly , and by separately recognizing hazardous and anoma-lous states. We evaluate several state-of-the-art VLMs across two datasets and multiple prompting strategies to test whether this distinction changes model behavior. Our results show that VLMs frequently misinterpret anomalousness as hazardous-ness, revealing an over-reliance on contextual irregularity as a proxy for danger. We further show that explicitly separating anomaly from hazard provides a more informative evaluation of VLM safety reasoning and exposes failure modes that binary safety judgments can obscure. Our public dataset is avail-able on Roboflow: https://app.roboflow.com/vlm-in-context-anomaly-and-hazard-detection/camera-ready-roman-ds. 
+
+I. I NTRODUCTION 
+
+To prevent disasters or respond to them effectively, crit-ical domains such as search and rescue, industrial safety, and space exploration have implemented strict safety stan-dards [28], [13], [17]. However, ensuring compliance with these standards is still a challenge, in part because oper-ators may still lack adequate situational awareness [24], [11]. For example, workers in construction zones may over-look abandoned tools, while a first responder scanning an emergency scene may mistake someone’s red costume (see fig. 1) for blood, drawing attention away from a real hazard nearby. As a result, modern safety-critical systems increas-ingly rely on autonomous robots that can provide situational awareness cues to support human operators in high-risk environments [8], [13]. While simple object detection can support Human-Robot Interaction (HRI) in high-risk areas, recent Vision–Language Models (VLMs) appear promising for this role because they can describe and interpret complex                        
+
+> * Equal contributions by these authors.
+> †This work was supported in part by NSF Grants IIS-2024878 and IIS-2145642, and this material is also based on research that is in part supported by the Army Research Laboratory, Grant No. W911NF2120076.
+> 1Interactive Robotics and Language Lab, University of Maryland Baltimore County, Computer Science and Electrical Engineering Department, Baltimore, MD, USA.
+> (muralii1|eskandari|skollu2|cmat)@umbc.edu
+> Accepted to RO-MAN 2026 .
+> 2DEVCOM Army Research Laboratory, Adelphi, MD, USA.
+> stephanie.m.lukin.civ@army.mil
+
+Fig. 1: Images extracted from our public dataset representing four classes. Clockwise from bottom right: Safe, Anomalous, Hazardous, and Anomalous-Hazardous. This dataset aims to highlight the conceptual difference between anomalous and hazardous conditions in borderline cases. scenes by combining visual perception with language-based reasoning [2], [6], [18], [15], limited currently by a lack of clear evaluation of how they form safety judgments and process different types of risk [5]. Although some studies on VLMs report strong perfor-mance on multimodal benchmarks [40], others document failures even on basic perceptual tasks [29]; still, whether VLMs can distinguish merely unusual situations from gen-uine physical danger, or understand the context when making safety judgments, remains an open question. In many evalua-tions, danger detection is framed as a binary choice [39], [5], forcing ambiguous scenes into coarse categories. As a result, anomalous but non-dangerous situations are often labeled as hazardous, while subtle hazards are overlooked. We argue that this stems from the absence of an explicit separation between anomalies and hazards. Following OSHA [27], we define a hazard as a source of potential physical harm under normal interaction conditions. An anomaly , in contrast, is a violation of expected spatial, functional, or contextual relations that does not necessarily imply danger. These definitions allow us to test whether models can differentiate the orthogonal classes. We contribute the following: 1) An evaluation pipeline for hazard/anomaly classifica-tion in VLMs, designed to study distinctions relevant to situational awareness in safety-critical settings. 2) A curated 610-image benchmark with a four-class haz-ard–anomaly scheme for evaluating anomaly–hazard separation in Vision–Language Models. 3) A systematic evaluation showing that state-of-the-art VLMs conflate anomalousness with hazardousness un-arXiv:2607.18325v1 [cs.CV] 18 Jul 2026 der binary safety prompting, and that explicit separa-tion improves calibration. II. R ELATED WORK 
+
+The concepts of hazard and anomaly are semantically close. In other words, it is essential for the VLMs to dis-ambiguate between these concepts to effectively execute the task. Previous research has shown that it is possible to reli-ably determine the meaning of words from context [38], [32], and it is possible for multimodal models to correctly map ambiguous words to the corresponding visual stimuli [22], showing that VLMs combined with word sense disambigua-tion are promising in distinguishing these concepts. Another relevant area is the study of object-contextual reasoning in multimodal models. Previous research has evaluated the perception and reasoning capabilities of VLMs using datasets such as PAM and CVR [1], [35], or has focused on the evaluation of the sensitivity of VLMs to the composition of the captions, including the presence of words that are placed in the wrong position [33]. The results of these studies demonstrate that contextual information and fine-tuning strategies improve contextual reasoning [23], [37]. Existing research has shown that modality bias exists in multimodal reasoning. For example, if textual tokens carry answers to a particular query, vision-language mod-els (VLMs) often rely on textual information over visual information [2]. In addition, for tasks requiring precise joint reasoning over both textual and visual information, VLMs significantly underperform human baselines [34]. Our re-search attempts to improve the existing models by providing definitions for “anomaly” and “hazard,” thus encouraging models to focus on relevant visual information while avoid-ing ambiguities. We have also designed a task where dense captions are used as an input modality to isolate reasoning ability with text-only input. Other work has explored multimodal reasoning mod-els for robotic applications. For instance, MLLMs (Mul-timodal Large Language Models) have been incorporated into robots to identify semantic anomalies arising from out-of-distribution interactions [10]. Research on understanding road accidents has shown that VLMs are well suited for visu-ally grounded perception tasks, while accident prevention is still beyond their capabilities [19]. Other studies have shown that using smaller models can improve their performance over larger models, especially in hazard detection [36]. Most relevant to the current research, existing research has explored VLMs for reasoning about anomalies, context, and other related issues. For example, models can generate descriptions for anomalies from images, which can then be used to classify the images with high accuracy [41]. In addition, BERT models can be used to establish whether an object is within a particular scene, thus providing information for context detection [39]. Misaligned reasoning is an enduring concern in the de-ployment of such systems. Empirical studies have demon-strated that multimodal models are prone to producing harm-ful and misleading advice in the process of joint reasoning over images and text data. Open-weight models are particu-larly susceptible to such model failures [30]. In other studies, the over-reaction problem is reported, where the model is prone to over-reacting and incorrectly identifying scenes that are merely anomalous as dangerous in the process of binary safety labeling, [5] in the study of VLMs. This study extends the aforementioned research by clearly defining the concepts of anomaly and hazard as distinct la-bels, allowing the model to reason over contextual anomalies. By including the formal definitions of the concepts within the prompts, the study attempts to address the overreaction prob-lem and provide more consistent results in the identification of the most relevant safety risks. III. M ETHODOLOGY 
+
+For a systematic evaluation of current VLM capability in distinguishing the semantically close concepts of hazard and anomaly, we construct a 610-image dataset labeled with one of four classes: Safe, Anomaly, Hazard, or Both. We then use this dataset with several different prompting techniques to evaluate VLM capability. Further, we introduce a simplified classification task that evaluates whether current models can perform the four-class classification given the dense captions associated with a particular image of the dataset. We begin by formalizing this methodology. 
+
+System Design. For our formalization, we use the following symbolism:  
+
+> •
+
+Let P denote the prompt, an ordered tuple which may be composed of the following elements: 
+
+– Let QTi and QIi be the ith set of text and image tokens in P that the VLM uses as input. 
+
+– Let Ri be the ith element of P that represents a VLM response. A given element of P may be associated with a classification code ci, discussed further in the following sections. We treat a given VLM agent as a function A that maps 
+
+P, a prompt of length i, to some response Ri+1 (i.e. 
+
+A(P) = Ri+1 ). Ri+1 may be appended to P along with other elements, QTi+1 and QIi+1 . Generally speaking, the objective of the VLM is to produce the correct ci+1 in Ri+1 
+
+to match the expected in ci in QTi or QIi (i.e. the last element of the prompt P). 
+
+Dataset Design. Our goal is to evaluate the ability of state-of-the-art VLMs in distinguishing hazards, anomalies, and benign scenes. To this end, we developed a dataset where each image, QIi , is labeled with ci taking two-bit values corresponding to the following:  
+
+> •
+
+Safe : No immediate hazard is present and object-context relations are not violated.  
+
+> •
+
+Anomalous : A scene element appears out of place or inconsistent with expected relations (interposition, support, probability, position, or familiar size), but poses no immediate physical risk.  
+
+> •
+
+Hazardous : A visible source of immediate harm is present, consistent with OSHA’s definition of a hazard, without any contextual irregularity. • Anomalous Hazardous : The scene presents both an immediate hazard and an object–context violation. Unlike traditional safety datasets, which combine contex-tual deviation and physical danger under a unified label, our two-bit encoding treats the notions of anomaly and danger as orthogonal dimensions. This allows for a controlled assessment of whether predictions are driven by object-level risk cues or more general contextual deviations. This dataset, therefore, allows for a more in-depth study of VLMs’ reasoning abilities when judging hazards. The main dataset comprises artificially generated images based on textual descriptions from several public datasets and images. These images spanned many fields including construction sites, natural disasters, and hazardous objects like weapons [21], [16], [26], [20], [14], [25], [31]. We believe that the range of environments and contexts that these images were pulled from supports a rigorous evaluation of how VLMs may perform when deployed in real-life anomaly and hazard detection scenarios. To construct the datasets, images were hosted on Roboflow [9]. The source datasets were imported to acombined dataset, which we used to construct text descrip-tions. Images for the final published dataset were generated from these descriptions. In the final dataset, the researchers independently labeled each image with a binary hazard and anomaly labels in the form of AH . For instance, 01 
+
+indicated the image contained hazards but not an anomaly. The researchers reviewed these independent annotations col-lectively to reach a unanimous agreement. In borderline cases, a displaced element could be con-sidered either safe or risky, which can cause disagreements among the annotators. Such discussions highlighted the ambiguity between anomalous and hazardous conditions, resulting in more refined definitions of anomaly and hazard. When an agreement could not be reached after a discussion among the annotators, the images were excluded. The final dataset included over 100 images per class with 610 images in total. The safe, anomalous, hazardous, and anomalous-hazardous categories had 213, 113, 111, and 173 images respectively. This imbalance results from the less common nature of exclusively anomalous or hazardous situations. The study down-sampled to use an equal number of images in all classes to limit testing bias. 
+
+Dense Captioning. We hypothesize that the main bottleneck for VLM performance in our task is the need to appropriately process the context in an image to get the information needed for classification. Work has suggested that current models struggle with this [4]. We therefore propose the related task of classifying dense captions of images from our dataset into the four discussed classes. With this, we seek to isolate the task of identifying context in an image from reasoning about said context. Based on preceding work that shows VLMs’ capability for 3D reasoning from text [3], we hope this results in more accurate classifications for our task. To generate dense captions, QTi , for each image of our dataset, we use Google’s Gemini 3 Flash. Each dense caption is roughly a paragraph long and stored with the associated image’s classification code ci. Because our goal is to isolate VLMs’ ability to process context, we reviewed the dense captions to ensure they were accurate for the dataset images and that they are sufficiently detailed to be able to justify a given class prediction ci+1 for caption QTi .
+
+Task Design. 
+
+Core prompt and problem definition (QT 
+
+> 0
+
+):
+
+You are inspecting an environment for anomalies and hazards to help first responders. Use the following definitions.  
+
+> •
+
+Hazard: A scene is hazardous if normal interac-tion with at least one of the present elements would realistically cause immediate physical harm to the people or put the existing property in significant danger.  
+
+> •
+
+Anomaly: A scene is anomalous if any visible element clearly violates normal expectations for this environment (location, arrangement, state, or use).  
+
+> •
+
+Safe: Safe scenes include normal, expected hu-man activities in the specifically given appropri-ate environment, provided no immediate physi-cal hazard is present. 
+
+The output structure specification ( QTf )
+
+Decide hazard and anomaly labels independently. Obey this STRICT output format: ‘<a brief, explicit justification for the final decision>: <code>’ Where <code>is ONLY one of: 00 = Safe, 10 = Anomalous, 01 = Hazardous 11 = Anomalous AND Hazardous -No extra paragraphs, no bullet points, no additional commentary. 
+
+The primary objectives of our task design are to evaluate the ability of modern VLMs to recognize anomalies and hazards, and to determine how well they distinguish between these two closely related concepts. To this end, we define several related tasks in which a VLM agent maps a prompt Pi
+
+to a response Ri containing a classification code ci. For each task, the predicted code ci is compared against the ground-truth label associated with the target query instance. This general formulation allows us to keep the query content fixed across tasks while varying the prompting strategy, thereby isolating the effects of prompt design and input modality from those of contextual variation between prompts. For all tasks, we begin by defining the role of the agent and the definitions it must use in the first element of the prompt, P. We denote this QT 
+
+> 0
+
+.We include formatting information near the end of each prompt to standardize model responses. We label this QTf ,which contains the specification for the code, and how the model must justify its response. The specific structure for the rest of prompt depended on the prompting technique and input modality as is discussed in the following sections. 
+
+Approach: Zero Shot Prompting. We first test the simplest approach to our classification task: zero shot prompting. This technique allowed the most flexibility for model reasoning and interpretation of the definitions in QT 
+
+> 0
+
+. Our prompt was of the following form: P = ( QT 
+
+> 0
+
+, QT 
+
+> 1
+
+, QT 
+
+> 2
+
+, QT 
+
+> 3
+
+, Q4), where the queries 1-3 were: 
+
+QT 
+
+> 1
+
+: Identify concrete sources of immediate harm. 
+
+QT 
+
+> 2
+
+: Independently assess contextual irregularities. 
+
+QT3 = QTf
+
+As mentioned, our study included two variations of the experiment for each prompt: using images from our dataset, or dense captions for those images. Q4 represents the image for the former experiment and the set of dense captions for the latter experiment. 
+
+Approach: Few Shot Prompting. Because interpreting the definitions for an anomaly vs. a hazard can be subjective, we propose that more sophisticated techniques will improve performance. Few-shot prompting builds on the zero shot prompt by providing example responses rather than the broad instructions in the previous technique. We use the following structure: 
+
+P = ( QT 
+
+> 0
+
++ QTf , Q1, R1,
+
+QT 
+
+> 0
+
++ QTf , Q2, R2,
+
+QT 
+
+> 0
+
++ QTf , Q3, R3,
+
+QT 
+
+> 0
+
++ QTf , Q4, R4,
+
+QT 
+
+> 0
+
++ QTf , Q5).
+
+Queries Q1 to Q4 represent example images or the corre-sponding dense captions from each class of our dataset, and 
+
+R1 to R4 represent examples of responses the agent should provide for the respective query. Q5 is the actual image or caption the model must respond to. The four examples did not have any common elements; they were from unique scenes, domains, and had unique ground truth labels. This keeps the input token usage fairly low to meet restrictions of smaller models while also pro-viding a broad range of examples that should help improve classification performance. 
+
+Approach: Chain-of-Thought Prompting. In addition to providing selected examples, it is possible that guiding agents to identify relevant context from images before classification can improve performance. To facilitate completing our task in a step-by-step manner, we tested each agent with chain of thought prompting. We use the following inductive im-plementation: 
+
+Ri+1 = A(Pi)
+
+Pi+1 = Pi + Ri+1 + QTi+1 
+
+P1 = QT 
+
+> 0
+
++ QT 
+
+> 1
+
++ Q1
+
+We use Q1 to denote either the dense caption or image that the agent must classify. We take R4 as the final response from the model to extract the classification. The text queries for each step are given as follows: 
+
+QT 
+
+> 1
+
+: In accordance with the definition for “Haz-ard," Identify any real physically present el-ement that could cause immediate harm. Also consider if people or property are directly in danger. 
+
+QT 
+
+> 2
+
+: Independently determine whether any element violates normal expectations for this environ-ment using the definition for “Anomaly". 
+
+QT 
+
+> 3
+
+= QTf
+
+Model Selection. Since our task is designed to evaluate VLM effectiveness for autonomous annotation of hazards, we argue that it is important for models to be both accurate and fast, especially when deployed in real-time applications. Given this, we seek to compare the potential trade-off in accuracy and gain in speed when using smaller, more optimized models vs. larger ones like GPT 4.1 or Mistral Large. For our study, we use GPT 4.1; Mistral Ministral 3B, 14B, and Large; and Gemini 2.5 Flash and 3 Flash. The primary motivations for selecting these models were to evaluate how models of different sizes perform on this task, as well as to compare how older models perform relative to newer models. 
+
+Baseline Comparison. The most closely related prior work on evaluating whether VLMs can differentiate between safe and hazardous [5] considers only binary classification and can be treated as a relevant baseline for our more com-plex classification. We hypothesize that explicitly separating anomalous from hazardous cases reduces misclassifications between these categories, thereby mitigating the overreaction problem observed in VLM systems [5]. To enable compar-ison, we adopt their dataset and adapt its annotations to our four-class scheme. Because the original dataset does not include an anomalous category, we map exclusively “anomalous" cases to “safe" and “anomalous–hazardous" cases to “hazardous" for binary evaluation. However, we keep our prompts the same to still allow models to be more granular in their assignment. This mapping allows direct comparison with the results reported in the baseline study [5]. IV. R ESULTS AND ANALYSIS 
+
+For our evaluation, we first treat each class individually in order to get the per-class performance, rather than perform-ing evaluations jointly for both anomaly and hazard. This Model PA RA F1 A PH RH F1 H                                                                                                                                                                                                                  
+
+> Image Input
+> Chain of Thought Prompting
+> Ministral 3b 0.57 0.85 0.68 0.61 0.98 0.75
+> Ministral 14b 0.51 0.97 0.67 0.60 0.99 0.75
+> Mistral large 0.61 0.79 0.69 0.66 0.97 0.79
+> Gemini 3 Flash 0.59 0.82 0.69 0.73 0.96 0.83
+> Gemini 2.5 Flash 0.61 0.89 0.72 0.68 0.98 0.80
+> Gpt 4.1 0.65 0.81 0.72 0.71 0.97 0.82
+> Few Shot Prompting
+> Ministral 3b 0.57 0.69 0.63 0.75 0.79 0.77
+> Ministral 14b 0.62 0.78 0.69 0.75 0.83 0.79
+> Mistral large 0.69 0.70 0.70 0.78 0.80 0.79
+> Gemini 3 Flash 0.66 0.79 0.72 0.82 0.88 0.85
+> Gemini 2.5 Flash 0.60 0.88 0.72 0.82 0.88 0.85
+> Gpt 4.1 0.65 0.78 0.71 0.80 0.90 0.85
+> Zero Shot Prompting
+> Ministral 3b 0.56 0.39 0.46 0.60 0.94 0.73
+> Ministral 14b 0.57 0.86 0.68 0.68 0.93 0.79
+> Mistral large 0.66 0.83 0.74 0.62 0.94 0.75
+> Gemini 3 Flash 0.70 0.70 0.70 0.77 0.89 0.82
+> Gemini 2.5 Flash 0.59 0.84 0.69 0.68 0.95 0.79
+> Gpt 4.1 0.68 0.70 0.69 0.69 0.95 0.80
+> Dense Caption Input
+> Chain of Thought Prompting
+> Ministral 3b 0.54 0.73 0.62 0.57 0.96 0.72
+> Ministral 14b 0.51 0.92 0.65 0.61 0.96 0.75
+> Mistral Large 0.54 0.74 0.62 0.68 0.97 0.80
+> Gemini 3 Flash 0.61 0.71 0.66 0.76 0.89 0.82
+> Gpt 4.1 0.64 0.72 0.68 0.70 0.96 0.81
+> Few Shot Prompting
+> Ministral 3b 0.50 0.72 0.59 0.79 0.78 0.78
+> Ministral 14b 0.63 0.72 0.67 0.86 0.67 0.75
+> Mistral Large 0.67 0.65 0.66 0.86 0.76 0.81
+> Gemini 3 Flash 0.66 0.71 0.69 0.85 0.78 0.81
+> Gemini 2.5 Flash 0.59 0.79 0.68 0.83 0.86 0.84
+> Gpt 4.1 0.66 0.63 0.65 0.80 0.82 0.81
+> Zero Shot Prompting
+> Ministral 3b 0.56 0.21 0.31 0.67 0.93 0.78
+> Ministral 14b 0.56 0.75 0.64 0.62 0.89 0.73
+> Mistral Large 0.60 0.67 0.64 0.67 0.94 0.78
+> Gemini 3 Flash 0.67 0.52 0.58 0.75 0.82 0.78
+> Gemini 2.5 Flash 0.65 0.78 0.71 0.76 0.91 0.83
+> Gpt 4.1 0.63 0.52 0.57 0.75 0.91 0.82
+
+TABLE I: Shows the per-class precision, recall, and f1 scores for anomaly and hazard classes, denoted P , R, and F 1
+
+respectively with the subscript indicating the class. allows assigning partial correctness in model outputs. These performance metrics are summarized in table I. 
+
+Image vs. Dense Captioning Results. Figures 2 and 3 show that most models evaluated perform fairly well, especially with hazard classification given F1 scores tended to be above 0.7. As expected, the smallest model(Mistral-3B) is the worst-performing with its F1 score being as low as 0.31 when using the zero-shot prompting method and dense captions as the input modality. Contrary to our expectations, we note that agents tended to perform worse when using dense captions as the input modality with F1 scores skewing lower. We suspect that this is for a few reasons. It is possible that although models may have the ca-                                      
+
+> Reasoning Inputs Hamming Loss
+> Chain-of-Thought Image 0.36 0.41 0.31 0.28 –0.26
+> Captions 0.41 0.41 0.34 0.28 –0.29 Few Shot Image 0.32 0.28 0.26 0.23 0.25 0.24 Captions 0.35 0.29 0.26 0.25 0.27 0.27 Zero Shot Image 0.40 0.33 0.31 0.24 0.31 0.28 Captions 0.33 0.38 0.32 0.30 0.26 0.29 Ministral 3B Ministral 14B Mistral Large Gemini 3 Flash Gemini 2.5 Flash GPT 4.1
+
+TABLE II: Shows the Hamming loss for all models for image 
+
+and dense caption input modalities. We omit the results for Gemini 2.5 Flash and chain of thought prompting because the model did not produce valid responses for a significant number of queries. Lower values of hamming loss indicate a lower number of errors in jointly classifying anomalies and hazards. This metric serves to show how well modern VLMs can differentiate the concepts of anomaly and hazard. pability to perform the high level reasoning necessary for this classification task, the dense captions may simply not focus enough on the context necessary for the classification. Although the captions were ensured to be accurate for each image, they were made to be neutral about whether the image was hazardous or anomalous. The agent generating the dense captions, Gemini 3 Flash, was given no information about the classification task in order for it to not imbue a bias on other models when they classify anomalies or hazards. As such, these captions may lack the necessary focus to allow all models the best chance to produce accurate results. Regardless, model performance using images as the input modality indicates that current VLMs are indeed approaching the required level of reasoning capability to effectively classify anomalies and hazards. We observed that even small models like Ministral 3B can, with the right prompting technique, effectively classify anomalies and hazards. For instance, the model achieved an F1 score of 0.68 using chain-of-thought prompting for the anomaly classification and 0.77 in the hazard classification few shot prompting. As shown in fig. 2, agents like Gemini 2.5 and 3 flash reached F1 scores as high as 0.85 on the hazard classification. It should also be noted that although the few-shot prompt was generally best for classifying hazards, there was no universally best technique across the models for anomaly classifications. Usually, either the chain-of-thought or few-shot prompt gave the best results for the latter classification task depending on the model. For instance, Ministral 3B performed best when using chain-of-thought prompting vs. Ministral 14B that performed better with few-shot prompting. These results suggest that the specific model and prompt can significantly affect performance in deployments like our prior work [12], and factors like the frequency of anomalies or hazards, and the criticality of each class need to be considered when choosing model/prompt combination. Another interesting feature of both fig. 2 and fig. 3 is how anomaly classification performance is consistently lower than hazard classification performance. This might suggest that Fig. 2: The precision vs. recall graph when using images as the input modality for the agents. Experiment results where an agent did not produce a valid response for more than 10 images per prompting technique were omitted. Generally, the agents perform well when looking at anomaly and hazard classifications independently. The outlier was mistral-3b when using zero-shot prompting. semantically, the concept of anomaly is less well-defined. We note that even when annotating our dataset, we tended to have less consensus on the classification for anomalies. These images were carefully considered and excluded where consensus could not be reached. 
+
+Joint Classification Performance. We now consider model performance in jointly classifying images and dense captions into the four categories of our dataset. For this analysis, we use hamming loss [7] which averages the number of errors in labeling an image safe, anomalous, hazardous, or both over all input images. These scores are shown in table II, with the lower scores indicating the best performance. We note that models from the Gemini family and GPT 4.1 consistently perform the best, indicating that these mod-els have the greatest ability to differentiate the concept of an anomaly from a hazard. However, models from the Mistral family had lower performance with worse scores corresponding to smaller models. This implies that when deploying models to classify anomalies and hazards in actual applications, larger models may be more ideal. However, such deployments often require real-time performance or are resource constrained, especially when using edge-computing on robots, underscoring the need for more efficient algo-rithms Furthermore, the minimum proportion of errors 0.23 when images and few shot prompting with Gemini 3. This indicates that even though performance can be improved by optimizing the prompt, input, and model selection, performance with current algorithms still needs to be improved when the goal is joint classification and differentiating truly hazardous images from merely anomalous ones. This is especially true for safety-critical deployments like in our previous study [12]. 
+
+Baseline Comparison. As noted, we observed the best 
+
+Fig. 3: The precision vs. recall graph when using dense captions as the input modality for the agents. As with fig. 2, experiments with more than 10 invalid classifications per prompt technique were omitted. Contrary to our expectation, agents performed similarly to when the input modality was an image with some results being worse. A potential cause may be that textual descriptions may be too coarse for the level of information required for the anomaly vs. hazard classification. results with images at the input modality. We now review the results when comparing our methodology with previous work on a similar task [5]. Figure 4a and fig. 4b show the number of over or under-predicted images that each model classified for the “dangerous” and “safe” categories using the VERI dataset [5]. This dataset contains 100 images of each class, all of which were used in raw form rather than as captions. Unlike in the classification for our dataset, the few-shot technique performs poorly when results are interpreted in a binary manner. This is especially apparent for Ministral 14B. A common reason for misclassifications for many of the over-predicted images seemed to be misinterpretation of the context in images. For instance, one image contained a person with ketchup on them which was interpreted as blood, leading to an incorrect classification. Such errors undermine the system’s ability to increase awareness to users when deployed in safety-critical systems; however, false positives such as these are still preferable to false negatives which are more likely to impact safety. Despite some prompt and model combinations performing poorly, we note that our Zero-Shot prompt proved signifi-cantly more accurate than the baseline BSTS prompt [5]. A t-test for independence was performed, assuming the null hy-pothesis that both the Zero-Shot and BSTS prompt accuracies were equal for all models tested. This resulted in a p-value of 0.0022, well past a typical threshold of 0.05 to reject the null hypothesis. Therefore, with the right combination of the model and prompt, the system’s performance can be significantly improved over prior work. (a) Error in “Dangerous” classifications (b) Error in “Safe” classifications 
+
+Fig. 4: Shows how much models underpredicted or overpredicted images classified as “safe" or “dangerous” extracted from the VERI dataset [5]. BSTS represents the binary classification prompt used in [5]. The dataset had 100 images labeled “safe.” Similar to previous findings, most of the prompting techniques tend to under-predict safe images [5], however, our zero-shot prompt is significantly more accurate on average for most models. V. L IMITATIONS 
+
+Our study identifies systematic deficiencies in joint clas-sification of anomalous and hazardous scenes, but several limitations restrict the generality of the results. 
+
+Dataset size. The dataset contains 610 images, with Haz-ardous being the smallest category; balanced analysis is limited to roughly 100 samples per class, which amplifies the effect of noise and restricts the diversity of visual patterns the model encounters. Conclusions about hazard recognition should therefore be treated as preliminary, and it is difficult to tell whether observed performance patterns reflect systematic reasoning biases or dataset-specific artifacts. A larger-scale evaluation would yield higher statistical power and enable analysis of generalization. 
+
+Annotations. Ground-truth labels come from a few non-expert annotators, introducing subjectivity for distinctions as subtle as anomalous vs. hazardous vs. anomalous-hazardous. Our definitions are grounded in OSHA standards [27], but personal notions of “weird,” “unsafe,” and “dangerous” vary across individuals. Future work should formalize the anno-tation protocol via large-scale crowd-sourcing (e.g., Amazon Mechanical Turk) to compute consensus measures and pro-duce probabilistic ground truth, reducing annotator bias. VI. C ONCLUSION 
+
+This study sought to improve VLM performance in ap-plications such as our prior work [12] by creating a dataset of images from safety-critical and benign scenes. We devel-oped a four class classification scheme for images: “safe,” “anomalous,” “hazardous,” and ”anomalous-hazardous.” Fur-thermore, we hypothesized that forcing VLMs to separate scenes that are merely anomalous to scenes that are truly hazardous and require immediate action would help focus users’ attention to critical details. Recognizing that VLM performance varies significantly based on model size, prompt, and input, we constructed several sub-tasks for the classification task that used dense captions and raw images as input modalities, and three differ-ent prompting techniques for each input modality. When con-sidering per-class classification performance, we found that models perform moderately well with the best models having f1 scores around 0.70 for classifying anomalies and scores as high as 0.85 for classifying hazards. When considering joint classification performance with hamming loss, we found that the best score was 0.23 when using few shot prompting with Gemini 3 and images as the input. This indicated that performance can be improved by tuning pipeline parameters like the model, prompt, and input modality; however, for safety critical tasks like disaster response, current models struggle with the complex reasoning required for the four-class taxonomy. We found that Choi et al. pursued a similar approach to ours [5], and compared our pipeline with their approach. For this, we collapsed the four-class taxonomy to a binary ap-proach by interpreting anomalies as “safe,” and anomalous-hazardous scenes as “dangerous” to match their dataset. We found that significant improvements to classification accuracy can be made by tuning the prompt and found that our zero shot prompt was significantly more accurate overall compared to the prior work [5]. This may indicate that even if classes are interpreted in a binary manner, forcing models to use the four-class taxonomy helps their reasoning. Future work should extend this analysis across a wider set of models and incorporate crowd-sourced annotations to build more reliable ground truth. Additional techniques like knowledge graphs of scenes may be incorporated to further assist in reasoning and classification. Such techniques may capture more context than the dense captions that we use for this study and assist models in focusing on only the relevant information for classification. Ultimately, the goal is to guide the development of systems that can distinguish unusual from dangerous conditions with greater consistency and reliability, enabling safer deployments of AI in high-risk environments. REFERENCES [1] M. Acharya, A. Roy, and S. Jha, “COCO-OOC dataset,” Apr. 2024. [2] K. Amara, L. Klein, C. Lüth, P. Jäger, H. Strobelt, and M. El-Assady, “Why context matters in VQA and Reasoning: Semantic interventions for VLM input modalities,” Oct. 2024. [3] S. Chandhok. SceneGPT: A Language Model for 3D Scene Understanding. [Online]. Available: http://arxiv.org/abs/2408.06926 [4] S. Chen, T. Zhu, R. Zhou, J. Zhang, S. Gao, J. C. Niebles, M. Geva, J. He, J. Wu, and M. Li, “Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas.” [5] D. Choi, S. Lee, and Y. Song, “Better safe than sorry? overreaction problem of vision language models in visual emergency recognition,” 
+
+arXiv preprint arXiv:2505.15367 , 2025. [6] J. M. Deniz, A. S. Kelboucas, and R. B. Grando, “Real-time robotics situation awareness for accident prevention in industry,” 2024. [7] S. Destercke, “Multilabel Prediction with Probability Sets: The Ham-ming Loss Case,” in Information Processing and Management of Un-certainty in Knowledge-Based Systems . Cham: Springer International Publishing, 2014, vol. 443, pp. 496–505. [8] V. Di Pasquale, V. De Simone, S. Miranda, and S. Riemma, “Smart operators: How industry 4.0 is affecting the worker’s performance in manufacturing contexts,” Procedia Computer Science , vol. 180, pp. 958–967, 2021. [9] B. Dwyer, J. Nelson, T. Hansen et al. , “Roboflow,” 2026, computer Vision Management Platform. [Online]. Available: https: //roboflow.com [10] A. Elhafsi, R. Sinha, C. Agia, E. Schmerling, I. A. D. Nesnas, and M. Pavone, “Semantic anomaly detection with large language models,” 
+
+Autonomous Robots , vol. 47, no. 8, pp. 1035–1055, Dec. 2023. [11] M. R. Endsley and E. S. Connors, “Situation awareness: State of the art,” in 2008 IEEE Power and Energy Society General Meeting - Conversion and Delivery of Electrical Energy in the 21st Century .Pittsburgh, PA, USA: IEEE, July 2008, pp. 1–4. [12] M. Eskandari, M. K. V. Indukuri, S. M. Lukin, and C. Matuszek, “LLM-supported safety annotation in high-risk environments,” in 
+
+Proceedings of the HRI 2025 Workshop on Vision-Based Assistance for Manipulation in Human-Robot Interaction (VAM-HRI) , 2025. [Online]. Available: https://openreview.net/forum?id=Ewg3WsMBRv [13] P. Fratczak, Y. M. Goh, P. Kinnell, A. Soltoggio, and L. Justham, “Understanding human behaviour in industrial human– robot interaction by means of virtual reality,” in Proceedings of the Halfway to the Future Symposium 2019 . Nottingham, United Kingdom: ACM, 2019, pp. 1–7. [Online]. Available: https://dl.acm.org/doi/10.1145/3363384.3363403 [14] grad, “interior computer vision dataset,” 2024. [Online]. Available: https://universe.roboflow.com/grad-ltvg6/interior-umkr0 [15] W. Huang, “When hci meets hri: The intersection and distinction,” 
+
+Virginia Polytechnic Institute and State University , 2015. [16] A. S. H. Identifier, “Safety hazard identification computer vision model,” 2025. [Online]. Available: https://universe.roboflow.com/ ai-safety-hazard-identifier/safety-hazard-identification [17] V. Jayawardene, T. Huggins, R. Prasanna, and B. Fakhruddin, “The role of data and information quality during disaster response decision-making,” Progress in Disaster Science , vol. 12, p. 100202, 08 2021. [18] F. Jentsch, Human-Robot Interactions in Future Military Operations .CRC Press, 2016. [19] Y. Kim, A. S. Abdelrahman, and M. Abdel-Aty, “VRU-accident: A vision-language benchmark for video question answering and dense captioning for accident scene understanding,” 2025. [20] J. Ko, “firefighter computer vision dataset,” 2022. [Online]. Available: https://universe.roboflow.com/juyeon-ko/firefighter [21] krauseswelt, “aerial computer vision model,” 2024. [Online]. Available: https://universe.roboflow.com/krauseswelt/aerial-qjpyp [22] A. Kritharoula, M. Lymperaiou, and G. Stamou, “Large Language Models and Multimodal Retrieval for Visual Word Sense Disambigua-tion,” in Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , 2023, pp. 13 053–13 077. [23] S. Lin, C. Wang, X. Ding, Y. Wang, B. Du, L. Song, C. Wang, and H. Liu, “A vlm-based method for visual anomaly detection in robotic scientific laboratories,” arXiv preprint arXiv:2506.05405 ,2025. [Online]. Available: https://arxiv.org/abs/2506.05405 [24] S. Misra, P. Roberts, and M. Rhodes, “Information overload, stress, and emergency managerial thinking,” International Journal of Disaster Risk Reduction , vol. 46, p. 101615, 2020. [Online]. Available: https: //www.sciencedirect.com/science/article/pii/S2212420920312644 [25] model v2, “Natural disaster damage computer vision model,” 2023. [Online]. Available: https://universe.roboflow.com/model-v2/ natural-disaster-damage-np4mh [26] Nhyan, “Chemical spill computer vision model,” 2025. [Online]. Available: https://universe.roboflow.com/nhyan/chemical-spill-b5dmp [27] Occupational Safety and Health Administration (OSHA), “Hazard assessment and job safety analysis,” 2018, u.S. Department of Labor, Occupational Safety and Health Administration. [28] M. Olbrich, H. Graf, J. Keil, R. Gad, S. Bamfaste, and F. Nicolini, “Virtual reality based space operations – a study of esa’s potential for vr based training and simulation,” in Virtual, Augmented and Mixed Reality: Interaction, Navigation, Visualization, Embodiment, and Simulation , J. Y. C. Chen and G. Fragomeni, Eds. Cham: Springer, 2018, vol. 10909, pp. 438–451. [29] P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, and A. T. Nguyen, “Vision language models are blind,” in Proceedings of the Asian Conference on Computer Vision (ACCV) , December 2024, pp. 18–34. [30] P. Röttger, G. Attanasio, F. Friedrich, J. Goldzycher, A. Parrish, R. Bhardwaj, C. D. Bonaventura, R. Eng, G. E. K. Geagea, S. Goswami, J. Han, D. Hovy, S. Jeong, P. Jeretiˇ c, F. M. Plaza-del-Arco, D. Rooein, P. Schramowski, A. Shaitarova, X. Shen, R. Willats, A. Zugarini, and B. Vidgen, “MSTS: A Multimodal Safety Test Suite for Vision-Language Models,” Jan. 2025. [31] S. D. B. SHAFIZAL, “Classification ppe computer vision model,” 2025. [Online]. Available: https://universe.roboflow.com/ shafia-diana-binti-shafizal/classification-ppe [32] D. Sumanathilaka, N. Micallef, and J. Hough, “Assessing GPT’s Potential for Word Sense Disambiguation: A Quantitative Evaluation on Prompt Engineering Techniques,” in 2024 IEEE 15th Control and System Graduate Research Colloquium (ICSGRC) , Aug. 2024, pp. 204–209. [33] T. Thrush, R. Jiang, M. Bartolo, A. Singh, A. Williams, D. Kiela, and C. Ross, “Winoground: Probing vision and language models for visio-linguistic compositionality,” 2022, version Number: 2. [Online]. Available: https://arxiv.org/abs/2204.03162 [34] R. Wadhawan, H. Bansal, K.-W. Chang, and N. Peng, “ConTextual: Evaluating Context-Sensitive Text-Rich Visual Reasoning in Large Multimodal Models,” Jul. 2024. [35] Z. Weng, L. Gomez, T. W. Webb, and P. Bashivan, “Caption This, Reason That: VLMs Caught in the Middle,” May 2025. [36] D. Xiao, M. Dianati, P. Jennings, and R. Woodman, “HazardVLM: A Video Language Model for Real-Time Hazard Description in Auto-mated Driving Systems,” IEEE Transactions on Intelligent Vehicles ,vol. 10, no. 5, pp. 3331–3343, May 2025. [37] H. Xu, G. Ghosh, P.-Y. Huang, P. Arora, M. Aminzadeh, C. Feicht-enhofer, F. Metze, and L. Zettlemoyer, “VLM: Task-agnostic Video-Language Model Pre-training for Video Understanding,” Sep. 2021. [38] J. H. Yae, N. C. Skelly, N. C. Ranly, and P. M. LaCasse, “Leveraging large language models for word sense disambiguation,” Neural Com-puting and Applications , vol. 37, no. 6, pp. 4093–4110, Feb. 2025. [39] T. Yang, T. Jordan, N. Liu, and J. Sun, “Common inpainted objects in-n-out of context,” arXiv:2506.00721 , 2025. [Online]. Available: https://arxiv.org/abs/2506.00721 [40] X. Yue, Y. Ni, K. Zhang, T. Zheng, R. Liu, G. Zhang, S. Stevens, D. Jiang, W. Ren, Y. Sun et al. , “Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , June 2024, pp. 9556–9567. [41] J. Zhu, S. Cai, F. Deng, B. C. Ooi, and J. Wu, “Do llms understand visual anomalies? Uncovering llm’s capabilities in zero-shot anomaly detection,” in Proceedings of the 32nd ACM International Conference on Multimedia , ser. Mm ’24. New York, NY, USA: Association for Computing Machinery, 2024, pp. 48–57.

@@ -1,121 +1,27 @@
 {
-  "generated_at": "2026-07-21T21:30:07.376155+00:00",
-  "updated_date": "20260721",
+  "generated_at": "2026-07-22T21:41:28.163109+00:00",
+  "updated_date": "20260722",
   "carryover_days": 9,
   "tag_states": {
     "opd": {
-      "updated_date": "20260721",
+      "updated_date": "20260722",
       "carryover_days": 9,
       "items": []
     },
     "l-context-rl": {
-      "updated_date": "20260721",
+      "updated_date": "20260722",
       "carryover_days": 9,
       "items": []
     },
     "ai-safety": {
-      "updated_date": "20260721",
+      "updated_date": "20260722",
       "carryover_days": 9,
-      "items": [
-        {
-          "id": "2607.17986v1",
-          "source": "arxiv",
-          "title": "Self-State Attacks on Self-Hosted AI Agents: How Far Can OS Defenses Go?",
-          "abstract": "Self-hosted AI agents read and write their own memory and configuration files to function. An agent may get compromised via corruption of its own state -- a compromise realized via legitimate OS system call invocation. We refer to this class of threats as self-state attacks. In this paper, we investigate the OS resilience to this class of attacks. Formally, we characterize a four-axis attack space (Target, Mechanism, Granularity, Temporal); investigate the structural limits of prevention, detection, and recovery; and introduce a workload-conditioned view of detectability. To instantiate the framework, we collect live activity traces from a representative self-hosted agent running across distinct workload profiles, and realize the attack space as a 23-cell matrix, 43 concrete operations on real self-state files, and injected into those traces. We then evaluate both canonical and workload-conditioned defense strategies. The empirical results show that a layered defense stack (access-control prevention on the instruction and configuration layers, workload-conditioned detection on the memory layer, and periodic backup for recovery) is effective on most attack cells while a small residual attack surface remains structurally indistinguishable at the OS level. These findings suggest that against the newly established class of self-state attacks, OS-level defense needs to be reconsidered, potentially opening new research directions in the field.",
-          "authors": [
-            "Yimeng Chen",
-            "Nathanaël Denis",
-            "Roberto Di Pietro",
-            "Jürgen Schmidhuber"
-          ],
-          "primary_category": "cs.CR",
-          "categories": [
-            "cs.CR",
-            "cs.AI",
-            "cs.CL",
-            "cs.MA"
-          ],
-          "published": "2026-07-20T14:16:55+00:00",
-          "link": "https://arxiv.org/pdf/2607.17986v1",
-          "tags": [
-            "keyword:ai-safety",
-            "query:ai-safety",
-            "query:opd"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "self-state attacks on self-hosted AI agents",
-          "llm_evidence_cn": "自托管AI智能体的自状态攻击",
-          "llm_evidence": "自托管AI智能体的自状态攻击",
-          "canonical_evidence": "自托管AI智能体的自状态攻击",
-          "llm_tldr_en": "Characterizes self-state attacks where agents are compromised via corruption of their own memory/config files, measures OS resilience across four-axis attack space.",
-          "llm_tldr_cn": "自托管AI智能体依赖自身内存和配置文件运行，攻击者可通过操纵这些状态（自状态攻击）来破坏智能体。本文形式化定义了一个四轴攻击空间（目标、机制、粒度、时间维度），并评估了操作系统对此类攻击的预防、检测和恢复能力。通过收集代表性智能体在不同工作负载下的活动轨迹，实现了23种具体攻击实例。该工作揭示了现有OS防御在自状态攻击面前的局限性，为设计更安全的智能体系统提供了指导。",
-          "llm_tldr": "自托管AI智能体依赖自身内存和配置文件运行，攻击者可通过操纵这些状态（自状态攻击）来破坏智能体。本文形式化定义了一个四轴攻击空间（目标、机制、粒度、时间维度），并评估了操作系统对此类攻击的预防、检测和恢复能力。通过收集代表性智能体在不同工作负载下的活动轨迹，实现了23种具体攻击实例。该工作揭示了现有OS防御在自状态攻击面前的局限性，为设计更安全的智能体系统提供了指导。",
-          "llm_tags": [
-            "query:ai-safety"
-          ],
-          "matched_query_tag": "query:ai-safety",
-          "matched_query_text": "agent safety",
-          "matched_requirement_id": "req-14",
-          "selection_source": "carryover_cache",
-          "paper_id": "2607.17986v1",
-          "carry_days": 1
-        }
-      ]
+      "items": []
     },
     "eff-reason": {
-      "updated_date": "20260721",
+      "updated_date": "20260722",
       "carryover_days": 9,
-      "items": [
-        {
-          "id": "2607.18100v1",
-          "source": "arxiv",
-          "title": "Can We Break LLMs Out of Self-Loops? Fine-Grained Reasoning Control with Activation Steering",
-          "abstract": "Extended reasoning has become standard for frontier Large Language Models (LLMs), yet the trajectories these models produce remain largely uncontrollable. Existing methods for shaping how a model reasons are prompt based approaches and operate at the input level, offering no fine-grained control over the reasoning process itself. Related work analyzes and discovers latent transition dynamics in the reasoning traces from Large Language Models. Building on this, we statistically characterize these states, and show that failure trajectories get stuck in self-loops, exhausting the token budget without progress toward the final answer. To intervene on these failures, We propose SOPHIA: Steering Of reasoning Processes via Hidden-state Intervention and Activations. We treat each reasoning trace as a sequence of latent states rather than an unstructured texts, and investigate whether inference time interventions can provide fine-grained control over the self-looping reasoning process. We classify every prefix to a latent state, record step level transitions, and use them to construct a bank of steering vectors indexed by state pairs. At inference time, a controller infers the current state and, given a target state, retrieves the corresponding vector and can also detect self-loops online from the transition structure to prevent the model from sinking into a reasoning black hole. Through extensive experiments, our method reliably intervenes on self-loop failures, with steering vectors that generalize to different state pairs. End task accuracy and token efficiency indicate that fine-grained controllability results in better reasoning quality.",
-          "authors": [
-            "Sheldon Yu",
-            "Tong Yu",
-            "Xunyi Jiang",
-            "Rohan Surana",
-            "Gagan Mundada",
-            "Sungchul Kim",
-            "Lina Yao",
-            "Julian McAuley",
-            "Junda Wu"
-          ],
-          "primary_category": "cs.AI",
-          "categories": [
-            "cs.AI"
-          ],
-          "published": "2026-07-20T16:01:57+00:00",
-          "link": "https://arxiv.org/pdf/2607.18100v1",
-          "tags": [
-            "keyword:eff-reason",
-            "keyword:l-context-rl",
-            "keyword:opd",
-            "query:ai-safety",
-            "query:eff-reason",
-            "query:l-context-rl",
-            "query:opd"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "fine-grained reasoning control via activation steering to break self-loops, improving efficiency",
-          "llm_evidence_cn": "通过激活引导进行细粒度推理控制，打破自循环，提升效率",
-          "llm_evidence": "通过激活引导进行细粒度推理控制，打破自循环，提升效率",
-          "canonical_evidence": "通过激活引导进行细粒度推理控制，打破自循环，提升效率",
-          "llm_tldr_en": "SOPHIA identifies self-loops in LLM reasoning and uses activation steering to break them, reducing wasted tokens and improving success rate.",
-          "llm_tldr_cn": "大语言模型在扩展推理中可能陷入自循环，耗尽预算而不进步。SOPHIA通过统计表征推理状态，识别自循环，并利用隐藏状态激活引导干预，从而打破循环。实验证明该方法有效减少失败路径的令牌消耗。",
-          "llm_tldr": "大语言模型在扩展推理中可能陷入自循环，耗尽预算而不进步。SOPHIA通过统计表征推理状态，识别自循环，并利用隐藏状态激活引导干预，从而打破循环。实验证明该方法有效减少失败路径的令牌消耗。",
-          "llm_tags": [
-            "query:eff-reason"
-          ],
-          "matched_query_tag": "query:eff-reason",
-          "matched_query_text": "efficient reasoning methods",
-          "matched_requirement_id": "req-24",
-          "selection_source": "carryover_cache",
-          "paper_id": "2607.18100v1",
-          "carry_days": 1
-        }
-      ]
+      "items": []
     },
     "agent-swarm": {
       "updated_date": "20260612",

@@ -8,91 +8,89 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-21
-- 运行时间：2026-07-21 21:41:50 UTC
+- 最新运行日期：2026-07-22
+- 运行时间：2026-07-22 21:52:22 UTC
 - 运行状态：成功
 - 本次总论文数：23
 - 精读区：9
 - 速读区：14
 
 ### 今日简报（AI）
-今日聚焦掩码扩散语言模型的策略蒸馏与推理差距弥补，共精读9篇、速读14篇，其中两篇满分研究引起关注。
-重点推荐“基于轨迹的在线策略蒸馏”和“覆盖自适应策略蒸馏”两个方向，分别提升扩散语言模型生成质量与模型推理能力。
-建议关注多轮搜索推理中的过程奖励归因及大型语言模型安全评估的潜在风险。
-- 详情：[/202607/21/README](/202607/21/README)
+今日聚焦于提升大模型推理能力的两大方向：覆盖自适应策略蒸馏与对比策略蒸馏，以及推理控制技术的突破。精读的两篇10分论文《CADENCE》和《Contrastive On-Policy Distillation》最值得看，它们给出了解决推理泛化差距的新方法。建议优先研读这两篇论文，理解如何通过策略蒸馏让模型在复杂推理任务中表现更稳定。
+- 详情：[/202607/22/README](/202607/22/README)
 
 ### 精读区论文标签
-1. [Trace-Based On-Policy Distillation for Masked Diffusion Language Models](/202607/21/2607.16872v1-trace-based-on-policy-distillation-for-masked-diffusion-language-models)  
+1. [CADENCE: Closing the Reasoning Gap via Coverage-Adaptive On-Policy Distillation](/202607/22/2607.16955v1-cadence-closing-the-reasoning-gap-via-coverage-adaptive-on-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：基于轨迹的在线策略蒸馏用于扩散语言模型
-2. [CADENCE: Closing the Reasoning Gap via Coverage-Adaptive On-Policy Distillation](/202607/21/2607.16955v1-cadence-closing-the-reasoning-gap-via-coverage-adaptive-on-policy-distillation)  
+   evidence：覆盖自适应on-policy蒸馏用于推理任务
+2. [Contrastive On-Policy Distillation](/202607/22/2607.19046v1-contrastive-on-policy-distillation)  
    标签：评分：10.0/10、query:opd
-   evidence：CADENCE直接针对推理任务中的在线策略知识蒸馏
-3. [Distilled Reinforcement Learning for LLM Post-training](/202607/21/2607.17247v1-distilled-reinforcement-learning-for-llm-post-training)  
-   标签：评分：10.0/10、query:opd
-   evidence：提出蒸馏强化学习，将教师监督融入RL目标，解决on-policy蒸馏的局限性
-4. [LLM-as-a-Coach: Experiential Learning for Non-Verifiable Tasks](/202607/21/2607.18110v1-llm-as-a-coach-experiential-learning-for-non-verifiable-tasks)  
-   标签：评分：10.0/10、query:opd
-   evidence：教师-学生框架中的在线上下文蒸馏
-5. [How Jailbreak Attacks Inform Safety Alignment: A Defender-Centric, Shapley-Based Evaluation of Jailbreak Contributions](/202607/21/2607.17152v1-how-jailbreak-attacks-inform-safety-alignment-a-defender-centric-shapley-based-evaluation-of-jailbreak-contributions)  
+   evidence：面向语言模型的对比式同策略蒸馏
+3. [Refusal is Not Safety! Benchmarking Latent Safety Risks of LLM-Driven Content Humorization](/202607/22/2607.15977v1-refusal-is-not-safety-benchmarking-latent-safety-risks-of-llm-driven-content-humorization)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：越狱攻击安全评估
-6. [Between Safe Boundaries: Exploiting Temporal Consistency for Jailbreaking Text-To-Video Generation Models](/202607/21/2607.17279v1-between-safe-boundaries-exploiting-temporal-consistency-for-jailbreaking-text-to-video-generation-models)  
+   evidence：安全风险，越狱，拒绝机制，基准测试
+4. [Distilled Reinforcement Learning for LLM Post-training](/202607/22/2607.17247v1-distilled-reinforcement-learning-for-llm-post-training)  
+   标签：评分：9.0/10、query:opd
+   evidence：直接针对LLM后训练中的on-policy蒸馏与强化学习
+5. [WAR: Workload-Aware Rollouts for Synchronous Agentic Reinforcement Learning](/202607/22/2607.17299v1-war-workload-aware-rollouts-for-synchronous-agentic-reinforcement-learning)  
+   标签：评分：9.0/10、query:l-context-rl
+   evidence：同步智能体强化学习的工作负载感知rollout生成
+6. [SciHazard: A Benchmark for Measuring Scientific Safety Risks with Decomposed Harm Scoring](/202607/22/2607.18665v1-scihazard-a-benchmark-for-measuring-scientific-safety-risks-with-decomposed-harm-scoring)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：对文本到视频模型的越狱攻击
-7. [A Dual-Hypothesis Reasoning Framework for LLM Guardrails](/202607/21/2607.17575v1-a-dual-hypothesis-reasoning-framework-for-llm-guardrails)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：双假设推理用于LLM安全护栏
-8. [Dynamic Defense Profiling Enables Cognitive Jailbreak of Text-to-Image Models](/202607/21/2607.17779v1-dynamic-defense-profiling-enables-cognitive-jailbreak-of-text-to-image-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：针对文生图模型的认知越狱框架
-9. [Certifiable Safe Model-Based Reinforcement Learning with Control-Affine Dynamics Approximation](/202607/21/2607.16501v1-certifiable-safe-model-based-reinforcement-learning-with-control-affine-dynamics-approximation)  
+   evidence：科学安全风险基准
+7. [H$^2$SD: Hybrid Hindsight Self-Distillation](/202607/22/2607.18955v1-h2sd-hybrid-hindsight-self-distillation)  
+   标签：评分：9.0/10、query:opd
+   evidence：在线策略蒸馏，混合后见之明自蒸馏
+8. [Self-State Attacks on Self-Hosted AI Agents: How Far Can OS Defenses Go?](/202607/22/2607.17986v1-self-state-attacks-on-self-hosted-ai-agents-how-far-can-os-defenses-go)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：可认证安全的模型强化学习方法
+   evidence：自状态攻击直接涉及代理安全
+9. [Hazard or Anomaly? Evaluating VLMs for Understanding Dangers and Discrepancies](/202607/22/2607.18325v1-hazard-or-anomaly-evaluating-vlms-for-understanding-dangers-and-discrepancies)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：评估VLM区分危险与异常的能力，构建安全基准
 
 ### 速读区论文标签
-1. [LOTAPO: Leave-One-Turn Attribution for Self-Generated Process Rewards in Multi-Turn Search Reasoning](/202607/21/2607.13501v2-lotapo-leave-one-turn-attribution-for-self-generated-process-rewards-in-multi-turn-search-reasoning)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：多轮搜索推理中自生成过程奖励
-2. [Refusal is Not Safety! Benchmarking Latent Safety Risks of LLM-Driven Content Humorization](/202607/21/2607.15977v1-refusal-is-not-safety-benchmarking-latent-safety-risks-of-llm-driven-content-humorization)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：LLM幽默化内容的安全风险基准
-3. [Token-Wise Latent Streaming from Slow Reasoners to Fast Planners for Dynamic Vision Language Navigation](/202607/21/2607.16806v1-token-wise-latent-streaming-from-slow-reasoners-to-fast-planners-for-dynamic-vision-language-navigation)  
+1. [Constraint-Anchored Reasoning Traces](/202607/22/2607.16727v1-constraint-anchored-reasoning-traces)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：通过将慢推理器隐状态流式传输到快规划器实现高效推理
-4. [LenGuard-GPC: Length Guarding with Guided-Prompt Consistency for Spatial Reasoning Reinforce Learning](/202607/21/2607.17243v1-lenguard-gpc-length-guarding-with-guided-prompt-consistency-for-spatial-reasoning-reinforce-learning)  
-   标签：评分：8.0/10、query:l-context-rl
-   evidence：针对长视觉上下文空间推理的RL密集奖励框架
-5. [Salience Induction against Multi-Hop RAG Agents: Threat and Defense](/202607/21/2607.17535v1-salience-induction-against-multi-hop-rag-agents-threat-and-defense)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：在RAG智能体上发现显著性诱导这一新型攻击面
-6. [Why Does Feedback-Augmented Self-Distillation Fail to Improve Retrieval-Interleaved Search Agents?](/202607/21/2607.17558v1-why-does-feedback-augmented-self-distillation-fail-to-improve-retrieval-interleaved-search-agents)  
+   evidence：通过约束锚定推理迹提高推理效率
+2. [Why Does Feedback-Augmented Self-Distillation Fail to Improve Retrieval-Interleaved Search Agents?](/202607/22/2607.17558v1-why-does-feedback-augmented-self-distillation-fail-to-improve-retrieval-interleaved-search-agents)  
    标签：评分：8.0/10、query:opd
-   evidence：分析on-policy自蒸馏在智能体任务中的失败原因
-7. [C$^2$KV: Compressed and Composable KV Cache Reuse for Efficient LLM Inference](/202607/21/2607.17715v1-c2kv-compressed-and-composable-kv-cache-reuse-for-efficient-llm-inference)  
+   evidence：on-policy自蒸馏在智能体搜索中的失败分析
+3. [Can We Break LLMs Out of Self-Loops? Fine-Grained Reasoning Control with Activation Steering](/202607/22/2607.18100v1-can-we-break-llms-out-of-self-loops-fine-grained-reasoning-control-with-activation-steering)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：KV缓存压缩与重用实现高效LLM推理
-8. [ToolAtlas: Learning Once, Reusing Everywhere with Tool-Side Memory](/202607/21/2607.11126v1-toolatlas-learning-once-reusing-everywhere-with-tool-side-memory)  
-   标签：评分：7.0/10、query:agent-swarm
-   evidence：ToolAtlas为LLM智能体提供工具侧记忆，支持类似集群的工具复用
-9. [Extending LLM Context via Associative Recurrent Memory](/202607/21/2607.11614v1-extending-llm-context-via-associative-recurrent-memory)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：ARMT实现常数量记忆缩放，提高长上下文LLM推理效率
-10. [Process Reward Informed Tree Rollout for Effective Multi-Turn RL](/202607/21/2607.15610v1-process-reward-informed-tree-rollout-for-effective-multi-turn-rl)  
+   evidence：打破推理自我循环以节约token预算；激活导向方法
+4. [Copy Less, Ground More: Overcoming Repetitive Copying in Long-Context Reasoning via Evidence-Aware Reinforcement Learning](/202607/22/2607.19345v1-copy-less-ground-more-overcoming-repetitive-copying-in-long-context-reasoning-via-evidence-aware-reinforcement-learning)  
+   标签：评分：8.0/10、query:l-context-rl
+   evidence：长上下文推理的强化学习训练
+5. [RECON: Benchmarking Agent Memory for Compositional Reasoning over Long Contexts](/202607/22/2607.16716v1-recon-benchmarking-agent-memory-for-compositional-reasoning-over-long-contexts)  
    标签：评分：7.0/10、query:l-context-rl
-   evidence：针对长视界智能体任务的RL树搜索自适应展开
-11. [When to Plan: Learning to Select Between Reactive Control and Deliberative Planning](/202607/21/2607.16421v1-when-to-plan-learning-to-select-between-reactive-control-and-deliberative-planning)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：学习在快速反应策略与慢速深思规划间选择以优化推理效率
-12. [Lomekwi: Resource-Bounded Tool Discovery in LLM Agents](/202607/21/2607.16961v1-lomekwi-resource-bounded-tool-discovery-in-llm-agents)  
+   evidence：长上下文组合推理的基准，与长上下文强化学习评估相关
+6. [RELIC: Revealed Principles for Learning Interpretable Composable Skills in Multi-Agent Planning](/202607/22/2607.16745v1-relic-revealed-principles-for-learning-interpretable-composable-skills-in-multi-agent-planning)  
    标签：评分：7.0/10、query:agent-swarm
-   evidence：LLM agent的工具发现框架
-13. [MXSens: Sensitivity-Aware Mixed-Precision Quantization for Efficient LLM Inference](/202607/21/2607.17733v1-mxsens-sensitivity-aware-mixed-precision-quantization-for-efficient-llm-inference)  
-   标签：评分：6.0/10、query:eff-reason
-   evidence：通过混合精度量化实现高效LLM推理
-14. [PPL-Factory: Task-Aware and Budget-Aware Data Selection from Language Modeling to Reasoning](/202607/21/2607.18199v1-ppl-factory-task-aware-and-budget-aware-data-selection-from-language-modeling-to-reasoning)  
-   标签：评分：6.0/10、query:eff-reason
-   evidence：PPL-Factory选择信息性样本用于高效推理微调
+   evidence：多智能体技能学习与私有LLM搜索实现可组合技能
+7. [Beyond Semantic Equivalence: Logical Graphs for LLM Uncertainty Quantification](/202607/22/2607.16868v1-beyond-semantic-equivalence-logical-graphs-for-llm-uncertainty-quantification)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：面向安全敏感场景的大模型不确定性量化
+8. [MADA-RL: Multi-Agent Debate-Aware Reinforcement Learning for Parameter-Efficient Reasoning in Compact Models](/202607/22/2607.18006v1-mada-rl-multi-agent-debate-aware-reinforcement-learning-for-parameter-efficient-reasoning-in-compact-models)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：参数高效推理，紧凑模型，辩论感知学习
+9. [DAIS: Dependency-Aware Intermediate QA Supervision for Complex Reasoning](/202607/22/2607.19088v1-dais-dependency-aware-intermediate-qa-supervision-for-complex-reasoning)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：从教师推理过程提炼中间QA监督用于复杂推理
+10. [Agents in the Wild: Where Research Meets Deployment](/202607/22/2607.19336v1-agents-in-the-wild-where-research-meets-deployment)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：讨论了LLM智能体部署中的安全挑战
+11. [Policy-Conditioned Constrained Decoding for Column-Level Access Control in Text-to-SQL](/202607/22/2607.12341v1-policy-conditioned-constrained-decoding-for-column-level-access-control-in-text-to-sql)  
+   标签：评分：6.0/10、query:ai-safety
+   evidence：Text-to-SQL中面向列级访问控制的策略约束解码
+12. [Memory as a Controlled Process: Learned Adaptive Memory Management for LLM Agents](/202607/22/2607.13591v1-memory-as-a-controlled-process-learned-adaptive-memory-management-for-llm-agents)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：LLM智能体的自适应记忆管理，对智能体集群协调有用
+13. [Value-Aware Prediction for Robust Multi-Agent Coordination Under Communication Loss](/202607/22/2607.17914v1-value-aware-prediction-for-robust-multi-agent-coordination-under-communication-loss)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：提出了通信丢失下的价值感知预测方法，与智能体集群的鲁棒性相关
+14. [Search-on-Graph-R1: Training Large Language Models to Search Knowledge Graphs with Reinforcement Learning](/202607/22/2607.18481v1-search-on-graph-r1-training-large-language-models-to-search-knowledge-graphs-with-reinforcement-learning)  
+   标签：评分：6.0/10、query:opd
+   evidence：使用教师-学生框架和RL进行知识图谱问答，类似蒸馏
 
 
 <div class="dpr-home-promo-card">
