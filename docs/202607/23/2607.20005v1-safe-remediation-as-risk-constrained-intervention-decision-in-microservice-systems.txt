@@ -1,0 +1,479 @@
+Title: Safe Remediation as Risk-Constrained Intervention Decision in Microservice Systems
+
+URL Source: https://arxiv.org/pdf/2607.20005v1
+
+Published Time: Thu, 23 Jul 2026 00:44:24 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Safe Remediation as Risk-Constrained Intervention Decision in Microservice Systems 
+
+Chengxiao Dai 1, Zhaokun Yan 3, Chenjun Lei 4, Qiao Li 5, Luyan Zhang 2,∗
+
+Abstract — In modern IT operations (IT-Ops), the cost of an incorrect repair often exceeds the cost of no action at all. Yet existing automated remediation systems are designed to 
+
+generate actions rather than to decide whether intervention is warranted, leaving safety as an afterthought enforced by man-ual approval. This paper makes three contributions to close this gap: (i) we reformulate safe remediation as a risk-constrained 
+
+intervention decision problem and cast it as a Constrained Markov Decision Process (CMDP) in which the agent maximizes repair success subject to a bounded false remediation rate (FRR); (ii) we introduce a three-dimensional risk decomposition comprising blast radius, reversibility, and epistemic uncertainty, providing operators with an interpretable, per-action safety interface; and (iii) we design a context-adaptive human-in-the-loop (HITL) gate that turns escalation from a binary failsafe into a bandwidth-aware control layer responsive to on-call load and business criticality. The full policy is learned offline from historical incident logs, enabling explicit control of the expected FRR. Experiments on the Train Ticket microservice benchmark with Chaos Mesh fault injection and an RCAEval-aligned fault taxonomy show that our framework reduces FRR by 39% while improving repair success by 2.5 points over a strong runbook baseline, and cuts on-call escalation load by 17% relative to a fixed-threshold variant. 
+
+I. INTRODUCTION Modern cloud-native and microservice systems generate a continuous stream of incidents. Automated remediation, exe-cuting repair actions without human intervention, promises to reduce Mean Time To Recovery (MTTR) and relieve on-call engineers [1], and recent large language models (LLMs) and agentic systems can automatically generate plausible actions from runbooks, tickets, and telemetry [2], [3], opening a path toward autonomous operations. However, a fundamental gap remains between generating 
+
+and executing actions. The cost of a wrong action is highly asymmetric: a misdirected repair can cascade into broader outages, erode trust, and trigger costly rollbacks [4] (e.g., a restart on a stateful service corrupts in-flight state; a rollback on a healthy replica cuts capacity as demand spikes). This is why most pipelines remain gated by manual ap-proval or narrow rule-based automation. Existing automated approaches instead conflate two decisions in one scoring 
+
+> ∗Corresponding author (
+
+zhang.luya@northeastern.edu ). 
+
+> 1School of Computer Science, University of Sydney, Sydney, Australia.
+> 2Khoury College of Computer Sciences, Northeastern University, Boston, USA.
+> 3School of Computation, Information and Technology, Technical Univer-sity of Munich, Munich, Germany.
+> 4College of Business and Economics, Australian National University, Canberra, Australia.
+> 5School of Computer Science and Technology, Fujian Normal University, Fuzhou, China.
+
+pipeline, which candidate to consider and whether it is safe to execute, optimizing success rate while implicitly ignoring risk asymmetry. The bottleneck is not the what but the 
+
+whether and when : what is missing is a decision layer that explicitly reasons about risk, uncertainty, and consequence before committing to execution. This paper argues that safe automated remediation should be optimized for intervention decision rather than action generation : the deployment bottleneck is not proposing can-didates but deciding whether intervention is safe enough to execute under operational risk. We make three contribu-tions that convert “candidate generation” into “deployable decision-making.” 
+
+(1) Decision-centric reformulation. We recast remediation as a risk-constrained intervention decision and formalize it as a Constrained Markov Decision Process (CMDP) whose action space spans execution, escalation, evidence-gathering, and deliberate abstention, so the policy optimizes whether to act, not merely which action to propose. This exposes safety as a first-class objective rather than a downstream filter. 
+
+(2) A deployable safety interface. We introduce a three-dimensional risk representation, blast radius, reversibility, and epistemic uncertainty, that replaces an uninterpretable scalar with per-action, dimension-specific knobs mapping di-rectly to operational concerns: how widely an action spreads, whether it can be undone, and how confident the model is. 
+
+(3) Bandwidth-aware autonomy control. We design acontext-adaptive human-in-the-loop (HITL) gate that mod-ulates escalation on real-time on-call load, business criti-cality, and diagnosis confidence, converting escalation from a binary failsafe into a bandwidth-aware control layer that respects operators’ finite attention. We evaluate on the Train Ticket benchmark [5] with Chaos Mesh [6] fault injection over an RCAEval-aligned taxonomy [7], where our method attains the best success-safety trade-off (Sec. V). Fig. 1 overviews the framework. II. RELATED WORK 
+
+AIOps and automated remediation. AIOps pipelines have progressed from anomaly detection and alert correlation to root cause analysis and runbook-driven automation [1], [8]. Localization methods (MicroRCA [9]) and end-to-end frame-works (Eadro [10]) improve diagnostic accuracy on multi-source telemetry, supplying the upstream signals remediation depends on. Classical rule-engine remediation is reliable but low-coverage, while LLM generators [2], [3], [11] expand coverage; both produce candidates and assume a downstream arXiv:2607.20005v1 [cs.AI] 22 Jul 2026 Incident   
+
+> State 𝑺 𝒕
+> Screen Feasible Actions
+> Execute
+> Escalate
+> Wait
+> No -op
+
+Conventional paradigm: Action Generation + Scalar Thresholding 
+
+Risk  - Constrained Intervention Decision Framework           
+
+> 3D Risk Estimator CMDP Policy
+> Analogue Outcome Scorer
+> Adaptive HITL Gate
+> Historical Incident Trajectories 𝓓
+> Over -
+> escalation
+> Metrics
+> Unsafe
+> execution
+> Action proposal Scalar score /
+> threshold
+> Metrics Logs
+> Traces Topology
+> RCA Confidence
+> Ops Context
+> Past
+> Incidents Actions Rollback
+> Outcomes
+> False
+> remediations
+> Operator
+> Decisions
+
+…                                              
+
+> •Load
+> •Criticality
+> •Confidence
+> Incident
+> Retrieval
+> Nearest -neighbour
+> incident archive
+> Similarity weighted
+> aggregation
+> Compare Utilities
+> Blast Radius
+> Reversibility
+> Epistemic Uncertainty
+> Dependency
+> Propagation
+> Rollback
+> Likelihood
+> Ensemble
+> Disagreement
+> Incident
+> inputs
+> Logs
+> Topology
+> Candidate
+> actions Traces
+> Feedback
+> Offline Historical
+> Incident Logs
+> Training Write -back
+> Write -back
+> 𝝅 𝒔 =𝐚𝐫𝐠 𝐦𝐚𝐱 𝑸 𝒔 ,𝒂 s.t. 𝒓 𝒔 ,𝒂 ≼𝝉 𝒔
+> 𝒓 𝒔 ,𝒂
+> =
+> 𝒃 𝒔 ,𝒂
+> 𝟏 −𝝆 𝒔 ,𝒂
+> 𝒖 𝒔 ,𝒂
+> ෡𝑷 𝒔𝒖𝒄𝒄𝒆𝒔𝒔 𝒔 ,𝒂
+> per -action
+> risk vector
+> 𝒃 𝒔 ,𝒂
+> 𝟏 −𝝆 𝒔 ,𝒂
+> 𝒖 𝒔 ,𝒂
+> Unsafe
+> outcomes
+> Execute
+> vs
+> Escalate
+
+Fig. 1. Proposed risk-aware remediation framework. 
+
+rule or human filters unsafe actions, the safety-aware decision layer we supply. 
+
+Safe RL and constrained MDPs. Constrained MDPs [12] and Lagrangian methods trade reward against safety cost. CPO [13] enforces per-update constraints via trust regions but needs online interaction; offline CQL [14] penalizes out-of-distribution actions but treats safety as a soft penalty, and recent offline-RL work adds Lagrangian constraints yet models risk as one scalar budget. We decompose risk into per-dimension constraints integrated with offline Lagrangian learning for IT operations, where blast radius, reversibility, and uncertainty carry distinct semantics. 
+
+Counterfactual outcome estimation. Causal and counter-factual policy evaluation estimate intervention outcomes in healthcare and recommendation [15], [16] but are under-explored in IT operations despite a natural fit; we use a retrieval-augmented estimator over incident analogues, cap-turing this spirit without a causal graph. 
+
+HITL autonomous systems. Prior HITL frameworks use static or confidence-based escalation thresholds [17] that ignore operational context, and selective classification [18] adapts to uncertainty but not to signals such as on-call load. Our contextual bandit makes escalation a learnable function of operational state. 
+
+Risk estimation in systems. Blast radius [19] and reversibil-ity [20] have been studied for static dependency and config-uration analysis; no prior remediation work operationalizes these dimensions within a constrained decision framework. III. PROBLEM FORMULATION 
+
+System model. We consider an IT operations environment monitored by a telemetry stack (logs, metrics, traces, alerts). The state st ∈ S is a feature vector aggregating: (i) the diagnosed root cause and its confidence from an upstream diagnosis module (treated as a black box [2]); (ii) affected-service summaries and topology context; (iii) telemetry anomaly features; and (iv) operational context ot (on-call load, time-of-day, business criticality). At each decision point, the agent must select an action from the extended action set: 
+
+A = Aexec ∪ { aescalate , a wait , a noop }, (1) where Aexec holds candidate actions proposed upstream or retrieved from runbooks, and the remaining three denote escalating to a human, requesting more evidence, and de-liberate inaction. 
+
+Constrained MDP. We model the decision as a CMDP tuple ⟨S , A, P, r, c, γ ⟩. The reward encodes repair success: 
+
+r = +1 if a resolves the incident, 0 for partial resolution or escalation, and −κ (κ > 0) for failure or worsening. The cost c(s, a ) indicates false remediation : executing an action that fails or further escalates the incident. The agent seeks: 
+
+max  
+
+> π
+
+Eπ
+
+"X
+
+> t
+
+γtr(st, a t)
+
+#
+
+s.t. Eπ
+
+"X
+
+> t
+
+γtc(st, a t)
+
+#
+
+≤ ϵsafe .
+
+(2) Unlike soft-penalty safe RL, (2) is a hard operational requirement: the operator sets an acceptable FRR ϵsafe that the policy must respect. This is a CMDP in the sense of [12], solvable via Lagrangian relaxation. 
+
+Key challenges. Three challenges distinguish this prob-lem from classical CMDPs. (i) Offline learning. Online exploration is unsafe, since executing an untested action to learn its outcome may cause an outage; the policy must be learned entirely from logged decision data. (ii) Structured risk. Two actions with identical nominal success probability may carry very different operational risk: restart db and 
+
+clear cache may both have 70% expected success, yet the former has blast radius 0.70 / reversibility 0.25 and the latter 0.10 / 0.98. A scalar score cannot distinguish them; a structured representation can. (iii) Heterogeneous action space. Execution actions carry variable risk and reward, escalation is reliable but costs on-call bandwidth, and wait trades delay for evidence; a single scoring function cannot capture these asymmetries without explicit structure. IV. METHOD The framework has four components, trained jointly on offline incident logs (Sec. IV-E): a 3D risk estimator (IV-A), an analogue-based outcome scorer (IV-B), a risk-constrained policy (IV-C), and an adaptive HITL gate (IV-D). 
+
+A. Three-Dimensional Risk Representation 
+
+Given a candidate action a ∈ A exec in state s, we compute a risk vector: 
+
+r(s, a ) = [ b(s, a ), 1 − ρ(s, a ), u (s, a ) ] ⊤. (3) 
+
+Blast radius b(s, a ). We propagate the influence of action a
+
+over the service dependency graph G = ( V, E ) via a learned diffusion kernel on graph powers: 
+
+b(s, a ) = 1
+
+|V |
+
+X
+
+> v∈V
+
+σb
+
+> Kdiff
+
+X
+
+> k=0
+
+αk(Ak)v, tgt (a)
+
+!
+
+, (4) where A is the row-normalized adjacency matrix, tgt (a) the target service, αk ≥ 0 (P 
+
+> k
+
+αk = 1 ) learnable weights, Kdiff 
+
+the diffusion order, and σb a learned monotone sigmoid. We fit (α, σ b) by per-service binary cross-entropy against labels 
+
+z(j) 
+
+> v
+
+∈ { 0, 1} marking whether service v showed a health-metric deviation (latency, error-rate, or saturation) within 60 s of action a(j), read from raw indicators rather than a separate anomaly detector. 
+
+Reversibility ρ(s, a ). A model ρ(s, a ) ∈ [0 , 1] predicts the probability of successful rollback, trained on historical roll-back logs where each action is labeled by whether rollback succeeded within an operational time budget, weighted by rollback latency. The risk contribution 1 − ρ is high when rollback is unlikely or slow. 
+
+Epistemic uncertainty u(s, a ). We maintain an ensemble of M =5 outcome predictors {fm}Mm=1 , each bootstrap-resampled with independent initialization, where fm : S × A → ∆2 outputs a distribution over the three outcome classes ( resolved , partial , false remediation ). Disagreement is the average L2 deviation from the ensemble mean: 
+
+u(s, a ) = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+fm(s, a ) − ¯f (s, a ) 2 , (5) with ¯f (s, a ) = 1
+
+> M
+
+P 
+
+> m
+
+fm(s, a ). High disagreement flags out-of-distribution states or actions, precisely where au-tonomous execution is most risky. We do not collapse these dimensions into a scalar: the vector is checked componentwise against a state-dependent threshold τ (s), and any single dimension exceeding its threshold rejects the action. 
+
+B. Intervention Outcome Scoring via Incident Analogues 
+
+We score the post-intervention success probability of ap-plying a in s:
+
+ˆpsuccess (s, a ) = P(resolved | s, a ) . (6) The estimator has three steps. (i) A learned encoder, trained jointly with gψ to minimize outcome-prediction loss, maps each historical incident i (diagnosed root cause, affected-service features, telemetry summary) to an embed-ding ei ∈ Rd. (ii) Given state s, we retrieve the top-
+
+K incidents closest under cosine similarity, preferring the same fault category. (iii) We aggregate their predictions by similarity: 
+
+ˆpsuccess (s, a ) = 
+
+> K
+
+X
+
+> i=1
+
+wi · gψ (s, a, e i), (7) where wi ∝ exp(cos( es, e i)/τ e) are softmax weights with temperature τe, and gψ : S × A × Rd → [0 , 1] is trained by binary cross-entropy on tuples (s(i), a (i), y (i)) with observed outcome y(i) ∈ { 0, 1}. This grounds action-value estimation in observed post-intervention outcomes, capturing the spirit of counterfactual evaluation without a fully specified causal graph. 
+
+C. Risk-Constrained Policy 
+
+The policy chooses among the extended action set accord-ing to: 
+
+π(s) = arg max  
+
+> a∈A
+
+Q(s, a ) s.t. r(s, a ) ⪯ τ (s), (8) where τ (s) is a state-dependent risk threshold and ⪯ is componentwise inequality. We compute the ranking value 
+
+Q as a convex combination of two complementary signals: 
+
+Q(s, a ) = η · ˆpsuccess (s, a ) + (1 − η) · ˜Qθ (s, a ), (9) where ˆpsuccess is the analogue estimate (7) and ˜Qθ the CQL-regularized Q-function (Sec. IV-E), min-max rescaled to [0 , 1] on validation for a common scale; the two are complementary, retrieval recall vs. parametric generalization. The mixing weight in (9) is η=0 .6, chosen by grid search over {0.3, 0.5, 0.6, 0.7}. When no execution action satisfies the constraint, the policy defaults to aescalate or await per the HITL gate (Sec. IV-D). 
+
+Inference-time procedure. Each decision proceeds in four steps: (1) compute the 3D risk vector for every candidate; (2) reject actions violating any dimension threshold; (3) select the highest-Q survivor as the tentative execution choice; (4) execute it only if its utility exceeds the HITL-modulated es-calation utility. Separating risk screening from value ranking keeps each stage independently auditable. 
+
+Two-layer safety control. Safety is enforced along the average-vs.-tail axis: at training time the scalar budget ϵsafe 
+
+governs the policy in expectation via Lagrangian relaxation, while at inference time the 3D vector screens per action, rejecting unsafe outliers even when the aggregate budget is unexhausted. The layers are consistent, since the filter rejects Algorithm 1 Offline Risk-Constrained Policy Learning 
+
+Require: Offline dataset D, budget ϵsafe , horizons T1, T 2. 
+
+> 1:
+
+Train outcome ensemble {fm}, rollback model ρ, diffu-sion kernel (α, σ b) on D. 
+
+> 2:
+
+Train outcome predictor gψ on (s(i), a (i), y (i)) from D. 
+
+> 3:
+
+Initialize Q-function Qθ , Lagrange multiplier λ ≥ 0. 
+
+> 4:
+
+for iter = 1 , . . . , T 1 do  
+
+> 5:
+
+Sample minibatch B ∼ D . 
+
+> 6:
+
+Compute CQL loss LCQL (θ). 
+
+> 7:
+
+Compute safety violation ˆc = EB [c(s, a )] − ϵsafe . 
+
+> 8:
+
+θ ← θ − ηθ ∇θ (LCQL + λˆc). 
+
+> 9:
+
+λ ← max(0 , λ + ηλ ˆc). 
+
+> 10:
+
+end for  
+
+> 11:
+
+for iter = 1 , . . . , T 2 do  
+
+> 12:
+
+Train HITL gate (w, b 0) by contextual-bandit objec-tive.  
+
+> 13:
+
+end for 
+
+only actions the trained policy already assigns low support, avoiding a train-deploy shift [21], [13]. 
+
+Lagrangian relaxation. We convert (2) into an uncon-strained optimization: 
+
+L(θ, λ ) = E[Qθ (s, a )] − λ(E[c(s, a )] − ϵsafe ) , (10) updating θ and the Lagrange multiplier λ ≥ 0 via alternating gradient ascent-descent until convergence. 
+
+D. Context-Adaptive Escalation Gating 
+
+Instead of a fixed escalation threshold, we treat the execution-vs.-escalation decision as a contextual bandit. Let 
+
+ϕ(s) encode on-call load, business criticality, incident sever-ity, diagnosis confidence, and service centrality. The gate outputs the estimated benefit of escalation: 
+
+τesc (s) = σ w⊤ϕ(s) + b0
+
+ , (11) with σ logistic and (w, b 0) learned. High τesc (low con-fidence, high criticality) tilts toward escalation; low τesc 
+
+(high load, clear diagnosis) favors execution. It is trained offline from observational labels, positive when the oper-ator’s execution caused a false remediation and negative on successful executions, reproducing the limited-bandwidth constraint without explicit counterfactual labels. 
+
+E. Offline Safe Policy Learning 
+
+We train offline from historical trajectories D =
+
+{(st, a t, r t, c t, s t+1 )}. To avoid distribution shift from rarely-seen actions, we adopt a conservative Q-learning objective penalizing out-of-distribution actions [14]: 
+
+LCQL (θ) = LQ(θ)+ β(Ea∼πθ [Qθ (s, a )] − Ea∼D [Qθ (s, a )]) .
+
+(12) The overall training procedure is given in Algorithm 1. 
+
+Controlled behavior. At convergence (10) drives λ to enforce the FRR constraint on the offline distribution. As-suming (i) D covers the deployment state-action pairs and (ii) Qθ is calibrated to within additive error ξ on the support of D, the deployment FRR is bounded by ϵsafe + ξ + ζ, with 
+
+ζ the concentration error of the importance-weighted off-policy estimator [21]. This is a behavioral-control argument, not a formal guarantee: (i) is unverifiable in practice, and the inference-time filter (8) adds protection beyond the scalar Lagrangian. V. EXPERIMENTS 
+
+A. Datasets and Setup 
+
+System and telemetry. We deploy Train Ticket [5], a 41-service microservice benchmark, on a 3-node Kubernetes v1.28 cluster (8 vCPU, 32 GB RAM per node) via the official Helm chart, giving a realistic gateway/business-logic/data-layer dependency graph. We inject faults with Chaos Mesh [6] across 11 categories aligned with RCAEval [7] (CPU, memory, disk I/O, socket, network delay, packet loss, net-work partition, pod kill, HTTP abort, clock skew, DNS error), each targeting a single service with known root cause, and collect telemetry from Prometheus (15 s metrics), Fluentd (logs), and Jaeger (traces) over a 90 s window per injection. 
+
+State and actions. Each state vector aggregates the diagnosed root cause and confidence (from an upstream RCA module trained on RCAEval data), anomaly scores of affected and neighboring services, and operational context (on-call load, time-of-day, business criticality). We define 12 remediation actions with intrinsic blast-radius/reversibility profiles plus three abstentions ( escalate , wait , no-op ), 4–6 applicable per fault type. Each action runs in an isolated replica with full state reset, labeled resolved (metrics recover within 60 s), partial , or false remediation (fails or worsens downstream). The dataset has 8,320 decision records from 1,664 events, split 70/15/15. 
+
+Historical trajectories and implementation. The offline training set is generated by a suboptimal operator policy (softmax over action compatibilities at temperature 0.12, 25% uniform exploration, escalation pesc ∝ load × (1 −
+
+confidence )), yielding a realistic mix of correct, suboptimal, and failed actions. All hyperparameters are tuned on the val-idation split and fixed at test: M =5 , K=8 , η=0 .6, τe=0 .1,
+
+β=1 .0, Kdiff =3 , ϵsafe =0 .10 , learning rates 10 −4/10 −3 for 
+
+θ/λ , batch size 256. 
+
+B. Baselines and Metrics 
+
+We compare against Rule-Runbook (top action from a per-fault-type runbook), LLM-Remed (LLM action gener-ator without risk gating [2], [3]), BC (behavior cloning on operator actions), CQL (offline Q-learning with con-servative regularization [14], no safety constraint), CPO (offline) [13] with a scalar FRR constraint, and CMDP-vanilla (Lagrangian relaxation [12] with a single aggregate cost). Three ablations collapse risk to a scalar ( Single-Risk ), remove the risk filter ( No-Risk ), or use a fixed escalation threshold ( Fixed-HITL ). We report repair success rate, FRR, escalation rate, and time-to-recovery (TTR, including roll-back cost). Success counts any resolved incident, whether autonomous or resolved by a human after escalation. We also report a matched-escalation comparison (Fig. 2) to disentangle method quality from escalation volume. 
+
+C. Main Results     
+
+> TABLE I MAIN RESULTS (MEAN ±STD , 5 SEEDS ).
+
+Method Succ. ↑ FRR ↓ Esc.% TTR ↓
+
+Rule-Runbook .761 ±.005 .183 ±.007 0.0 138 ±4
+
+LLM-Remed .724 ±.008 .214 ±.009 0.0 154 ±6
+
+BC .758 ±.006 .180 ±.008 1.4 138 ±5
+
+CQL .778 ±.006 .138 ±.007 49.5 146 ±5
+
+CPO (offline) .776 ±.005 .132 ±.006 28.4 131 ±4
+
+CMDP-vanilla .771 ±.006 .142 ±.007 22.1 132 ±5
+
+Single-Risk .769 ±.005 .152 ±.006 15.2 133 ±4
+
+No-Risk .731 ±.007 .201 ±.008 3.8 150 ±6
+
+Fixed-HITL .779 ±.005 .124 ±.006 43.8 136 ±4
+
+Ours .786 ±.004 .112 ±.003 36.5 126 ±3
+
+At the selected operating point (Table I), our method attains the highest success (0.786) and lowest FRR (0.112), improving success by 2.5 points over Rule-Runbook while cutting FRR by 39%. The scalar-risk baselines CPO and CMDP-vanilla reach only FRR 0.132 and 0.142, confirm-ing that structured decomposition gives finer safety control than a single aggregate budget, while LLM-Remed’s high FRR (0.214) shows generation without a safety layer is insufficient. CQL escalates 49.5% of decisions yet reaches FRR 0.138, and Fixed-HITL escalates 43.8% with worse success and FRR than ours, showing that indiscriminate escalation without context-aware gating does not translate into proportional safety gains (Fig. 3). 0.76       
+
+> 0.78
+> Success Rate  (a)
+> CQL CPO CMDP F-HITL Ours
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> False Remediation Rate
+> (b)
+> Fig. 2. Success (a) and FRR (b) at matched ≈34% escalation. Error bars: 95% CI, 5 seeds.
+
+D. Ablation Studies 
+
+The lower block of Table I ablates each component. Removing the risk filter (No-Risk) raises FRR by 79% and collapsing risk to a scalar (Single-Risk) by 36%. Two further ablations: dropping the analogue scorer raises FRR 0.2 0.4 0.6 0.8  
+
+> On-Call Load (normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Escalation Rate
+> Bandwidth saved
+> Fixed threshold
+> Adaptive (Ours)
+> Fig. 3. Escalation rate vs. on-call load. Shaded area: bandwidth saved.
+
+to 0.158 ( +41% ) and removing the CQL regularizer to 0.141 ( +26% ); CQL is essential for down-weighting the out-of-distribution actions that behavior cloning cannot. Fixed-HITL escalates 20% more yet scores worse on both success and FRR, confirming that adaptive gating targets escalation more effectively. 
+
+E. Matched-Escalation Comparison 
+
+To control for escalation volume, we tune each method’s escalation threshold on the validation set to match ≈34%, then evaluate on the test set.  
+
+> TABLE II MATCHED -ESCALATION COMPARISON (≈34%).
+
+Method Esc.% Succ. ↑ FRR ↓ TTR ↓
+
+CQL 34.0 .762 .148 142 CPO (offline) 34.3 .771 .138 137 CMDP-vanilla 33.8 .766 .145 141 Fixed-HITL 34.6 .768 .141 139 
+
+Ours 34.5 .784 .114 128 
+
+At ∼34% escalation (Table II), our method achieves the best success (0.784) and the lowest FRR (0.114) among all competitors. Without per-dimension risk filtering, CQL and CPO reach FRR 0.148 and 0.138; Fixed-HITL reaches 0.141. This confirms that 3D risk decomposition and adaptive gating jointly yield the best use of a fixed escalation budget (Fig. 2). 
+
+F. Sensitivity and Robustness Escalation under load. Fig. 3 shows the adaptive gate cuts escalation more aggressively as on-call load grows, whereas the fixed gate barely scales down (27.8% vs. 37.1% at load 0.5; 2.8% vs. 7.2% at load 0.8, under 40% of the fixed rate), reserving human attention for genuinely ambiguous cases under heavy load while escalating freely when bandwidth is cheap. Safety budget ϵsafe . Sweeping 
+
+ϵsafe ∈ {0.05 , 0.10 , 0.15 , 0.20 } traces a smooth trade-off: tightening to 0.05 drives aggressive escalation (Esc. 48.2%, Succ. 0.803, FRR 0.078), while relaxing to 0.20 executes more freely (Esc. 18.4%, Succ. 0.768, FRR 0.162). Across the whole sweep FRR stays strictly below Rule-Runbook, so the framework tunes smoothly to operator preference; we report ϵsafe =0 .10 .
+
+Retrieval size K. The scorer is stable across an order of magnitude of K ∈ { 2, 4, 8, 16 , 32 , 64 }: over K ∈ [4 , 32] 
+
+success and FRR vary within 0.005 and 0.008 (best at K=8 :0.786/0.112), while K=2 (0.775/0.128) over-weights outliers and K=64 (0.773/0.131) dilutes the similarity signal. We use 
+
+K=8 throughout. 
+
+Upstream RCA noise. Replacing the true root cause with a random label for a fraction α of test incidents (all methods re-evaluated under the same corruption), our method de-grades gracefully ( α=0 .1: 0.771/0.128; α=0 .3: 0.748/0.151), staying above every baseline (Rule-Runbook 0.742/0.206, CPO 0.758/0.155 at α=0 .1). The 3D filter acts as a second safety net: even under a wrong diagnosis, high-blast or irreversible actions are still rejected, and for novel faults with no analogues u(s, a ) rises sharply and triggers escalation as a zero-shot fallback. 
+
+G. Case Study 
+
+A network-partition incident on the payment service (RCA confidence 0.72, on-call load 0.45, high criticality) illustrates the full decision logic. Rule-Runbook and CQL both se-lect restart stateful , the highest-compatibility action (0.80), which would risk corrupting in-flight transactions and cascading to six downstream services. Our policy computes its risk vector [0 .52 , 0.59 , 0.38] ; the irreversibility dimension (0.59) exceeds the state-dependent threshold (0.55), so the per-dimension filter rejects it despite the high score. The sur-viving candidate drain connections passes all dimen-sions ( [0 .21 , 0.12 , 0.31] ), and its execution utility beats the HITL gate’s escalation utility (0.38), so the policy executes it and the incident resolves in 52 s. Where Fixed-HITL would escalate the entire case and consume on-call bandwidth, the three components jointly convert a risky default into a safe autonomous decision. VI. DISCUSSION AND LIMITATIONS 
+
+Closed action set. The action catalog is predefined and finite. Modern remediation often requires parameterized ac-tions such as scaling by a specific factor or rolling back to a specific commit hash; extending the framework to such spaces requires hybrid discrete-continuous policy architec-tures and parameter-conditioned risk estimators. Topology drift. The blast-radius diffusion kernel is trained on a static service graph; in highly elastic environments where topolo-gies shift on the order of minutes, the kernel may require periodic re-estimation or online adaptation. VII. CONCLUSIONS This paper reframed safe automated remediation from an action-generation problem into an intervention-decision problem, exposing safety as a first-class objective and mo-tivating three design choices: a CMDP objective with an explicit FRR budget, a three-dimensional risk decomposi-tion that gives operators a deployable safety interface, and a context-adaptive HITL gate that turns escalation into a bandwidth-aware control layer. On a Train Ticket/Chaos Mesh benchmark with an RCAEval-aligned taxonomy, it cuts false remediation by 39% and unnecessary escalation by 17% over a strong fixed-threshold baseline, while remaining best across success, safety, and recovery time. The broader takeaway is that the most useful next step in autonomous remediation is not better action generation but a sharper notion of when to intervene at all . Future work includes online safe adaptation under topology drift and parameterized action spaces. ACKNOWLEDGMENT This work was supported by Chuchiang Data Co., Ltd Shanghai, China. The authors gratefully acknowledge the computational resources provided by the Chuchiang Data. REFERENCES [1] P. Notaro, J. Cardoso, and M. Gerndt, “A Survey of AIOps Methods for Failure Management,” ACM Trans. Intelligent Systems and Tech-nology , vol. 12, no. 6, 2021. [2] Y. Chen et al., “Automatic Root Cause Analysis via Large Language Models for Cloud Incidents,” in Proc. EuroSys , 2024. [3] D. Goel et al., “X-Lifecycle Learning for Cloud Incident Management Using LLMs,” in Companion Proc. FSE , 2024, pp. 536–547. [4] S. Ghosh, M. Shetty, C. Bansal, and S. Nath, “How to Fight Production Incidents? An Empirical Study on a Large-Scale Cloud Service,” in
