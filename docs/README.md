@@ -8,97 +8,86 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-23
-- 运行时间：2026-07-23 21:43:23 UTC
+- 最新运行日期：2026-07-24
+- 运行时间：2026-07-24 20:33:53 UTC
 - 运行状态：成功
-- 本次总论文数：25
-- 精读区：13
-- 速读区：12
+- 本次总论文数：22
+- 精读区：9
+- 速读区：13
 
 ### 今日简报（AI）
-今日精选25篇论文，精读13篇，其中两篇满分论文分别提出混合事后自我蒸馏与选择性策略蒸馏，在导航领域实现显著突破。  
-最值得关注的方向：混合事后自我蒸馏（H$^2$SD）和选择性策略蒸馏（SOPD-SocialNav）为视觉语言导航与社交导航提供了高效的知识迁移框架。  
-建议读者重点跟进蒸馏技术在多智能体系统协同与实时规划中的应用，尤其是速读列表中涉及的延迟感知编排与离线强化学习蒸馏方法。
-- 详情：[/202607/23/README](/202607/23/README)
+今日共22篇论文，精读重点为LLM安全评估的对抗演化框架DARWIN（满分）与基于评分标准的强化学习自蒸馏方法（9分）。建议优先阅读DARWIN学习LLM安全对抗与防护的最新范式，并关注DataShield以识别微调数据中的隐蔽风险。
+- 详情：[/202607/24/README](/202607/24/README)
 
 ### 精读区论文标签
-1. [H$^2$SD: Hybrid Hindsight Self-Distillation](/202607/23/2607.18955v1-h2sd-hybrid-hindsight-self-distillation)  
-   标签：评分：10.0/10、query:opd
-   evidence：混合后见自我蒸馏用于在线策略蒸馏
-2. [SOPD-SocialNav: Selective On-Policy Distillation for Vision-Language Social Navigation](/202607/23/2607.19850v1-sopd-socialnav-selective-on-policy-distillation-for-vision-language-social-navigation)  
-   标签：评分：10.0/10、query:opd
-   evidence：明确提出了选择性在线策略蒸馏用于社交导航
-3. [Refusal is Not Safety! Benchmarking Latent Safety Risks of LLM-Driven Content Humorization](/202607/23/2607.15977v1-refusal-is-not-safety-benchmarking-latent-safety-risks-of-llm-driven-content-humorization)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：对LLM幽默化过程中的潜在安全风险进行基准测试，揭示了拒绝之外的安全漏洞
-4. [CADENCE: Closing the Reasoning Gap via Coverage-Adaptive On-Policy Distillation](/202607/23/2607.16955v1-cadence-closing-the-reasoning-gap-via-coverage-adaptive-on-policy-distillation)  
+1. [DARWIN: Evolving Jailbreak Adversary and Guardrail for LLM Safety Evaluation and Protection](/202607/24/2607.19829v1-darwin-evolving-jailbreak-adversary-and-guardrail-for-llm-safety-evaluation-and-protection)  
+   标签：评分：10.0/10、query:ai-safety
+   evidence：演化式越狱攻击与护栏框架，用于大语言模型安全
+2. [Enhancing Rubric-based RL via Self-Distillation](/202607/24/2607.18082v1-enhancing-rubric-based-rl-via-self-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：覆盖自适应在线策略蒸馏
-5. [Distilled Reinforcement Learning for LLM Post-training](/202607/23/2607.17247v1-distilled-reinforcement-learning-for-llm-post-training)  
+   evidence：基于规则的RL中的自蒸馏
+3. [Enhancing Rubric-based RL via Self-Distillation](/202607/24/2607.18082v2-enhancing-rubric-based-rl-via-self-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：提出蒸馏强化学习方法，结合RL和on-policy蒸馏用于LLM后训练
-6. [WAR: Workload-Aware Rollouts for Synchronous Agentic Reinforcement Learning](/202607/23/2607.17299v1-war-workload-aware-rollouts-for-synchronous-agentic-reinforcement-learning)  
-   标签：评分：9.0/10、query:l-context-rl
-   evidence：长视界卷展加速的agentic强化学习
-7. [Why Does Feedback-Augmented Self-Distillation Fail to Improve Retrieval-Interleaved Search Agents?](/202607/23/2607.17558v1-why-does-feedback-augmented-self-distillation-fail-to-improve-retrieval-interleaved-search-agents)  
-   标签：评分：9.0/10、query:opd
-   evidence：在线策略自蒸馏（OPSD）及反馈增强自蒸馏
-8. [H$^2$SD: Hybrid Hindsight Self-Distillation](/202607/23/2607.18955v2-h2sd-hybrid-hindsight-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：面向可验证奖励强化学习的混合后见自我蒸馏
-9. [SLPO: Scaling Latent Reasoning via a Surrogate Policy](/202607/23/2607.19691v1-slpo-scaling-latent-reasoning-via-a-surrogate-policy)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：通过代理策略RL扩展潜在推理
-10. [DARWIN: Evolving Jailbreak Adversary and Guardrail for LLM Safety Evaluation and Protection](/202607/23/2607.19829v1-darwin-evolving-jailbreak-adversary-and-guardrail-for-llm-safety-evaluation-and-protection)  
+   evidence：基于规则的强化学习中的自我蒸馏
+4. [JailMeter: An Evidence-Based Evaluation Framework for Jailbreak Attacks on Large Language Models](/202607/24/2607.19424v1-jailmeter-an-evidence-based-evaluation-framework-for-jailbreak-attacks-on-large-language-models)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：越狱攻击与防御框架
-11. [EvoThink: Evolving Thinking in Large Reasoning Models via Self-Pruning and Aha-Moment Preference Optimization](/202607/23/2607.19962v1-evothink-evolving-thinking-in-large-reasoning-models-via-self-pruning-and-aha-moment-preference-optimization)  
-   标签：评分：9.0/10、query:eff-reason
-   evidence：通过自剪枝和偏好优化提升推理效率
-12. [OpenSkillRisk: Benchmarking Agent Safety When Using Real-World Risky Third-Party Skills](/202607/23/2607.20121v1-openskillrisk-benchmarking-agent-safety-when-using-real-world-risky-third-party-skills)  
+   evidence：大语言模型越狱评估框架
+5. [OpenSkillRisk: Benchmarking Agent Safety When Using Real-World Risky Third-Party Skills](/202607/24/2607.20121v2-openskillrisk-benchmarking-agent-safety-when-using-real-world-risky-third-party-skills)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：LLM智能体使用第三方技能的安全性基准
-13. [Sound Probabilistic Safety Bounds for Large Language Models](/202607/23/2607.20286v1-sound-probabilistic-safety-bounds-for-large-language-models)  
+   evidence：第三方技能中的智能体安全基准
+6. [GuardianAgentBench: Where Agents Fail and How to Guard Them](/202607/24/2607.20982v1-guardianagentbench-where-agents-fail-and-how-to-guard-them)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：LLM有害输出概率的严格概率安全界
+   evidence：智能体安全基准，含对抗攻击模式
+7. [TOUR: A Trajectory-Level Unlearning Benchmark for Offline Reinforcement Learning](/202607/24/2607.21111v1-tour-a-trajectory-level-unlearning-benchmark-for-offline-reinforcement-learning)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：离线强化学习轨迹级遗忘基准，评估删除和隐私
+8. [Beyond Success Rate: Cost-Aware Evaluation of Offensive and Defensive Security Agents](/202607/24/2607.15263v1-beyond-success-rate-cost-aware-evaluation-of-offensive-and-defensive-security-agents)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：成本感知的安全智能体攻防评估
+9. [SciHazard: A Benchmark for Measuring Scientific Safety Risks with Decomposed Harm Scoring](/202607/24/2607.18665v1-scihazard-a-benchmark-for-measuring-scientific-safety-risks-with-decomposed-harm-scoring)  
+   标签：评分：8.0/10、query:ai-safety
+   evidence：具有可分解危害评分的科学安全基准
 
 ### 速读区论文标签
-1. [Learning Latency-Aware Orchestration for Multi-Agent Systems](/202607/23/2607.13359v2-learning-latency-aware-orchestration-for-multi-agent-systems)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：多智能体延迟感知编排框架
-2. [Token-Wise Latent Streaming from Slow Reasoners to Fast Planners for Dynamic Vision Language Navigation](/202607/23/2607.16806v1-token-wise-latent-streaming-from-slow-reasoners-to-fast-planners-for-dynamic-vision-language-navigation)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：将慢推理器的知识流式传输给快规划器以实现高效推理
-3. [REGEN: Replay-recycling for Expert-to-Generalist distillation with Offline Reinforcement Learning](/202607/23/2607.19450v1-regen-replay-recycling-for-expert-to-generalist-distillation-with-offline-reinforcement-learning)  
-   标签：评分：8.0/10、query:opd
-   evidence：多教师在线策略蒸馏实现专家到通才
-4. [Dreamer-CPC: Message Learning with World Models for Decentralized Multi-agent Reinforcement Learning](/202607/23/2607.19809v1-dreamer-cpc-message-learning-with-world-models-for-decentralized-multi-agent-reinforcement-learning)  
-   标签：评分：8.0/10、query:agent-swarm
-   evidence：去中心化多智能体强化学习中的世界模型消息学习
-5. [JANUS: Foreseeing Latent Risk for Long-Horizon Agent Safety](/202607/23/2607.19913v1-janus-foreseeing-latent-risk-for-long-horizon-agent-safety)  
+1. [DataShield: Uncovering Risky Fine-Tuning Data Across LLMs Through Consensus Subspace Alignment](/202607/24/2607.15081v1-datashield-uncovering-risky-fine-tuning-data-across-llms-through-consensus-subspace-alignment)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：具有前瞻性的长视界智能体安全
-6. [Efficient Chain-of-Modality Reasoning via Progressive Compression for Spoken Language Models](/202607/23/2607.19932v1-efficient-chain-of-modality-reasoning-via-progressive-compression-for-spoken-language-models)  
+   evidence：检测风险微调数据以提升LLM安全性
+2. [Token-Wise Latent Streaming from Slow Reasoners to Fast Planners for Dynamic Vision Language Navigation](/202607/24/2607.16806v1-token-wise-latent-streaming-from-slow-reasoners-to-fast-planners-for-dynamic-vision-language-navigation)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：通过渐进式压缩实现高效链式模态推理
-7. [MADA-RL: Multi-Agent Debate-Aware Reinforcement Learning for Parameter-Efficient Reasoning in Compact Models](/202607/23/2607.18006v1-mada-rl-multi-agent-debate-aware-reinforcement-learning-for-parameter-efficient-reasoning-in-compact-models)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：通过多智能体辩论感知RL实现参数高效推理
-8. [Can We Break LLMs Out of Self-Loops? Fine-Grained Reasoning Control with Activation Steering](/202607/23/2607.18100v1-can-we-break-llms-out-of-self-loops-fine-grained-reasoning-control-with-activation-steering)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：细粒度推理控制以避免自循环并提高效率
-9. [Harnessing Disagreement: Detecting Correlated Agreement Blindness in Multi-Agent Triage](/202607/23/2607.19899v1-harnessing-disagreement-detecting-correlated-agreement-blindness-in-multi-agent-triage)  
+   evidence：将慢推理器知识流式传输到快规划器以提高推理效率
+3. [SLPO: Scaling Latent Reasoning via a Surrogate Policy](/202607/24/2607.19691v1-slpo-scaling-latent-reasoning-via-a-surrogate-policy)  
+   标签：评分：8.0/10、query:eff-reason
+   evidence：通过替代策略实现高效潜在推理，结合强化学习
+4. [RELIC: Revealed Principles for Learning Interpretable Composable Skills in Multi-Agent Planning](/202607/24/2607.16745v1-relic-revealed-principles-for-learning-interpretable-composable-skills-in-multi-agent-planning)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：隐私约束下的多智能体技能学习
+5. [End-to-End Learning of Safe Optimal Feedback Control in High Dimensions with Control Barrier Function Layers](/202607/24/2607.20674v1-end-to-end-learning-of-safe-optimal-feedback-control-in-high-dimensions-with-control-barrier-function-layers)  
    标签：评分：7.0/10、query:ai-safety
-   evidence：多智能体分诊中的安全监控，检测一致同意盲点
-10. [PyroDash: Cost-Efficient Token-Level Small-Large Language Model Collaborative Inference](/202607/23/2607.20327v1-pyrodash-cost-efficient-token-level-small-large-language-model-collaborative-inference)  
-   标签：评分：7.0/10、query:eff-reason
-   evidence：小-大语言模型的高效协作推理
-11. [RELIC: Revealed Principles for Learning Interpretable Composable Skills in Multi-Agent Planning](/202607/23/2607.16745v1-relic-revealed-principles-for-learning-interpretable-composable-skills-in-multi-agent-planning)  
-   标签：评分：6.0/10、query:agent-swarm
-   evidence：具有私有技能学习的多智能体规划
-12. [Safe Remediation as Risk-Constrained Intervention Decision in Microservice Systems](/202607/23/2607.20005v1-safe-remediation-as-risk-constrained-intervention-decision-in-microservice-systems)  
+   evidence：结合控制障碍函数的端到端安全控制学习
+6. [Robust Asynchronous Q-Learning under Reward and State Corruption via Batching](/202607/24/2607.20822v1-robust-asynchronous-q-learning-under-reward-and-state-corruption-via-batching)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：对抗奖励和状态损坏的鲁棒RL算法，保障智能体安全
+7. [Sample-Efficient Learning from Agent Experience](/202607/24/2607.21051v1-sample-efficient-learning-from-agent-experience)  
+   标签：评分：7.0/10、query:opd
+   evidence：通过上下文蒸馏内化智能体交互历史的经验蒸馏
+8. [When Are Reasoning-Based Guardrails Not Efficient? ResponseGuard: A Fast Vision-Language Guard for Real-Time Moderation](/202607/24/2607.21401v1-when-are-reasoning-based-guardrails-not-efficient-responseguard-a-fast-vision-language-guard-for-real-time-moderation)  
+   标签：评分：7.0/10、query:ai-safety
+   evidence：高效的视觉语言安全防护，与AI安全相关
+9. [Transition-Aware Backend Dispatch for Edge LLM Inference](/202607/24/2607.17415v1-transition-aware-backend-dispatch-for-edge-llm-inference)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：通过后端调度实现边缘LLM推理效率优化
+10. [Co-Evolving LLM Evaluators and Policies via DynamicRubric](/202607/24/2607.20083v2-co-evolving-llm-evaluators-and-policies-via-dynamicrubric)  
+   标签：评分：6.0/10、query:opd
+   evidence：强化学习中评估器与策略的共同进化
+11. [PoTRE: Test-Time Reasoning inspired by Cognitive Heterogeneity](/202607/24/2607.20268v1-potre-test-time-reasoning-inspired-by-cognitive-heterogeneity)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：用于提升推理质量和鲁棒性的多智能体推理框架
+12. [StabilityBench: Benchmarking Instability in LLMs](/202607/24/2607.20558v1-stabilitybench-benchmarking-instability-in-llms)  
    标签：评分：6.0/10、query:ai-safety
-   evidence：基于约束马尔可夫决策过程的风险约束干预决策实现安全修复
+   evidence：LLM安全性评估基准
+13. [SHIFT: Self-reconstruction Harnesses Implicit Fine-grained Thinking for Retrieval](/202607/24/2607.21333v1-shift-self-reconstruction-harnesses-implicit-fine-grained-thinking-for-retrieval)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：隐式细粒度推理用于高效检索
 
 
 <div class="dpr-home-promo-card">
