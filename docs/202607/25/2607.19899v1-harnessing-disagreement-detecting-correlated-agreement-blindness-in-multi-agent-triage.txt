@@ -1,0 +1,292 @@
+Title: Harnessing Disagreement: Detecting Correlated Agreement Blindness in Multi-Agent Triage
+
+URL Source: https://arxiv.org/pdf/2607.19899v1
+
+Published Time: Thu, 23 Jul 2026 00:36:48 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Harnessing Disagreement: Detecting Correlated Agreement Blindness in Multi-Agent Triage ⋆
+
+Shay Seiya McDonnell 1,2 , Avantika Singh 3, Quoc-Viet Pham 1,2 , Vratislav Havlík 3, and Gregory M.P. O’Hare 1,2 
+
+> 1
+
+School of Computer Science & Statistics, Trinity College Dublin, College Green, Dublin 2, Ireland 
+
+mcdonns8@tcd.ie, viet.pham@tcd.ie, gregory.ohare@tcd.ie  
+
+> 2
+
+ADAPT Centre, Trinity College Dublin, College Green, Dublin 2, Ireland  
+
+> 3
+
+CKDelta, 28/29 Sir John Rogerson’s Quay, Dublin 2, Ireland 
+
+Avantika.Singh@ckdelta.ai, Vratislav.Havlik@ckdelta.ai 
+
+Abstract. Disagreement-triggered escalation can create a structural blind spot in multi-agent arbitration: as base learners improve, they tend to converge, weakening safety monitoring where correlated failures con-centrate. We term this correlated agreement blindness and present ARAT (Arbitrated Reasoning Agents for Alarm Triage), a directed-star system combining an inductive Random Forest (RF) agent, an analogical case-based k-nearest neighbour (k-NN) agent, and a calibrated meta-model to mitigate this effect. On 82,332 holdout samples from the UNSW-NB15 network intrusion detection dataset, 57.2% of errors occur under agree-ment and 90.6% of dangerous under-predictions evade disagreement-based monitoring even after conservative override; ablation shows that strength-ening base learners increases error correlation while reducing disagreement. ARAT reduces under-prediction relative to soft voting from 4.80% to 1.70% via conservative override ( −2.6pp) and a safety-flag gate ( −0.5pp), demonstrating architectural gains. Cross-dataset validation on clinical readmission supports these indicators, suggesting that diversification im-proves safety only when it generates productive disagreement rather than convergence. These results indicate that disagreement-triggered escalation can be blind to correlated failure, a risk that may intensify as agentic pipelines deploy increasingly capable, correlated models. 
+
+Keywords: Multi-agent systems · Correlated agreement blindness ·
+
+Disagreement uncertainty · Network intrusion detection · Agentic AI ·
+
+Human-in-the-loop 
+
+## 1 Introduction 
+
+Disagreement is widely used as a practical proxy for uncertainty in multi-agent systems (MAS) [ 21 , 25 ]. As agentic AI pipelines deploy increasingly capable base models, those models agree more often, and that agreement becomes a misleading  
+
+> ⋆
+
+Accepted for publication at PAAMS 2026. This is the pre-review submitted version. arXiv:2607.19899v1 [cs.MA] 22 Jul 2026 2 S. S. McDonnell et al. 
+
+safety signal when the models share correlated errors [ 10 , 11 ]. Unlike prior work on error correlation in ensemble accuracy [ 1,24 ], we show this blindness is heightened by accuracy improvements: stronger models suppress the very disagreement signal that triggers human review [ 6]. The resulting failure is categorical: when agents mistakenly agree, escalation is never triggered and dangerous cases bypass human review entirely. This paper makes the following contributions: 1. Characterisation: Large-scale empirical evidence of correlated agreement blindness : 3.53 × joint error inflation (bias-corrected and accelerated (BCa) 95% confidence interval (CI): [3.50, 3.59]), error association ϕ = 0 .612 (BCa 95% CI: [0.605, 0.619]) at n= 82 ,332 , and 90.6% of dangerous under-predictions not detected by disagreement-based monitoring. A paired ablation demonstrates that ϕ increases and disagreement decreases as the RF is made heavier. 2. Architecture: ARAT, a directed-star arbitration system with two quantifiable routing layers: conservative override ( −2.6pp under-prediction vs. soft voting) and unanimous-Normal safety flag ( −0.5pp further, exact: −0.48pp), plus a calibrated escalation meta-model (area under the receiver operating charac-teristic curve AUROC 0.924); together consistently outperforming evaluated single-model and naive MAS baselines and not reproduced by loss-function tuning alone. 3. Performance: 98.3% operationally adjusted accuracy (treating over-predictions as acceptable and penalising only under-predictions) and 1.70% under-prediction on 82,332 UNSW-NB15 holdout samples, with a per-layer decomposition, indicating that each architectural layer contributes independently. 4. Validation: Cross-dataset replication on UCI Diabetes ( n = 20 ,354 ) supports the same mechanism indicators; SVM substitution shows that agent diversifi-cation improves safety only when it generates productive disagreement: on UNSW-NB15 SVM diverges and helps, whereas on Diabetes it converges and does not. 
+
+## 2 Related Work 
+
+Prior ML-based network intrusion detection work [ 13 , 14 ] rarely addresses un-certainty quantification for human-in-the-loop severity triage. Cost-sensitive approaches encode asymmetric costs directly [ 4,5]; consensus formation in MAS has been extensively studied as a coordination objective [ 16 ]. In contrast ARAT applies conservative post-hoc arbitration, separating predictive and routing con-cerns. Error correlation is well established [ 1,24 ], but prior work studies its effect on accuracy rather than escalation-triggered review. Goel et al. [ 6] demonstrate that capable models share similar blind spots, which undermines AI-based over-sight. However, they examine an AI-as-evaluator setting, where one model is tasked with grading another; in this case, the oversight is merely weakened. By contrast, our work focuses on disagreement-triggered routing , where human review is gated by model consensus. Here, if agents mistakenly agree, the safety Harnessing Disagreement in Multi-Agent Triage 3
+
+mechanism fails entirely and the human analyst is never alerted. Thus, our failure mode is categorical (a total loss of oversight) rather than quantitative (an inaccurate evaluation). Hammond et al. [ 7] identify correlated error suppression of divergence as a multi-agent risk; Reid et al. [ 19 ] identify monoculture collapse as a critical vulnerability in governed MAS. Our contribution is orthogonal to both: we demonstrate that the blindness is not merely present but intensifies as base learner accuracy improves, and we quantify the architectural layers required to mitigate it. Concurrent work confirms the breadth of correlated failure: larger LLMs exhibit highly correlated errors even across distinct architectures [ 10 ], latent entanglement induces over-endorsement bias in verifier ensembles [ 11 ], and correlated ensembles face an information-theoretic error floor that addi-tional models cannot overcome [ 23 ]. These studies address ensemble accuracy or evaluation bias, not escalation-triggered human review. To our knowledge, this failure mode has not been explicitly characterised in escalation-triggered multi-agent systems, nor has its relationship with increasing model accuracy been systematically examined. 
+
+## 3 Use Case: Safety-Critical Triage 
+
+ARAT addresses triage settings where uncertainty signals prioritise human review rather than trigger abstention. In Security Operations Centres (SOCs), analysts triage alerts by severity: under-prediction (predicting lower severity than truth) is dangerous; over-prediction erodes trust. Under-prediction rate is therefore our primary safety metric; the same structure applies wherever dangerous minority cases must be prioritised under resource constraints. UNSW-NB15 was selected because its attack taxonomy closely mirrors operational alert categories and its scale and label structure make it suitable for evaluating severity triage in a safety-critical setting. This work is conducted in the context of an active industrial collaboration in which ARAT has been deployed on a similar task. 
+
+## 4 ARAT Architecture 
+
+In its current incarnation, ARAT comprises two predictive agents (Random Forest and k-NN) and a central routing agent that uses disagreement and a learned risk score to arbitrate between predictions and escalate uncertain cases for operator review. ARAT provides a mechanistic and architectural contribution: the goal is to demonstrate that correlated agreement blindness is a structural property of disagreement-based escalation, and to show that a deliberately lightweight routing design can mitigate it without retraining base models. The routing agent RA 3 is intentionally simple: deterministic rules for the first two safety layers and logistic regression for the third, to maximise interpretability and auditability in analyst-facing deployments where opaque arbitration is operationally unacceptable. This follows the committee-style MAS tradition [ 21 , 25 ], prioritising principled routing logic over negotiation or belief revision. 4 S. S. McDonnell et al. 
+
+ARAT implements a directed-star topology (Figure 1) in which IA 1 and 
+
+AA 2 report belief states to a central routing agent, RA 3. The topology is agent-agnostic (any classifier emitting class probabilities can join the star), and while demonstrated on a minimal two-agent configuration, the blindness mechanism generalises to any topology where a subset of agents can reach consensus on a wrong prediction undetected. IA 1: Inductive Agent 
+
+> Random Forest
+> severity prob.
+> AA 2: Analogical Agent
+> k-NN (k = 5)
+> neighbour vote
+> RA 3: Routing Agent
+> 1. Soft-disagreement scoring
+> 2. Conservative override
+> 3. Unanimous-Normal flag
+> Output
+> final severity
+> escalation_score
+> Analyst review
+> resolution outcome
+> escalate
+> agents
+> Input
+> belief state
+> belief state
+
+Fig. 1. ARAT directed-star topology. IA 1 (RF) and AA 2 (k-NN) produce belief states processed by RA 3 across three stages: (1) soft-disagreement scoring (weighted sum of Shannon entropy and binary disagreement), (2) conservative severity override on disagreement, and (3) unanimous-Normal safety flag when entropy > θ = 0 .10 . RA 3
+
+emits a severity prediction and calibrated escalation_score ; flagged cases escalate to mandatory review. 
+
+IA 1: Inductive agent (Random Forest). IA 1 is a Random Forest classifier trained on the pre-holdout training split using n = 30 mutual-information (MI) selected features from the UNSW-NB15 dataset. It uses 500 trees with no depth restriction, minimum leaf size of 2, and balanced class weights to account for the 0.51% prevalence of the High-severity class. All baselines use the identical feature set. 
+
+IA 1 outputs class-probability vectors from tree vote fractions as confidence signals. 
+
+AA 2: Analogical agent ( k-NN). AA 2 implements analogical case-based retrieval via k-nearest neighbour ( k = 5 , uniform weighting) using the same n = 30 
+
+MI-selected features. Neighbours are retrieved by Euclidean distance; probability vectors for disagreement and entropy routing are constructed from unweighted neighbour-label frequencies. AA 2 operates independently of IA 1. Despite this epistemic distinction, both agents share the same feature space and training distribution, which underlie the high error correlation observed in Section 6.2: independence of method does not guarantee independence of failure. While brute-force k-NN inference over n = 175 ,341 training points is computationally expensive, approximate nearest-neighbour methods (e.g., FAISS [ 8 ]) provide a drop-in, low-latency replacement that preserves our routing logic and architectural properties. Harnessing Disagreement in Multi-Agent Triage 5
+
+RA 3: Routing agent. RA 3 arbitrates using a soft-disagreement score c = 0 .5 ·
+
+H(pmerged ) + 0 .5 · d, where H(pmerged ) is Shannon entropy over the averaged class-probability distributions and d = 1 if agents predict different classes ( d = 0 
+
+otherwise). Both components are min-max scaled to [0 , 1] . Equal weighting is the stable default; ablation over asymmetric alternatives (0.3/0.7, 0.7/0.3) showed no consistent improvement ( ≤0.1pp difference). On disagreement, RA 3 applies a conservative severity override, choosing the more severe prediction to prioritise safety and eliminate 92.8% of disagreement-based under-predictions. When both agents unanimously predict the lowest-risk class and entropy > θ = 0 .10 , a safety flag triggers mandatory analyst review; 
+
+θ = 0 .10 was selected to flag approximately 6.79% of cases; this threshold is config-urable and was chosen to reflect a plausible analyst review budget in operational SOC deployments. The escalation meta-model (logistic regression, 10 routing-time features, isotonic calibration) provides a calibrated P (under-prediction ) score for analyst queue ordering (AUROC 0.924). 
+
+## 5 Experimental Setup 
+
+Dataset and split. We evaluate on the UNSW-NB15 network intrusion detection dataset from UNSW Canberra’s Cyber Range Lab [ 13 , 14 , 15 , 12 , 20 ], compris-ing 2,540,044 total network traffic records combining real normal activities with synthetically generated attacks. We use the official partition: training set (n = 175 ,341 , UNSW_NB15_training-set.csv ) and testing set ( n = 82 ,332 ,
+
+UNSW_NB15_testing-set.csv ), mapping native labels into our 4-class severity triage scheme (Normal, Low, Medium, High). The High-severity class represents 0.51% of our holdout set (422 cases). 
+
+Cross-dataset validation. To evaluate the generalisability of correlated agreement blindness beyond intrusion detection, we replicate ARAT on the UCI Diabetes 130-US Hospitals dataset [ 22 ]. We apply a fixed 80/20 split (train n = 81 ,412 , test 
+
+n = 20 ,354 ) and map readmission outcomes into a three-class severity scheme (test set: No readmission 60.4%, Readmitted >30 days 28.9%, and Readmitted 
+
+<30 days 10.6%), with the last class as the dangerous under-prediction target. Twenty-one features are available at discharge time; none are post-hoc. The Diabetes pipeline uses adapted base learner configurations ( n = 100 → 500 
+
+trees, fixed depth = 15 , min_samples_leaf = 5) for this noisier task. The routing architecture, conservative override, and safety flag use the same logic as UNSW-NB15. 
+
+Features. For UNSW-NB15 we use n = 30 MI-selected tabular features [ 17 ], removing noisy features identified via a feature-count sweep optimising High-class F1. For Diabetes we use all 21 discharge-time features after excluding identifiers. 
+
+Metrics. We report exact accuracy as a conventional summary metric, but our primary evaluation is safety-oriented: over-/under-prediction rates and opera-tionally adjusted accuracy reflect the asymmetric cost of false reassurance, while 6 S. S. McDonnell et al. 
+
+dangerous-class recall measures performance on the critical minority class. We also report Clopper–Pearson intervals to quantify uncertainty around these rates. Under-prediction is the primary safety metric. 
+
+Baselines. RF and k-NN were selected as stable, interpretable base learners that expose inspectable belief states. For non-agentic comparison, we evaluate class-balanced LightGBM [ 9], XGBoost [ 3 ], and CatBoost [ 18 ] on the identical feature set, plus cost-sensitive LightGBM variants with cost-sensitivity parameter 
+
+α ∈ { 2, 3, 5, 50 } to assess whether ARAT’s architectural safeguards can be replicated by loss-function tuning. To contextualise the routing architecture against naive aggregation, we also evaluate soft voting (averaged probabilities) over the same RF+ k-NN agent pair. Code, preprocessing pipelines, and pinned result outputs are publicly available 4.
+
+## 6 Results 
+
+6.1 Core Accuracy and Safety Metrics 
+
+Table 1 compares baselines on UNSW-NB15. Soft voting over RF+ k-NN yields 4.80% under-prediction. ARAT v2 reduces this to 1.70% and raises adjusted accuracy to 98.3%. The 1.70% figure assumes perfect analyst resolution of esca-lated cases; the conditional row (93.21%) reports automated performance only. Cost-sensitive LightGBM still underperforms ARAT on under-prediction, con-firming that loss tuning does not reproduce the architectural safeguard. ARAT also improves High-class recall (Hi-R) over cost-sensitive LGB while keeping lower under-prediction. CatBoost achieves competitive under-prediction but provides no escalation queue, correlated-failure detection, or per-layer routing audit; its Hi-R advantage is a loss-function property, not an architectural one.  
+
+> 4https://github.com/McDonnelletal/arat-paper
+
+Harnessing Disagreement in Multi-Agent Triage 7
+
+Table 1. UNSW-NB15 baseline comparison ( n = 82 ,332 , 30 features). CP 95 denotes the 95% Clopper–Pearson interval on adjusted accuracy. Cost-sensitive LGB is a loss-tuned baseline only. System Exact Under Adj Hi-R CP 95 (Adj) LightGBM (balanced) 80.6% 4.61% 95.39% 78.0% [95.2%, 95.5%] XGBoost (balanced) 80.1% 4.97% 95.03% 85.8% [94.9%, 95.2%] CatBoost (balanced) 79.5% 2.13% 97.87% 96.2% [97.8%, 98.0%] RF only (tuned) 80.7% 3.76% 96.24% 72.3% [96.1%, 96.4%] 
+
+k-NN only 80.3% 6.10% 93.90% 25.6% [93.7%, 94.1%] LGB cost-sensitive † (α = 3 ) 82.5% 3.35% 96.65% 69.0% [96.5%, 96.8%] 
+
+Naive MAS aggregation (same RF+ k-NN pair, no routing) 
+
+Soft vote (avg probability) 80.8% 4.80% 95.20% 51.0% [95.1%, 95.4%] 
+
+ARAT: 6.79% escalated to mandatory review 
+
+ARAT v2 (all routing layers, 100%) 73.6% 1.70% 98.30% 74.4% [98.2%, 98.4%] ARAT v2 (93.21% ‡) 78.4% 1.75% 98.25% 74.8% [98.2%, 98.3%]  
+
+> †
+
+Loss-tuned only; no correlated-failure detection, safety flag, or escalation queue.  
+
+> ‡
+
+Metrics conditional on the 93.21% of test cases not escalated to mandatory review (nauto = 76 ,742 ). 
+
+6.2 Error Dependence and Correlated Agreement Blindness 
+
+Table 2 summarises error dependence between IA 1 and AA 2 on the holdout. The observed joint error rate is 0.134, whereas independence would predict only 0.038, yielding a 3.53 × inflation (BCa 95% CI: [3.50, 3.59]) and strong positive association ( ϕ = 0 .612 , BCa 95% CI: [0.605, 0.619]). These intervals exclude sampling artefacts. Of all ARAT errors, 57.2% occur under agent agreement; the disagreement signal is blind to them. Of all dangerous under-predictions, 90.6% occur under agent agreement after conservative override, confirming that disagreement-based monitoring is structurally blind to the majority of dangerous failures. 
+
+Table 2. Error dependence between IA 1 and AA 2 on the n = 82 ,332 holdout. BCa = bias-corrected and accelerated bootstrap. 
+
+Error dependence 
+
+P (A1 wrong ) 0.193 
+
+P (A2 wrong ) 0.197 
+
+P (both wrong ) 0.134 Expected joint error under independence 0.038 Observed / expected (inflation) 3.53 × [3.50, 3.59] 
+
+ϕ correlation coefficient 0.612 [0.605, 0.619] Total errors 17,000 All errors under agreement 57.2% (9,722/17,000) Under-predictions (total) 1,793 Under-predictions under agreement (post-override) 90.6% (1,625/1,793) 8 S. S. McDonnell et al. 
+
+6.3 Architectural Decomposition: Override and Safety Flag 
+
+The conservative override is the dominant architectural contributor, eliminating 92.8% of disagreement-based under-predictions by construction. The unanimous-Normal safety flag (both agents predict Normal, entropy > θ = 0 .10 ) contributes a more modest −0.48 pp; its significance is mechanistic rather than aggregate: it is the only mechanism that operates when agents reach a high-entropy consensus on the ‘Normal’ class. On this partition ( 0.51% High-severity prevalence), the safety flag captures 100% of the dangerous under-predictions that reside within the unanimous-Normal subpopulation, proving it serves as a principled final safety net where disagreement-based monitoring is structurally blind. 
+
+6.4 Escalation Model and Routing Signals 
+
+The escalation meta-model (logistic regression, 10 routing-time features, isotonic calibration) achieves AUROC 0.924 and is used solely for analyst queue ordering rather than as a hard safety gate. Restricting evaluation to the unanimous-Normal subset ( n = 25 ,642 , a superset of the 5,590 cases flagged by the entropy threshold) gives conditional AUROC 0.933, confirming meaningful ranking within the critical subpopulation; the primary driver is RF confidence (coefficient −4.47 ). Within this subset, at a 15% global review budget, 91.7% of dangerous under-predictions are retained (CP 95 : [88.8%, 94.1%]; k = 411 of n = 448 ), confirming that critical concentration sits within the highest-priority portion of the escalation queue. 
+
+6.5 Ablation: RF Configuration, Confusion Matrix, and Disagreement Signal 
+
+Figure 2 shows the row-normalised confusion matrix for ARAT v2 on the UNSW-NB15 holdout set ( n = 82 ,332 ). The red-highlighted High-severity row marks the most safety-critical class and shows 74.4% recall, reflecting the agreement ceiling discussed in Section 7; Medium-severity recall of 95.5% indicates clearer separation at that class. The Normal row’s 28% misclassification into Low reflects feature-space overlap at the benign/low-severity boundary [ 13 ,14 ]; as over-predictions, these do not affect the under-prediction safety metric. To probe how RF strength affects error correlation and disagreement, we compare a lighter baseline (v1) to a heavier variant (v2) on UNSW-NB15 and Diabetes, as defined in Table 3. On UNSW-NB15, the heavier configuration improves exact accuracy by 0.47pp, increases ϕ (0.584 →0.612), reduces dis-agreement (15.31% →13.75%), and concentrates more errors under agreement (55.46% →57.19%): all four mechanism indicators (error correlation ϕ, disagree-ment, errors-under-agreement, and under-prediction) move in the predicted direction. The modest rise in under-prediction ( +0.35pp) alongside reduced disagreement demonstrates the mechanism: a stronger, more correlated RF sup-presses disagreement-triggered overrides, increasing under-prediction even as accuracy improves. On Diabetes, all four indicators move in the same direction. Harnessing Disagreement in Multi-Agent Triage 9Normal Low Medium High 
+
+> Predicted Severity
+> Normal
+> Low
+> Medium
+> High
+> True Severity
+> 0.68
+> (25,191)
+> 0.28
+> (10,418)
+> 0.03
+> (1,211)
+> 0.00
+> (180)
+> 0.04
+> (393)
+> 0.66
+> (6,714)
+> 0.27
+> (2,803)
+> 0.03
+> (325)
+> 0.00
+> (56)
+> 0.04
+> (1,236)
+> 0.95
+> (33,113)
+> 0.01
+> (270)
+> 0.00
+> (2)
+> 0.11
+> (45)
+> 0.14
+> (61)
+> 0.74
+> (314)
+
+ARAT Confusion Matrix 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+
+Fig. 2. Row-normalised confusion matrix for ARAT v2 on the UNSW-NB15 holdout set (n = 82 ,332 ). High-severity recall is 74.4%, bounded by the agreement ceiling discussed in Section 7; Medium-severity recall is 95.5%, reflecting clearer class separation. 
+
+Table 3. Effect of RF configuration (v1: lighter, v2: heavier) on ARAT mechanism indicators. UNSW-NB15: RF grows from 200 to 500 trees, features reduced from 37 to 30. Diabetes: RF grows from 100 to 500 trees, depth fixed at 15. Mechanism indicators move in the predicted direction on both datasets. UNSW-NB15 Diabetes Metric v1 v2 ∆ v1 v2 ∆
+
+RF exact accuracy 80.27% 80.74% +0.47pp 48.32% 48.72% +0.40pp ARAT under-prediction ∗ 1.83% 2.18% +0.35pp 13.70% 13.83% +0.13pp Dangerous-class recall 72.51% 74.41% +1.90pp 28.61% 28.01% −0.60pp 
+
+ϕ error correlation 0.584 0.612 +0.028 0.279 0.283 +0.004 Disagreement rate 15.31% 13.75% −1.56pp 45.31% 44.97% −0.34pp Errors under agreement 55.46% 57.19% +1.73pp 38.98% 39.26% +0.28pp Under-preds under agreement 90.62% 90.63% +0.01pp 79.66% 80.14% +0.48pp  
+
+> ∗
+
+Routing-layer output prior to escalation; full ARAT v2 achieves 1.70% (Table 1). 
+
+6.6 Cross-Dataset Validation: Diabetes Readmission Triage 
+
+UNSW-NB15 combines real background traffic with synthetically generated attacks, whereas the UCI Diabetes 130-US Hospitals dataset is derived from real clinical records. To test whether the mechanism generalises beyond network security, and to probe the limits of diversification as a mitigation strategy, we 10 S. S. McDonnell et al. 
+
+replicate on the Diabetes benchmark. This is explicitly a boundary-condition experiment, not a second performance claim; the goal is to confirm that correlated agreement blindness is a structural property of disagreement-based escalation, and to determine when the architectural remedy works. Table 3 (Diabetes columns) reports mechanism indicators. All four replicate: 
+
+ϕ rises from 0.279 to 0.283 (BCa 95% CI v2: [0.270, 0.296]), disagreement falls by 0.34pp, errors-under-agreement rises, and under-predictions-under-agreement rises, confirming the mechanism operates across domains, independently of feature space, base learner configuration, and synthetic vs. real data. Inflation is 1.30 ×
+
+(BCa 95% CI: [1.28, 1.31]), statistically confirmed above independence. The esca-lation meta-model achieves AUROC 0.727 globally and 0.593 conditionally, above chance but weaker than UNSW-NB15, consistent with 45% agent disagreement reducing the unanimous-Normal subpopulation. Under-prediction is essentially flat from v1 to v2 ( +0.13pp), which is consistent with the mechanism finding: correlated agreement blindness operates at the level of error correlation structure, independent of whether accuracy gains propagate to safety. 
+
+SVM substitution. Replacing k-NN with an SVM shifts the ARAT mechanism in opposite ways across domains. We define productive disagreement as disagree-ment that is associated with an error asymmetry between agents, such that the conservative override can replace a wrong prediction with a safer one. In the UNSW-NB15 dataset, substituting SVM for k-NN reduced the error correlation (ϕ: 0.6117 → 0.5180 ) and increased the disagreement ( 13 .75% → 23 .07% ), reduc-ing the under-prediction by 0.64pp and improving the adjusted accuracy from 
+
+97 .82% to 98 .46% , despite a decrease in exact accuracy from 79 .35% to 72 .92% .In the case of the Diabetes dataset, SVM converges with RF ( ϕ: 0.283 → 0.696 ;disagreement: 45 .0% → 21 .4% ), reducing productive disagreement and degrading under-prediction by 3.1pp. This pattern is consistent with how the two mod-els partition the feature space: RF and SVM appear to fail on the same noisy boundary rather than differing only in hyperparameter choice. This confirms that agent diversification is necessary but not sufficient: the safety benefit scales with whether the substituted agent produces complementary errors, not merely different inductive biases in principle. 
+
+## 7 Discussion 
+
+7.1 Recall, Agreement Ceiling, and Shared Bias 
+
+ARAT’s High-class recall of 74.4% (CP 95 : [70.0%, 78.5%]) is bounded by an agree-ment ceiling rather than a tuning failure: 90.6% of dangerous under-predictions occur under agent agreement, where routing cannot recover errors made by both base models. The missed High-class cases represent 108 samples out of 82,332 total; the 1.70% under-prediction headline captures the full dangerous-miss scope across all severity classes (1,793 cases total), not fixating on the High class alone. Cost-sensitive LightGBM’s High-class recall (69.0%) remains below ARAT’s (74.4%) at a substantially worse under-prediction rate (3.35% vs. 1.70%), Harnessing Disagreement in Multi-Agent Triage 11 
+
+confirming that single-model loss tuning cannot resolve errors arising from cor-related feature-space ambiguity. As only 9.4% of under-predictions occur under disagreement, routing can theoretically recover at most that fraction; 74.4% Hi-R indicates near-complete recovery within the architecturally recoverable subset. 
+
+7.2 Broader Implications for Multi-Agent Safety 
+
+These cross-dataset results, spanning synthetic-plus-real traffic and real clin-ical data, suggest a structural rather than dataset-specific effect. Correlated agreement blindness is not unique to these domains. Inter-agent misalignment bias is a systematic failure mode in multi-agent LLM systems [ 2]; correlated errors intensify as capability increases [ 6]; monoculture collapse is a recognised vulnerability in governed MAS [ 19 ]. In any MAS where a disagreement signal gates human oversight, the signal’s reliability degrades as agents become more capable and more correlated. This applies directly to agentic LLM pipelines: as foundation models converge on shared pretraining and fine-tuning, the inductive bias diversity that disagreement-based escalation depends on erodes silently. The SVM substitution experiment operationalises this: diversification by inductive bias alone is insufficient if the new agent fails at the same feature-space boundary. A pre-deployment diagnostic (measuring ϕ and productive-disagreement rate across candidate agent pairs before committing to an architecture) would provide a principled basis for agent selection in safety-critical settings. 
+
+## 8 Limitations 
+
+Three limitations bound our claims. First, the headline 1.70% under-prediction rate credits the analyst with correctly resolving the escalated 6.79% of cases; the conditional row of Table 1 (1.75% on the 93.21% decided automatically) bounds the automated system alone, and realised performance lies between the two. Second, ARAT is demonstrated with two deliberately simple, interpretable base learners on two tabular datasets; the SVM substitution shows the override’s benefit depends on the agent pair sustaining productive disagreement and can vanish under convergence, so we offer ϕ together with the productive-disagreement rate as a pre-deployment diagnostic, not an unconditional guarantee. Finally, we benchmark against single-model, loss-tuned, and naive aggregation baselines but not learned multi-agent coordination frameworks, which ARAT deliberately forgoes in favour of auditable fixed routing; that comparison is future work. 
+
+## 9 Conclusion 
+
+ARAT achieves 98.3% operationally adjusted accuracy and 1.70% dangerous under-prediction on 82,332 UNSW-NB15 holdout samples. A per-layer decom-position confirms that the conservative override contributes −2.6pp and the safety-flag gate a further −0.5pp over naive soft voting, gains not reproduced by 12 S. S. McDonnell et al. 
+
+loss-function tuning alone. The primary contribution is the characterisation of correlated agreement blindness as a structural property of disagreement-triggered escalation: under correlated failure, escalation becomes blind to the failures that most require human review, and this blindness intensifies as base learner strength increases. Cross-dataset replication supports these indicators; SVM substitution further shows that agent diversification improves safety only when it generates productive disagreement, providing practitioners with a concrete pre-deployment diagnostic. As agentic pipelines deploy increasingly capable and correlated models, disagreement-triggered monitoring will become less reliable precisely where it is most needed. The phenomenon we term correlated agreement blindness necessitates explicit architectural consideration: not as an edge case, but rather as an expected consequence of delivering the agent improvements that safety monitoring depends upon. Harnessing Disagreement in Multi-Agent Triage 13 
+
+## Acknowledgements 
+
+This research was conducted with the financial support of Research Ireland at ADAPT, the Research Ireland Centre for AI-Driven Digital Content Technology at Trinity College Dublin, 13/RC/2106_P2. For the purpose of Open Access, the author has applied a CC BY public copyright licence to any Author Accepted Manuscript version arising from this submission. This work has been funded by CKDelta through the establishment of an AI research collaboration between Trinity College Dublin and CKDelta. 
+
+## References 
+
+1. Brown, G., Wyatt, J., Harris, R., Yao, X.: Diversity creation methods: A survey and categorisation. Information Fusion 6(1), 5–20 (2005) 2. Cemri, M., Pan, M.Z., Yang, S., et al.: Why do multi-agent LLM systems fail? In: Advances in Neural Information Processing Systems (2025) 3. Chen, T., Guestrin, C.: XGBoost: A scalable tree boosting system. In: Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. pp. 785–794 (2016) 4. Elkan, C.: The foundations of cost-sensitive learning. In: Proceedings of IJCAI. pp. 973–978 (2001) 5. Frank, E., Hall, M.: A simple approach to ordinal classification. In: Proceedings of ECML. vol. 2167, pp. 145–156. Springer (2001) 6. Goel, S., Strüber, J., Auzina, I.A., et al.: Great models think alike and this un-dermines AI oversight. In: International Conference on Machine Learning. vol. 267 (2025) 7. Hammond, L., Chan, A., Clifton, J., et al.: Multi-agent risks from advanced AI. Tech. Rep. 2502.14143, arXiv (2025), https://arxiv.org/abs/2502.14143 8. Johnson, J., Douze, M., Jégou, H.: Billion-scale similarity search with GPUs. IEEE Transactions on Big Data 7(3), 535–547 (2021). https://doi.org/10.1109/TBDATA. 2019.2921572 9. Ke, G., Meng, Q., Finley, T., et al.: LightGBM: A highly efficient gradient boosting decision tree. In: Advances in Neural Information Processing Systems. vol. 30, pp. 3146–3154 (2017) 10. Kim, E.M., Garg, A., Peng, K., Garg, N.: Correlated errors in large language models. In: International Conference on Machine Learning. vol. 267 (2025) 11. Kuai, C., Jiang, J., Zhu, Z., Wang, H., et al.: How independent are large lan-guage models? A statistical framework for auditing behavioral entanglement and reweighting verifier ensembles (2026), https://arxiv.org/abs/2604.07650 12. Moustafa, N., Creech, G., Slay, J.: Big data analytics for intrusion detection system: Statistical decision-making using finite Dirichlet mixture models. In: Data Analytics and Decision Support for Cybersecurity: Trends, Methodologies and Applications, pp. 127–156. Springer, Cham (2017) 13. Moustafa, N., Slay, J.: UNSW-NB15: A comprehensive data set for network in-trusion detection systems (UNSW-NB15 network data set). In: 2015 Military Communications and Information Systems Conference (MilCIS). pp. 1–6. IEEE (2015). https://doi.org/10.1109/MilCIS.2015.7348942 14 S. S. McDonnell et al. 14. Moustafa, N., Slay, J.: The evaluation of network anomaly detection systems: Statistical analysis of the UNSW-NB15 data set and the comparison with the KDD99 data set. Information Security Journal: A Global Perspective 25 (1–3), 18–31 (2016) 15. Moustafa, N., Slay, J., Creech, G.: Novel geometric area analysis technique for anomaly detection using trapezoidal area estimation on large-scale networks. IEEE Transactions on Big Data 5(4), 481–494 (2019) 16. Olfati-Saber, R., Fax, J.A., Murray, R.M.: Consensus and cooperation in networked multi-agent systems. Proceedings of the IEEE 95 (1), 215–233 (2007). https://doi. org/10.1109/JPROC.2006.887293 17. Peng, H., Long, F., Ding, C.: Feature selection based on mutual information: Criteria of max-dependency, max-relevance, and min-redundancy. IEEE Transactions on Pattern Analysis and Machine Intelligence 27 (8), 1226–1238 (2005) 18. Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A.V., Gulin, A.: CatBoost: Unbiased boosting with categorical features. In: Advances in Neural Information Processing Systems. vol. 31 (2018) 19. Reid, A., O’Callaghan, S., Carroll, L., Caetano, T.: Risk analysis techniques for governed LLM-based multi-agent systems (2025), https://arxiv.org/abs/2508.05687 20. Sarhan, M., Layeghy, S., Moustafa, N., Portmann, M.: NetFlow datasets for machine learning-based network intrusion detection systems. In: Big Data Technologies and Applications (BDTA). vol. 371, pp. 117–135. Springer, Cham (2021) 21. Seung, H.S., Opper, M., Sompolinsky, H.: Query by committee. In: Proceedings of COLT 1992. pp. 287–294. ACM (1992) 22. Strack, B., DeShazo, J.P., Gennings, C., Olmo, J.L., Ventura, S., Cios, K.J., Clore, J.N.: Impact of HbA1c measurement on hospital readmission rates: Analysis of 70,000 clinical database patient records. BioMed Research International 2014 ,781670 (2014). https://doi.org/10.1155/2014/781670 23. Turkmen, Y., Buyukates, B., Bastopcu, M.: Don’t always pick the highest-performing model: An information theoretic view of LLM ensemble selection (2026), https://arxiv.org/abs/2602.08003 24. Wood, D., Mu, T., Webb, A.M., Reeve, H.W.J., Luján, M., Brown, G.: A unified theory of diversity in ensemble learning. Journal of Machine Learning Research 
+
+24 (359), 1–49 (2023) 25. Wooldridge, M.: An Introduction to MultiAgent Systems. Wiley, Chichester, 2 edn. (2009)

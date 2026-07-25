@@ -8,86 +8,79 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-24
-- 运行时间：2026-07-24 20:33:53 UTC
+- 最新运行日期：2026-07-25
+- 运行时间：2026-07-25 21:22:51 UTC
 - 运行状态：成功
-- 本次总论文数：22
-- 精读区：9
-- 速读区：13
+- 本次总论文数：19
+- 精读区：5
+- 速读区：14
 
 ### 今日简报（AI）
-今日共22篇论文，精读重点为LLM安全评估的对抗演化框架DARWIN（满分）与基于评分标准的强化学习自蒸馏方法（9分）。建议优先阅读DARWIN学习LLM安全对抗与防护的最新范式，并关注DataShield以识别微调数据中的隐蔽风险。
-- 详情：[/202607/24/README](/202607/24/README)
+今日收录19篇论文，精读两篇高分工作：端到端安全最优反馈控制与样本高效智能体学习，速读涵盖多智能体规划、边缘LLM推理及值冲突解决。
+最值得关注的是安全控制与样本效率两大方向，其中控制屏障函数层在高维环境下的泛化能力亮点突出，智能体经验高效学习则显著降低数据成本。
+建议优先精读这两篇9.0分论文，对应用启发最大；速读中多智能体技能组合与边缘推理调度也值得拓展。
+- 详情：[/202607/25/README](/202607/25/README)
 
 ### 精读区论文标签
-1. [DARWIN: Evolving Jailbreak Adversary and Guardrail for LLM Safety Evaluation and Protection](/202607/24/2607.19829v1-darwin-evolving-jailbreak-adversary-and-guardrail-for-llm-safety-evaluation-and-protection)  
-   标签：评分：10.0/10、query:ai-safety
-   evidence：演化式越狱攻击与护栏框架，用于大语言模型安全
-2. [Enhancing Rubric-based RL via Self-Distillation](/202607/24/2607.18082v1-enhancing-rubric-based-rl-via-self-distillation)  
+1. [End-to-End Learning of Safe Optimal Feedback Control in High Dimensions with Control Barrier Function Layers](/202607/25/2607.20674v1-end-to-end-learning-of-safe-optimal-feedback-control-in-high-dimensions-with-control-barrier-function-layers)  
+   标签：评分：9.0/10、query:ai-safety
+   evidence：基于控制屏障函数的安全强化学习
+2. [Sample-Efficient Learning from Agent Experience](/202607/25/2607.21051v1-sample-efficient-learning-from-agent-experience)  
    标签：评分：9.0/10、query:opd
-   evidence：基于规则的RL中的自蒸馏
-3. [Enhancing Rubric-based RL via Self-Distillation](/202607/24/2607.18082v2-enhancing-rubric-based-rl-via-self-distillation)  
+   evidence：针对智能体学习的体验蒸馏
+3. [Visual Contrastive Self-Distillation](/202607/25/2607.21556v1-visual-contrastive-self-distillation)  
    标签：评分：9.0/10、query:opd
-   evidence：基于规则的强化学习中的自我蒸馏
-4. [JailMeter: An Evidence-Based Evaluation Framework for Jailbreak Attacks on Large Language Models](/202607/24/2607.19424v1-jailmeter-an-evidence-based-evaluation-framework-for-jailbreak-attacks-on-large-language-models)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：大语言模型越狱评估框架
-5. [OpenSkillRisk: Benchmarking Agent Safety When Using Real-World Risky Third-Party Skills](/202607/24/2607.20121v2-openskillrisk-benchmarking-agent-safety-when-using-real-world-risky-third-party-skills)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：第三方技能中的智能体安全基准
-6. [GuardianAgentBench: Where Agents Fail and How to Guard Them](/202607/24/2607.20982v1-guardianagentbench-where-agents-fail-and-how-to-guard-them)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：智能体安全基准，含对抗攻击模式
-7. [TOUR: A Trajectory-Level Unlearning Benchmark for Offline Reinforcement Learning](/202607/24/2607.21111v1-tour-a-trajectory-level-unlearning-benchmark-for-offline-reinforcement-learning)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：离线强化学习轨迹级遗忘基准，评估删除和隐私
-8. [Beyond Success Rate: Cost-Aware Evaluation of Offensive and Defensive Security Agents](/202607/24/2607.15263v1-beyond-success-rate-cost-aware-evaluation-of-offensive-and-defensive-security-agents)  
+   evidence：提出视觉对比式自蒸馏，用于在线自蒸馏
+4. [OPOD: On-Policy Omni Distillation](/202607/25/2607.20918v1-opod-on-policy-omni-distillation)  
+   标签：评分：8.0/10、query:opd
+   evidence：多模态模型上的在策略全模态蒸馏，带有教师路由
+5. [QuantiBias: Benchmarking Quantization-Induced Bias in LLMs](/202607/25/2607.21063v1-quantibias-benchmarking-quantization-induced-bias-in-llms)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：成本感知的安全智能体攻防评估
-9. [SciHazard: A Benchmark for Measuring Scientific Safety Risks with Decomposed Harm Scoring](/202607/24/2607.18665v1-scihazard-a-benchmark-for-measuring-scientific-safety-risks-with-decomposed-harm-scoring)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：具有可分解危害评分的科学安全基准
+   evidence：量化引发的偏见能规避标准安全评估
 
 ### 速读区论文标签
-1. [DataShield: Uncovering Risky Fine-Tuning Data Across LLMs Through Consensus Subspace Alignment](/202607/24/2607.15081v1-datashield-uncovering-risky-fine-tuning-data-across-llms-through-consensus-subspace-alignment)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：检测风险微调数据以提升LLM安全性
-2. [Token-Wise Latent Streaming from Slow Reasoners to Fast Planners for Dynamic Vision Language Navigation](/202607/24/2607.16806v1-token-wise-latent-streaming-from-slow-reasoners-to-fast-planners-for-dynamic-vision-language-navigation)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：将慢推理器知识流式传输到快规划器以提高推理效率
-3. [SLPO: Scaling Latent Reasoning via a Surrogate Policy](/202607/24/2607.19691v1-slpo-scaling-latent-reasoning-via-a-surrogate-policy)  
-   标签：评分：8.0/10、query:eff-reason
-   evidence：通过替代策略实现高效潜在推理，结合强化学习
-4. [RELIC: Revealed Principles for Learning Interpretable Composable Skills in Multi-Agent Planning](/202607/24/2607.16745v1-relic-revealed-principles-for-learning-interpretable-composable-skills-in-multi-agent-planning)  
+1. [RELIC: Revealed Principles for Learning Interpretable Composable Skills in Multi-Agent Planning](/202607/25/2607.16745v1-relic-revealed-principles-for-learning-interpretable-composable-skills-in-multi-agent-planning)  
    标签：评分：7.0/10、query:agent-swarm
-   evidence：隐私约束下的多智能体技能学习
-5. [End-to-End Learning of Safe Optimal Feedback Control in High Dimensions with Control Barrier Function Layers](/202607/24/2607.20674v1-end-to-end-learning-of-safe-optimal-feedback-control-in-high-dimensions-with-control-barrier-function-layers)  
+   evidence：多智能体规划，结合私有技能学习和编排
+2. [Transition-Aware Backend Dispatch for Edge LLM Inference](/202607/25/2607.17415v1-transition-aware-backend-dispatch-for-edge-llm-inference)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：面向边缘LLM推理效率的过渡感知后端调度
+3. [A Geometric Perspective on Stabilizing Value Conflict Resolution](/202607/25/2607.17946v1-a-geometric-perspective-on-stabilizing-value-conflict-resolution)  
    标签：评分：7.0/10、query:ai-safety
-   evidence：结合控制障碍函数的端到端安全控制学习
-6. [Robust Asynchronous Q-Learning under Reward and State Corruption via Batching](/202607/24/2607.20822v1-robust-asynchronous-q-learning-under-reward-and-state-corruption-via-batching)  
+   evidence：利用思维链改进RLHF中的价值冲突解决，提升模型安全性
+4. [CHMAS: A Coupled Hierarchical Framework for Multi-Agent Reinforcement Learning](/202607/25/2607.19555v1-chmas-a-coupled-hierarchical-framework-for-multi-agent-reinforcement-learning)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：耦合分层多智能体强化学习框架
+5. [Dreamer-CPC: Message Learning with World Models for Decentralized Multi-agent Reinforcement Learning](/202607/25/2607.19809v1-dreamer-cpc-message-learning-with-world-models-for-decentralized-multi-agent-reinforcement-learning)  
+   标签：评分：7.0/10、query:agent-swarm
+   evidence：基于世界模型的去中心化多智能体通信方法，与智能体集群架构相关
+6. [Harnessing Disagreement: Detecting Correlated Agreement Blindness in Multi-Agent Triage](/202607/25/2607.19899v1-harnessing-disagreement-detecting-correlated-agreement-blindness-in-multi-agent-triage)  
    标签：评分：7.0/10、query:ai-safety
-   evidence：对抗奖励和状态损坏的鲁棒RL算法，保障智能体安全
-7. [Sample-Efficient Learning from Agent Experience](/202607/24/2607.21051v1-sample-efficient-learning-from-agent-experience)  
-   标签：评分：7.0/10、query:opd
-   evidence：通过上下文蒸馏内化智能体交互历史的经验蒸馏
-8. [When Are Reasoning-Based Guardrails Not Efficient? ResponseGuard: A Fast Vision-Language Guard for Real-Time Moderation](/202607/24/2607.21401v1-when-are-reasoning-based-guardrails-not-efficient-responseguard-a-fast-vision-language-guard-for-real-time-moderation)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：高效的视觉语言安全防护，与AI安全相关
-9. [Transition-Aware Backend Dispatch for Edge LLM Inference](/202607/24/2607.17415v1-transition-aware-backend-dispatch-for-edge-llm-inference)  
+   evidence：多代理分诊检测安全盲点
+7. [Profiling Lightweight Large Language Models](/202607/25/2607.20806v1-profiling-lightweight-large-language-models)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：轻量级大语言模型推理效率的精确感知剖析
+8. [Process Reward Informed Tree Rollout for Effective Multi-Turn RL](/202607/25/2607.15610v1-process-reward-informed-tree-rollout-for-effective-multi-turn-rl)  
+   标签：评分：6.0/10、query:l-context-rl
+   evidence：针对长周期智能体任务的强化学习树形展开
+9. [Constraint-Anchored Reasoning Traces](/202607/25/2607.16727v1-constraint-anchored-reasoning-traces)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：通过后端调度实现边缘LLM推理效率优化
-10. [Co-Evolving LLM Evaluators and Policies via DynamicRubric](/202607/24/2607.20083v2-co-evolving-llm-evaluators-and-policies-via-dynamicrubric)  
-   标签：评分：6.0/10、query:opd
-   evidence：强化学习中评估器与策略的共同进化
-11. [PoTRE: Test-Time Reasoning inspired by Cognitive Heterogeneity](/202607/24/2607.20268v1-potre-test-time-reasoning-inspired-by-cognitive-heterogeneity)  
+   evidence：符号约束防止推理错误级联
+10. [Token-Wise Latent Streaming from Slow Reasoners to Fast Planners for Dynamic Vision Language Navigation](/202607/25/2607.16806v1-token-wise-latent-streaming-from-slow-reasoners-to-fast-planners-for-dynamic-vision-language-navigation)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：用于提升推理质量和鲁棒性的多智能体推理框架
-12. [StabilityBench: Benchmarking Instability in LLMs](/202607/24/2607.20558v1-stabilitybench-benchmarking-instability-in-llms)  
-   标签：评分：6.0/10、query:ai-safety
-   evidence：LLM安全性评估基准
-13. [SHIFT: Self-reconstruction Harnesses Implicit Fine-grained Thinking for Retrieval](/202607/24/2607.21333v1-shift-self-reconstruction-harnesses-implicit-fine-grained-thinking-for-retrieval)  
+   evidence：从慢推理器到快规划器的潜在流
+11. [Verify, Repair, Repeat, or Stop? Robust Stopping for Noisy Verify-Repair Loops in LLM Agents](/202607/25/2607.17641v1-verify-repair-repeat-or-stop-robust-stopping-for-noisy-verify-repair-loops-in-llm-agents)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：隐式细粒度推理用于高效检索
+   evidence：LLM代理验证修复循环的鲁棒停止
+12. [A Hardware-oriented Approach for Efficient Bayesian Inference Computation and Deployment](/202607/25/2607.17855v1-a-hardware-oriented-approach-for-efficient-bayesian-inference-computation-and-deployment)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：面向硬件的贝叶斯推理高效加速
+13. [Fishing Out Free Riders: Shapley-Based Reward Attribution for Parallel Reasoning via Reinforcement Learning](/202607/25/2607.18979v1-fishing-out-free-riders-shapley-based-reward-attribution-for-parallel-reasoning-via-reinforcement-learning)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：基于强化学习的并行推理信用分配
+14. [ISO: An RLVR-Native Optimization Stack](/202607/25/2607.19331v1-iso-an-rlvr-native-optimization-stack)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：用于推理能力提升的RLVR优化方法
 
 
 <div class="dpr-home-promo-card">
