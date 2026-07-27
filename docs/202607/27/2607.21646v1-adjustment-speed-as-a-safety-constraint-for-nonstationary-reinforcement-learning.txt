@@ -1,0 +1,541 @@
+Title: Adjustment Speed as a Safety Constraint for Nonstationary Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2607.21646v1
+
+Published Time: Mon, 27 Jul 2026 00:02:01 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+Preprint. 
+
+# ADJUSTMENT SPEED AS A SAFETY CONSTRAINT FOR 
+
+# NONSTATIONARY REINFORCEMENT LEARNING 
+
+Timothy Tomashevskiy 
+
+Department of Computing and Software McMaster University Hamilton, Ontario, Canada 
+
+ttm207@gmail.com 
+
+# ABSTRACT 
+
+Ensuring safety in reinforcement learning under nonstationarity requires determining whether the learning system can adapt within the required recovery horizon under forecasted changes in the environment. Here, adjustment speed refers to the learning system’s ability to safely adapt to fore-casted environmental change. Existing approaches to safe reinforcement learning typically assume stationary environments and therefore do not explicitly consider adaptation speed under nonstation-arity as a safety concern. However, when environments evolve over time, the rate at which the agent adapts to changing dynamics becomes critical for maintaining safety. In this work, we propose adjustment speed as a safety constraint for nonstationary reinforcement learning. The key idea is to define safety in terms of adaptation feasibility: future states or regions may become unsafe not because they are inherently dangerous, but because the adaptation required to remain safe lies outside the learning system’s calibrated recovery envelope. We formalize this relationship using representation learning and context forecasts to estimate environmental change and compare it with the learning system’s achievable adaptation capacity. The comparison between required adaptation and achievable adaptation is used to proactively reg-ulate behavior when adaptation is predicted to become infeasible. Operationally, the framework tightens the admissible action set and activates an action-level shield when predicted adaptation demand exceeds the learning system’s achievable adaptation capacity. Empirical evaluation in a nonstationary driving environment shows that the proposed approach pri-marily reduces violations in short-horizon windows aligned to context changes. The ablations further show that shielding is more conservative for peak- and tail-risk suppression, while optimization-level adjustment provides additional reductions in short-horizon switch-conditioned violations. These results support the view that safety under nonstationarity depends on adaptation feasibil-ity: when forecasted environmental change occurs faster than the learning system can safely adapt, proactive safety intervention becomes necessary. 
+
+# 1 INTRODUCTION 
+
+Reinforcement learning (RL) has achieved strong empirical success in sequential decision-making problems such as robotics, autonomous driving, and adaptive control (Mnih et al., 2015; Lillicrap et al., 2016). However, many real-world deployment settings are inherently nonstationary: traffic patterns evolve, interacting agents change their behavior, sensor conditions drift, and task dynamics may vary over time. Such distribution shifts violate the stationarity assumptions under which most RL methods are developed and may substantially degrade both performance and safety. This challenge is particularly acute in safety-critical settings. A policy that is safe under previously observed conditions may become unsafe after an environmental shift, even before any significant degradation in long-run performance is observed. In practice, failures often arise not because the agent can never adapt, but because it cannot recover safe behavior within the required horizon. Immediately after a change in environment dynamics, the system may evolve before the policy has adapted to the new dynamics. During this transient phase, the agent continues to execute actions that may be suboptimal or unsafe under the new conditions. Adaptation after a distribution shift involves recovery of safe behavior, and delayed safety recovery can lead to bursts of unsafe behavior. Most existing approaches to safe reinforcement learning do not explicitly address this issue. Classical methods based on constrained Markov decision processes, fixed safety specifications, or reward-penalty formulations are typically 1arXiv:2607.21646v1 [cs.LG] 21 Jul 2026 Preprint. Time Change magnitude 
+
+∆E
+
+∆A
+
+> Safe adaptation
+> Unsafe region
+
+Figure 1: Conceptual illustration of adaptation feasibility. The red curve denotes the required adaptation rate in-duced by forecasted environmental change, while the blue dashed curve denotes the learning system’s achievable safe adaptation rate. The shaded region marks adaptation infeasibility, where environmental change occurs faster than the learning system can safely adapt. In this regime, ordinary learning may be too slow to maintain safety, motivating proactive intervention through constraint tightening and shielding. designed for stationary or slowly varying settings (Altman, 1999; Achiam et al., 2017; Tessler et al., 2019). At the same time, work on nonstationary, continual, and context-aware reinforcement learning has largely focused on adaptation and performance recovery rather than on maintaining safety throughout the transition itself (Hallak et al., 2015; Finn et al., 2017; Kirkpatrick et al., 2017). Consequently, an important question remains insufficiently addressed: when is safe adaptation itself feasible under nonstationarity? 
+
+In this paper, we argue that safety under nonstationarity should be understood through the relationship between the adaptation required by forecasted environmental change and the adaptation achievable by the learning system. The issue is not the physical speed of the agent, nor merely whether the policy can eventually adapt, but whether it can recover safe behavior within the required horizon as future context shifts unfold. When forecasted environmental change occurs faster than the learning system can safely adapt, transient unsafe behavior may become unavoidable unless additional protective mechanisms are activated. This observation motivates the central concept of this work: adjustment speed as a safety constraint . The goal is not to maximize adaptation speed itself, but to use adaptation feasibility as a criterion for future state admissibility. Predicted shifts in latent context induce a required adaptation demand; if that demand exceeds the learning system’s achievable adaptation capacity, future states or regions affected by the shift are treated as unsafe for ordinary adaptation and require stronger safety intervention. To implement this idea, we introduce Adjustment Speed as a Safety Constraint in Nonstationary Reinforcement Learn-ing (ASASC-NS). The framework learns a latent context representation of the current environment, predicts context evolution over a short adaptation horizon, estimates the adaptation demand induced by the predicted shift, and com-pares this quantity with the agent’s empirically calibrated recovery capacity. When the required adaptation is predicted to exceed achievable safe adaptation, the framework proactively intervenes by tightening safety constraints and acti-vating an action-level shielding mechanism. We provide a conditional theoretical characterization of the relationship between predicted context shift, calibrated recovery capacity, and safety intervention. Empirically, the resulting mechanism primarily improves safety in short-horizon windows aligned to context changes, while the ablation clarifies that shielding is more conservative for peak-and tail-risk suppression. More broadly, this work advances safe continual reinforcement learning by shifting the focus from static safety specifications to feasible safe adaptation .
+
+Contributions. This paper makes four contributions. First, it introduces adjustment speed as a safety constraint for reinforcement learning under nonstationarity and formalizes safety in terms of adaptation feasibility , defined by whether the adaptation required by forecasted environmental change remains within the calibrated safe-recovery en-velope for the required horizon. Second, it proposes a proactive framework (ASASC-NS) that combines context representation, context forecasting, adaptation-demand estimation, and action-level shielding to anticipate regimes in which safe adaptation may become infeasible. Third, it provides a conditional theoretical characterization of how envi-ronmental change and calibrated recovery capacity affect violation risk under distribution shift. Fourth, it empirically shows reduced safety violations in short-horizon windows aligned to context changes and analyzes how optimization-level adjustment and action-level shielding affect switch-conditioned, peak, and tail-risk metrics. 2Preprint. 
+
+# 2 RELATED WORK 
+
+Safe reinforcement learning is commonly studied in constrained Markov decision processes (CMDPs), where safety is enforced through explicit cost or risk constraints (Altman, 1999). Representative approaches include constrained policy optimization (Achiam et al., 2017), Lagrangian formulations (Tessler et al., 2019), and Lyapunov-based meth-ods (Chow et al., 2018; Berkenkamp et al., 2017). These methods provide principled safety mechanisms, but typically assume stationary or slowly varying environments. A second line of work enforces safety through shielding or safety filtering, where unsafe actions are modified before execution (Alshiekh et al., 2018; Dalal et al., 2018). Hybrid approaches combine learned policies with control-theoretic safety filters (Wabersich & Zeilinger, 2021). While effective, these mechanisms are largely reactive: they act after unsafe behavior is proposed rather than anticipating when changing conditions make safe adaptation difficult. Research on nonstationary and continual reinforcement learning addresses changing environments through contextual MDPs (Hallak et al., 2015), meta-learning (Finn et al., 2017), continual learning and regularization against forgetting (Kirkpatrick et al., 2017), and explicit modeling of context dynamics (Xie et al., 2020; Nagabandi et al., 2019). Recent work on plasticity loss in deep continual learning and continual deep RL shows that adaptation capacity itself can degrade or vary over time (Dohare et al., 2024; Abbas et al., 2023; Juliani & Ash, 2024). Recent work has also begun to study safety under nonstationarity through context- or uncertainty-aware constraints (Chen et al., 2021; Ding & Lavaei, 2023; Wen et al., 2022). However, existing methods generally do not provide an explicit operational criterion for determining when environmental change outpaces the agent’s ability to adapt safely. We therefore treat Cadapt as a calibrated recovery threshold rather than a complete neural-plasticity model. In contrast, we model safety under nonstationarity through adaptation feasibility . The proposed framework predicts when adaptation becomes infeasible, identifies unsafe state regions that should be avoided, and uses this signal to guide policy adaptation and tighten action-level shielding. This shifts the focus from reactive correction to proactive avoidance of unsafe state regions. 
+
+# 3 PRELIMINARIES 
+
+We consider reinforcement learning in nonstationary environments modeled as a time-dependent Markov decision process Mt = ( S, A, P t, R t), where the transition kernel and reward function may vary over time. To capture this variability, we assume the environment is governed by a latent context variable zt ∈ Z such that transitions depend on 
+
+(st, a t, z t).Safety is defined through an unsafe set U ⊂ S , with violations indicated by 
+
+vt = 1{st ∈ U} .
+
+The objective is to minimize violations while maintaining task performance. When the context changes, a policy learned under previous dynamics may no longer remain safe or effective. If the rate of environmental change exceeds the agent’s ability to adapt, transient safety violations may occur. This motivates mechanisms that explicitly account for the relationship between environmental change and adaptation capacity. 
+
+# 4 METHOD 
+
+This section introduces Adjustment Speed as a Safety Constraint in Nonstationary Reinforcement Learning (ASASC-NS). The method monitors predicted environmental change and asks whether the adaptation required to remain safe lies within the calibrated recovery envelope for the required horizon. When the predicted adaptation demand exceeds the learning system’s achievable adaptation capacity, ASASC-NS uses the feasibility signal for optimization-level adjustment and for tightening the admissible action set through shielding. 4.1 CONTEXT -D EPENDENT NONSTATIONARY MDP We model nonstationarity through a context-dependent MDP 
+
+Mκ = ( S, A, P κ, r κ, c κ, γ ), (1) where the latent context κ indexes the transition dynamics, reward, and safety cost. The state and action spaces are shared across contexts, but the same state-action pair may induce a different next-state distribution when the context 3Preprint. changes. In the driving domain, changes in traffic density, surrounding-vehicle speed, aggressiveness, and observation noise therefore affect Pκ(s′ | s, a ) and cκ(s, a ) rather than requiring a new state space. Safety is represented by a cost or risk signal cκ(s, a ), and an action is admissible when its predicted risk is below the current threshold. 4.2 CONTEXT EXTRACTION AND PREDICTION 
+
+The context encoder is not a full model-based RL planner. It is a representation module used to estimate the current operating regime from recent transition evidence. Let 
+
+ht = {(si, a i, s i+1 )}ti=t−m (2) be a sliding window of recent transitions. The encoder maps this window to a latent context estimate 
+
+ˆκt = fθ (ht). (3) In implementation, fθ can be a recurrent encoder or Transformer over transition tuples. It is trained with an auxiliary context-conditioned next-state prediction loss, 
+
+Lctx (θ, ψ ) = X
+
+> (si,a i,s i+1 )∈ht
+
+ℓ(si+1 , ˆpψ (si, a i, ˆκt)) + λcons Lcons , (4) where Lcons encourages windows from the same regime to produce similar context embeddings. This objective makes 
+
+ˆκt predictive of regime-level dynamics relevant to safety, without using the model for full model-based control. A predictor forecasts the near-future context over a fixed short horizon ∆:
+
+ˆκt+∆ = gϕ(ˆ κt−L+1: t, ∆) . (5) In implementation, gϕ is a recurrent forecaster trained on observed context sequences using prediction error between the forecasted embedding ˆκt+∆ and the embedding later extracted from the realized transition window. The phrase “near future” therefore denotes this fixed prediction horizon. In the reported implementation we use ∆ = 10 context-update steps, chosen as a fixed short horizon for forecasting near-term context evolution used by the adaptation-feasibility monitor. 4.3 ADAPTATION DEMAND , C APACITY , AND FEASIBILITY 
+
+The predicted adaptation demand is the magnitude of the forecasted context displacement: 
+
+At = ∥ˆκt+∆ − ˆκt∥2 . (6) Thus, At measures predicted regime shift in the learned context space, not raw observation change. Since ∆ is fixed, using At is equivalent to using At/∆ for ranking the adaptation speed required over that horizon. The adaptation capacity Cadapt is an empirical recovery-capacity threshold expressed in the same latent-distance units as At. It is calibrated from training rollouts as a conservative quantile of context displacements after which the agent recovers below a target violation level within a recovery horizon Hrec :
+
+Cadapt = Quantile q ({At : ¯ vt:t+Hrec ≤ η}) , (7) where ¯vt:t+Hrec is the average violation indicator after the shift and η is a tolerated recovery-level violation rate. The quantile q is selected on calibration rollouts: smaller values make the trigger more conservative, while larger values allow larger shifts before intervention. This quantity should be interpreted as an operational safe-recovery threshold, not as a complete measure of neural plasticity. 
+
+Relation to plasticity. We do not claim that Cadapt is a complete measure of neural plasticity or parameter-level adaptability. Instead, it is an operational recovery-capacity threshold calibrated from observed post-shift learning behavior. This distinction separates our safety trigger from broader questions of plasticity loss in deep continual learning: ASASC-NS uses recovery evidence to decide when safety constraints should become more conservative, rather than attempting to characterize which network weights remain plastic. The feasibility ratio is then 
+
+ρt = At
+
+Cadapt + ϵ , (8) where ϵ > 0 avoids division by zero. Values ρt ≤ 1 indicate shifts within the calibrated recovery envelope, while 
+
+ρt > 1 indicates predicted adaptation demand exceeding observed safe recovery capacity. 4Preprint. 
+
+Algorithm 1 ASASC-NS decision step 
+
+1: Update transition window ht = {(si, a i, s i+1 )}ti=t−m
+
+2: Estimate context ˆκt = fθ (ht)
+
+3: Forecast context ˆκt+∆ = gϕ(ˆ κt−L+1: t, ∆) 
+
+4: Compute At = ∥ˆκt+∆ − ˆκt∥2
+
+5: Compute ρt = At/(Cadapt + ϵ)
+
+6: Set τ AS  
+
+> t
+
+= τ0 − λ max(0 , ρ t − 1) 
+
+7: Obtain policy action aRL  
+
+> t
+
+∼ π(· | st)
+
+8: if ˆc(st, a RL  
+
+> t
+
+; ˆ κt) ≤ τ AS  
+
+> t
+
+then 
+
+9: Execute at = aRL 
+
+> t
+
+10: else 
+
+11: Execute at = arg min a∈A safe (st) ˆc(st, a ; ˆ κt), or fallback if Asafe (st) = ∅
+
+12: end if 
+
+13: Observe st+1 and, for adjustment variants, update DQN with rAS  
+
+> t
+
+from Eq. 9 4.4 OPTIMIZATION -L EVEL ADJUSTMENT 
+
+The feasibility signal can be used before action shielding as an optimization-level safety regulator. In the DQN instantiation, the reward used in the temporal-difference target is adjusted by a context-dependent safety penalty, 
+
+rAS  
+
+> t
+
+= rt − βAS max(0 , ρ t − 1) ˆ c(st, a t; ˆ κt), (9) where βAS ≥ 0 controls the strength of the adjustment. The resulting DQN loss is 
+
+LAS DQN =
+
+
+
+Qω (st, a t) −
+
+h
+
+rAS  
+
+> t
+
++ γ max  
+
+> a′
+
+Q¯ω (st+1 , a ′)
+
+i 2
+
+. (10) The Adj-only ablation uses this optimization-level penalty without action filtering. The Shield-only ablation sets 
+
+βAS = 0 and uses the same feasibility signal only to construct the admissible action set. The Full method uses both mechanisms. This separation makes clear which part of the method affects learning updates and which part affects runtime action selection. 4.5 CONSTRAINT TIGHTENING AND ACTION SHIELDING 
+
+ASASC-NS converts adaptation infeasibility into a state-action safety intervention. The safety threshold is tightened when ρt > 1:
+
+τ AS  
+
+> t
+
+= τ0 − λ max(0 , ρ t − 1) , (11) where τ0 is the nominal threshold and λ controls tightening strength. The admissible action set is 
+
+Asafe (st) = {a ∈ A : ˆ c(st, a ; ˆ κt) ≤ τ AS  
+
+> t
+
+}. (12) In the driving experiments, ˆc is computed from interpretable safety diagnostics such as collision or overlap risk, minimum gap, and time-to-collision. An action is unsafe if the predicted safety cost violates the tightened threshold. If the DQN action is inadmissible, the shield replaces it with the lowest-risk admissible action; if no admissible action is available, a conservative fallback action is executed. 4.6 ALGORITHM OVERVIEW 
+
+At each decision step, ASASC-NS updates the transition window, estimates the current context, predicts the future context, computes At and ρt, and then selects an action subject to the tightened admissible set. The mechanism is proactive because intervention is triggered by predicted adaptation infeasibility rather than by an already observed safety violation. 
+
+# 5 EXPERIMENTS 
+
+We evaluate whether the proposed method reduces transient safety violations under nonstationarity and analyze how its optimization-level and shielding-level instantiations affect switch-aligned safety metrics. 5Preprint. 5.1 EXPERIMENTAL SETUP 
+
+Experimental instantiation. In merge-v0 , nonstationarity is implemented as switching among traffic regimes that differ in traffic density, surrounding-vehicle speed, interaction aggressiveness, and observation noise. These regime changes modify the context-dependent transition distribution Pκ(s′ | s, a ): for the same ego state and action, the next state may differ because surrounding vehicles move and interact differently across regimes. Thus, the experiments evaluate dynamics-level nonstationarity rather than merely introducing new states. Safety is evaluated using collision and proximity-based diagnostics. A state-action pair is treated as unsafe when it is predicted to produce collision or overlap, insufficient front/rear gap, or time-to-collision below a safety threshold. The shield evaluates the discrete candidate actions available to the DQN policy using the predicted safety cost ˆc(st, a ; ˆ κt).If the policy-selected action violates the current threshold, the shield replaces it with the lowest-risk admissible action; if no admissible action exists, a conservative fallback action is executed. The ablations compare two operational uses of the same adaptation-feasibility signal. The adjustment-only variant uses this signal through the reward adjustment in Eq. 9, while the shield-only variant uses it to update a context-dependent reach-avoid safety specification and filter unsafe actions. The full method combines both uses. We report early-violation, peak-risk, tail-violation, and intervention-related diagnostics to distinguish transient-safety improvement from excessive conservatism. 
+
+Environment and nonstationarity. We evaluate on merge-v0 from highway-env , augmented with a Markov context-switching mechanism to induce controlled nonstationarity. At each timestep, the environment remains in the current context with probability pstay and switches otherwise. Unless otherwise stated, we use a strong nonstationarity setting with pstay = 0 .5, which induces frequent regime changes. 
+
+Agent and training. All methods use the same DQN architecture, optimizer, replay settings, and training horizon of 20k timesteps, differing only in the safety mechanism. We report results across N = 10 random seeds. All runs use identical environment settings and the same context-switching process for a given seed. 
+
+Methods and ablations. We compare the following variants: • Baseline : DQN without the adaptation-feasibility signal, without adjustment-speed-based optimization, and without action filtering. • Adj-only : DQN using the adaptation-feasibility signal to modify the optimization criterion, but without action filtering. • Shield-only : DQN using the same adaptation-feasibility signal to update a context-dependent reach-avoid safety specification and filter unsafe actions, but without the optimization-level adjustment. • Full : DQN combining optimization-level adjustment with context-dependent reach-avoid shielding. 
+
+Adjustment-speed activation and unsafe actions. The adaptation-feasibility signal is activated when the feasibility ratio satisfies ρt > 1. Unsafe actions are actions whose predicted safety cost exceeds the current context-dependent threshold. In the driving environment, this cost is computed from collision or overlap indicators and proximity diag-nostics such as minimum gap and time-to-collision. When the policy proposes an unsafe action, the shield selects the lowest-risk admissible action or a conservative fallback if no admissible action is available. 
+
+Logging for switch-aligned analysis. To isolate transient failures caused by distribution shifts, we log per-step: (i) the current context id ct, (ii) a switch flag ⊮{ct̸ = ct−1}, (iii) the violation indicator vt ∈ { 0, 1}, and optionally (iv) a shield intervention flag. This enables time-since-switch hazard curves and switch-aligned metrics. 5.2 SAFETY METRICS 
+
+Our goal is to reduce safety failures in short-horizon windows aligned to regime changes, not merely aggregate viola-tion rates. We therefore report three complementary metrics computed from vt ∈ { 0, 1}.
+
+PeakRisk. We define the maximum rolling violation rate with window W :PEAK RISK = max 
+
+> t
+
+1
+
+W
+
+> t
+
+X 
+
+> k=t−W+1
+
+vk. (13) 6Preprint. We use W = 1000 unless otherwise stated. 
+
+Switch-aligned EarlyViol and TailViol. Let {τk}Kk=1 be the timesteps at which a context switch occurs. For each switch time τk, define an early window of length Hearly and a tail window [Htail-start , H tail-end ) measured after the switch. We compute: EARLY VIOL = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+1
+
+Hearly  
+
+> τk+Hearly −1
+
+X
+
+> t=τk
+
+vt, (14) TAIL VIOL = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+1
+
+Htail  
+
+> τk+Htail-end −1
+
+X 
+
+> t=τk+Htail-start
+
+vt, Htail = Htail-end − Htail-start . (15) In our experiments we set Hearly = 1000 , Htail-start = 3000 , and Htail-end = 5000 . These window sizes define short-and longer-horizon switch-conditioned summaries under the chosen switching frequency. Because additional switches may occur within either window, the metrics characterize behavior conditioned on a switch event rather than recovery from an isolated switch. 
+
+Reporting. For all scalar metrics we report mean ± 95% confidence intervals across seeds. 5.3 MAIN RESULTS UNDER STRONG NONSTATIONARITY 
+
+Table 1 reports safety metrics under frequent context switching with pstay = 0 .5. The full method achieves the lowest EARLY VIOL , indicating improved safety during the immediate adaptation phase, while the shield-only instantiation achieves the lowest P EAK RISK and T AIL VIOL in this implementation. Table 1: Safety metrics under frequent context switching ( pstay = 0 .5). We report mean ± 95% CI across N = 10 
+
+seeds. Lower is better for all safety metrics. Method EarlyViol ↓ PeakRisk ↓ TailViol ↓
+
+Baseline 0.0690 ± 0.0069 0.0840 ± 0.0039 0.0698 ± 0.0054 Adj-only 0.0560 ± 0.0218 0.0415 ± 0.0267 0.0598 ± 0.0054 Shield-only 0.0510 ± 0.0118 0.0335 ± 0.0167 0.0308 ± 0.0064 Full 0.0440 ± 0.0103 0.0535 ± 0.0098 0.0402 ± 0.0031 
+
+Interpreting adjustment, shielding, and their combination. Both the adjustment and shielding variants use the same adaptation-feasibility signal derived from context-forecasted nonstationarity and calibrated recovery capacity. The adjustment-only variant uses this signal in the adjusted TD target from Eq. 10, whereas the shield-only variant uses it to construct an updatable context-dependent reach-avoid safety specification. The full method combines both interventions. Because the optimization-level adjustment and action-level shield influence the same policy behavior, their effects need not be additive; implementation-level interactions can make the combined method perform better on short-horizon switch-conditioned violations while the shield-only variant remains stronger on some peak-risk metrics. Thus, the ablation should be interpreted as comparing two operational uses of adaptation feasibility, not as showing that the shield is independent of the proposed mechanism. 
+
+Transient safety improvements. The largest gains appear in E ARLY VIOL , which is consistent with the purpose of the adjustment-speed mechanism: to tighten safety specifically when predicted environmental change exceeds adaptation feasibility. 
+
+Worst-case burst behavior. PEAK RISK captures rare but high-risk violation bursts. In this implementation, the shield-only variant attains the lowest peak value, suggesting that the reach-avoid shielding instantiation is especially effective at suppressing burst risk. The full method remains lower than the baseline, but does not dominate shield-only on P EAK RISK . This is consistent with interaction effects between optimization-level adjustment and action-level shielding, rather than with a failure of adaptation-feasibility information itself. 
+
+Steady-state behavior. TAIL VIOL reflects violation rates in a longer-horizon window following each recorded switch. The lower tail violation rates of shield-only and full suggest that adaptation-feasibility-guided safety inter-ventions remain useful beyond the short-horizon switch-conditioned window. However, the main advantage of the full method is concentrated in early adaptation rather than in uniformly dominating every instantiation on all metrics. 7Preprint. 5.4 ABLATION SUMMARY 
+
+The ablation results suggest that the two uses of the adaptation-feasibility signal play different roles. Optimization-level adjustment contributes most directly to improved early adaptation safety, as reflected in the reduction of E AR -
+
+> LY
+
+VIOL , while reach-avoid shielding is particularly effective at suppressing high-risk bursts and lowering later vio-lation levels. Their combination yields the strongest early-phase safety performance, but the shield-only instantiation remains stronger on P EAK RISK and T AIL VIOL in this implementation. 
+
+Scope of the empirical claim. The results should be interpreted as evidence for targeted transient-safety improve-ment rather than uniform dominance of the combined method over each component. Shield-only uses the same adaptation-feasibility mechanism to update the reach-avoid safety specification and may achieve lower peak or tail violations when shielding dominates the safety behavior. The full method combines shielding and optimization-level adjustment; interactions between them may improve early safety without improving every peak- or tail-risk metric. 5.5 NONSTATIONARITY SWEEP 
+
+We sweep switching severity by varying pstay ∈ { 0.50 , 0.70 , 0.85 , 0.95 , 0.99 } and report E ARLY VIOL in Figure 2. Lower pstay corresponds to more frequent regime switches. The purpose of this sweep is not to claim monotonic behav-ior in every finite-sample setting, but to test whether the feasibility gate remains useful across switching frequencies. Across the evaluated settings, the proposed method maintains lower short-horizon switch-conditioned violation rates than the unconstrained baseline, although the size of the gap varies with switching frequency and confidence intervals. 5.6 TIME -S INCE -S WITCH HAZARD ANALYSIS 
+
+To analyze switch-conditioned safety bursts, we align trajectories by the most recent context switch. Let ∆t =
+
+t − max {τk : τk ≤ t} denote time since the last switch. Violations occur as sparse, burst-like events rather than as a continuous signal, which results in spiky hazard curves even after aggregation. Accordingly, the analysis focuses on relative differences in violation frequency and intensity across methods, particularly at small values of time since the most recent switch. Figure 3 plots the empirical violation probability as a function of ∆t. The baseline exhibits elevated violation probabil-ity at several values of time since the most recent switch. The full method shows lower violation levels over portions of the short-horizon switch-conditioned interval, consistent with proactively tightening constraints when predicted change exceeds adaptation feasibility. 0.50 0.55 0.60 0.65 0.70 0.75 0.80 
+
+> pstay
+> 0.045
+> 0.050
+> 0.055
+> 0.060
+> 0.065
+> EarlyViol
+> Nonstationarity sweep: EarlyViol
+> Baseline
+> Full
+
+Figure 2: Effect of nonstationarity on transient safety. 
+
+Early-phase violation rate (E ARLY VIOL ) as a function of the context-persistence probability pstay . Lower values of 
+
+pstay correspond to more frequent context switches and stronger nonstationarity. The proposed method main-tains lower violation rates across the displayed switching regimes, although the improvement is not monotonic and the gap varies across settings. 
+
+Figure 3: Transient safety after distribution shift. Em-pirical violation probability Pr( vt = 1 | ∆t) as a func-tion of time since the most recent context switch. Despite visible variability due to the bursty nature of violations, the full method shows reduced violation levels over por-tions of the short-horizon switch-conditioned interval. 8Preprint. 5.7 ADDITIONAL VISUALIZATIONS 
+
+To complement the aggregate safety metrics, we visualize the temporal evolution of violations during training. Figure 4 shows the rolling violation rate, highlighting transient bursts that occur when the agent encounters unfamiliar regimes. Consistent with the main results, the full method shows lower rolling violation levels during early adaptation. Figure 5 reports the cumulative mean violation rate over the training horizon. The separation between curves during earlier training is consistent with lower observed violation rates for the full method, while the later reduction in separation indicates smaller differences during later training. 0 1000 2000 3000 4000 5000 6000 
+
+> Training timestep
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> 0.200
+> Rolling violation rate (window = 500)  Baseline
+> Full method
+
+Figure 4: Rolling violation rate during early training un-der pstay = 0 .5. The full method shows lower rolling violation levels during adaptation to unfamiliar regimes. 
+
+Figure 5: Cumulative mean violation rate during train-ing. Early-phase safety improvements are visible, while the curves become closer later in training. 
+
+Scope and limitations. This work does not aim to characterize catastrophic forgetting or neural plasticity at the parameter level. Instead, we study adaptation feasibility as a safety condition: given a predicted context shift, the question is whether the required adaptation remains within the calibrated recovery envelope for the specified horizon. If the predicted adaptation demand exceeds the calibrated recovery capacity, then ordinary adaptation is treated as unsafe and stronger intervention is required, such as tighter constraints, shielding, or context-dependent policy adjustment. Thus, Cadapt is not a general plasticity measure; it is an operational safety threshold used to decide when predicted nonstationarity makes otherwise reachable regions unsafe under the agent’s current adaptation capability. The present evaluation focuses on the safety diagnostics directly targeted by the proposed adaptation-feasibility mechanism and does not provide a complete task-performance analysis. Broader task-return reporting and additional environments remain important directions for follow-up evaluation. 
+
+# 6 CONCLUSION 
+
+This paper introduced adaptation feasibility as a safety principle for reinforcement learning under nonstationarity. The objective is not to maximize adaptation speed itself, but to determine whether the adaptation required by forecasted environmental change remains within the calibrated recovery envelope for the required horizon. Future states or regions may become unsafe when ordinary adaptation cannot keep pace with the required adaptation demand. The proposed framework operationalizes adaptation feasibility. Nonstationarity is represented through a context-dependent MDP, current context is estimated from transition windows, future context is predicted over a short horizon, and adaptation demand is measured as the predicted displacement in latent context space. Adaptation capacity is treated as an empirical recovery threshold, not as a complete model of neural plasticity. When the feasibility ratio exceeds one, the method tightens the safety threshold and restricts the admissible action set through shielding. The experiments show that this mechanism primarily improves safety in short-horizon windows aligned to con-text changes, which is the intended target of the adjustment-speed constraint. The ablation also shows that the shielding-only instantiation can be more conservative for peak and tail risk. Thus, the empirical contribution should be interpreted as evidence that adaptation-feasibility monitoring helps identify high-risk transition periods, while optimization-level adjustment and reach-avoid shielding provide complementary uses of the same safety signal. Overall, this work positions adaptation feasibility as a useful principle for safe reinforcement learning under nonsta-tionarity. Safety depends not only on whether a constraint exists, but also on whether the required adaptation remains within the calibrated recovery envelope for the required horizon under forecasted environmental change. Future work will extend this formulation to richer forms of nonstationarity, stronger capacity estimators, and broader evaluations of the trade-off between intervention frequency, conservatism, and safety. 9Preprint. 
+
+# REFERENCES 
+
+Zaheer Abbas, Rosanne Liu Zhao, Joseph Modayil, Adam White, and Marlos C. Machado. Loss of plasticity in continual deep reinforcement learning. In Conference on Lifelong Learning Agents , 2023. Joshua Achiam, David Held, Aviv Tamar, and Pieter Abbeel. Constrained policy optimization. In International Conference on Machine Learning (ICML) , 2017. Mohammad Alshiekh, Roderick Bloem, Rüdiger Ehlers, Bettina Könighofer, Scott Niekum, and Ufuk Topcu. Safe reinforcement learning via shielding. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 32, 2018. Eitan Altman. Constrained Markov decision processes , volume 7. CRC press, 1999. Felix Berkenkamp, Marcello Turchetta, Angela P. Schoellig, and Andreas Krause. Safe model-based reinforcement learning with stability guarantees. In Advances in Neural Information Processing Systems (NeurIPS) , 2017. Baiming Chen, Zuxin Liu, Jiacheng Zhu, Mengdi Xu, Wenhao Ding, Liang Li, and Ding Zhao. Context-aware safe reinforcement learning for non-stationary environments. In 2021 IEEE International Conference on Robotics and Automation (ICRA) , pp. 10689–10695. IEEE, 2021. Yinlam Chow, Ofir Nachum, Edgar Duenez-Guzman, and Mohammad Ghavamzadeh. A lyapunov-based approach to safe rein-forcement learning. In Advances in Neural Information Processing Systems , 2018. Gal Dalal, Roi Gilboa, Shie Mannor, and Ran El-Yaniv. Safe exploration in continuous action spaces. In Jennifer Dy and Andreas Krause (eds.), Proceedings of the 35th International Conference on Machine Learning , volume 80 of Proceedings of Machine Learning Research , pp. 1471–1480. PMLR, 2018. URL https://proceedings.mlr.press/v80/dalal18b.html .Yuhao Ding and Javad Lavaei. Provably efficient primal-dual reinforcement learning for cmdps with non-stationary objectives and constraints. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 37, pp. 7396–7404, 2023. Shibhansh Dohare, J. Fernando Hernandez-Garcia, Qingfeng Lan, Parash Rahman, A. Rupam Mahmood, and Richard S. Sutton. Loss of plasticity in deep continual learning. Nature , 2024. Chelsea Finn, Pieter Abbeel, and Sergey Levine. Model-agnostic meta-learning for fast adaptation of deep networks. In Interna-tional conference on machine learning , pp. 1126–1135. PMLR, 2017. Assaf Hallak, Dotan Di Castro, and Shie Mannor. Contextual markov decision processes. In International Conference on Machine Learning , 2015. Arthur Juliani and Jordan T. Ash. A study of plasticity loss in on-policy deep reinforcement learning. In Advances in Neural Information Processing Systems , 2024. James Kirkpatrick et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the National Academy of Sciences ,2017. Timothy Lillicrap et al. Continuous control with deep reinforcement learning. ICLR , 2016. Volodymyr Mnih et al. Human-level control through deep reinforcement learning. Nature , 2015. Anusha Nagabandi, Ignasi Clavera, Siyuan Liu, Ronald Fearing, Pieter Abbeel, Sergey Levine, and Chelsea Finn. Learning to adapt in dynamic, real-world environments through meta-reinforcement learning. In International Conference on Learning Representations , 2019. Chen Tessler, Daniel J. Mankowitz, and Shie Mannor. Reward constrained policy optimization. In International Conference on Learning Representations (ICLR) , 2019. URL https://openreview.net/forum?id=SkfrvsA9FX .Kim P. Wabersich and Melanie N. Zeilinger. A predictive safety filter for learning-based control of constrained nonlinear dynamical systems. IEEE Transactions on Automatic Control , 2021. Lu Wen, Songan Zhang, H Eric Tseng, Baljeet Singh, Dimitar Filev, and Huei Peng. Improved robustness and safety for pre-adaptation of meta reinforcement learning with prior regularization. In 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pp. 8987–8994. IEEE, 2022. Annie Xie, James Harrison, and Chelsea Finn. Lifelong reinforcement learning with context-dependent exploration. In Advances in Neural Information Processing Systems , 2020. 
+
+10 Preprint. 
+
+# A CONDITIONAL THEORETICAL CHARACTERIZATION 
+
+This section provides a conditional theoretical characterization of adaptation feasibility under nonstationary environ-ments. The analysis formalizes the intuition that predicted context shifts can increase violation risk when they exceed the agent’s calibrated recovery capacity. The proposed adjustment-speed mechanism mitigates this effect locally by tightening the admissible action set when adaptation is predicted to become unsafe. A.1 ADAPTATION DEMAND AND CAPACITY 
+
+Let ˆκt denote the latent context estimated from the recent transition window ht, and let ˆκt+∆ denote the predicted future context over horizon ∆. Following Section 4.2, the context estimate is obtained as 
+
+ˆκt = fθ (ht), ht = {(si, a i, s i+1 )}ti=t−m, (16) and the future context is predicted as 
+
+ˆκt+∆ = gϕ(ˆ κt−L+1: t, ∆) . (17) The predicted adaptation demand is defined as 
+
+At = ∥ˆκt+∆ − ˆκt∥2 . (18) Thus, At measures predicted displacement in the learned context space rather than raw observation change. Let Cadapt denote the calibrated recovery-capacity threshold introduced in Section 4.3. We treat this quantity as an operational threshold estimated from observed post-shift safety recovery, not as a complete measure of neural plasticity. The adaptation-feasibility ratio is 
+
+ρt = At
+
+Cadapt + ϵ , (19) where ϵ > 0 avoids division by zero. Values ρt ≤ 1 correspond to shifts within the calibrated recovery envelope, while 
+
+ρt > 1 indicates that predicted adaptation demand exceeds observed safe recovery capacity. 
+
+Why a quantile threshold? The quantile calibration is not intended to estimate a universal biological or neural-plasticity constant. It is a validation-set rule for converting observed post-shift recovery behavior into an operational safety threshold. Choosing a lower quantile produces earlier interventions and more conservative behavior; choosing a higher quantile reduces intervention frequency but accepts larger predicted shifts before shielding. This makes Cadapt 
+
+reproducible from logged rollouts and keeps it directly comparable to At.A.2 VIOLATION PROBABILITY UNDER CONTEXT SHIFT 
+
+We now formalize the relationship between context shift and safety violations. 
+
+Lemma 1 (Violation probability under context shift) . Assume that the policy πt was trained or adapted under context 
+
+κt and that the environment transitions toward context κt+∆ . Let 
+
+δt = ∥κt+∆ − κt∥2
+
+denote the context-shift magnitude. If the transition kernel and safety cost are Lipschitz continuous with respect to context, then the probability of entering an unsafe state satisfies 
+
+P(vt = 1) ≤ α + Lδ t,
+
+where α is the baseline violation probability under the original context and L captures the sensitivity of the safety event to context change. 
+
+Proof sketch. Under Lipschitz continuity, a bounded context shift induces a bounded change in the transition distri-bution and safety cost. Because the policy was optimized or adapted under the original context, the shifted transition kernel may increase the probability of reaching unsafe states. Bounding this change by the context-shift magnitude yields the stated inequality. 11 Preprint. A.3 ADAPTATION FEASIBILITY 
+
+The previous lemma shows that violation probability can increase with context shift. However, the learning system may reduce this risk if it can adapt safely before entering high-risk state regions. 
+
+Lemma 2 (Adaptation feasibility) . Suppose that the calibrated recovery threshold Cadapt upper-bounds the context shifts after which the agent has historically recovered below the tolerated violation level within the recovery horizon. If 
+
+At ≤ Cadapt ,
+
+then the predicted context shift lies within the observed safe-recovery envelope. If 
+
+At > C adapt ,
+
+then the shift is outside this envelope and should be treated as adaptation-infeasible for safety control. 
+
+Proof sketch. By construction, Cadapt is calibrated from rollouts in which the agent recovered below a target vi-olation level after context shifts of comparable magnitude. When At ≤ Cadapt , the predicted shift falls within this empirical recovery envelope. When At > C adapt , the method cannot rely on ordinary policy adaptation alone to maintain safety and therefore activates stricter safety control. A.4 EFFECT OF CONSTRAINT TIGHTENING 
+
+When ρt > 1, ASASC-NS tightens the safety threshold and restricts the admissible action set: 
+
+τ AS  
+
+> t
+
+= τ0 − λ max(0 , ρ t − 1) , (20) 
+
+Asafe (st) = {a ∈ A : ˆ c(st, a ; ˆ κt) ≤ τ AS  
+
+> t
+
+}. (21) 
+
+Proposition 1 (Risk reduction under tightened admissibility) . Assume that the safety-cost estimator ˆc ranks candidate actions consistently with their realized violation risk up to bounded estimation error. When ρt > 1, replacing an inadmissible action with the lowest-risk admissible action weakly reduces the predicted one-step violation risk relative to executing the inadmissible policy action. 
+
+Proof sketch. If the policy-selected action violates the tightened threshold, then by definition it lies outside 
+
+Asafe (st). The shield selects an admissible action with lower predicted safety cost or executes a conservative fallback. Under bounded estimation error and consistent risk ranking, this replacement weakly reduces predicted violation risk. The guarantee is conditional on the quality of the safety-cost estimate and should be interpreted as a local admissibility guarantee rather than an unconditional hard-safety guarantee. A.5 INTERPRETATION 
+
+The theoretical results clarify the role of adaptation feasibility. Predicted context shifts can increase safety risk, and shifts outside the calibrated recovery envelope indicate that ordinary policy adaptation may be insufficient. The adjustment-speed mechanism responds by tightening admissibility and restricting actions in regions where safe adap-tation is predicted to be infeasible. These guarantees are intentionally conditional. They do not claim that Cadapt is a full neural-plasticity measure or that the combined method must dominate every shielding instantiation on every metric. Instead, they support the central claim of the paper: context-forecasted adaptation demand can be used as an operational safety signal for identifying high-risk transition periods and proactively restricting unsafe actions. 
+
+# B IMPLEMENTATION DETAILS 
+
+This appendix gives the implementation details that are most relevant for reproducibility. It mirrors the notation in Section 4 and avoids treating the context module as a full model-based RL planner. 
+
+RL backbone. All reported discrete-control experiments use DQN with the same network, optimizer, replay buffer, and training horizon across methods. The safety mechanisms are applied after the DQN proposes an action and before the action is executed. The policy update itself uses the same replay data and optimizer settings for all variants, except that the adjustment-only and full variants include the adjustment-speed regulation term described below. 12 Preprint. 
+
+Optimization-level adjustment. For the Adj-only and Full variants, the DQN update uses the adjusted reward in Eq. 9. The penalty is zero when ρt ≤ 1 and increases with both predicted adaptation infeasibility and predicted safety cost. This gives a concrete implementation of “adjustment-speed-based optimization” without action filtering. The Shield-only variant disables this term by setting βAS = 0 .
+
+Context extraction. The context encoder receives a sliding transition window 
+
+ht = {(si, a i, s i+1 )}ti=t−m,
+
+rather than a single state. In our implementation, each transition tuple is vectorized and passed through a small recurrent encoder. The resulting embedding ˆκt = fθ (ht) summarizes regime-level properties of the local dynamics, such as surrounding-vehicle density, relative speed pattern, aggressiveness, and observation noise. The encoder is trained with the auxiliary loss 
+
+Lctx = X
+
+> (si,a i,s i+1 )∈ht
+
+ℓ(si+1 , ˆpψ (si, a i, ˆκt)) + λcons Lcons ,
+
+where the prediction term encourages ˆκt to encode transition-relevant information and the consistency term encourages windows from the same regime to produce similar embeddings. The learned transition predictor is used only to shape the representation; it is not used as a full planning model. 
+
+Context prediction and horizon. A recurrent predictor forecasts context from recent embeddings, 
+
+ˆκt+∆ = gϕ(ˆ κt−L+1: t, ∆) .
+
+The horizon ∆ = 10 context-update steps defines the fixed short interval over which near-term context evolution and the associated adaptation demand are forecast. Thus, “near future” refers to this specified prediction horizon rather than to an unspecified task horizon. 
+
+Adaptation demand and calibrated capacity. The adaptation demand is 
+
+At = ∥ˆκt+∆ − ˆκt∥2.
+
+The capacity term is calibrated in the same units as At. Specifically, Cadapt is estimated from training rollouts as a high quantile of context displacements after which the agent recovers below a target violation level within a recovery horizon: 
+
+Cadapt = Quantile q
+
+ {At : ¯ vt:t+Hrec ≤ η}.
+
+This makes ρt = At/(Cadapt + ϵ) a dimensionless feasibility ratio. The quantile q controls the conservatism of the trigger and is selected on calibration rollouts together with η. Cadapt should be interpreted as an empirical safe-recovery threshold, not as a parameter-level model of plasticity. 
+
+Constraint tightening and shielding. When ρt > 1, the threshold is tightened according to 
+
+τ AS  
+
+> t
+
+= τ0 − λ max(0 , ρ t − 1) .
+
+For each discrete candidate action, the shield computes a safety-cost estimate ˆc(st, a ; ˆ κt) from collision or overlap risk, gap margins, and time-to-collision. The admissible set is 
+
+Asafe (st) = {a : ˆ c(st, a ; ˆ κt) ≤ τ AS  
+
+> t
+
+}.
+
+If the DQN action is admissible, it is executed. Otherwise, the shield executes the lowest-risk admissible action. If no admissible action exists, a conservative fallback action is used. 
+
+Nonstationarity in merge-v0 . The Markov context-switching process changes regime-level traffic parameters including density, surrounding-vehicle speed distribution, interaction aggressiveness, and observation noise. These changes affect the context-dependent transition kernel Pκ(s′ | s, a ): the same ego state and action can lead to a different next-state distribution because surrounding vehicles behave differently under different contexts. 
+
+Logged quantities. For every run we log context id, switch indicators, violation indicators, predicted context dis-placement At, feasibility ratio ρt, tightened threshold τ AS  
+
+> t
+
+, and shield intervention indicators. These logs support the switch-aligned metrics, hazard curves, ablations, and intervention analysis. 13 Preprint. 
+
+# C ADDITIONAL EXPERIMENTAL AND CALIBRATION DETAILS 
+
+This appendix provides supplementary implementation details. The main theoretical characterization is given in Ap-pendix A; we therefore avoid repeating a second, inconsistent proof or algorithm here. C.1 CALIBRATION OF THE FEASIBILITY THRESHOLD 
+
+The recovery-capacity threshold Cadapt is calibrated from training rollouts using the same latent-distance units as 
+
+At. For each detected or induced context shift, we compute the predicted displacement At and the post-shift average violation rate over a recovery horizon Hrec . Shifts whose post-shift violation rate remains below the tolerated level η
+
+are treated as empirically recoverable. We then set 
+
+Cadapt = Quantile q
+
+ {At : ¯ vt:t+Hrec ≤ η}.
+
+This calibration is deliberately operational: it estimates the largest context displacement for which the current learning system has historically recovered safely. It does not attempt to identify which network weights remain plastic or to model catastrophic forgetting at the parameter level. C.2 ADDITIONAL ALGORITHMIC DETAIL 
+
+The deployed decision step is the same as Algorithm 1 in the main paper. The key implementation choices are: • context is inferred from transition windows (st, a t, s t+1 ), not from a single state; • the context predictor uses ∆ = 10 context-update steps as a fixed short forecasting horizon; • At and Cadapt are both measured in latent-context distance units; • tightening means decreasing the admissible safety threshold τ AS  
+
+> t
+
+as ρt grows above one; • shielding replaces inadmissible DQN actions with the lowest-risk admissible action or with a conservative fallback. C.3 CONTEXT -P REDICTION DIAGNOSTIC 
+
+To address whether the latent predictor is meaningful, the implementation logs the realized forecast error 
+
+epred  
+
+> t
+
+= ∥ˆκt+∆ − ˆκobs 
+
+> t+∆
+
+∥2,
+
+where ˆκt+∆ is the predicted future context and ˆκobs  
+
+> t+∆
+
+is the embedding extracted later from the realized transition window. This diagnostic is used to check that the adaptation-demand signal reflects actual context evolution. The main paper reports downstream safety metrics because the proposed constraint is evaluated by whether it reduces post-shift violations, not by context-prediction error alone. 
+
+# D HYPERPARAMETERS 
+
+Table 2 summarizes the main hyperparameters used in the reported experiments. The safety-specific parameters are calibrated on training rollouts as described in Appendix C.1. 14 Preprint. Table 2: Key training and safety-monitoring hyperparameters. Parameter Value / selection rule RL backbone DQN Learning rate 10 −4
+
+Discount factor 0.99 
+
+Replay buffer size 10 6
+
+Batch size 64 
+
+Training steps 20 ,000 
+
+Strong-switching setting pstay = 0 .5
+
+Context window length m validation-selected transition window Context history length L validation-selected embedding history Prediction horizon ∆ 10 context-update steps Recovery horizon Hrec Hearly = 1000 steps Capacity quantile q high quantile of recoverable shifts Tolerance η validation-selected target violation level Adjustment penalty βAS validation-selected; disabled for Shield-only Tightening strength λ validation-selected safety-margin slope Fallback action conservative lowest-risk action 15
