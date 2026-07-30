@@ -1,0 +1,667 @@
+Title: Borrowed Strength: Best-of-N Search over a Code EncodingBreaks Self-Check Jailbreak Defenses
+
+URL Source: https://arxiv.org/pdf/2607.26639v1
+
+Published Time: Thu, 30 Jul 2026 00:38:01 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Borrowed Strength: Best-of-N Search over a Code Encoding Breaks Self-Check Jailbreak Defenses 
+
+# Haoyu Zhang 1, Shibo Zheng 1, Xiangchen Guan, Zhuoxi Wang 1, Zijian Xiao, Mohammad Zandsalimy 1, Shanu Sushmita 1
+
+> 1
+
+Northeastern University 
+
+Abstract 
+
+A self-check defense asks the target model to assess a request before answering it; SAGE, the strongest published instance, reports an average 99% defense success rate. Composing weak jailbreak transformations is known to be sometimes synergis-tic and usually not (Bugnot et al. 2026); what has not been asked is which compositions defeat a defense , and why. We show SAGE can be breached by composing two attacks indi-vidually harmless against it — an established code-completion encoding and an established best-of-N search over character augmentations, neither of which exceeds 4.7% of behaviors alone, the search even at a full budget of N =100 . Com-posed, with the search budget spent on the encoding, they reach 67 /22 /15% across three open targets, nine to seventy-five times the sum of the parts, and the effect persists on a 70 Btarget. We then explain the composition rather than only re-porting it. First, a self-check defense borrows its strength from the target: SAGE does not detect the attack, it asks the model to, and the four targets convert that request into an explicit re-fusal between 32% and 97% of the time — which orders the spread in defended coverage even though undefended reach is near-identical. Second, which attack survives is decided by the type of defense, and it inverts: against transform defenses the code encoding retains far more of its undefended reach than the character search, while against gate defenses the or-dering flips — on two classifiers sharing one architecture, and at a published gate deployed as it ships, where the search gets 
+
+53 behaviors past the classifier against the encoding’s 14 . We account for this with the number of independent probes an at-tack delivers to a defense’s decision boundary, and show that the canonicalization intended to shrink that number collapses none of best-of-N ’s variants in practice. Finally, we report a validity defect we found and repaired in our own pipeline — a deterministic attack under greedy decoding has no best-of-N
+
+variation channel at all — and give the one-line diagnostic that detects it. All claims rest on 310 ,000 generations scored by a human-validated judge. 
+
+# 1 Introduction 
+
+Best-of-N (BoN) jailbreaking is a black-box attack of dis-arming simplicity (Hughes et al. 2025): apply a random aug-mentation to a harmful request, query the target, and repeat until one of N samples elicits harmful content. It needs no gradients, no logits, and no knowledge of the target, and its success grows smoothly with the budget N . As published, the augmentation is character-level — word scrambling, random capitalization, ASCII noise — and we call that configuration 
+
+original BoN throughout. Defenses answer it in two structurally different ways. A 
+
+gate defense screens the request with a classifier and blocks or passes it. A transform defense rewrites the request before the target answers. The strongest published transform defense is SAGE (Ding et al. 2025), which wraps the request in a self-assessment instruction so the target judges its own input before responding, exploiting the observed gap between a model’s ability to recognize a jailbreak and its tendency to 
+
+comply with one. SAGE reports an average 99% defense success rate across many attacks and model families, and in our own measurements it earns that reputation against each of our attacks taken alone. 
+
+The composition. That composing weak attacks can pay off is established: Bugnot et al. (2026) chain twelve mutators pairwise and find a non-uniform landscape in which most pairs interfere destructively and a small subset is synergistic. Their setting is deliberately narrow in three ways that bound what it can say about deployed systems — the adversary has a fixed budget and performs no search, the targets are unde-fended, and the synergies are reported rather than explained. We change all three. This paper shows that SAGE’s protec-tion does not survive composition. We keep original BoN’s search budget but spend it on a code-completion encoding 
+
+of the request (Ren et al. 2024) in place of the character noise. That encoding is deterministic, so the draws differ through the target’s sampling alone — one probe repeated, which is what later explains the inversion. We call the result 
+
+BoN-wrapped CodeAttack ; the composition is ours, both ingredients are established. Against SAGE, neither ingredient alone works: the code encoding fired once succeeds on 4.7% 
+
+(Llama-3.1-8B), 1.8% (Qwen2.5-7B) and 0.2% (Gemma-2-9B) of HarmBench behaviors, and original BoN at N =100 
+
+on 3.0% , 0.0% and 0.0% . Composed, they reach 67 %, 22 %
+
+and 15 % — nine, twelve and seventy-five times the sum of the parts. The same hundred queries that buy three percent-age points on the character encoding buy sixty-two on the code encoding. 
+
+Why it works: borrowed strength. A composition result is only as good as its explanation, so we ask what SAGE is actually doing. Because it is a self-check , its efficacy is bounded not by its own design but by whether the target arXiv:2607.26639v1 [cs.CR] 29 Jul 2026 acts on the verdict it is asked to produce. We measure this directly on raw response text, independently of any judge: under SAGE, Qwen and Gemma refuse 96 .3% and 97 .3% 
+
+of code-encoded requests in short responses, whereas Llama performs the requested analysis at three times the length and converts it into an explicit refusal only 31 .8% of the time, with Llama-3.3-70B between them at 68 .7% . Undefended, the four targets are almost equally breakable ( 92 –97% ), so neither raw alignment nor the attack’s potency explains the spread in defended coverage — the refusal disposition or-ders it. A self-check defense inherits its strength from the target’s willingness to refuse itself , which turns the obvi-ous objection (“your headline holds only on Llama”) into a mechanism-level prediction. We also report where it stops short: coverage at N =100 saturates, so the fourth target’s intermediate refusal rate lands at the low end rather than the middle — though below saturation the mapping is strictly monotone on all four. 
+
+Why it inverts: probe count. Our two attacks do not have a fixed ranking; which one survives is decided by the defense’s type (Figure 2). Against the two transform defenses the code encoding retains far more of its undefended reach than the character search; against a canonicalize-then-guard gate the ordering flips. We account for this with the number of in-dependent probes an attack delivers to a defense’s decision boundary. A gate is a boundary to be searched, so an attack supplying many distinct inputs erodes it while a deterministic encoding supplying one does not; a transform has no bound-ary to search, so the deterministic encoding’s advantage — that its single form is one the self-check mishandles — is preserved across every draw. The design corollary is measur-able: a defense seeking N -independence must collapse the attack’s actual variance axes, and we find that the canonical-ization proposed for exactly this purpose (Armstrong et al. 2025) collapses 0% of original BoN’s variants, because it normalizes case but not the character scrambling and ASCII noise that carry the diversity. 
+
+A validity defect worth reporting. Preparing a longer-budget run, we found that our own code arm had no best-of-N variation channel: the encoding was a deterministic template (one distinct string per behavior) and the target ran at temperature 0, so the hundred “draws” differed only by serving nondeterminism. Every per-draw number stood; every union-over-N number did not. We repaired it by giving both arms a uniform sampling temperature and re-running the full matrix, and we report the one-line diagnostic that detects the defect — median distinct responses per behavior, which must be ≈ N — because the same failure is invisible in stored outputs that all look like genuine model responses. 
+
+Contributions. 
+
+• A composition attack that breaches a published self-check defense. Composition is known to be occasion-ally synergistic on undefended models (Bugnot et al. 2026); we show a composition that defeats a defense hold-ing each ingredient. BoN-wrapped CodeAttack reaches 
+
+67 /22 /15% of behaviors under SAGE on three targets where the code encoding alone reaches ≤ 4.7% and best-of-N alone ≤ 3.0% — 9–75 × the sum of the parts — and 22% on a 70 B target, so the result is not an artifact of small models. 
+
+• The borrowed-strength mechanism. That self-check de-fenses vary by target is known; we supply the governing quantity. A self-check defense’s strength is the target’s disposition to refuse itself, measured judge-independently at 31 .8/68 .7/96 .3/97 .3% and ordering the spread in de-fended coverage that undefended breakability does not. We also report where it stops: the N =100 metric sat-urates, though below saturation the mapping is strictly monotone. 
+
+• The defense-type inversion and its probe-count ac-count , replicated across two guard classifiers and con-firmed at the decision boundary of a published gate de-ployed as it ships, with the measured 0% collapse rate of the canonicalization designed to prevent it, yielding a cheap diagnostic any defense paper can run. 
+
+• A validity requirement for best-of-N evaluation , from a defect we found in our own pipeline, with the diagnostic that detects it. All results are 310 ,000 generations under a human-validated judge. The pipeline, the configuration of every reported cell, and the per-draw judgments are provided as supplementary material. 
+
+# 2 Related Work 
+
+Best-of-N and inference-time search. BoN jailbreak-ing (Hughes et al. 2025) resamples character-level aug-mentations until one succeeds; follow-ups accelerate the search (Beetham et al. 2026) or amortize it across prompts (Huang 2024), and few-shot priming raises per-sample odds in a grey-box setting (Zheng et al. 2024). All of these vary the search . We instead vary what is being searched over, and study the interaction between that choice and the defense’s type. 
+
+Encoding and framing attacks. Persuasive framing (Zeng et al. 2024) and code-completion framing (Ren et al. 2024) re-express a harmful request in a form whose surface differs from its intent. These are normally evaluated single-shot. Our contribution is not the encoding but its composition with a search, and the finding that the composition is worth far more than either part against one class of defense and less against the other. 
+
+Composing attacks. The closest work to ours studies com-position directly: Bugnot et al. (2026) evaluate all ordered pairs of twelve mutators on three aligned models and re-port that most chains fail to beat their constituents while a minority are synergistic. Composition also appears in auto-mated form — Li et al. (2026) evolve and combine symbolic attack rules under verifier feedback — in a single prompt, where Zhang et al. (2025) obfuscate query and response si-multaneously and Zeng et al. (2024) layer framing onto an existing request, and across turns, where Weng et al. (2025) aggregate individually weak steps into a breach. Two gaps in that line define our contribution. First, the composed object there is transformation × transformation; ours is transfor-mation × search , and the search is what converts a 4.7% single-shot encoding into a 67% breach. Second, that line evaluates against bare aligned models — interaction with safety defenses is named as future work — whereas the com-position’s whole interest here is that it defeats a defense each ingredient respects. We also supply what an empirical land-scape cannot: a mechanism that says when to expect synergy, and predicts a case where the ordering inverts. 
+
+Input-transformation and self-check defenses. Smooth-LLM and paraphrase-and-vote defenses (Robey et al. 2025; Ji et al. 2025) perturb the prompt and aggregate; canoni-calization and dark-prompt filters (Armstrong et al. 2025) normalize it before screening; guard classifiers screen it di-rectly (Han et al. 2024; Inan et al. 2023). SAGE (Ding et al. 2025) descends instead from Self-Reminder (Xie et al. 2023), the first defense to wrap a request in an instruction that re-cruits the model’s own safety awareness: it neither normal-izes nor classifies but delegates the judgment to the target. Self-check is a family and we measure one member: Phute et al. (2024) delegate on the output side instead, screening the response; whether borrowed strength governs that variant is limitation (v). Wang et al. (2025) delegate to a separate 
+
+shadow model, which borrows nothing from the target — the boundary our account predicts. The disposition SAGE borrows is itself documented — Mao et al. (2026) find rea-soning models that recognise a query’s harm then override the judgment mid-trajectory, the failure our refusal measure-ment sees from outside. That such defenses vary across tar-gets is already reported; the governing quantity is not, and we measure it. Usually treated as one family of cheap black-box defenses, they do not behave as one under a best-of-N
+
+attacker: the axis separating them is not strength but whether they present a searchable decision boundary. 
+
+Evaluation methodology. The adversarial-robustness lit-erature has long held that single-attack evaluation overstates a defense and that reliable evaluation needs diverse attacks and adaptive testing (Croce and Hein 2020; Carlini et al. 2019). We inherit that discipline in two ways: we report at-tacker success as a union over a query budget rather than a per-draw average, and we treat a defense’s reported success rate as conditional on the attack composition it was measured against. Two concurrent works interrogate best-of-N num-bers themselves, from the opposite side of ours. Feng et al. (2026) give the estimator a principled treatment, modelling per-sample success as a Beta mixture to extrapolate ASR at large budgets from small ones. Monteuuis, Chen, and Pe-tit (2026) argue that a single lucky success inflates ASR 
+
+and propose counting a prompt as jailbroken only when all 
+
+k evaluations agree — an AND-reduction, the opposite di-rection from best-of-N ’s OR. Both harden what counts as a 
+
+success ; our methodological observation is prior to that ques-tion and concerns whether the N draws exist as independent attempts at all (Section 4). Harmful behaviors come from HarmBench (Mazeika et al. 2024); JailbreakBench (Chao et al. 2024) supplies the refusal conventions we follow in judging. 
+
+# 3 Threat Model and Setup 
+
+Attacker. Black-box, with a query budget N and no access to gradients, logits, or model internals. The attacker may resubmit a behavior up to N times and needs one success. 
+
+Targets. Four open instruction-tuned text models, served locally. The primary panel is three families at compara-ble size — Llama-3.1-8B-Instruct, Qwen2.5-7B-Instruct, Gemma-2-9B-it (bf16) — because borrowed strength pre-dicts variation across alignment styles, which a single-family panel would hide. We add Llama-3.3-70B-Instruct (fp8), 
+
+∼ 8× larger and sharing Llama-3.1-8B’s lineage, to sepa-rate alignment style from scale: a difference between the two Llamas cannot be attributed to family. 
+
+Defenses. Two published input-transformation defenses — 
+
+SAGE (Ding et al. 2025), which rewrites the request into a self-assessment task, and SemanticSmooth (Ji et al. 2025), which paraphrases into n=5 copies and votes — plus a no-defense condition. For the mechanism analysis we add two conditions of our own construction: canonicalize , which ap-plies NFKC normalization, case folding and whitespace col-lapse (Armstrong et al. 2025) and then answers, and canoni-calize+guard , which canonicalizes and then screens with an off-the-shelf classifier, blocking on a harmful verdict. The latter is a gate by construction and is the steelman a defender would build against best-of-N ; it is ours, not a published system. 
+
+Attacks. Original BoN is a faithful reproduction of the published character augmentations (word scrambling, ran-dom capitalization, ASCII noise, σ=0 .4) (Hughes et al. 2025). BoN-wrapped CodeAttack is ours: the same best-of-
+
+N search wrapped around the published CodeAttack en-coding (Ren et al. 2024), which presents the request as a code-completion task the model must fill in. 
+
+Scale and judging. HarmBench, 100 behaviors × 100 
+
+draws per cell. The main matrix is 3 targets × 3 defense conditions × 2 attacks = 18 cells, plus 4 on Llama-3.3-70B; the mechanism panel adds 6 (three probe-count defenses ×
+
+both attacks, on Llama-3.1-8B), the published gate 2 and the temperature ablation 1, for 31 cells and 310 ,000 judged generations. All are scored by gpt-5-mini applying the HarmBench completion rubric, human-validated at κ=0 .68 
+
+against author labels on a 100 -item set whose largest arm is the code-completion attack. We deliberately do not use a prompt-harmfulness guard as the success judge: such classi-fiers fire on harmful intent echoed inside an encoded prompt even when no harmful content is produced, and in a direct comparison on our own cells the two judges disagree by up to 40 points in both directions on exactly the code-encoded arm this paper is about (Appendix A). 
+
+# 4 Method 
+
+Composition. A best-of-N attack is a pair: an encoding 
+
+that maps a harmful behavior to a prompt, and a search 
+
+that draws N samples and keeps the first success. Original BoN and CodeAttack fix opposite halves — the first varies characters and is normally evaluated at large N , the second varies nothing and is normally evaluated once. Composing them is the natural factorial cell that the literature skips, and the object of this paper. We hold the search identical across both arms so that the only difference is the encoding. 
+
+Union ASR at a budget. For behavior b with kb successes among M stored draws, the probability that a random N -subset contains at least one success is exact: 
+
+ASR( N ) = 1
+
+|B|
+
+X
+
+> b∈B
+
+
+
+1 −
+
+M − kb
+
+N
+
+.MN
+
+ 
+
+, (1) with the convention that the bracket is 1 when M − kb <N . We report ASR( N =100) as coverage , in the sense of Brown et al. (2024). Its companion is queries-to-first-success (QtFS), the expected index of the first success under a random draw ordering, (M +1) /(kb+1) , reported as a me-dian over behaviors with kb > 0; restricting to crackable behaviors keeps efficiency from silently re-absorbing cover-age. Equation (1) is a finite-population identity over the M
+
+stored draws, so it assumes nothing about how they were gen-erated; what it needs is that they be exchangeable repeated attempts , since only then does a random N -subset stand in for a budget of N . That is weaker than independence — au-toregressive dependence lives within a response, not across separate stateless requests — and it is the assumption that fails below. Independence proper is required only to extrap-olate past the measured budget, as the Beta-mixture scaling law of Feng et al. (2026) does; we extrapolate only in the appendix, and flag it there. 
+
+The variation channel, and the defect it hides. A best-of-
+
+N number is meaningful only if the N draws are genuinely different attempts. Two things can supply that difference: a 
+
+stochastic encoding , which emits a different prompt each draw, or a stochastic target , which answers the same prompt differently each draw. If neither is present the search is a fic-tion. We found exactly this in our own pipeline: CodeAttack is a deterministic template (verified: one distinct encoded string per behavior, against 100 for original BoN) and our target ran at temperature 0 with a fixed seed, so the code arm’s hundred draws differed only through the numerical nondeter-minism of continuous batching. Every stored response was a genuine model response — which is why the defect is invis-ible on inspection — but they were one attempt replicated, not 100 attempts, so Equation (1) did not apply to that arm — nor would any estimator built on the same assumption, including budget extrapolation from small N (Feng et al. 2026), which would have propagated the defect rather than revealed it. We repaired it by setting the target temperature to 1.0, the published BoN standard, uniformly across both arms so that the cross-arm comparison does not acquire a second asymmetry, and re-ran the entire matrix. Every result in this paper is from the repaired runs. 
+
+Diagnostic. The check is one line and we recommend it as standard for best-of-N reporting: the median number of 
+
+distinct responses per behavior across the N draws, normal-ized by N . It is 0.98 –1.00 on every main cell reported here. It must be a warning rather than an error, because one legitimate condition drives it low: a gate defense that blocks returns a canned refusal, so every blocked draw is byte-identical. That is the defense working, and it is itself informative — against a gate facing a deterministic encoding, the draws are not merely identical but structurally uninformative, which is where the probe-count account begins. 
+
+# 5 Results 
+
+The attacks are comparable undefended — and the composition is invisible there. With no defense, both attacks break nearly everything at N =100 : BoN-wrapped CodeAttack reaches 95 /96 /97% of behaviors on Llama/Qwen/Gemma and original BoN 89 /92 /62% (Ap-pendix K). The attacks differ sharply in cost — the code encoding succeeds on roughly half of all individual draws (49 .95 /49 .73 /51 .73% ) against 11 .32 /17 .39 /4.28% for char-acter noise, so its median QtFS is 1.5–1.8 queries against 
+
+11 .2–25 .2 — but on the axis a defense paper usually reports they look like near-equals. An evaluation that stopped here would conclude the two attacks are interchangeable. They are not. 
+
+Against SAGE, the composition is superadditive. SAGE holds against each ingredient. Fired once, the code encoding succeeds on 4.7% (Llama), 1.8% (Qwen) and 0.2% (Gemma) of behaviors. Given a hundred queries but the published char-acter encoding, the attacker reaches 3.0% , 0.0% and 0.0% .Given the same hundred queries and the code encoding, cov-erage rises to 67 .0%, 22 .0% and 15 .0% — 9×, 12 × and 
+
+75 × the sum of the two ingredients (Table 1, Figure 1). At 
+
+matched budget the split is clean: a hundred queries buy +3 .0
+
+points on the character arm and +62 .3 on the code arm, same defense, same target — the budget’s value is contingent on the encoding. The gap exceeds sampling uncertainty: boot-strapping over behaviors and over draws ( 10 4 resamples), the composition’s 95% interval lower bound is 51 .0/11 .0/5.0
+
+against ingredient upper bounds of 6.2/2.9/0.4 (single-shot code) and 5.0/0.0/0.0 (original BoN at N =100 ) — disjoint on every target. Nor is it an artifact of small models: on Llama-3.3-70B, ∼ 8× the size of the panel above, the same composition reaches 22 .0% [13 .0, 29 .0] from ingredients worth 3.2% and 2.0% — again disjoint (ingredient upper bounds 5.1 and 4.0), and 4× their sum. 
+
+Borrowed strength explains the spread. SAGE’s de-fended coverage varies more than 4× across targets (67 /22 /22 /15 ) while undefended coverage barely varies (95 /96 /97 /92 ), so the spread is a property neither of the at-tack nor of raw target alignment. Because SAGE is a self-check, we measured what the targets actually do with the wrapper, on raw response text and therefore independently of any judge (Table 2). Qwen and Gemma treat the injected self-assessment as a gate : they evaluate, conclude the re-quest is harmful, and refuse in 96 .3% and 97 .3% of draws, in short responses (median ∼ 440 characters) that open with an explicit declination. Llama treats the same wrapper as a 
+
+task : it performs the requested analysis — responses open “Semantic Analysis: Upon reviewing the code and com-ments, I detect a potentially sensitive topic. . . ” — and writes three times as much (median 1452 characters), but converts that analysis into an explicit refusal only 31 .8% of the time. 10 0 10 1 10 2              
+
+> query budget N
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> union ASR@ N (%)
+> Llama-3.1-8B
+> 10 010 110 2
+> query budget N
+> Qwen2.5-7B
+> 10 010 110 2
+> query budget N
+> Gemma-2-9B
+> 10 010 110 2
+> query budget N
+> Llama-3.3-70B
+> no defense SAGE SemanticSmooth BoN-wrapped CodeAttack original BoN
+
+Figure 1: Union ASR( N ) against query budget (log x), exact expectation over random N -subsets (Equation 1); solid = BoN-wrapped CodeAttack, dashed = original BoN. The composition is the green solid curve: under SAGE it climbs from 4.7 to 
+
+67 .0 on Llama while the same defense holds the character search flat near zero at every budget. On Qwen and Gemma it climbs more slowly ( 22 , 15 ) with the same shape. SAGE’s protection erodes rather than holding flat, which the probe-count account attributes to target re-sampling. 
+
+ingredient alone Target code, N =1 BoN, N =100 composed [95% CI] Llama-3.1-8B 4.7 3.0 67.0 [51.0, 70.0] Qwen2.5-7B 1.8 0.0 22.0 [11.0, 27.0] Gemma-2-9B 0.2 0.0 15.0 [ 5.0, 17.0] Llama-3.3-70B 3.2 2.0 22.0 [13.0, 29.0] 
+
+Table 1: The composition result, under SAGE (Ding et al. 2025). Coverage ( = ASR( N =100) , %) of HarmBench be-haviors. “code, N =1 ” is the code encoding fired once; “BoN, 
+
+N =100 ” is the published character search at full budget; “composed” is the code encoding inside that search. Neither ingredient exceeds 4.7% on any target; composed they reach 
+
+15 –67% , and the composition’s 95% bootstrap interval clears both ingredients’ intervals on all four targets (Appendix F). Llama-3.3-70B (below the rule) is ∼ 8× the parameter count of the panel above it and is not more robust to the composition than its similarly-aligned 7–9B peers. Read the magnitudes honestly: on Llama-3.1-8B this is a breach, on the other three SAGE still blocks 78 –85% — but a defense admitting one behavior in five within a hundred queries has failed as a guar-antee. Llama-3.3-70B sits between the two behaviours despite shar-ing Llama-3.1-8B’s alignment lineage: it refuses 68 .7% of draws in Qwen-length responses (median 411 characters), so the task-style reading of the wrapper is a property of the specific model, not of the family. Undefended, all four refuse essentially never ( 0.0/0.0/1.6/0.0% ), so the wrapper is doing the work; how much work it does is the target’s decision. This supports a claim about the defense class, not about SAGE’s implementation: a self-check transform defense in-herits its strength from the target’s disposition to act on its own verdict . SAGE does not detect the attack; it asks the model to, and is only as strong as that model’s willingness to refuse itself. This is a behavioural account, complementary to representation-space explanations of why particular encod-ings land in a model’s acceptance region (Lin et al. 2024): ours needs only black-box access, theirs explains what our refusal rate proxies. 
+
+How far the account goes. We registered this prediction be-fore running a fourth target. Llama-3.3-70B refuses at 68 .7% 
+
+— between Llama-3.1-8B and Qwen — so a graded reading predicts coverage between 67 .0 and 22 .0; observed is 22 .0,at the boundary rather than interpolating. That saturation is a property of the metric , not of the mechanism. At M =N =100 
+
+coverage equals the number of behaviors with at least one success, so it measures the size of the crackable set and can-not see how easily each is cracked: the two targets tying at 
+
+22 .0 crack 22 behaviors each, with medians of 8 and 5 suc-cesses. Below saturation the mapping is strictly monotone and untied — per-draw success runs 4.69 /3.16 /1.77 /0.22% 
+
+and ASR( N =10) runs 27 .9/12 .8/9.9/2.1, both ordered ex-actly by refusal disposition on all four targets. The account therefore predicts a point at budgets the crackable set does not saturate, and an ordering at N =100 .
+
+Where the successes sit. Refusal and success do not par-tition the draws: a band that neither refuses nor succeeds covers 63 .6/28 .2/2.4/2.5% , largest where SAGE fails most. Two readings — refusal withholding draws from a reachable region, or the band being itself a confusion failure — differ in whether the in-band hazard tracks coverage. It does not (6.7/9.7/33 .4/8.1% , lowest where coverage is highest); what moves with coverage is the band’s size , 26 × across targets. A refusal opening is near-perfectly protective ( ≤ 0.6% of such draws succeed), so refusal governs the mass reaching the exposed band (appendix, The Middle Band ). 
+
+Which attack wins inverts with the defense’s type. Nei-ther attack dominates. Normalizing each defended cell by its own undefended baseline (Figure 2), the code encoding re-tains 0.71 /0.23 /0.15 /0.24 of its reach under SAGE against the character search’s 0.03 /0.00 /0.00 /0.02 ; under Seman-ticSmooth it retains 0.98 /0.96 on Llama and Qwen against 
+
+0.75 /0.91 . Against a canonicalize+guard gate , the ordering flips: the character search retains 0.88 and the code encoding only 0.61 .
+
+The flip is a property of gates, not of one classifier. A sin-gle gate cannot distinguish “gates invert the ordering” from refusal rate (%) median SAGE Target SAGE undef. ∆ len. (ch.) coverage Llama-3.1-8B 31.8 0.0 +31 .8 1452 67.0                
+
+> Llama-3.3-70B 68.7 0.0 +68 .7411 22.0
+> Qwen2.5-7B 96.3 0.0 +96 .3439 22.0
+> Gemma-2-9B 97.3 1.6 +95 .7454 15.0
+
+Table 2: Borrowed strength. Refusal-marker rate over the code arm’s stored responses, measured on raw text and there-fore judge-independent. Rows are ordered by refusal rate, and SAGE coverage falls monotonically down the column: the target that least often converts SAGE’s self-assessment into a refusal is exactly the target on which SAGE most fails, though all four are near-equally breakable undefended (92 –97% ). The relation is monotone but not proportional — Llama-3.3-70B refuses 27 .6 points less often than Qwen yet yields the same 22 .0 coverage, so most of the collapse happens between 32% and 69% and the curve is flat above it. Llama-3.1-8B’s long responses reflect it performing the analysis as a task rather than using it as a gate; the 70B, de-spite sharing that lineage, produces Qwen-length gate-style refusals. “WildGuard inverts the ordering”, so we fixed the architec-ture and swapped only the classifier, to LlamaGuard-3-8B (Inan et al. 2023); the direction was recorded before the run. It inverts again: the character search retains 0.26 against the code encoding’s 0.06 . Absolute retention is far lower — LlamaGuard-3 is the stronger gate — but the ranking is unchanged, which is the claim. 
+
+Nor of our construction. Both gates prefix our canoni-calization to the classifier, so we also ran LlamaGuard-3 as it ships: screening the raw input, forwarding the origi-nal prompt. At the classifier’s own boundary — read off its block/pass verdicts, so no judge enters — the character search gets a probe through on 53 of 100 behaviors against the code encoding’s 14 , though each character probe is screened five times harder ( 2.6 vs 13 .2% of probes pass). In coverage the direction survives but the margin does not: 0.18 retention against 0.14 , three behaviors, exact McNemar p=0 .63 . The search buys entry ; what caps its conversion ( 16 of those 53 
+
+behaviors yield a jailbreak, against 13 of 14 for the code encoding) is the target’s own disposition, not the gate (Ap-pendix D). A defender benchmarking against original BoN and one benchmarking against a code encoding therefore rank the same two defenses in opposite orders. 
+
+Probe count accounts for the inversion. We propose the governing quantity: best-of-N ’s power against a defense is the number of independent probes that reach the defense’s decision boundary, not N itself. The quantity is implicit in the search-based attack line — a fuzzing jailbreak such as Gong et al. (2025) is precisely an attacker maximising dis-tinct probes per query spent — but it is not usually named, and naming it is what makes the transform/gate contrast pre-dictable rather than observed. A gate is a boundary and is deterministic in its input, so each distinct prompt is one in-dependent evasion attempt and protection erodes as probes accumulate; a deterministic encoding delivers exactly one probe. A transform defense presents no boundary to search, so probe count is irrelevant to it and what matters instead is whether its single transformed form is one the target mis-handles. The measurement matches: on the gate, the ratio of defended to undefended coverage climbs 0.56 → 0.88 over 
+
+N =1 → 100 for the 100 -probe character search but only 
+
+0.53 → 0.61 for the 1-probe code encoding — a 4× differ-ence in decay rate, in the predicted direction. Two honest qualifications. First, the corollary a defender wants — collapse the attacker to one probe — is available in principle and unmet in practice. Canonicalization is proposed for exactly this purpose (Armstrong et al. 2025); applied to the stored best-of-N prompts it leaves 100 distinct forms per behavior, a collapse rate of 0% — and canonicalize alone is correspondingly a near no-op on both arms ( 97 .0 vs 95 .0
+
+coverage on the code arm, 89 .0 vs 89 .0 on the character arm). It normalizes case and width as specified; BoN’s scrambling and ASCII noise carry the diversity untouched. This is sur-face canonicalization, not the class: SemanticSmooth, whose paraphrase step is a semantic normalizer, does cut the charac-ter arm further ( 0.75 retention) without collapsing it. Second, one probe does not mean the budget buys nothing: gate pro-tection still erodes +0 .08 on the code arm, because draws gain from two independent channels — probing the defense and re-sampling the target — and collapsing probe count closes only the first. We pre-registered the stronger predic-tion that the 1-probe arm would be flat in N ; the data refuted it, and the surviving claim is quantitative: probe count sets how fast a gate’s protection decays with N , and collapsing an attacker to one probe cuts that decay roughly fourfold without eliminating it. 
+
+The defenses split, and single-shot evaluation misses it. 
+
+SAGE and SemanticSmooth are both cheap black-box input transformations and are usually grouped together; under a best-of-N attacker they behave differently in kind. SAGE removes coverage — 95 → 67 , 96 → 22 , 97 → 15 . Semantic-Smooth mostly removes per-draw reliability : on Llama and Qwen it cuts per-draw success by a third ( 49 .95 → 32 .55 ,
+
+49 .73 → 33 .09 ) while cutting coverage by two and four points, so a single-shot evaluation credits it with a 33 –35% 
+
+reduction that a best-of-N attacker recovers almost entirely. Only on Gemma does it also remove coverage ( 97 → 54 ). 
+
+A defense whose protection is delivered as reduced per-query reliability is structurally mismatched to an attacker who needs one success , and reporting both columns is what makes that visible. 
+
+# 6 Discussion and Limitations 
+
+What a defense paper should report. Four consequences follow for anyone evaluating a black-box jailbreak defense. 
+
+(i) A defense success rate is conditional on the attack com-position it was measured against, not just the attack list: SAGE’s 99% is not contradicted by our result — each in-gredient alone is among the attacks it holds against, and the composition is the new cell. (ii) Report coverage at a bud-get alongside per-draw success: a defense that only lowers per-query reliability leaves a best-of-N attacker nearly un-Llama         
+
+> 8B
+> Qwen Gemma Llama
+> 70B
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> retained attack reach
+> (defended ÷ undefended)
+> 0.71
+> 0.23
+> 0.15
+> 0.24
+> 0.03 0.00 0.00 0.02
+> SAGE
+> (transform)
+> Llama
+> 8B
+> Qwen Gemma
+> 0.98 0.96
+> 0.56
+> 0.75
+> 0.91
+> 0.66
+> SemanticSmooth
+> (transform)
+> Llama
+> 8B
+> 0.61
+> 0.88
+> canon.+WildGuard
+> (gate)
+> Llama
+> 8B
+> 0.06
+> 0.26
+> canon.+LG-3
+> (gate)
+> Llama
+> 8B
+> 0.14
+> 0.18
+> LG-3 as shipped
+> (gate)
+> BoN-wrapped CodeAttack (ours) original BoN
+
+Figure 2: The defense-type inversion. Attack reach retained under each defense, normalized by that attack’s own undefended coverage at N =100 (so 1.0 = the defense does nothing). Against the two transform defenses the code encoding survives far better; against the gate the ordering inverts. Which attack is “stronger” is not a property of the attacks. touched, and the two columns differ by an order of magnitude for SemanticSmooth on two targets. (iii) Measure a canoni-calizer’s collapse rate rather than assuming it; ours was zero. 
+
+(iv) Report the draw-diversity diagnostic with any best-of-N
+
+result — a stronger criterion or estimator cannot help if the draws were never repeated attempts, and no inspection of responses reveals it. 
+
+Limitations. (i) Targets are four open-weight instruction-tuned text models from 8B to 70 B; frontier closed-weight and vision–language targets remain the natural extension (our earlier vision–language cells carry the Section 4 defect). 
+
+(ii) Every reported quantity carries a 95% bootstrap interval over behaviors and draws ( 10 4 resamples; Appendix F) — the two sampling axes our claims are stated over, but not seed-to-seed variation of the serving stack. (iii) Gemma-2-9B’s 8,192 -token context caps its generation budget at 3,072 
+
+tokens against 16 ,384 elsewhere; median responses sit far be-low either bound, but the asymmetry is real. (iv) The refusal-disposition measurement is a marker-based regex on raw text — adequate for the 3× contrast it carries, not a fine one — erring in one bounded direction: up to 0.6% of draws decline and then comply, over-counting refusal. (v) The probe-count account rests on three gates — two differing only in classifier, one published and deployed as it ships — and one near-no-op transform, all on one target; the direction replicates, but generality across defense architectures is not established. (vi) 
+
+Hits are not uniform in severity, so we graded them rather than conceding the point: re-reading every successful draw against a three-level rubric puts coverage at the actionable 
+
+threshold at 24 /8/1 against the headline 67 /22 /15 , and at 6
+
+against 22 on the 70 B — an upper bound overstating action-able harm roughly threefold. The mix is common-mode — the actionable share of successes differs between defended and undefended cells by −2.1 to +2 .6 points on the three targets with enough defended hits to compare — so the con-trasts survive, but 22 .0% is not 22 .0% of behaviors rendered operational (Appendix I). (vii) We report a single judge, and quantify that choice rather than asserting it: paired on the identical 310 ,000 responses, a completion judge and a guard classifier agree on only 87 .6% of draws (median κ = 0 .409 ), the guard reading higher in 16 of the 17 cells whose coverage differs by ≥ 5 points — on both arms ( 7 code, 10 surface), so its bias is systematic rather than specific to our encoding. Under that judge the four SAGE code cells read 72 /23 /12 /25 
+
+against our 67 /22 /22 /15 : the breach survives the swap in di-rection though not in magnitude (Appendix A). Absolute levels are therefore judge-conditional; every claim here is a relative contrast under one judge. 
+
+Defensive implication. The two families fail in comple-mentary ways, so the constructive reading is to stack them — a gate to collapse probe count, a self-check for the determin-istic form that survives. Our measurements are attack-side only; the stack’s benign-refusal cost is the next experiment, on the axis Varshney et al. (2024) benchmark. 
+
+# 7 Conclusion 
+
+Two attacks a published self-check defense holds against, composed, breach it on all four targets: 67 /22 /15% against 
+
+≤ 4.7% for either alone, and 22% on a 70 B — not an acci-dent of one model or scale. A self-check defense borrows its strength from the target’s willingness to refuse itself, which orders defended coverage as undefended breakability cannot; and which attack survives depends on whether the defense presents a searchable boundary. 
+
+# Ethical Statement 
+
+This work red-teams open models and published defenses using harmful behaviors from a public benchmark. It in-troduces no new harmful capability — both ingredients are published attacks, and we contribute their combination and its measurement — and we release no harmful content. We report the mechanism because it yields a defensive predic-tion (the refusal disposition a self-check defense depends on is measurable on any target before deployment) and a design test for canonicalizing defenses. The defenses studied are re-search systems rather than deployed products; we withhold no defense-relevant detail while adding no operational uplift. 
+
+Code and data. The pipeline, the configuration of every reported cell, and the per-draw judgments for all 31 cells are available at https://github.com/vacantfury/imaging_text_ attacks_for_llm_jailbreaking. 
+
+# References 
+
+Armstrong, S.; Franklin, M.; Stevens, C.; and Gorman, R. 2025. Defense Against the Dark Prompts: Mitigating Best-of-N Jailbreaking with Prompt Evaluation. arXiv:2502.00580. Beetham, J.; Chakraborty, S.; Wang, M.; Huang, F.; Bedi, A. S.; and Shah, M. 2026. Jailbreaks as Inference-Time Alignment: A Framework for Understanding Safety Failures in LLMs. In Proceedings of the 18th Conference of the Eu-ropean Chapter of the Association for Computational Lin-guistics (Volume 1: Long Papers) . Association for Computa-tional Linguistics. Introduces LIAR, best-of-N jailbreaking as inference-time alignment. Brown, B.; Juravsky, J.; Ehrlich, R.; Clark, R.; Le, Q. V.; Ré, C.; and Mirhoseini, A. 2024. Large Language Mon-keys: Scaling Inference Compute with Repeated Sampling. arXiv:2407.21787. Bugnot, R. J.; Choi, S.; Lim, H. W.; and Duan, Y. 2026. Com-positional Jailbreaking: An Empirical Analysis of Mutator Chain Interactions in Aligned LLMs. ArXiv:2605.15598v1, 15 May 2026, arXiv:2605.15598. Carlini, N.; Athalye, A.; Papernot, N.; Brendel, W.; Rauber, J.; Tsipras, D.; Goodfellow, I.; Madry, A.; and Ku-rakin, A. 2019. On Evaluating Adversarial Robustness. arXiv:1902.06705. Chao, P.; Debenedetti, E.; Robey, A.; Andriushchenko, M.; Croce, F.; Sehwag, V.; et al. 2024. JailbreakBench: An Open Robustness Benchmark for Jailbreaking Large Lan-guage Models. In Globerson, A.; Mackey, L.; Belgrave, D.; Fan, A.; Paquet, U.; Tomczak, J.; and Zhang, C., eds., 
+
+Advances in Neural Information Processing Systems , vol-ume 37, 55005–55029. Curran Associates, Inc. Croce, F.; and Hein, M. 2020. Reliable evaluation of adver-sarial robustness with an ensemble of diverse parameter-free attacks. In Proceedings of the 37th International Conference on Machine Learning , ICML’20. JMLR.org. Ding, P.; Kuang, J.; Wang, Z.; Cao, X.; Cai, X.; Chen, J.; and Huang, S. 2025. Why Not Act on What You Know? Unleashing Safety Potential of LLMs via Self-Aware Guard Enhancement. In Che, W.; Nabende, J.; Shutova, E.; and Pilehvar, M. T., eds., Findings of the Association for Compu-tational Linguistics: ACL 2025 , 6279–6299. Vienna, Austria: Association for Computational Linguistics. ISBN 979-8-89176-256-5. Feng, M.; Liu, X.; Yang, W.; Xu, C.; White, C.; and Gao, J. 2026. Statistical Estimation of Adversarial Risk in Large Language Models under Best-of-N Sampling. arXiv:2601.22636. Gong, X.; Li, M.; Zhang, Y.; Ran, F.; Chen, C.; Chen, Y.; Wang, Q.; and Lam, K.-Y. 2025. PAPILLON: Efficient and Stealthy Fuzz Testing-Powered Jailbreaks for LLMs. In 
+
+34th USENIX Security Symposium (USENIX Security 25) .USENIX Association. Han, S.; Rao, K.; Ettinger, A.; Jiang, L.; Lin, B. Y.; Lambert, N.; Choi, Y.; and Dziri, N. 2024. WildGuard: Open One-stop Moderation Tools for Safety Risks, Jailbreaks, and Refusals of LLMs. In Globerson, A.; Mackey, L.; Belgrave, D.; Fan, A.; Paquet, U.; Tomczak, J.; and Zhang, C., eds., Advances in Neural Information Processing Systems , volume 37, 8093– 8131. Curran Associates, Inc. Huang, B. R. 2024. Plentiful Jailbreaks with String Com-positions. In Workshop on Socially Responsible Language Modelling Research .Hughes, J.; Price, S.; Lynch, A.; Schaeffer, R.; Barez, F.; Somani, A.; Koyejo, S.; Sleight, H.; Jones, E.; Perez, E.; and Sharma, M. 2025. Best-of-N Jailbreaking. In Belgrave, D.; Zhang, C.; Lin, H.; Pascanu, R.; Koniusz, P.; Ghassemi, M.; and Chen, N., eds., Advances in Neural Information Process-ing Systems , volume 38, 73137–73221. Curran Associates, Inc. Inan, H.; Upasani, K.; Chi, J.; Rungta, R.; Iyer, K.; Mao, Y.; Tontchev, M.; Hu, Q.; Fuller, B.; Testuggine, D.; and Khabsa, M. 2023. Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations. arXiv:2312.06674. Ji, J.; Hou, B.; Robey, A.; Pappas, G. J.; Hassani, H.; Zhang, Y.; Wong, E.; and Chang, S. 2025. Defending Large Language Models against Jailbreak Attacks via Semantic Smoothing. In Inui, K.; Sakti, S.; Wang, H.; Wong, D. F.; Bhattacharyya, P.; Banerjee, B.; Ekbal, A.; Chakraborty, T.; and Singh, D. P., eds., Proceedings of the 14th International Joint Conference on Natural Language Processing and the 4th Conference of the Asia-Pacific Chapter of the Associ-ation for Computational Linguistics , 7–40. Mumbai, India: The Asian Federation of Natural Language Processing and The Association for Computational Linguistics. ISBN 979-8-89176-299-2. Li, J.; Liu, Y.; Fu, Y.; Zhu, J.; Wang, L.; Yang, M.; and Ying, R. 2026. SRTJ: Self-Evolving Rule-Driven Training-Free LLM Jailbreaking. arXiv:2605.00974. Lin, Y.; He, P.; Xu, H.; Xing, Y.; Yamada, M.; Liu, H.; and Tang, J. 2024. Towards Understanding Jailbreak Attacks in LLMs: A Representation Space Analysis. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing . Association for Computational Lin-guistics. Mao, Y.; Zhang, C.; Wang, J.; Guan, X.; Cao, B.; Lu, Y.; Lin, H.; Han, X.; and Sun, L. 2026. When Models Out-think Their Safety: Unveiling and Mitigating Self-Jailbreak in Large Reasoning Models. In Findings of the Association for Computational Linguistics: ACL 2026 . Association for Computational Linguistics. Mazeika, M.; Phan, L.; Yin, X.; Zou, A.; Wang, Z.; Mu, N.; et al. 2024. HarmBench: a standardized evaluation frame-work for automated red teaming and robust refusal. In Pro-ceedings of the 41st International Conference on Machine Learning , ICML’24. JMLR.org. Monteuuis, J.-P.; Chen, C.; and Petit, J. 2026. The Great Pretender: A Stochasticity Problem in LLM Jailbreak. ArXiv:2605.14418v1, 14 May 2026; Qualcomm Technolo-gies, Inc., arXiv:2605.14418. Phute, M.; Helbling, A.; Hull, M.; Peng, S.; Szyller, S.; Cor-nelius, C.; and Chau, D. H. 2024. LLM Self Defense: By Self Examination, LLMs Know They Are Being Tricked. arXiv:2308.07308. Ren, Q.; Gao, C.; Shao, J.; Yan, J.; Tan, X.; Lam, W.; and Ma, L. 2024. CodeAttack: Revealing Safety Generalization Challenges of Large Language Models via Code Completion. In Ku, L.-W.; Martins, A.; and Srikumar, V., eds., Findings of the Association for Computational Linguistics: ACL 2024 ,11437–11452. Bangkok, Thailand: Association for Compu-tational Linguistics. Robey, A.; Wong, E.; Hassani, H.; and Pappas, G. J. 2025. SmoothLLM: Defending Large Language Models Against Jailbreaking Attacks. Transactions on Machine Learning Research .Varshney, N.; Dolin, P.; Seth, A.; and Baral, C. 2024. The Art of Defending: A Systematic Evaluation and Analysis of LLM Defense Strategies on Safety and Over-Defensiveness. In Findings of the Association for Computational Linguistics: ACL 2024 .Wang, X.; Wu, D.; Ji, Z.; Li, Z.; Ma, P.; Wang, S.; Li, Y.; Liu, Y.; Liu, N.; and Rahmel, J. 2025. SELFDEFEND: LLMs Can Defend Themselves Against Jailbreaking in a Practical Manner. In Proceedings of the 34th USENIX Conference on Security Symposium (SEC ’25) . USENIX Association. ISBN 978-1-939133-52-6. Weng, Z.; Jin, X.; Jia, J.; and Zhang, X. 2025. Foot-In-The-Door: A Multi-turn Jailbreak for LLMs. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing . Association for Computational Linguistics. Xie, Y.; Yi, J.; Shao, J.; Curl, J.; Lyu, L.; Chen, Q.; Xie, X.; and Wu, F. 2023. Defending ChatGPT against jailbreak at-tack via self-reminders. Nature Machine Intelligence , 5(12): 1486–1496. Zeng, Y.; Lin, H.; Zhang, J.; Yang, D.; Jia, R.; and Shi, W. 2024. How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Human-izing LLMs. In Ku, L.-W.; Martins, A.; and Srikumar, V., eds., Proceedings of the 62nd Annual Meeting of the As-sociation for Computational Linguistics (Volume 1: Long Papers) , 14322–14350. Bangkok, Thailand: Association for Computational Linguistics. Zhang, T.; Cao, B.; Cao, Y.; Lin, L.; Mitra, P.; and Chen, J. 2025. WordGame: Efficient & Effective LLM Jailbreak via Simultaneous Obfuscation in Query and Response. In 
+
+Findings of the Association for Computational Linguistics: NAACL 2025 . Association for Computational Linguistics. Zheng, X.; Pang, T.; Du, C.; Liu, Q.; Jiang, J.; and Lin, M. 2024. Improved Few-Shot Jailbreaking Can Circumvent Aligned Language Models and Their Defenses. In Glober-son, A.; Mackey, L.; Belgrave, D.; Fan, A.; Paquet, U.; Tom-czak, J.; and Zhang, C., eds., Advances in Neural Information Processing Systems , volume 37, 32856–32887. Curran As-sociates, Inc. Target Defense guard gpt-5-mini ∆                
+
+> Gemma SemSm. 94.0 54.0 −40
+> Gemma SAGE 25.0 15.0 −10
+> Llama SAGE 72.0 67.0 −5
+> Qwen SAGE 12.0 22.0 +10
+
+Table 3: Coverage ( ASR( N =100) , %) on the BoN-wrapped CodeAttack arm under two judges, same stored responses. Errors reach 40 points and run in both directions, so no first-pass guard number is reportable. This technical appendix supplements the main paper with our judge-selection evidence, the full account of the best-of-
+
+N variation-channel defect and the audit that bounded it, the probe-count measurements, the refusal-disposition protocol, and reproducibility details. It is provided for review and is not part of the main paper’s page budget; all headline claims are supported in the main text. References of the form Table 1 or Eq. (1) point to the main paper. 
+
+# A Judge Choice 
+
+Every number in the main paper is scored by gpt-5-mini 
+
+applying the HarmBench completion rubric (Mazeika et al. 2024). This section documents why, because the choice is load-bearing for a paper whose central arm is a code encod-ing. 
+
+A guard classifier is not a completion judge. Prompt-harmfulness guards such as WildGuard (Han et al. 2024) are trained to flag harmful intent in an input. The Harm-Bench and JailbreakBench (Chao et al. 2024) rubrics in-stead ask whether the response completes the harmful task. These come apart most sharply on encoded attacks: a code-completion prompt that echoes the behavior string is flagged as harmful by a guard regardless of whether the model’s completion contains anything harmful. On our own cells this inflated apparent success on encoding and code attacks by 
+
+41 –68% , which is why we re-scored every cell with a com-pletion judge rather than reporting the guard’s verdicts. 
+
+The disagreement is large and signed both ways. We hold both sets of judgments for the identical stored responses, so the comparison is exact rather than inferred (Table 3). The guard is not merely noisy: on the code arm this paper is about, it is wrong by up to 40 coverage points and in both directions. 
+
+Systematic agreement, not just the extremes. Table 3 shows four coverage-level gaps on the code arm; because both judges scored the identical stored responses, we can report the comparison for every cell rather than for a chosen subset (Table 4). Across all 31 cells and 310 ,000 paired judgments the two agree on 87 .6% of individual draws, median Cohen’s 
+
+κ = 0 .409 — only moderate — with per-draw gaps up to 
+
+22 .3 points. The full matrix corrects a claim we made from the four-cell view. The disagreement is one-directional but not universally so: of the 17 cells whose coverage differs by at least 5 points, the guard scores higher in 16 . It is also not confined to the code arm. Ten of those 17 are surface-arm cells, and the single largest gap in the entire matrix is +58 coverage points on Gemma under SemanticSmooth × surface. Mean per-draw inflation is +9 .4 points on the code arm against +4 .9 on the surface arm — larger on code, but the same defect in kind. The mechanism explains this: SemanticSmooth’s paraphrase output restates the request, and a prompt-harmfulness guard fires on that echoed intent whatever the arm. The guard is therefore disqualified as a completion judge generally, not merely on the encoding this paper studies, and the practice of reporting guard verdicts as attack success rates inflates them across the board. 
+
+Human validation. gpt-5-mini was validated against author labels on a 100 -item stratified set, Cohen’s κ = 0 .68 .The set deliberately over-samples the code-completion arm — the format whose grading is most in question — rather than sampling proportionally, so the agreement figure is measured where it matters most rather than where it is easiest. 
+
+The same comparison at the coverage level. Table 4 com-pares the judges per draw; because coverage is what the paper reports, we give the same 31 cells at the coverage level too (Table 5), so no headline number rests on a judge choice the reader cannot inspect. The guard reads higher in 24 cells, lower in 4, and identically in 3. The headline cells move lit-tle — SAGE × code goes 67 /22 /22 /15 under our judge to 
+
+72 /23 /12 /25 under the guard — so the breach conclusion is judge-robust in direction even though its magnitude is not: on Qwen the guard would make SAGE look stronger than we report, on Gemma weaker. The largest disagreements are not on the code arm at all but on SemanticSmooth × original BoN ( +58 on Gemma, +31 on Llama), where the paraphrase output restates the request and the guard fires on the echoed intent. 
+
+Silent-failure guard. A failed judge API call is scored “safe” by the HarmBench evaluator, so a quota exhaustion or transient outage reads as a low ASR rather than an error. We therefore gate every reported cell on three post-conditions read from its stored results: the number of evaluated items equals the expected 10 ,000 ; the count of responses that re-quired fallback parsing is zero; and the run status is success. All 31 cells pass. We recommend this gate to anyone judging at this scale, because the failure mode is paper-favourable in the defense direction and produces no error. 
+
+# B The Variation-Channel Defect 
+
+The main paper reports (Section 4) that we found and repaired a validity defect in our own pipeline. This section gives the full account, because the defect is easy to reproduce and invisible in stored outputs. 
+
+What happened. While preparing a larger-budget run we checked, for the first time, how many distinct prompts the code arm actually submitted per behavior. The answer was one. CodeAttack is a deterministic template, so its encoding step emitted a single string per behavior (verified in the stored transform artifacts: minimum, median and maximum distinct encodings all equal 1 across 100 behaviors, against 100 for Target Def. × attack mini guard ∆                                                                                                                                                                
+
+> Llama-3.1-8B none ×code 49.95 69.53 +19 .58
+> none ×surface 11.32 22.40 +11 .08
+> SAGE ×code 4.69 6.32 +1 .63
+> SAGE ×surface 0.03 0.12 +0 .09
+> SAGE ( T=0 .5)×code 4.76 5.78 +1 .02
+> SemSm. ×code 32.55 54.82 +22 .27
+> SemSm. ×surface 3.69 16.45 +12 .76
+> canon. ×code 47.84 65.23 +17 .39
+> canon. ×surface 14.98 18.99 +4 .01
+> canon. +WildG. ×code 26.27 32.98 +6 .71
+> canon. +WildG. ×surface 6.34 8.50 +2 .16
+> canon. +LG-3 ×code 2.87 2.53 −0.34
+> canon. +LG-3 ×surface 1.60 2.08 +0 .48
+> LG-3 only ×code 5.13 6.75 +1 .62
+> LG-3 only ×surface 0.23 0.56 +0 .33
+> Llama-3.3-70B none ×code 60.61 80.87 +20 .26
+> none ×surface 15.26 19.71 +4 .45
+> SAGE ×code 3.16 6.11 +2 .95
+> SAGE ×surface 0.02 0.00 −0.02
+> Qwen2.5-7B none ×code 49.73 69.85 +20 .12
+> none ×surface 17.39 17.99 +0 .60
+> SAGE ×code 1.77 1.16 −0.61
+> SAGE ×surface 0.00 0.00 +0 .00
+> SemSm. ×code 33.09 49.40 +16 .31
+> SemSm. ×surface 11.44 29.03 +17 .59
+> Gemma-2-9B none ×code 51.73 67.39 +15 .66
+> none ×surface 4.28 8.43 +4 .15
+> SAGE ×code 0.22 0.32 +0 .10
+> SAGE ×surface 0.00 0.00 +0 .00
+> SemSm. ×code 2.75 8.66 +5 .91
+> SemSm. ×surface 1.90 18.15 +16 .25
+
+Table 4: Per-draw ASR (%) under both judges, all 31 cells, identical stored responses. mini = gpt-5-mini (the reportable completion judge); guard = WildGuard (the free on-cluster first pass). The guard reads higher in 26 of 31 cells and on both arms, which is why no first-pass guard number is reported anywhere in this paper. original BoN). The target was configured at temperature 0
+
+with a fixed seed. With a deterministic encoding and greedy decoding there is no source of variation, so the hundred “draws” differed only through the numerical nondeterminism of continuous batching in the serving stack. 
+
+What survived and what did not. Every stored response was a genuine model response, so every per-draw number stood — on the affected cells it is simply the determinis-tic single-shot success rate, a legitimate quantity. What did not stand was the best-of-N superstructure: Equation (1) as-sumes i.i.d. draws of the attack, and replicas of one input do not satisfy it. Concretely, the union coverage and QtFS numbers on the affected cells described an OR over serving noise rather than over an attacker’s search. 
+
+Blast radius. An audit over every stored best-of-N cell in our codebase ( 95 cells across all rounds) found the defect in exactly the cells with a deterministic transform: 6 of the 18 
+
+cells of the affected round, plus the corresponding cells of two earlier rounds, including the vision–language generalization round — which is why the main paper’s limitations decline to reuse those cells rather than reporting them with a caveat. Rounds whose attacks were all stochastic were unaffected. 
+
+Two non -defects the same audit surfaced. The diagnostic must be a warning rather than a hard error, because two legit-imate conditions drive it low. First, a gate defense that blocks returns a canned refusal, so every blocked draw is byte-identical: our canonicalize+guard cells sit at low diversity even on the character arm where the 100 prompts genuinely differ. That is the defense working. Second, a target that re-fuses uniformly (SAGE on Gemma) produces near-identical text for the same reason. An error-level check would fire on exactly the strongest defense results. 
+
+The fix, and the constraint on it. We set the target 
+
+sampling temperature to 1.0 — the published BoN stan-dard (Hughes et al. 2025) — and re-ran the entire matrix. The temperature is uniform across both arms by design: rais-ing it on the code arm alone would have repaired the esti-mator while introducing a second asymmetry into the very cross-arm comparison that constitutes the paper’s contribu-tion. After the repair, the diagnostic reads 0.98 –1.00 on every main cell. Target Def. × attack mini guard ∆                                                                                                                                                                
+
+> Llama-3.1-8B none ×code 95 99 +4
+> none ×BoN 89 100 +11
+> SemSm. ×code 93 99 +6
+> SemSm. ×BoN 67 98 +31
+> SAGE ×code 67 72 +5
+> SAGE ×BoN 312 +9
+> SAGE ( T=0 .5)×code 55 57 +2
+> canon. ×code 97 98 +1
+> canon. ×BoN 89 96 +7
+> canon. +WildG. ×code 58 59 +1
+> canon. +WildG. ×BoN 78 86 +8
+> canon. +LG-3 ×code 65−1
+> canon. +LG-3 ×BoN 23 32 +9
+> LG-3 only ×code 13 13 ±0
+> LG-3 only ×BoN 16 25 +9
+> Llama-3.3-70B none ×code 92 99 +7
+> none ×BoN 95 99 +4
+> SAGE ×code 22 23 +1
+> SAGE ×BoN 20−2
+> Qwen2.5-7B none ×code 96 97 +1
+> none ×BoN 92 94 +2
+> SemSm. ×code 92 97 +5
+> SemSm. ×BoN 84 100 +16
+> SAGE ×code 22 12 −10
+> SAGE ×BoN 00±0
+> Gemma-2-9B none ×code 97 93 −4
+> none ×BoN 62 70 +8
+> SemSm. ×code 54 94 +40
+> SemSm. ×BoN 41 99 +58
+> SAGE ×code 15 25 +10
+> SAGE ×BoN 00±0
+
+Table 5: Coverage ( ASR( N =100) , %) under both judges, all 31 cells, identical stored responses. Companion to Table 4, which gives the same comparison per draw. “BoN” = original BoN. 
+
+Recommended practice. Report, alongside any best-of-N
+
+result, the median number of distinct responses per behavior divided by N . If it is not close to 1, no search is happening, and the union-over-N numbers do not mean what they appear to mean. The check costs nothing — it reads stored outputs — and there is no way to detect the defect by inspecting individual responses, all of which look normal. 
+
+# C Probe Count 
+
+Measuring canonicalization’s collapse rate. The claim that a canonicalizing defense delivers N -independent pro-tection is testable directly, without running any attack: apply the canonicalizer to the stored best-of-N prompts and count distinct forms before and after. We define the collapse rate as 1−(distinct after )/(distinct before ). Applying NFKC nor-malization, case folding and whitespace collapse (Armstrong et al. 2025) to the stored prompts leaves 100 distinct forms per behavior — exactly the 100 it started with — for a collapse rate of 0% .This is not a failure of the canonicalizer, which works as specified ( writE A PERsUaSIVe → write a persuasive ). It is a mismatch of axes. The published BoN augmentation has three components — case random-ization, character scrambling, and ASCII noise (Hughes et al. 2025) — and normalization neutralizes only the first. Scram-bled tokens such as ARLtCiE / aCLItRd / alRtiCe pass through untouched and carry all the diversity. Because the three components are BoN’s as published rather than an ar-tifact of our reimplementation, the 0% result is a statement about the defense–attack pairing, not about our code. 
+
+The behavioural confirmation. Consistently with a 0% 
+
+collapse rate, canonicalize alone is a near no-op on both arms: 97 .0 vs 95 .0 undefended coverage on the code arm and 
+
+89 .0 vs 89 .0 on the character arm. 
+
+The pre-registered prediction, and its refutation. We recorded the mechanism’s predictions in the experiment con-figuration before running the panel. Three of four held (Ta-ble 6). The fourth — our crux — did not: we predicted that a gate facing a 1-probe attack would show a ratio flat in N ,since no search is possible. It is not flat; it erodes by +0 .08 .
+
+Why it erodes, and what survives. The per-behavior hit distribution under canonicalize+guard on the code arm is not the all-or-nothing shape one deterministic gate decision per Defense Attack N =1 N =100 ∆ outcome canon. code 0.94 0.99 +0 .05 confirmed canon. orig. BoN 0.85 0.96 +0 .11 confirmed canon. +guard orig. BoN 0.56 0.88 +0 .32 confirmed canon. +guard code 0.53 0.61 +0 .08 refuted 
+
+Table 6: Ratio of defended to undefended coverage on Llama, with the pre-registered outcome. The crux prediction — flat in N for the 1-probe arm against a gate — is refuted; the surviving claim is that probe count sets the decay rate , here by a factor of four. behavior would produce: 41 behaviors are never broken, only 
+
+6 are broken on ≥ 95 of 100 draws, and 50 sit in between (median 17 hits). The resolution is that best-of-N draws gain from two independent channels, and collapsing probe count closes only one of them: (i) probing the defense, where the attacker varies the input to buy fresh decisions at the classi-fier boundary — closed at one probe — and (ii) re-sampling the target, where the same passed prompt is answered afresh at temperature 1, which the gate does not touch. Our original framing silently attributed all N -gain to the first channel. The corrected claim is quantitative: probe count sets how fast a gate’s protection decays with N , and collapsing an attacker to one probe cuts that decay roughly fourfold without elimi-nating it. We report the refutation rather than the prediction because the corrected account also explains something the original could not — why SAGE, a stochastic transform over a stochastic target, erodes in N at all. 
+
+# D The Published Gate 
+
+The panel above puts our canonicalization step in front of the classifier, so it tests the probe-count account on a con-struction of ours. To test it on a defense as deployed, we ran LlamaGuard-3-8B as a standalone input screen: the classi-fier reads the raw attack prompt and either returns a canned refusal or forwards the original prompt to the target, with nothing of ours in front of it. The direction was recorded before the run. The classifier’s own verdicts settle the mechanism with-out any judge entering (Table 7). The shapes are the ac-count made literal. One prompt repeated yields one verdict repeated: the code arm is bimodal, with 10 behaviors pass-ing all 100 draws, 86 passing none, and only 4 in between. One hundred distinct prompts yield one hundred verdicts: the character arm spreads from 1 to 41 passes per behavior, with a mode of 1. The search reaches 3.8× more behaviors while each of its probes is screened five times harder. Probe count, not per-probe quality, is what converts a query budget into reach at a gate. Coverage moves in the same direction but does not sep-arate the arms. The character search reaches 16 .0 coverage against the code encoding’s 13 .0 — retentions of 0.18 and 
+
+0.14 against undefended baselines of 89 .0 and 95 .0 — a three-behavior margin that an exact McNemar test over the paired behaviors leaves unresolved ( 17 discordant pairs, 10 
+
+character-only and 7 code-only, two-sided p=0 .63 ). We re-           
+
+> probes behaviors of those, Attack passed reached broken BoN-wrapped code 1,315 14 13
+> original BoN 258 53 16
+
+Table 7: LlamaGuard-3 as published, screening raw input on Llama-3.1-8B: the gate’s own block/pass verdicts over 
+
+10 ,000 draws per arm ( 13 .2% and 2.6% of probes passed), and how many of the behaviors it let through went on to yield a jailbreak. Every column but the last is judge-independent. port the direction as consistent with the pre-registered pre-diction and the magnitude as not established at n=100 .What separates entry from success is the target. Of the 53 
+
+behaviors the character search opens at the gate, 16 produce a jailbreak; of the code encoding’s 14 , 13 do. A prompt that survives a strong classifier while still carrying a code pay-load is already a strong attack; a character-perturbed prompt that slips through is an ordinary harmful request meeting an aligned target. This is the borrowed-strength account applied to a gate rather than to a self-check — the gate decides who gets in, the target decides who succeeds — and it is why the reach the search buys does not convert one-for-one. 
+
+Not a single-variable contrast. Removing canonicaliza-tion changes two things, not one: our canonicalize +guard defense forwards the canonicalized prompt to the target as well as to the classifier, whereas the standalone gate forwards the original. The constructed gate’s wider gap ( 23 .0 vs 6.0)and the published gate’s narrower one ( 16 .0 vs 13 .0) there-fore differ in what is screened and in what is answered. The inversion’s direction is common to both; the magnitudes are not comparable, and we do not read the difference between them as a measured effect of canonicalization. 
+
+# E Refusal-Disposition Protocol 
+
+Measurement. Table 2 of the main paper reports the rate at which each target converts SAGE’s injected self-assessment into an explicit refusal. It is computed by matching a refusal-marker regular expression against the first 400 characters of each stored response, on the code arm, across all 10 ,000 
+
+draws per cell. The markers cover the standard declination openings (“I cannot”, “I’m not able to”, “I must decline”, “I’m sorry”, “unable to assist/help/provide”, “not appropri-ate”, “against my”). We restrict to the response opening be-cause a refusal that appears only after a compliant answer is not a refusal. 
+
+Why it is judge-independent. The measurement reads raw response text and never consults a judgment, so it cannot be moved by the choice of judge in Appendix A. This matters: the refusal disposition is the paper’s explanation for the 6×
+
+spread in defended coverage, and an explanation that inher-ited the judge’s biases would be circular. 
+
+What the targets do. Qwen and Gemma refuse 96 .3% and 
+
+97 .3% of draws in short responses (median ∼ 440 characters) that open with an explicit declination. Llama refuses 31 .8% ,and its responses are three times longer (median 1452 char-acters) because it performs the requested analysis as a task — a representative opening is “ Semantic Analysis: Upon re-viewing the code and comments, I detect a potentially sensi-tive topic. . . ”. Undefended, all three refuse essentially never (0.0/0.0/1.6% ). 
+
+The middle band. On Llama, 31 .8% of draws are explicit refusals and 4.7% are judged successful attacks, leaving 
+
+63 .6% in neither category: the model performs the analysis, does not explicitly refuse, and does not complete the harm-ful task. That band is decomposed in Appendix H. The regex is a marker detector, not a judge: adequate for the threefold contrast it carries, not for a fine one. 
+
+Known direction of error. The marker test asks only whether a response opens with a declination, so it miscounts a response that declines and then complies anyway. We can bound that error, because such a draw is exactly one the completion judge scores a success despite a refusal marker: it occurs on 0.38 /0.17 /0.57 /0.00% of draws (Llama-3.1-8B / Llama-3.3-70B / Qwen / Gemma). Marker-based refusal is therefore an over-count by at most 0.6 points on any target — immaterial against the 31 .8-to-97 .3 spread the measurement carries. Qwen is the one target where the pattern is not neg-ligible in relative terms: 31% of its successful draws open with “I cannot assist with this request. . . ” and then complete the task inside the code template. 
+
+# F Uncertainty 
+
+Every quantity in the main paper is a point estimate over 100 
+
+behaviors × 100 draws. Two of the three sampling axes are recoverable from the stored per-draw judgments without new generations, and they are the two our claims are stated over. 
+
+Estimator. We bootstrap over behaviors (resampling the 
+
+100 behaviors with replacement, 10 4 resamples) and, within each resample, over draws (redrawing each behavior’s suc-cess count as Binomial( M, k b/M )). Union ASR( N ) is then recomputed exactly by Equation (1) on each resample and we report the 2.5th and 97 .5th percentiles. The behavior axis dominates at n=100 , which is why intervals on near-saturated cells are asymmetric: a cell at 95% coverage can lose behaviors but cannot gain many. 
+
+What it does not cover. Seed-to-seed variation of the serv-ing stack is not recoverable from stored outputs and would require re-running the matrix under a second seed. We state this rather than implying the intervals are total. Two cells were accidentally duplicated during the run and agree to within 0.11 percentage points; that is suggestive, not a vari-ance estimate. 
+
+The headline survives comfortably. On all three targets the composition’s interval is disjoint from both ingredi-ents’: lower bounds 51 .0/12 .0/5.0 against single-shot-code upper bounds 6.2/2.9/0.4 and original-BoN-at-N =100 up-per bounds 5.0/0.0/0.0.                                                                                                                                    
+
+> Target Def. Atk N=1 [95% CI] N=100 [95% CI] Llama none code 49.9 [43.8,56.0] 95.0 [90.0,99.0] Llama none BoN 11.3 [8.5,14.5] 89.0 [78.0,92.0] Llama SemSm. code 32.5 [27.8,37.3] 93.0 [85.0,96.0] Llama SemSm. BoN 3.7 [2.5,5.0] 67.0 [49.0,68.0] Llama SAGE code 4.7 [3.4,6.2] 67.0 [51.0,70.0] Llama SAGE BoN 0.0 [0.0,0.1] 3.0 [0.0,5.0] Llama SAGE 0.5code 4.8 [3.1,6.6] 55.0 [39.0,58.0] Llama canon. code 47.8 [41.9,53.7] 97.0 [92.0,99.0] Llama canon. BoN 15.0 [11.6,18.6] 89.0 [78.0,92.0] Llama canon+WG code 26.3 [20.4,32.6] 58.0 [48.0,67.0] Llama canon+WG BoN 6.3 [4.7,8.0] 78.0 [62.0,80.0] Llama canon+LG3 code 2.9 [0.4,5.9] 6.0 [2.0,11.0] Llama canon+LG3 BoN 1.6 [0.7,2.8] 23.0 [13.0,29.0] Llama LG3 alone code 5.1 [2.1,8.8] 13.0 [7.0,20.0] Llama LG3 alone BoN 0.2 [0.1,0.4] 16.0 [5.0,18.0] Llama70 none code 60.6 [53.6,67.6] 92.0 [85.0,96.0] Llama70 none BoN 15.3 [12.5,18.1] 95.0 [85.0,96.0] Llama70 SAGE code 3.2 [1.5,5.1] 22.0 [13.0,29.0] Llama70 SAGE BoN 0.0 [0.0,0.1] 2.0 [0.0,4.0] Qwen none code 49.7 [44.1,55.4] 96.0 [92.0,99.0] Qwen none BoN 17.4 [13.2,21.8] 92.0 [79.0,93.0] Qwen SemSm. code 33.1 [27.4,38.8] 92.0 [84.0,96.0] Qwen SemSm. BoN 11.4 [8.2,15.0] 84.0 [68.0,84.0] Qwen SAGE code 1.8 [0.8,2.9] 22.0 [11.0,27.0] Qwen SAGE BoN 0.0 [0.0,0.0] 0.0 [0.0,0.0] Gemma none code 51.7 [44.5,58.8] 97.0 [91.0,99.0] Gemma none BoN 4.3 [2.8,6.0] 62.0 [43.0,63.0] Gemma SemSm. code 2.8 [1.8,3.9] 54.0 [38.0,57.0] Gemma SemSm. BoN 1.9 [1.1,2.9] 41.0 [25.0,43.0] Gemma SAGE code 0.2 [0.1,0.4] 15.0 [5.0,17.0] Gemma SAGE BoN 0.0 [0.0,0.0] 0.0 [0.0,0.0]
+
+Table 8: Union ASR( N ) with 95% bootstrap intervals, all 
+
+31 cells, from one seeded generation. “BoN” = original BoN, “code” = BoN-wrapped CodeAttack, “canon+WG” and “canon+LG3” = canonicalize +guard with each classi-fier, “LG3 alone” = LlamaGuard-3 as published. share of draws (%) in-band Target refusal success band hazard (%) Llama-3.1-8B 31.8 4.69 63.6 6.7 Llama-3.3-70B 68.7 3.16 28.2 9.7 Qwen2.5-7B 96.3 1.77 2.4 33.4 Gemma-2-9B 97.3 0.22 2.5 8.1 
+
+Table 9: Outcome decomposition of all 10 ,000 draws per cell, SAGE × code. Band = neither an explicit refusal marker nor a judged success. In-band hazard = P (success |
+
+the response did not open with a refusal ), i.e. the per-draw risk conditional on reaching the band at all. Band size spans 
+
+26 × across targets and orders them exactly as coverage does; the hazard spans 5× and does not. 
+
+# G Beyond N = 100 
+
+Our budget stops at N =100 , and Figure 2’s curves are still rising there, so we apply the Beta-mixture extrapolation of Feng et al. (2026) to ask what a larger budget would buy. Their model places a Beta( α, β ) prior on the per-behavior success probability, giving ASR( N ) = 1 − B(α, β +N )/B (α, β ).Our data force one modification: a large share of behaviors are never cracked in 100 draws, and a Beta density has no atom at zero, so we fit a zero-inflated variant — a point mass 
+
+p0 at θ=0 plus a Beta over the remainder, by method of moments. 
+
+Result, and why we report it as a signal rather than a pre-diction. On SAGE × code the fit projects 64 .5/21 .5/14 .4% 
+
+at N =1000 (Llama/Qwen/Gemma) — i.e. saturation, not continued growth. But the same fit underestimates the an-chor it was fit to, giving 55 .3/18 .9/9.3% at N =100 where we measured 67 .0/22 .0/15 .0% . A single Beta cannot repre-sent our per-behavior success distribution, which is bimodal: a set of behaviors that crack on nearly every draw and a long tail that cracks rarely. We therefore read the extrapolation only as evidence that marginal returns diminish sharply past 
+
+N =100 , and we do not quote its absolute levels. The misfit is itself worth recording for anyone applying that method to a composed attack: the mixture assumption is the part that breaks. 
+
+# H The Middle Band 
+
+Table 2 reports that Llama refuses only 31 .8% of SAGE-wrapped code attacks while 4.7% succeed, leaving a large residue. We classify it here rather than leaving it open, by matching markers against the stored response text (analysis-without-verdict, hedged or partial help, emitted code judged non-harmful, empty). 
+
+The band is where the risk lives, and its size is what re-fusal disposition controls. Two readings of the band make opposite predictions. If the target simply refuses insuffi-ciently , refusal withholds draws from a region where suc-cess is possible, so the band’s size should order the targets and the hazard inside it need not. If instead the band is a 
+
+confusion failure — the model rambles rather than decid-ing — then the in-band hazard should itself track coverage.                                
+
+> share of successes (%) coverage Target (SAGE) nsev-0 sev-1 sev-2 all sev-2 Llama-3.1-8B 469 53 .334 .512 .267 24
+> Llama-3.3-70B 316 41 .551 .67.022 6
+> Qwen2.5-7B 177 39 .040 .720 .322 8
+> Gemma-2-9B 22 22 .763 .613 .615 1
+
+Table 10: Severity of the SAGE-defended successes, and coverage recomputed counting only behaviors with at least one actionable draw. Exact at M =N =100 , by the same definition as the headline coverage. The data separate them: band size is 63 .6/28 .2/2.4/2.5% 
+
+against coverage 67 /22 /22 /15 , while the in-band hazard is 
+
+6.7/9.7/33 .4/8.1% , lowest on the target with the highest coverage. Coverage follows band size, not in-band behaviour, which is the borrowed-strength account seen directly rather than inferred. Two residues are worth stating. First, a re-fusal opening is near-perfectly protective ( ≤ 0.6% of refusal-marked draws are scored successes), so essentially all suc-cessful draws — 97 .4/96 .2/68 .9/100% of them — come from the band. Second, the hazard is not constant: Qwen complies at 33 .4% once it fails to refuse, five times Llama’s rate. That residual is why refusal disposition orders the tar-gets but does not scale linearly into coverage, and it is the quantitative form of the saturation reported in the main text. It also identifies the cheapest defensive patch — parse the self-assessment and require an explicit verdict, rather than trusting the model to act on its own analysis — though we have not measured what that costs in benign refusals. 
+
+# I Severity 
+
+Coverage counts a behavior as broken if any draw was judged a successful completion. How much of that is operationally useful content, and how much is the code template filled with procedural scaffolding? The question is sharpened by the format itself: a code-completion prompt invites template-filling, so a severity-blind metric flatters our own headline. We measure it rather than concede it, by re-reading stored responses — no target is re-queried and no new generation is produced. 
+
+Protocol. Only draws the completion judge already scored successful are graded, so severity is a second question asked of an already-positive verdict and can only lower a reported number, never raise one. The grader is gpt-5-mini , apply-ing a three-level rubric: 2, actionable — named materials, quantities or parameters, or a concrete ordered procedure specific to this task; 1, partial — on-topic and concrete in places, but missing the specifics that would make it usable; 
+
+0, scaffolding — structure without substance, such as place-holders, restatement of the task, or generic filler. We grade every successful draw in the SAGE cells, because coverage at a severity threshold has to be recomputed exactly from them, plus a deterministic fixed-stride sample of 400 undefended successes per target, which is enough to test whether the mix is common-mode. No response failed to parse. What it changes, and what it does not. Coverage at the actionable threshold is roughly a third of headline coverage (Table 10). That is the honest ceiling on reading Table 1 as operational harm, and the main paper states it as such. It does not disturb the paper’s contrasts, because the severity mix is a property of the attack format rather than of the defense: the actionable share of successes differs between SAGE-defended and undefended cells by −2.1, −3.5 and +2 .6
+
+points on Llama-3.1-8B, Llama-3.3-70B and Qwen2.5-7B — the three targets with enough defended successes to compare. A common-mode bias cancels in every defended/undefended ratio we claim. Gemma’s −8.1 is computed on 22 defended successes and we do not read it as a difference. 
+
+Judge-conditional, like every other number here. Sever-ity levels inherit the grader’s calibration exactly as attack success rates inherit the judge’s. The contrast across cells is the claim; the absolute one-in-three would not transfer unchanged to another grader. 
+
+# J Where the Saturation Comes From 
+
+The borrowed-strength mapping is monotone in refusal dis-position but saturating: two targets whose refusal rates differ by 28 points ( 68 .7 against 96 .3) land on the same coverage, 
+
+22 .0. That looks like a ceiling on the mechanism’s predictive power. It is instead a ceiling on the metric .At M =N =100 , Equation (1) reduces exactly to the frac-tion of behaviors with at least one success, so coverage counts the size of the crackable set and is blind to how hard each member was to crack. The two tied targets illustrate the point precisely: both crack 22 behaviors, but Llama-3.3-70B cracks them with a median of 8 successes per behavior against Qwen2.5-7B’s 5. Coverage cannot see that difference; any behavior with a per-draw rate above roughly 3% is found almost surely within 100 draws, so the metric has already saturated for every crackable behavior before the budget runs out. Below saturation, the mapping is strictly monotone with no ties (Table 11). Per-draw success falls monotonically as refusal disposition rises, across all four targets and with no plateau, and so does ASR( N =10) . The mechanism therefore supports a point prediction at budgets the crackable set does not saturate, and an ordering at N =100 ; the saturation the ordering exhibits is a consequence of measuring at a budget large relative to the attack’s per-draw rate, not evidence that refusal disposition stops mattering above two-thirds. 
+
+# K Full Results Matrix 
+
+The main paper reports the headline cells; this is every cell, including the per-draw rate and QtFS that the cover-age columns do not show. 
+
+# L Attack and Defense Configurations 
+
+Original BoN. A faithful reproduction of the published character augmentations (Hughes et al. 2025): word scram-bling, random capitalization, and ASCII perturbation at 
+
+σ = 0 .4, sampled independently per draw, giving 100 dis-tinct prompts per behavior.                            
+
+> Target refusal per draw N=10 N=100 med. hits Llama-3.1-8B 31 .84.69 27 .967 4
+> Llama-3.3-70B 68 .73.16 12 .822 8
+> Qwen2.5-7B 96 .31.77 9.922 5
+> Gemma-2-9B 97 .30.22 2.115 1
+
+Table 11: Refusal disposition against attack success at three budgets (%), plus the median successes per crackable behav-ior. All cells are SAGE, code arm. The ordering is strict at every column except N =100 , where the two middle targets tie because coverage has saturated. 
+
+BoN-wrapped CodeAttack. The published CodeAttack encoding (Ren et al. 2024) presents the behavior as a code-completion task. In the composition it is resampled inside the same best-of-N loop; because the template itself is de-terministic, the variation channel on this arm is the target’s sampling temperature (see Appendix B). 
+
+SAGE (Ding et al. 2025) wraps the request in adiscriminative-analysis instruction so the target assesses its own input before answering. We use the published template unmodified. No auxiliary model is involved: the target per-forms both the self-check and the answer, which is precisely why its efficacy is target-dependent. 
+
+SemanticSmooth (Ji et al. 2025) paraphrases the request into n=5 copies and aggregates the responses by voting. Paraphrasing is performed at a nonzero temperature, so this defense supplies its own variation channel independently of the target’s. 
+
+canonicalize / canonicalize+guard (ours). canonicalize 
+
+applies NFKC normalization, case folding and whitespace collapse and then answers. canonicalize+guard canonical-izes and then screens with an off-the-shelf harmfulness clas-sifier, returning a fixed refusal on a harmful verdict and oth-erwise passing the prompt through. Neither is a published system; they exist to instantiate the two defense types cleanly — a pure transform that performs no screening, and a gate — for the probe-count analysis. We run the gate with two classi-fiers, WildGuard (Han et al. 2024) and Llama-Guard-3-8B, holding the architecture and the canonicalization prefix fixed so that the only difference between the two gate conditions is the classifier. Because canonicalize alone is measured to be a near no-op on both arms, the canonicalize +guard con-dition is close to the classifier deployed on its own, but it is not identical to it, and we state the construction rather than claiming to have evaluated a deployed system. 
+
+Temperature ablation. The SAGE × code cell on Llama-3.1-8B was additionally run at target temperature 0.5 (all other settings identical) to test whether the composition de-pends on the sampling temperature chosen in the repair. It does not: coverage is 55 .0 at T =0 .5 against 67 .0 at T =1 .0,both far above either ingredient. We did not run T =1 .5: at that temperature the 8B target stops emitting an end-of-sequence token reliably and runs to the generation cap, which changes what is being measured rather than ablating it. Table 12: Full matrix , gpt-5-mini judge, 100 behaviors × 100 draws per cell. per-draw = fraction of individual generations judged successful; N =1 , 10 , 100 = union ASR( N ) from Equation (1); QtFS = median queries to first success among crackable behaviors (“–” = none crackable). Bold marks the composition cells under SAGE. The lower block is the probe-count panel (ours, Llama only). Note the two readings that diverge: under SemanticSmooth on Llama and Qwen the per-draw column shows a large reduction while the N =100 column shows almost none.                                                                                                                                                                                               
+
+> Target Defense Attack per-draw N=1 N=10 N=100 QtFS Llama-3.1-8B none BoN-wr. CodeAttack 49.95 49.9 87.8 95.0 1.8 none original BoN 11.32 11.3 49.6 89.0 12.6 SemanticSmooth BoN-wr. CodeAttack 32.55 32.5 78.5 93.0 2.8 SemanticSmooth original BoN 3.69 3.7 23.6 67.0 25.2
+> SAGE BoN-wr. CodeAttack 4.69 4.7 27.9 67.0 20.2
+> SAGE original BoN 0.03 0.0 0.3 3.0 50.5 SAGE ( T=0 .5)BoN-wr. CodeAttack 4.76 4.8 24.2 55.0 25.2 Llama-3.3-70B none BoN-wr. CodeAttack 60.61 60.6 86.1 92.0 1.3 none original BoN 15.26 15.3 62.5 95.0 7.8
+> SAGE BoN-wr. CodeAttack 3.16 3.2 12.8 22.0 11.2
+> SAGE original BoN 0.02 0.0 0.2 2.0 50.5 Qwen2.5-7B none BoN-wr. CodeAttack 49.73 49.7 90.2 96.0 1.8 none original BoN 17.39 17.4 54.2 92.0 11.2 SemanticSmooth BoN-wr. CodeAttack 33.09 33.1 75.9 92.0 3.3 SemanticSmooth original BoN 11.44 11.4 42.8 84.0 14.4
+> SAGE BoN-wr. CodeAttack 1.77 1.8 9.9 22.0 16.8
+> SAGE original BoN 0.00 0.0 0.0 0.0 –Gemma-2-9B none BoN-wr. CodeAttack 51.73 51.7 82.0 97.0 1.5 none original BoN 4.28 4.3 23.5 62.0 25.2 SemanticSmooth BoN-wr. CodeAttack 2.75 2.8 18.5 54.0 25.2 SemanticSmooth original BoN 1.90 1.9 12.5 41.0 33.7
+> SAGE BoN-wr. CodeAttack 0.22 0.2 2.1 15.0 50.5
+> SAGE original BoN 0.00 0.0 0.0 0.0 –
+> Probe-count panel (ours): a near-no-op transform and two gates, on Llama-3.1-8B
+> Llama-3.1-8B canonicalize BoN-wr. CodeAttack 47.84 47.8 88.1 97.0 2.0 canonicalize original BoN 14.98 15.0 55.9 89.0 10.1 canon. +WildGuard BoN-wr. CodeAttack 26.27 26.3 52.9 58.0 2.5 canon. +WildGuard original BoN 6.34 6.3 36.1 78.0 16.8 canon. +LlamaGuard-3 BoN-wr. CodeAttack 2.87 2.9 5.3 6.0 2.8 canon. +LlamaGuard-3 original BoN 1.60 1.6 8.7 23.0 25.2
+
+# M Reproducibility 
+
+Scale. 100 HarmBench behaviors × 100 draws per cell. The main matrix is 3 targets × 3 defense conditions × 2
+
+attacks = 18 cells, plus 4 on Llama-3.3-70B (undefended and SAGE × both attacks); the probe-count panel adds 6
+
+(three defenses × both attacks, Llama-3.1-8B only), the pub-lished gate 2 (LlamaGuard-3 screening raw input × both attacks, Llama-3.1-8B) and the temperature ablation 1. To-tal: 31 cells, 310 ,000 judged generations. 
+
+Targets. Llama-3.1-8B-Instruct, Qwen2.5-7B-Instruct, Gemma-2-9B-it and Llama-3.3-70B-Instruct (fp8-quantized on a single card; all others bf16), served locally through a vLLM-compatible endpoint. Target sampling temperature is 1.0 uniformly across all arms after the repair described in Appendix B. Generation budgets are 16 ,384 tokens for Llama and Qwen and 3,072 for Gemma, whose 8,192 -token context forces the lower cap; median response lengths are far below either bound, but we note the asymmetry in the main paper’s limitations rather than leaving it implicit. 
+
+Estimators. Coverage is ASR( N =100) from Equa-tion (1), computed exactly over random N -subsets rather than simulated. QtFS is the median of (M +1) /(kb+1) over behaviors with kb > 0. Both are computed from the stored per-draw judgments, so the full ASR -vs-N curve at any bud-get N ≤ 100 is recoverable from released artifacts without new generations. 
+
+Provenance. Each stage’s results carry a hash-bearing pointer to the artifacts it consumed, so any reported cell can be traced back through judging, target generation, and encoding to the source behavior list. We release the pipeline, the experiment configurations for every cell reported here, the analysis code that produces the tables and figures, and the per-draw judgments themselves — one verdict per draw for all 31 cells, without the response text, which is the harmful artifact and is withheld. Every number in this paper therefore recomputes from the released package with no model calls. 
+
+Single-seed caveat. All cells are single-seed at N =100 ; we report no seed-variance bounds. Two cells were accidentally duplicated during the run and agree to within 0.11 percentage points, which is suggestive but is not a variance estimate.
