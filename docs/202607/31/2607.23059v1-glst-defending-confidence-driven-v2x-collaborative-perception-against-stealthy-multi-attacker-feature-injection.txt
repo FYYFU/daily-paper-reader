@@ -1,0 +1,1092 @@
+Title: GLST: Defending Confidence-Driven V2X Collaborative Perception Against Stealthy Multi-Attacker Feature Injection
+
+URL Source: https://arxiv.org/pdf/2607.23059v1
+
+Published Time: Tue, 28 Jul 2026 00:26:34 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# GLST: Defending Confidence-Driven V2X Collaborative Perception Against Stealthy Multi-Attacker Feature Injection 
+
+Ji He, Member, IEEE, Ying Wang, Lijie Zheng, Graduate Student Member, IEEE, Xinghui Zhu, Member, IEEE, 
+
+Yulong Shen, Member, IEEE, Xiaohong Jiang, Senior Member, IEEE 
+
+Abstract —Collaborative perception (CP) improves autonomous driving perception by allowing connected vehicles to exchange intermediate features through V2X communication. Among existing approaches, confidence-driven sparse communication has become an important design paradigm because it reduces bandwidth consumption by transmitting only perception-critical spatial regions. However, this design also introduces a new security risk: once a collaborator is compromised, malicious features located in high-confidence or ego-uncertain regions may be preferentially selected and amplified during feature fusion. In this paper, we investigate this vulnerability using Where2comm as a representative confidence-driven collaborative perception framework. We first verify that the proposed Pretend Benign attack can effectively exploit the spatial confidence mechanism of Where2comm by injecting stealthy perturbations into uncertain yet perception-critical regions, significantly degrading 3D object detection while maintaining benign-like feature characteristics. Beyond this specific attack-framework pair, we further identify a more general weakness of existing trust-based defenses: many of them rely primarily on a single consistency signal, making them vulnerable to multi-attacker scenarios where malicious agents can form a pseudo-consensus and bias trust estimation. To address this problem, we propose Global-Local Structural Trust (GLST), a lightweight defense framework that evaluates collaborator reliability from three complementary perspectives: global feature consistency, multi-scale local residual consistency, and structural consistency with ego-side semantic topology. The resulting trust scores are incorporated into the feature fusion process to suppress unreliable collaborators. Experiments on the OPV2V dataset demonstrate that GLST achieves competitive performance under single-attacker Pretend Benign attacks and provides substantially stronger robustness under multi-attacker settings. In the four-attacker Pretend Benign scenario, GLST maintains 0.69 AP@0.3, whereas existing single-signal defenses suffer severe degradation. GLST also remains effective against gradient-based attacks such as PGD, suggesting that multi-level trust modeling is essential for securing confidence-driven collaborative perception. 
+
+Index Terms —cooperative perception, V2X communication, feature injection attacks, trust modeling, 3D object detection. 
+
+I. I NTRODUCTION 
+
+# COLLABORATIVE perception (CP) has emerged as an important technique for improving autonomous driving perception under occlusion, limited sensing range, and in-complete local observations [1], [2]. By leveraging Vehicle-to-Everything (V2X) communication, multiple connected au-tonomous vehicles (CAVs) can exchange perception informa-tion and aggregate complementary observations into a more   
+
+> J. He, Y. Wang, L. Zheng, X, Zhu, Y. Shen and X. Jiang are with the School of Computer Science and Technology, Xidian University, Xi’an, China (jihe@xidian.edu.cn; 18223927854@163.com; lijzheng@stu.xidian.edu.cn; xhzhu@xidian.edu.cn; ylshen@mail.xidian.edu.cn; jiang@fun.ac.jp).
+
+complete environmental representation [3], [4]. Among differ-ent CP paradigms, feature-level collaboration has attracted in-creasing attention because it preserves rich spatial information while avoiding the prohibitive communication cost of raw-data sharing [5], [6]. Recent CP systems have further improved communica-tion efficiency through selective and confidence-driven com-munication [7]–[10]. Where2comm [11], as a representative confidence-driven sparse communication framework, transmits only perception-critical feature regions according to spatial confidence maps. This design substantially reduces band-width consumption while maintaining competitive 3D object detection performance. However, the same mechanism may also introduce a new security risk. Since perception-critical regions are preferentially selected for communication and then involved in feature fusion, malicious features injected into these regions may be propagated and amplified by the CP pipeline. Therefore, confidence-driven sparse communication, while efficient, can unintentionally enlarge the attack surface of feature-level CP systems. The open communication architecture of CP makes this threat particularly concerning. Once a collaborator is compro-mised, it may transmit carefully crafted adversarial features to the ego vehicle. If the ego vehicle fails to identify unreliable collaborators or suppress their injected features, the final perception output may be manipulated, leading to missed detections, false positives, or shifted bounding boxes. Recent stealthy feature-injection attacks, such as the Pretend Benign (PB) attack [12], further intensify this challenge. PB optimizes adversarial features to resemble benign feature distributions while still misleading downstream detection heads, making malicious features difficult to detect through conventional anomaly filtering or consistency checking mechanisms. Existing CP defenses, including ROBOSAC [13], LU-CIA [14], and MADE [15], improve robustness by estimating collaborator reliability and suppressing suspicious information. However, many of these methods rely mainly on a single global or pairwise consistency signal. Such a design can be fragile under stealthy and multi-attacker scenarios. When multiple malicious agents jointly participate in CP, they may form a pseudo-consensus in the feature space, which increases their mutual consistency and biases trust estimation. As a result, conventional consistency-based defenses may assign overly high reliability to coordinated attackers and fail to prevent corrupted feature fusion. In this paper, we focus on the security of confidence-driven sparse collaborative perception. We use Where2comm as a representative framework because it combines spatial arXiv:2607.23059v1 [cs.CR] 25 Jul 2026 2
+
+confidence-based communication with attention-based feature fusion. Our goal is not to design a defense tailored only to Where2comm, but to study a broader security issue in confidence-driven feature-level CP: malicious features located in perception-critical regions may be preferentially transmitted and amplified during fusion. We systematically analyze this vulnerability under PB attacks and show that stealthy feature injection can significantly degrade cooperative 3D object de-tection while maintaining benign-like feature characteristics. To address this problem, we propose Global-Local Structural Trust (GLST), a lightweight defense framework for secure confidence-driven collaborative perception. Instead of relying on a single consistency signal, GLST jointly evaluates collabo-rator reliability from three complementary perspectives: global feature consistency, multi-scale local residual consistency, and structural consistency with ego-side semantic topology. The resulting trust scores are used to reweight the feature fusion process, thereby suppressing low-trust collaborators at the fea-ture level without requiring complex reconstruction, iterative sampling, or additional communication procedures. Our main contributions are summarized as follows:  
+
+> •
+
+We identify and empirically analyze a critical secu-rity vulnerability in confidence-driven sparse CP. Using Where2comm as a representative framework, we show that confidence-driven communication and attention-based fusion, while effective in reducing communication overhead, may unintentionally amplify adversarial fea-ture propagation. In particular, stealthy feature-injection attacks such as PB can exploit perception-critical spatial regions by concentrating perturbations on uncertain or locally weakly perceived areas, thereby degrading coop-erative 3D object detection while preserving benign-like feature characteristics.  
+
+> •
+
+We reveal that existing consistency-based trust defenses are fragile under multi-attacker CP scenarios. Since many defenses estimate collaborator reliability mainly from a single global or pairwise consistency signal, multiple malicious agents can reinforce each other and form a pseudo-consensus in the feature space. This biased con-sensus weakens the discriminability between benign and malicious collaborators and may cause conventional trust estimation mechanisms to assign overly high reliability to coordinated attackers.  
+
+> •
+
+We propose GLST, a lightweight defense framework for secure confidence-driven collaborative perception. GLST jointly evaluates collaborator reliability from three complementary perspectives: global feature consistency, multi-scale local residual consistency, and structural con-sistency with ego-side semantic topology. The resulting trust scores are used to reweight the feature fusion process, thereby suppressing low-trust collaborators and mitigating adversarial interference at the feature level.  
+
+> •
+
+We conduct extensive experiments on the OPV2V dataset [16] under diverse adversarial settings, including single-attacker and multi-attacker PB attacks, as well as gradient-based attacks such as PGD [17]. The results show that GLST achieves performance comparable to representative defenses in single-attacker scenarios while providing stronger robustness under multi-attacker set-tings, demonstrating the importance of multi-level trust modeling for secure CP. II. R ELATED WORK 
+
+A. Adversarial Attacks Against CP 
+
+Adversarial attacks against perception systems were first studied in single-agent vision scenarios. Representative meth-ods, such as pixel-level perturbations [18] and Projected Gradi-ent Descent (PGD) [17], demonstrate that carefully optimized perturbations can mislead deep perception models. Subsequent studies further extended adversarial attacks to physical-world perception [19], [20], showing that printable perturbations, ad-versarial patches, and natural camouflage patterns can threaten real-world perception systems. Compared with single-vehicle perception, CP introduces an additional communication-layer attack surface because the ego vehicle relies on information shared by external collaborators [10], [21], [22]. A compromised agent can therefore manip-ulate the collaborative fusion process by perturbing shared features, falsifying pose information, or fabricating object-level messages. Tu et al. [23] showed that controlling only a few malicious agents can cause severe missed detections and false positives by attacking shared feature representations. AdvGPS [24] disrupts feature alignment by attacking pose information, while Zhang et al. [25] model communication-layer attacks as object spoofing and object removal. More re-cently, stealthy feature-injection attacks have posed a stronger challenge to CP security. The PB attack [12] optimizes ad-versarial features to preserve benign-like characteristics while still misleading downstream detection heads. Compared with conventional attacks that introduce more visible abnormal perturbations, PB is harder to detect using simple anomaly filtering or consistency checking. For confidence-driven sparse communication frameworks such as Where2comm, this threat becomes more serious because malicious perturbations can be concentrated on perception-critical regions that are more likely to be transmitted and fused. Therefore, PB provides a representative threat model for analyzing the security of confidence-driven feature-level CP. 
+
+B. Defenses Mechanisms for Secure CP 
+
+To improve the robustness of CP under compromised com-munication environments, existing defenses mainly attempt to identify unreliable collaborators or suppress suspicious infor-mation during fusion. ROBOSAC [13] follows a sampling-based strategy, which searches for a malicious-free collabo-rator subset by comparing sampled collaborative predictions with the ego vehicle’s independent perception results. Another line of work constructs trust scores directly from intermedi-ate features.LUCIA [14] assigns soft trust weights based on pairwise feature distances among agents and suppresses suspi-cious collaborators during feature fusion. Anomaly-detection-based defenses provide another way to evaluate collaborator reliability. MADE [15] performs a dual-hypothesis test for each collaborator by jointly considering matching loss and 3Local Raw Sensory                                  
+
+> Data 𝑥 𝑖
+> Feature
+> Encoder
+> ℇ
+> Spatial Features in
+> Local Frame
+> ෩𝑭 𝒊 ∈𝑅 𝐶 ×𝐻 ×𝑊
+> Rigid -body
+> Transformation
+> (Agent i to Ego Agent )
+> Coordinate Transformation
+> & Alignment
+> 𝑭 𝒊 =𝓦 ෩𝑭 𝒊 ,𝑻 𝒊 →𝟎
+> 𝑻 𝒊 →𝟎
+> Ego Agent
+> Feature
+> Encoder
+> ℇ
+> Spatial Features
+> 𝑭 𝟎 =෩𝑭 𝟎 ∈𝑅 𝐶 ×𝐻 ×𝑊
+> 𝑭 𝟏
+> …
+> 𝑭 𝑵 −𝟏
+> 𝑭 𝟎
+> Aggregation of All Received
+> Features
+> 𝑭 𝒇𝒖𝒔𝒆 =𝓕 𝑭 𝟎 ,𝑭 𝟏 ,…,𝑭 𝑵 −𝟏
+> Feature Decoder 𝒟
+> 𝒀 =𝒚 𝟏 ,𝒚 𝟐 ,…,𝒚 𝒎
+> Final 3D Detection Results
+> Collaboration Set
+> 𝒩 =0,1,2,…,𝑁 −1
+
+Fig. 1. Illustration of the Confidence-Driven V2X CP framework. 
+
+collaborative reconstruction loss. Overall, existing CP defenses are largely built upon a single source of evidence, e.g., sampling-based consensus, global feature distance, or anomaly scores. This design may be insufficient against compound threats that combine distribution mimicry with multi-attacker collaboration. III. P RELIMINARIES 
+
+A. Confidence-Driven Collaborative Perception in V2X 
+
+CP enables multiple CAVs to share complementary obser-vations through V2X communication, thereby mitigating the limited field of view and occlusion problems of single-agent perception [26]–[28]. Among existing CP paradigms, inter-mediate feature fusion has become a widely adopted solution because it retains rich semantic and geometric cues while requiring much less communication bandwidth than raw point-cloud sharing. This trade-off makes feature-level collaboration particularly suitable for real-time 3D object detection in multi-agent driving scenarios. We consider a collaborative network consisting of N agents, denoted by N = {0, 1, . . . , N − 1}, where agent 0 is the ego vehicle. The general CP pipeline is illustrated in Fig. 1. Each agent i first encodes its local observation xi into a bird’s-eye-view (BEV) feature representation using a feature encoder E:
+
+˜Fi = E(xi), ˜Fi ∈ RC×H×W , (1) where C, H, and W denote the channel, height, and width dimensions, respectively. To enable feature aggregation at the ego vehicle, the feature map of each collaborator is transformed into the ego coordinate system. Let Ti→0 denote the rigid-body transformation from agent i to the ego agent. The aligned feature can be written as Fi = W( ˜Fi, T i→0),where W(·) is the spatial warping operator. The ego agent then aggregates its local feature and the received aligned features through a fusion module F, and the fused representation is decoded by a detection head D:
+
+Y0 = D F 0fuse 
+
+, F 0fuse = F(F0, F 1, . . . , F N −1), (2) where Y0 = {y1, y 2, . . . , y M } denotes the final 3D detection results of the ego vehicle, and each ym contains a 3D bounding box, category label, and confidence score. The above formulation assumes that all intermediate fea-tures are available for fusion. In practical V2X systems, however, transmitting full BEV feature maps from all col-laborators may introduce considerable communication over-head, especially when the number of agents increases or the available bandwidth is limited. To improve communication efficiency, Where2comm [11] introduces a confidence-driven sparse communication mechanism that selects only perception-critical spatial regions for transmission. For each agent i and communication round k, a confidence generator G produces a spatial confidence map 
+
+C(k) 
+
+> i
+
+= G F (k)
+
+> i
+
+, C(k) 
+
+> i
+
+∈ RH×W , (3) where a larger value of C(k) 
+
+> i
+
+(x, y ) indicates that the spatial location (x, y ) is more informative for downstream detection. Based on the confidence map and the request map from the receiver, a binary communication mask is generated as 
+
+M (k) 
+
+> i→j
+
+=
+
+
+
+Φselect 
+
+ C(k)
+
+> i
+
+, k = 0 ,
+
+Φselect 
+
+ C(k) 
+
+> i
+
+⊙ R(k−1) 
+
+> j
+
+, k > 0,
+
+(4) where Φselect (·) denotes the top-p spatial selection function under a given communication budget, R(k−1)  
+
+> j
+
+is the request map generated by receiver j in the previous round, and ⊙
+
+denotes element-wise multiplication. The message transmitted from agent i to agent j is therefore a sparse feature map: 
+
+Z(k) 
+
+> i→j
+
+= M (k) 
+
+> i→j
+
+⊙ F (k) 
+
+> i
+
+. (5) After message passing, gents perform confidence-aware multi-head attention to compute fusion weights. For receiver i,the attention weight assigned to the message from collaborator 
+
+j is computed as 
+
+W (k) 
+
+> j→i
+
+= MHA w
+
+ F (k) 
+
+> i
+
+, Z (k)
+
+> j→i
+
+, Z (k)
+
+> j→i
+
+ ⊙ C(k) 
+
+> j
+
+, (6) where MHA w(·) denotes the multi-head attention module for estimating spatial fusion weights. The resulting feature representation is obtained by aggregating the weighted sparse messages from the communication neighbors: 
+
+F i, (k)fuse = FFN 
+
+ X
+
+> j∈N i∪{ i}
+
+W (k) 
+
+> j→i
+
+⊙ Z(k)
+
+> j→i
+
+ , (7) where Ni is the set of collaborators connected to agent i, and 
+
+FFN( ·) denotes a feed-forward network. Although confidence-driven sparse communication im-proves efficiency, it also changes the security properties of feature-level CP. First, high-confidence or requested regions are more likely to be transmitted; therefore, if an attacker can craft malicious features that appear informative in these regions, the communication policy may unintentionally pri-oritize the adversarial content. Second, sparse transmission reduces the amount of redundant information available for cross-agent consistency checking, making it more difficult to distinguish benign complementary observations from carefully manipulated features. Third, attention-based fusion may assign large weights to malicious messages that align with confidence priors, causing small perturbations to have a disproportionately 4
+
+large influence on the final fused representation. These prop-erties motivate the threat model and attack analysis presented below. 
+
+B. Threat Model and Attack Objective 
+
+We study feature-injection attacks against confidence-driven CP systems. The ego vehicle is assumed to be benign, while one or more collaborators may be compromised. Let A ⊆ N \ { 0} denote the set of malicious agents. A compromised agent a ∈ A can manipulate the intermediate feature trans-mitted to the ego vehicle by replacing the legitimate aligned feature Fa with an adversarial feature ˜Fa. This setting follows the common CP security assumption that the attacker has already compromised a collaborator or its perception software stack, while the ego-side fusion and detection modules remain unchanged. The attacker is considered under the following capabilities and constraints:  
+
+> •
+
+Feature manipulation capability: The attacker can mod-ify its own transmitted intermediate feature after local encoding and coordinate alignment, i.e., ˜Fa = Fa + δa,where δa is the adversarial perturbation.  
+
+> •
+
+Model knowledge: The attacker has white-box access to the deployed CP model, including the encoder, com-munication module, fusion module, and detection head. This allows end-to-end gradient-based optimization of adversarial perturbations.  
+
+> •
+
+Limited cross-agent observability: The attacker cannot directly access the private intermediate features of benign collaborators. It can use its own local feature, the pub-lic communication protocol, and ego-related information available during collaboration, such as the ego feature or confidence map.  
+
+> •
+
+Perturbation constraint: To avoid trivially detectable feature corruption, the perturbation is bounded by an ℓp
+
+norm constraint, i.e., ∥δa∥p ≤ ϵ.The attack objective is to degrade the ego vehicle’s per-ception results by inducing false negatives, false positives, or inaccurate bounding boxes after feature fusion. For a single at-tacker a, the adversarial feature is ˜Fa = Fa +δa, ∥δa∥p ≤ ϵ.The ego-side prediction under attack is formulated as 
+
+Y δ 
+
+> 0
+
+= D
+
+
+
+F
+
+
+
+F0, F 1, . . . , ˜Fa, . . . , F N −1
+
+ 
+
+. (8) The attacker seeks to maximize a detection-oriented adversar-ial loss max ∥δa∥p≤ϵ Ladv 
+
+ Y δ 
+
+> 0
+
+, Y gt 0
+
+, where Y gt 0 denotes the ground-truth 3D annotations of the ego vehicle, and Ladv (·)
+
+measures the attack effect on downstream detection. In the multi-attacker setting, each malicious agent inde-pendently generates its own perturbation and transmits an adversarial feature to the ego vehicle. The attack objective can be generalized as 
+
+max 
+
+> {δa}a∈A
+
+Ladv 
+
+ Y δ 
+
+> 0
+
+, Y gt 0
+
+ ,
+
+s.t. ˜Fa = Fa + δa, ∥δa∥p ≤ ϵ, ∀a ∈ A ,
+
+(9) where 
+
+Y δ 
+
+> 0
+
+= D
+
+
+
+F
+
+
+
+F0, {Fi}i / ∈A , { ˜Fa}a∈A 
+
+ 
+
+. (10) Unless otherwise specified, the multi-attacker setting consid-ered in this paper assumes independent attackers rather than explicitly coordinated attackers. This assumption is consistent with the experimental design in Section VI and allows us to evaluate whether a defense can remain reliable when several malicious agents simultaneously inject benign-looking perturbations. Securing the underlying V2X communication channel, authentication protocol, and message integrity is also important in practice [29], but it is orthogonal to the feature-level robustness problem studied in this work. IV. PB A TTACK AGAINST CONFIDENCE -D RIVEN CP This section analyzes why the PB attack [12] is particularly effective against confidence-driven CP frameworks such as Where2comm. PB is an existing stealthy feature-injection attack rather than a method proposed in this paper. We use it as a representative threat to expose the security weakness of confidence-based communication and attention-based fusion. Unlike PGD [17] or BIM [30], which generally optimize perturbations over the entire feature map, PB explicitly con-siders the spatial semantics of different BEV regions. Its goal is twofold: degrading the ego vehicle’s final detection results and preserving benign-like feature characteristics so that the malicious collaborator is difficult to identify by simple similarity-based defenses. As shown in Fig. 2, PB contains two major modules: Attack Region Selection (ARS) and Multi-target Adversarial Perturbation Generation (MAPG). ARS partitions the feature map into several functional regions according to the confidence responses of the ego vehicle, the attacker, and the fused perception output. MAPG then assigns different optimization objectives to these regions, allowing the attacker to selectively suppress real objects, introduce false detections, and maintain partial feature consistency. This region-aware design matches the communication logic of Where2comm and enables mali-cious features to pass through the sparse communication mask and receive non-negligible attention during fusion. 
+
+A. Attack Region Selection 
+
+PB first uses the classification head of the deployed 3D de-tector to obtain three confidence heatmaps: the ego confidence heatmap he, the attacker confidence heatmap ha, and the fused confidence heatmap hz. These heatmaps describe how different spatial locations are perceived before and after collaboration. Given two confidence thresholds μh and μl, ARS partitions the BEV feature space into four functional regions: 
+
+{R HCR , RTAR , RFAR , RIR } = ARS( he, h a, h z; μh, μ l),
+
+(11) where RHCR , RTAR , RFAR , and RIR denote the High Con-fidence Region, True Ambiguous Region, False Ambiguous Region, and Imperceptible Region, respectively. The High Confidence Region contains locations with strong and relatively consistent object responses. Directly corrupting these locations may produce obvious feature deviations and make the malicious agent easier to detect. Therefore, PB tends to preserve partial consistency in this region. The True 5Spatial                
+
+> confidednce
+> generator
+> 𝐶 𝑖 =𝒢 𝐹 𝑖
+> 𝐹 𝑧
+> ℎz
+> 𝐹 1,𝐹 2,…,𝐹 𝑎 ,…,𝐹 𝑖
+> 𝐹 𝑒 Request Map
+> 𝑅 𝑒 =1−𝐶 𝑒
+> Adversarial Region Selection (ARS)
+> Multi -Target Adversarial
+> Perturbation Generation (MAPG)
+> Advisarial perturbation δ
+> ℎ𝑎
+> Camera/Lidar input
+> Feature
+> Encoder
+> ℇ
+> Camera/Lidar input
+> Feature
+> Encoder
+> ℇ
+> 𝑍 𝑒 →𝑗
+> Ego Message
+
++ 
+
+> Attention Feature
+> Fusion
+> Feature Decoder 𝒟
+
+Multi -CAV Feature Encode  Selecting Communication Agents for 
+
+Where2Comm 
+
+Generating Adversarial 
+
+Perturbations via PB Attacker  Fusion & Output                                 
+
+> binary selection matrix
+> 𝑀 𝑒 →𝑗 =𝐶 𝑒 ⊙𝑅 𝑗
+> Communication Graph Construction
+> 𝑥 1,…,𝑥 𝑖
+> 𝑥 𝑒
+> ෨𝐹 𝑎 =𝐹 𝑎 +𝛿
+> 𝐶 𝑒
+> 𝐶 1,𝐶 2,…,𝐶 𝑎 ,…,𝐶 𝑖
+> 𝑀 𝑎 →𝑒 =𝐶 𝑎 ⊙𝑅 𝑒
+> 𝑀 𝑖 →𝑒 =𝐶 𝑖 ⊙𝑅 𝑒
+> 𝐹 𝑧 ,𝐹 𝑒 ,𝐹 𝑎
+> Cls.
+> Head
+> 𝐹 𝑧 =ℱ𝐹 𝑒 ,𝐹 𝑎
+> ℎ𝑒
+> Attacked Output
+
+Fig. 2. Illustration of the PB attack against Confidence-Driven CP. PB exploits confidence-aware communication by selecting attack-sensitive regions through ARS and generating region-specific perturbations through MAPG. 
+
+Ambiguous Region corresponds to locations where real objects are uncertain or weakly perceived by the ego vehicle; sup-pressing confidence in this region can cause missed detections. The False Ambiguous Region and Imperceptible Region are exploited to create false object responses in locations where the ego vehicle has insufficient evidence. In this way, PB avoids a uniform perturbation pattern and instead allocates perturbations according to the semantic role of each spatial region. This region-selection strategy directly exploits confidence-driven communication. Since Where2comm selects high-value spatial locations according to confidence maps and request maps, adversarial features that appear informative in am-biguous or complementary regions are more likely to be in-cluded in the transmitted sparse message Za→0. Consequently, the malicious feature is not necessarily filtered out by the communication policy. Instead, it may be treated as useful complementary information and propagated to the ego-side fusion module. 
+
+B. Multi-target Adversarial Perturbation Generation 
+
+After region partitioning, MAPG generates perturbations with region-specific objectives. In the High Confidence Re-gion, PB introduces a regularization term to maintain detection quality and preserve a benign-looking feature response. In the True Ambiguous Region, PB suppresses confidence scores associated with real objects, encouraging false negatives. In the False Ambiguous Region and Imperceptible Region, PB increases confidence scores to induce false positives. The overall adversarial objective is formulated as 
+
+Ladv = X
+
+> i∈HCR
+
+[log(1 − ysi ) · IoU( y′
+
+> i
+
+, y i) − λR (y′
+
+> i
+
+, y i)] + X
+
+> i∈TAR
+
+log(1 − ysi ) · IoU( y′
+
+> i
+
+, y i) + X
+
+> i∈FAR ∪IR
+
+log( ysi ),
+
+(12) where yi denotes an original detection result, y′ 
+
+> i
+
+denotes the corresponding post-attack bounding box, ysi is the post-attack confidence score, and IoU( y′
+
+> i
+
+, y i) measures the geo-metric overlap between the perturbed and original bounding boxes. The regularization term R(y′
+
+> i
+
+, y i) is used in the High Confidence Region to avoid excessive corruption of highly reliable detections, and λ controls its strength. The perturbation is iteratively updated in the feature space by maximizing Ladv under the norm constraint in Sec-tion III-B. A typical projected gradient update can be written as 
+
+δt+1  
+
+> a
+
+= Π ∥δ∥p≤ϵ
+
+ δta + α · sign ( ∇δa Ladv ) , (13) where α is the step size and Π∥δ∥p≤ϵ(·) denotes projection onto the perturbation budget. The malicious feature transmitted by attacker a is then given by 
+
+˜Fa = Fa + δa. (14) 
+
+C. Why PB Is Amplified by Where2comm 
+
+The effectiveness of PB comes from the interaction between its region-aware perturbation design and the confidence-driven CP pipeline. First, PB places adversarial effects in regions that can be interpreted as informative or complementary by the communication module. These regions are more likely to survive the sparse selection mask in Eq. (4). Second, PB maintains partial consistency in high-confidence regions, which reduces the chance of being detected by defenses that rely only on global feature distance or single-level similarity. Third, after the malicious sparse message is transmitted, the attention-based fusion module in Eq. (6) may assign non-trivial weights to the adversarial regions because they are aligned with confidence priors. As a result, the injected perturbations can be amplified during feature fusion and ultimately distort the ego vehicle’s final detection results. 6Ego                   
+
+> INPUT FEATURES
+> Feature 2
+> Feature 3
+> Feature N
+> Co
+> m
+> pr
+> ess
+> ion
+> &
+> No
+> rm
+> ali
+> zat
+> ion
+> GLST
+> 1. GLOBAL BRANCH
+> Pairwise L1 Distance Summation Normalize to global trust score
+> INFERENCE
+> Detection Result
+> Feature 1
+> Benign
+> Malicious
+> trust score & attention
+> weights Reassignment
+> 𝑾 𝑛𝑒𝑤 =𝑓 𝑇 𝑠𝑐𝑜𝑟𝑒 ,𝑊 𝑜𝑙𝑑
+> Message
+> 𝑑 𝑓 1,𝑓 3
+> 𝑑 𝑓 2,𝑓 3𝑑 𝑓 1,𝑓 2
+> …
+> L1 Distance Matrix
+> 𝑑
+> Feature space
+> distance
+> Key Region Mining Local Multi -Scale Residual
+> 2. LOCAL BRANCH
+> Local Trust Score Calculation 𝒕 𝒊
+> 𝒍𝒐𝒄𝒂𝒍
+> Consensus Center Computing
+> Feature 1
+> Local Residual
+> Calculation
+
+⊕                      
+
+> 3. STRUTURAL BRANCH
+> Cosine Similarity
+> Calculation
+> 𝑏 𝑖 =cos (𝑒 𝑖 ,𝑒 0)
+> Feature Map( 𝑭 𝒊 )Masked Feature Embedding
+> DownSampling
+> 𝑒 𝑖 =𝑣𝑒𝑐 𝑃 𝑖 ⨀Ω𝑘
+> Attention weighted fusion
+> Structure Trust Score Calculation 𝒕 𝒊
+> 𝒔𝒕𝒓𝒖𝒄𝒕
+> Attention
+> weighted
+> fusion
+> Ego Embedding( 𝑒 0)
+> New Attention Weights
+> 𝐹 𝑓𝑢𝑠𝑒 (ℎ,𝑤 )
+> Global Trust Score Calculation 𝒕 𝒊
+> 𝒈𝒍𝒐𝒃𝒂𝒍
+> TRUST FUSION
+> 𝑡 1𝑡 2
+> 𝑡 3
+> 𝑡 𝑁
+> Ego agent assigns trust
+> scores
+> Trust score matri x
+> 𝑇 𝑠𝑐𝑜𝑟𝑒
+> 𝑡 𝑖 =𝜔 𝑔 𝑡 𝑖
+> 𝑔𝑙𝑜𝑏𝑎𝑙 +𝜔 𝑙 𝑡 𝑖
+> 𝑙𝑜𝑐𝑎𝑙 +
+> 𝜔 𝑠 𝑡 𝑖
+> 𝑠𝑡𝑟𝑢𝑐𝑡
+
+Fig. 3. Overview of the proposed GLST defense framework. GLST estimates collaborator reliability from global feature consistency, critical-region local residual consistency, and ego-guided structural consistency, and then uses the fused trust scores to modulate the attention-based feature fusion process 
+
+This analysis also explains why PB is a suitable attack for evaluating robust CP defenses. A defense that only checks global feature consistency may fail when the attacker preserves benign-like statistical characteristics, while a defense that only examines local residuals may be unstable when several attackers create a pseudo-consensus. Therefore, an effective defense should evaluate collaborator reliability from multiple complementary perspectives. This observation motivates the proposed GLST framework in Section V, which combines global consistency, local robust residuals, and structural con-sistency to suppress stealthy feature injection under both single-attacker and multi-attacker settings. V. P ROPOSED DEFENSE FRAMEWORK : GLST 
+
+A. Framework Overview 
+
+Our analysis reveals a fundamental limitation of defenses that rely solely on a single global statistical measure, are vulnerable in multi-attacker scenarios due to consensus bias. When there are multiple attackers in the system, their small inter-attacker distances can artificially increase their individual trust scores, which in turn systematically shifts the fusion center and degrades the overall robustness of the system. To address this issue, we propose the GLST defense frame-work. The core idea is to extend trust evaluation from a single global signal to a joint modeling of three complementary perspectives: global consistency provides a coarse-grained prior, local residual captures fine-grained anomalies in critical regions, and structural consistency enforces the stability of semantic topology. These three signals are combined through a weighted summation strategy to avoid trust collapse caused by multiplicative coupling effects. As illustrated in Fig. 3, GLST consists of four major stages. Given the intermediate BEV feature Fi from each agent i, GLST first computes a global statistical trust score by measuring the deviation of each agent from the collective feature distribution. Then, guided by the ego confidence and feature response, GLST selects critical spa-tial regions and estimates multi-scale local residual trust. Next, an ego-referenced structural consistency score is computed to capture abnormal spatial semantic patterns. Finally, the three trust signals are aggregated through a weighted summation strategy and injected into the feature fusion process as a trust-aware reweighting factor. This design enables soft suppression of suspicious agents while preserving useful complementary information from benign collaborators. 
+
+B. Global Feature Consistency Trust 
+
+The global consistency branch aims to provide a coarse-grained reliability prior for each collaborative agent. The in-tuition is that benign agents observing the same driving scene should produce feature representations that are statistically compatible with the majority distribution, whereas malicious agents tend to introduce abnormal feature patterns that devi-ate from the collective representation. Therefore, GLST first evaluates agent reliability by measuring the global feature discrepancy among all agents. Specifically, the spatial feature map Fi of each agent is first downsampled to reduce computational cost and then normalized to remove scale variation: 
+
+¯Fi = Norm  Pool( Fi, k ), (15) where Pool( ·, k ) denotes spatial pooling with kernel size k,and Norm( ·) represents ℓ2 normalization. The pooling op-eration reduces computational overhead, while normalization suppresses the influence of feature magnitude and makes 7
+
+the subsequent comparison focus more on distribution-level differences. Based on the normalized feature representation, the cumu-lative deviation score of agent i by measuring its pairwise ℓ1
+
+distance to the other agents can be computed as 
+
+di = 1
+
+N − 1
+
+X  
+
+> j∈N ,j ̸=i
+
+¯Fi − ¯Fj 1 , i ∈ N . (16) A larger di indicates that the feature of agent i is farther away from the collective distribution and should therefore be assigned a lower trust score. Since the ego agent provides the reference view for feature fusion and should not be mistakenly suppressed, we explicitly protect the ego feature by assigning its deviation score to the minimum deviation among the collaborative agents: 
+
+d0 = min  
+
+> i∈N
+
+di. (17) The deviation scores are then normalized and converted into global trust scores: 
+
+tglobal  
+
+> i
+
+= 1 − di
+
+max j∈N dj + ε , i ∈ N , (18) where ε is a small constant used to avoid numerical instability. The global trust score serves as the first reliability prior in GLST. It can effectively suppress agents that are globally inconsistent with the majority feature distribution. However, global statistical consistency alone is insufficient in coordi-nated attack scenarios. When multiple attackers collude and generate mutually similar malicious features, their distances to each other may reduce the cumulative deviation score and cause overestimated trust values. Therefore, GLST further introduces local residual trust and structural consistency trust to compensate for the weakness of purely global estimation. 
+
+C. Local Robust Consensus Residual Module 
+
+Although global consistency provides an efficient reliabil-ity prior, it treats the entire feature map uniformly and is therefore insensitive to localized manipulations. In collabo-rative perception, adversarial perturbations often concentrate on semantically important regions, such as object boundaries, foreground areas, or locations with high detection uncertainty. These regions occupy only a small portion of the BEV feature map but can significantly influence the final detection result. To capture such fine-grained anomalies, GLST introduces a local robust consensus residual module. 
+
+Critical Region Selection. Before computing local residu-als, GLST first identifies a set of critical spatial regions Ω from the ego feature. The ego feature is used because it is directly available at the fusion center and provides a stable reference for selecting perception-sensitive regions. Two complementary spatial cues are extracted from the ego agent. We first compute the uncertainty map U ∈ RH×W from the ego detection confidence as follows 
+
+U (x, y ) = 1 − max  
+
+> k
+
+softmax (Φ ds (F0)) k , (19) where Φds (·) denotes the detection score prediction head, and 
+
+k indexes the object class. A larger value of U (x, y ) indicates lower prediction confidence and thus higher uncertainty. Then, the feature response intensity map S ∈ RH×W can be determined by 
+
+S(x, y ) = ∥F0(: , x, y )∥2
+
+max x,y ∥F0(: , x, y )∥2 + ϵ . (20) This map highlights locations with strong feature activations, which are more likely to correspond to foreground objects or perception-relevant regions. The final critical-region mask is obtained by selecting loca-tions that simultaneously exhibit high uncertainty and strong feature responses, which is given by 
+
+Ω = {(x, y ) | U (x, y ) ≥ Q 1−p(U ) ∧ S(x, y ) ≥ Q 1−p(S)} ,
+
+(21) where Q1−p(·) denotes the (1 − p)-quantile, and p controls the proportion of selected regions. This intersection strategy suppresses irrelevant background areas and forces the local trust evaluation to focus on regions that are both uncertain and semantically active. 
+
+Multi-Scale Consensus Residual. After obtaining the critical-region mask, GLST estimates the local deviation of each agent from a robust consensus center. For each spatial scale s ∈ S , the feature of agent i is downsampled as F (s) 
+
+> i
+
+,and the corresponding mask is denoted as Ω(s). To reduce the influence of suspicious agents during consensus construction, we use the global trust score (18) as a reliability weight, and the consensus center is formulated as 
+
+C(s) =
+
+
+
+F (s)0 , N ≤ 3,
+
+P 
+
+> i
+
+wiF (s) 
+
+> i
+
+, w i = tglobal 
+
+> i
+
+P 
+
+> j
+
+tglobal  
+
+> j
+
++ ϵ , N > 3. (22) When the number of agents is small, the ego feature is directly adopted as the consensus center to avoid unstable estimation caused by insufficient collaborators. When more agents are available, a globally weighted consensus center is used to reduce the contribution of potentially malicious agents. Given the consensus center (22), the residual map of agent 
+
+i within the critical region is computed as 
+
+R(s) 
+
+> i
+
+(x, y ) = F (s) 
+
+> i
+
+(: , x, y ) − C(s)(: , x, y ) 2
+
+. (23) The local residual score at this scale is then defined as a combination of the average residual and the high-percentile residual within the critical region: 
+
+a(s) 
+
+> i
+
+= 0 .7·E(x,y )∈Ω(s)
+
+h
+
+R(s) 
+
+> i
+
+(x, y )
+
+i
+
++0 .3·Q 0.9
+
+
+
+R(s) 
+
+> i
+
+| Ω(s)
+
+.
+
+(24) The mean term E(·) captures the overall local inconsistency, while the 90th-percentile term Q0.9(·) is introduced to capture extreme deviations concentrated on a small number of spatial locations. Even when attackers successfully conceal the av-erage residual magnitude, these localized abnormal responses can still expose malicious manipulations. The residual scores of agent i from multiple spatial scales are aggregated as ¯ai = 1
+
+> |S|
+
+P 
+
+> s∈S
+
+a(s) 
+
+> i
+
+. Finally, the local residual score is converted into a local trust score through exponential decay: 
+
+tlocal  
+
+> i
+
+= exp 
+
+
+
+−βl · ¯ai
+
+max j∈N ¯aj
+
+
+
+, (25) 8
+
+where βl controls the sensitivity of local trust to residual deviations. Agents that consistently deviate from the consen-sus center across multiple scales receive lower local trust scores. Since it is difficult for attackers to maintain consistent camouflage simultaneously at different spatial resolutions, the multi-scale design improves robustness against localized and coordinated feature manipulations. 
+
+D. Structural Consistency Check 
+
+Some stealthy attacks can mimic benign agents in terms of global statistics and even maintain small local residual magnitudes. However, malicious feature manipulation may still distort the internal spatial structure of the feature map, such as activation patterns in object regions, edge structures, and spatial correlations across feature channels. To capture these higher-level spatial discrepancies, GLST introduces an ego-referenced structural consistency branch. Different from the local residual branch, which measures point-wise deviation from a consensus center, the structural consistency branch evaluates whether the overall spatial se-mantic pattern of each agent is compatible with the ego agent. Specifically, each agent feature is first spatially pooled and then masked by the downsampled critical-region mask: 
+
+Pi = AvgPool d(Fi), ei = vec 
+
+
+
+Pi ⊙ Ω(d)
+
+, (26) where Ω(d) denotes the downsampled mask, ⊙ represents element-wise multiplication, and vec( ·) represents the flatten-ing operation. The structural similarity between agent i and the ego agent 
+
+e0 is measured by cosine similarity 
+
+bi = cos( ei, e 0) = eTi e0
+
+∥ei∥2∥e0∥2 + ϵ . (27) A larger bi indicates that agent i preserves a spatial semantic structure more similar to the ego reference. Based on (27), the structural dissimilarity is then normalized and transformed into a trust score, which is given by 
+
+tstruct  
+
+> i
+
+= exp 
+
+
+
+−βs · (1 − bi)/2max j∈N (1 − bj )/2 + ϵ
+
+
+
+, (28) where βs controls the sensitivity of structural trust. This branch provides an additional reliability criterion that is independent of global distribution distance and local residual magnitude. Therefore, even when attackers partially bypass statistical consistency checks, their abnormal spatial semantic structures can still be detected by the structural consistency branch. 
+
+E. Trust-Aware Feature Re-weighting and Fusion 
+
+After obtaining global, local, and structural trust scores, GLST aggregates them into a unified agent reliability score. Instead of using multiplicative coupling, we adopt weighted summation to compute the final trust score which is 
+
+ti = ωg tglobal  
+
+> i
+
++ ωltlocal  
+
+> i
+
++ ωststruct  
+
+> i
+
+, (29) where ωg , ωl, and ωs denote the weights of the three trust branches, with ωg + ωl + ωs = 1 and ωg , ω l, ω s ≥ 0.The reason for using weighted summation is twofold. First, multiplicative aggregation may over-penalize benign agents when one trust branch produces an unstable low value, which can increase false-positive suppression. Second, weighted summation allows different trust cues to compensate for each other under different attack patterns. For example, when coordinated attackers weaken global deviation, local and structural trust can still provide effective discrimination. Similarly, when local residuals are affected by perception noise, global consistency and structural similarity can stabilize the final decision. To incorporate the trust score into the fusion process, the final trust (29) are then normalized across agents as 
+
+ˆti = ti
+
+P 
+
+> j∈N
+
+tj + ϵ (30) Then, injecting the normalized trust score (30) into the original attention distribution, trust-aware modulation is then performed as 
+
+˜Wi→0(h, w ) = ˆtiWi→0(h, w )
+
+P 
+
+> j∈N
+
+ˆtj Wj→0(h, w ) + ϵ (31) where Wi→0(h, w ) denote the original attention weight from agent i to the ego agent at BEV location (h, w ). The final fusion process can therefore be expressed as 
+
+Ffuse (h, w ) = FFN X
+
+> i∈N
+
+˜Wi→0(h, w )Zi→0(h, w )
+
+!
+
+(32) where Zi→0(h, w ) denotes the transformed feature transmitted from agent i to the ego coordinate system, and FFN( ·) denotes the feed-forward fusion module. This trust-aware fusion mechanism can be regarded as a soft gating operation over the original attention weights. Agents with high reliability are assigned larger effective fusion weights, whereas suspicious agents are continuously sup-pressed before they contaminate the fused BEV representation. Compared with hard filtering, this soft reweighting strategy avoids discarding potentially useful observations from partially reliable agents, thereby improving the robustness and stability of collaborative perception under complex attack scenarios. VI. E XPERIMENTS 
+
+A. Experimental Setup 
+
+Datasets and Detector. We evaluate the vulnerability of Where2comm-based collaborative perception under the ex-isting PB attack [12] and assess the effectiveness of the proposed GLST defense framework on the widely used OPV2V dataset [16], a large-scale open-source benchmark for V2V collaborative perception. OPV2V is built upon the OpenCDA [31] co-simulation framework and the CARLA simulator [32]. It contains 70 diverse driving scenarios col-lected from eight towns, including 11 , 464 LiDAR frames and 232,913 annotated 3D vehicle bounding boxes. Each frame contains 2–7 CAVs, and each CAV is equipped with a 64-beam LiDAR sensor with complete pose transformations, point-cloud observations, and 3D annotations. All experiments are conducted based on the OpenCOOD framework [16]. 9AP@0.3 AP@0.5 AP@0.7  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.92 0.91
+> 0.74
+
+(a) No Attack AP@0.3 AP@0.5 AP@0.7  
+
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> AP Value
+> 0.08
+> 0.04
+> 0.01
+
+(b) PGD AP@0.3 AP@0.5 AP@0.7  
+
+> 0.000
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> AP Value
+> 0.01
+> 0.00 0.00
+
+(c) BIM AP@0.3 AP@0.5 AP@0.7  
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> AP Value
+> 0.42
+> 0.37
+> 0.18
+
+(d) PB Fig. 4. AP values at 0.3, 0.5, and 0.7 IoU thresholds after applying PGD, BIM, and PB attacks under the single-attacker setting. 
+
+We adopt PointPillars [27] as the detector backbone and use the confidence-aware multi-head attention fusion module of Where2comm as the CP framework. 
+
+Attack Details. We evaluate three feature-level adversarial attacks against Where2comm, including PGD [17], BIM [30], and PB [12]. For PB, we follow the iterative sign-gradient optimization setting with T = 10 iterations, learning rate 
+
+lr = 0 .1, and regularization weight λ = 5 .0. The region partition thresholds are set to 0.7 and 0.5, respectively. For the baseline attacks, PGD uses random initialization, while BIM uses zero initialization. Both PGD and BIM use the same number of iterations and learning rate as PB, with the perturbation budget set to ϵ = 0 .3. All attackers independently optimize their perturbations using the same detection loss objective. 
+
+Defense Details. We compare GLST with two representa-tive CP defense methods, ROBOSAC [13] and LUCIA [14]. ROBOSAC adopts a random sampling-based consistency strat-egy, and its sampling budget is set to 10. LUCIA constructs trust weights from pairwise feature L1 distances, with the compression ratio set to r = 32 . For GLST, the fusion weights of the global, local, and structural trust components are set to 
+
+ωg = 0 .30 , ωl = 0 .50 , and ωs = 0 .20 , respectively. The local residual scales are set to s ∈ { 1, 4, 8}, and the critical-region ratio is set to p = 0 .3. All defense methods are evaluated under the same detector, input modality, communication setting, and attack configuration for fair comparison. 
+
+Evaluation Metrics. We use Average Precision (AP) to evaluate 3D object detection performance under Intersection-over-Union (IoU) thresholds of 0.3, 0.5, and 0.7 (denoted as AP@0.3, AP@0.5, and AP@0.7, respectively). A higher AP indicates better detection performance. In adversarial settings, AP degradation reflects the attack effectiveness, whereas AP recovery after applying a defense method indicates the defense effectiveness. To further evaluate attack stealthiness, we report 2 3 4        
+
+> Attacker Number
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.92 0.92 0.92 0.91 0.91 0.91
+> 0.74 0.74 0.74
+> AP@0.3 AP@0.5 AP@0.7
+
+(a) No Attack 2 3 4      
+
+> Attacker Number
+> 0.000
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+> 0.030
+> AP Value  0.02
+> 0.01
+> 0.00
+> 0.01
+> 0.00 0.00 0.00 0.00 0.00
+> AP@0.3 AP@0.5 AP@0.7
+
+(b) PGD 2 3 4       
+
+> Attacker Number
+> 0.000
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+> 0.030
+> AP Value
+> 0.01 0.01
+> 0.02
+> 0.00 0.00 0.00 0.00 0.00 0.00
+> AP@0.3 AP@0.5 AP@0.7
+
+(c) BIM 2 3 4   
+
+> Attacker Number
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> AP Value
+> 0.30
+> 0.23
+> 0.15
+> 0.22
+> 0.17
+> 0.09
+> 0.07
+> 0.05
+> 0.02
+> AP@0.3 AP@0.5 AP@0.7
+
+(d) PB Fig. 5. AP values at 0.3, 0.5, and 0.7 IoU thresholds after applying PGD, BIM, and PB attacks under the multi-attacker setting. 
+
+the average number of false positives per frame under an IoU threshold of 0.5, which is FP IoU0 .5 =  
+
+> PFrame
+> i=0 FP i
+> Frame
+
+, where 
+
+FP i denotes the number of false-positive detections in frame 
+
+i under an IoU threshold of 0.5, and F rame is the total number of evaluated frames. A larger FP IoU0 .5 indicates weaker stealthiness. Conversely, a smaller value indicates stronger visual stealthiness and greater difficulty for defense mechanisms to suppress the attack. 
+
+B. Attack Performance Analysis 
+
+To evaluate the attack effectiveness of different feature-injection strategies, we first examine the detection perfor-mance of Where2comm under the single-attacker setting, as shown in Fig. 4. Without attacks, Where2comm maintains strong detection performance, achieving 0.91 AP@0.5 and 0.74 AP@0.7. After adversarial features are injected, the detection accuracy drops sharply across all IoU thresholds, demonstrating that the confidence-driven communication and attention-based fusion pipeline is highly vulnerable to ma-licious intermediate features. Among the evaluated attacks, PGD and BIM cause the most severe performance collapse. PGD reduces AP@0.5 to 0.04, while BIM almost completely disables the detector, reducing AP@0.5 to nearly zero. PB also substantially degrades the perception performance, reducing AP@0.5 and AP@0.7 to 0.37 and 0.18, respectively. Although PB is less destructive than PGD and BIM in terms of raw AP reduction, it still causes a significant loss of cooperative detec-tion capability, confirming its effectiveness against confidence-driven collaborative perception. Fig. 5 further evaluates attack effectiveness under the multi-attacker setting. As the number of attackers increases from two to four, the detection performance of Where2comm con-sistently deteriorates under all three attacks. PGD and BIM remain highly destructive in multi-attacker scenarios, with AP values approaching zero under most IoU thresholds. This 10          
+
+> (a) PB attack without defence (b) PGD attack without defence (c) BIM attack without defence
+> (d) PB attack with ROBOSAC (e) PGD attack with ROBOSAC (f) BIM attack with ROBOSAC
+> (g) PB attack with LUCIA (h) PGD attack with LUCIA (i) BIM attack with LUCIA
+> (j) PB attack with GLST (k) PGD attack with GLST (l) BIM attack with GLST Fig. 6. 3D detection results of CP systems under PB, PGD, and BIM attacks with different defense methods, including ROBOSAC, LUCIA, and GLST.
+
+indicates that once multiple malicious collaborators inject optimized perturbations into the shared feature space, the collaborative fusion process can be severely disrupted. PB exhibits a more gradual but still clear degradation trend. Specifically, as the number of PB attackers increases from two to four, AP@0.5 decreases from 0.22 to 0.17 and then to 0.09, while AP@0.7 drops from 0.07 to 0.05 and then to 0.02. These results show that PB can continuously weaken the perception capability of Where2comm as the number of attackers increases. Therefore, Fig. 4 and Fig. 5 demonstrate that all three attacks are effective against Where2comm, while PGD and BIM achieve stronger raw attack strength and PB still provides substantial attack effectiveness under both single-attacker and multi-attacker settings. 
+
+However, attack effectiveness alone is insufficient to evalu-ate the practical threat of an adversarial attack. An aggressive attack may significantly reduce AP but also produce many visually abnormal false detections, making it easier to identify and filter. Therefore, we further analyze attack stealthiness as reported in Table I. Under the no-attack setting, the false-positive value remains 0.87. PGD produces substantially more false positives, increasing this value to 29.81, 35.00, 45.19, and 42.43 as the number of attackers increases from one to four. BIM is even more aggressive, producing extremely large false-positive values of 321.22, 315.35, 303.77, and 266.62. These results indicate that although PGD and BIM are highly destructive, they introduce a large number of abnormal detections and therefore exhibit weak stealthiness.                          
+
+> TABLE I FP IOU0.5 UNDER DIFFERENT ATTACKS AND NUMBER OF ATTACKERS
+> Attack Method Number of Attackers 1234No Attack 0.87 0.87 0.87 0.87 PGD 29.81 35 45.19 42.43 BIM 321.22 315.35 303.77 266.62 PB 2.65 4.09 4.95 6.04
+
+In contrast, PB produces far fewer false positives than PGD and BIM. Its false-positive value increases only from 2.65 to 6.04 as the number of attackers increases from one to four, remaining much closer to the no-attack case than 11 
+
+TABLE II DETECTION PERFORMANCE OF DIFFERENT DEFENSE METHODS UNDER PB ATTACKS WITH MULTIPLE ATTACKERS .Attack Method Attacker Number 1 2 3 4AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 No Defense 0.42 0.37 0.18 0.30 0.22 0.07 0.23 0.17 0.05 0.15 0.09 0.02 ROBOSAC 0.53 0.49 0.26 0.79 0.75 0.52 0.67 0.66 0.45 0.50 0.50 0.36 LUCIA 0.87 0.85 0.65 0.31 0.25 0.09 0.20 0.13 0.03 0.18 0.11 0.02 GLST(Ours) 0.84 0.82 0.61 0.82 0.79 0.57 0.70 0.67 0.46 0.69 0.67 0.50 No Defense            
+
+> ROBOSAC
+> LUCIA
+> GLST
+> Defense Method
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.92 0.92 0.92 0.92 0.91 0.91 0.91 0.91
+> 0.74 0.74 0.74 0.74
+> AP@0.3 AP@0.5 AP@0.7
+
+(a) No Attack No Defense      
+
+> ROBOSAC
+> LUCIA
+> GLST
+> Defense Method
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.08
+> 0.78
+> 0.87 0.83
+> 0.04
+> 0.74
+> 0.85 0.81
+> 0.01
+> 0.51
+> 0.65
+> 0.59
+> AP@0.3 AP@0.5 AP@0.7
+
+(b) PGD No Defense    
+
+> ROBOSAC
+> LUCIA
+> GLST
+> Defense Method
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.01
+> 0.79
+> 0.87
+> 0.81
+> 0.00
+> 0.75
+> 0.85
+> 0.78
+> 0.00
+> 0.52
+> 0.65
+> 0.57
+> AP@0.3 AP@0.5 AP@0.7
+
+(c) BIM No Defense       
+
+> ROBOSAC
+> LUCIA
+> GLST
+> Defense Method
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> AP Value
+> 0.42
+> 0.53
+> 0.87 0.84
+> 0.37
+> 0.49
+> 0.85 0.82
+> 0.18
+> 0.26
+> 0.65 0.61
+> AP@0.3 AP@0.5 AP@0.7
+
+(d) PB Fig. 7. Defense performance of ROBOSAC, LUCIA, and GLST against PGD, BIM, and PB attacks under the single-attacker setting. 
+
+the other two attacks. This suggests that PB can preserve relatively benign-looking detection behavior while still causing substantial AP degradation. Combining the AP results in Fig. 4 and Fig. 5 with the stealthiness results in Table I, we can observe a clear distinction among the three attacks. PGD and BIM mainly emphasize destructive capability but suffer from poor stealthiness due to excessive false positives. PB, on the other hand, achieves a better balance between attack effectiveness and stealthiness: it significantly degrades cooperative 3D object detection while producing much fewer abnormal false detections. This makes PB a more practical and challenging threat model for evaluating the robustness of secure CP defenses .
+
+C. Defense Performance Analysis Of GLST 
+
+To evaluate the defense capability of the proposed GLST framework, we compare it with two representative CP defense methods, ROBOSAC and LUCIA, under both single-attacker and multi-attacker scenarios. We first provide a qualitative comparison in Fig. 6. Without defense, adversarial attacks introduce severe perception errors, including false positives, missed detections, and shifted bounding boxes. After applying GLST, most attack-induced false detections are effectively suppressed, and the predicted bounding boxes become much more consistent with the ground-truth annotations. This visual comparison indicates that GLST can reduce the influence of malicious intermediate features and recover reliable coopera-tive perception results under different attack types. Fig. 7 reports the quantitative defense performance under the single-attacker setting. In this relatively simple scenario, both LUCIA and GLST achieve strong recovery performance against PGD, BIM, and PB attacks. Under the PB attack, GLST improves AP@0.5 from 0.37 without defense to 0.82, showing that the proposed trust reweighting mechanism can effectively suppress stealthy malicious features. Although LU-CIA achieves slightly higher AP values in some single-attacker cases, GLST remains highly competitive with the strongest baseline. This result suggests that the proposed multi-level trust modeling does not sacrifice single-attacker defense capa-bility while preparing the system for more complex adversarial settings. The core advantage of GLST becomes more evident in multi-attacker scenarios. Table II reports the defense perfor-mance under PB attacks with different numbers of malicious agents. When no defense is applied, the perception perfor-mance continuously decreases as the number of PB attackers increases, with AP@0.5 dropping from 0.37 under one attacker to 0.09 under four attackers. LUCIA performs well in the single-attacker setting, achieving 0.85 AP@0.5. However, its performance rapidly collapses when multiple attackers are present. Specifically, AP@0.5 decreases to 0.25, 0.13, and 0.11 when the number of attackers increases to two, three, and four, respectively. This confirms that pairwise distance-based trust estimation is vulnerable to the pseudo-consensus formed by multiple malicious agents. In contrast, GLST maintains stable robustness under multi-attacker PB attacks. When the number of attackers increases from two to four, GLST achieves 0.79, 0.67, and 0.67 AP@0.5, respectively. Even in the four-attacker scenario, GLST still maintains 0.69 AP@0.3, 0.67 AP@0.5, and 0.50 AP@0.7, significantly outperforming LUCIA and also exceeding RO-BOSAC in most metrics. These results demonstrate that the proposed method can effectively mitigate the consensus bias caused by coordinated attackers. To further examine whether GLST is specific to PB at-tacks, we also evaluate its robustness under multi-attacker 12 
+
+TABLE III DETECTION PERFORMANCE OF DIFFERENT DEFENSE METHODS UNDER PGD ATTACKS WITH MULTIPLE ATTACKERS .Attack Method Attacker Number 1 2 3 4AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 AP0.3 AP0.5 AP0.7 No Defense 0.08 0.04 0.01 0.02 0.01 0.00 0.01 0.00 0.00 0.00 0.00 0.00 ROBOSAC 0.78 0.74 0.51 0.79 0.75 0.52 0.76 0.70 0.47 0.73 0.68 0.49 
+
+LUCIA 0.87 0.85 0.65 0.08 0.05 0.02 0.03 0.01 0.00 0.01 0.00 0.00 GLST(Ours) 0.83 0.81 0.59 0.81 0.78 0.55 0.82 0.78 0.55 0.72 0.68 0.49 Attacker Benign 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Trust score
+> mean=0.6157
+> mean=0.6769
+
+(a) LUCIA trust score Attacker Benign  
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> Trust score
+> mean=0.0232
+> mean=0.3165
+
+(b) GLST trust score Fig. 8. Box plot of trust score distribution for defense algorithms. 
+
+PGD attacks, as shown in Table III. Without defense, the detector almost completely fails under PGD, with AP values approaching zero as the number of attackers increases. LUCIA again shows strong performance in the single-attacker setting but degrades sharply under multiple attackers, indicating that its single-signal trust estimation is insufficient when malicious agents reinforce each other in the feature space. ROBOSAC maintains relatively stable performance under PGD attacks, but its sampling-based strategy introduces additional computa-tional cost. GLST achieves comparable or better performance in most multi-attacker PGD settings. For example, under two and three PGD attackers, GLST maintains 0.78 AP@0.5, and under four attackers it still achieves 0.68 AP@0.5. These results indicate that GLST is not tailored only to PB attacks; it also generalizes well to strong gradient-based feature attacks. Finally, Fig. 8 provides an explanation for the superior robustness of GLST from the perspective of trust-score dis-tributions. In the two-PB-attacker scenario, LUCIA assigns highly overlapping trust scores to benign and malicious agents, with mean scores of 0.6769 and 0.6157, respectively. Such a small separation makes it difficult to distinguish attackers from benign collaborators, especially when malicious agents form a pseudo-consensus. In contrast, GLST assigns a much lower mean trust score to attackers than to benign agents, with mean scores of 0.0232 and 0.3165, respectively. This clear separation shows that GLST provides stronger discriminability between benign and malicious collaborators. Therefore, the performance gain of GLST comes not merely from feature reweighting, but from more reliable trust estimation enabled by the joint modeling of global, local, and structural consistency. Overall, the experimental results demonstrate that GLST achieves competitive defense performance under single-attacker scenarios and substantially stronger robustness under multi-attacker scenarios. Compared with defenses relying on a single consistency signal, GLST is more resistant to stealthy IoU 0.3 IoU 0.5 IoU 0.7 
+
+> IoU Threshold
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> AP
+> GLST
+> GLST w/o Global
+> GLST w/o Local
+> GLST w/o Structure
+
+(a) Single-attacker IoU 0.3 IoU 0.5 IoU 0.7  
+
+> IoU Threshold
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> AP
+> GLST
+> GLST w/o Global
+> GLST w/o Local
+> GLST w/o Structure
+
+(b) Dual-attacker Fig. 9. Ablation study of the three main components in the proposed GLST. 
+
+feature injection and multi-attacker pseudo-consensus. These findings validate the necessity of multi-level trust modeling for secure confidence-driven collaborative perception. 
+
+D. Ablation Study 
+
+To further analyze the contribution of each trust compo-nent in GLST, we conduct ablation studies under PB attacks are shown in Fig. 9. Three variants are considered: GLST w/o Global, which removes the global consistency branch; GLST w/o Local, which removes the multi-scale local residual branch; and GLST w/o Structure, which removes the structural consistency branch. As shown in Fig. 9(a), under the single-attacker setting, all variants achieve relatively close performance, indicating that each remaining pair of trust cues can still provide useful defense information when the attack setting is simple. Never-theless, the full GLST consistently achieves the best overall performance across all IoU thresholds. This result shows that global consistency, local residual consistency, and structural consistency are complementary rather than redundant. The advantage of the full GLST becomes more evident in the dual-attacker setting, as shown in Fig. 9(b). When multiple attackers are present, removing any single branch leads to a clear performance drop, especially under stricter IoU thresh-olds. Among the three variants, GLST w/o Local suffers the largest degradation at AP@0.7, suggesting that the multi-scale local residual branch plays a key role in detecting fine-grained adversarial perturbations in perception-critical regions. This is consistent with the design motivation of GLST, since stealthy attacks such as PB tend to introduce localized feature manipulations while preserving benign-like global statistics. VII. C ONCLUSION 
+
+In this paper, we investigated the security of confidence-driven V2X collaborative perception against stealthy multi-13 
+
+attacker feature-injection attacks. Using Where2comm as a representative framework, we showed that PB attacks can exploit spatial confidence-based communication by inject-ing benign-like adversarial features into perception-critical regions, thereby significantly degrading 3D object detection while maintaining strong stealthiness. To address this threat, we proposed GLST, a lightweight global-local-structural trust framework that jointly evaluates collaborator reliability from global feature consistency, multi-scale local residual consis-tency, and structural consistency with ego-side semantic topol-ogy. The resulting trust scores are incorporated into the feature fusion process to suppress unreliable collaborators. Experi-ments demonstrate that GLST achieves competitive defense performance under single-attacker scenarios and substantially stronger robustness under multi-attacker PB and PGD attacks. Ablation results further confirm that the three trust components provide complementary information and jointly contribute to reliable defense against stealthy and coordinated malicious collaborators. REFERENCES [1] B. Graham, M. Engelcke, and L. Van Der Maaten, “3D semantic seg-mentation with submanifold sparse convolutional networks,” in Proceed-ings of the IEEE conference on computer vision and pattern recognition ,2018, pp. 9224–9232. [2] Q. Xia, J. Deng, C. Wen, H. Wu, S. Shi, X. Li, and C. Wang, “CoIn: Contrastive instance feature mining for outdoor 3d object detection with very limited annotations,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 6254–6263. [3] Q. Chen, S. Tang, Q. Yang, and S. Fu, “Cooper: Cooperative perception for connected autonomous vehicles based on 3D point clouds,” in 2019 IEEE 39th International Conference on distributed computing systems (ICDCS) . IEEE, 2019, pp. 514–524. [4] Q. Chen, X. Ma, S. Tang, J. Guo, Q. Yang, and S. Fu, “F-cooper: Feature based cooperative perception for autonomous vehicle edge computing system using 3D point clouds,” in Proceedings of the 4th ACM/IEEE Symposium on Edge Computing , 2019, pp. 88–100. [5] E. Ye, P. Spiegel, and M. Althoff, “Cooperative raw sensor data fusion for ground truth generation in autonomous driving,” in 2020 IEEE 23rd International Conference on Intelligent Transportation Systems (ITSC) .IEEE, 2020, pp. 1–7. [6] W. Yang, H. Yu, X. Luo, and S. Xie, “Density-aware early fusion for vehicle collaborative perception,” IEEE Intelligent Transportation Systems Magazine , vol. 17, no. 2, pp. 33–47, 2024. [7] J. Yoo, Z. Feng, T.-Y. Pan, Y. Sun, C. P. Phoo, X. Chen, M. Campbell, K. Weinberger, B. Hariharan, and W.-L. Chao, “Learning 3D perception from others’ predictions,” in International Conference on Learning Representations , vol. 2025, 2025, pp. 82 610–82 630. [8] B. Wang, L. Zhang, Z. Wang, Y. Zhao, and T. Zhou, “Core: Coop-erative reconstruction for multi-agent perception,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 8710–8720. [9] D. Yang, K. Yang, Y. Wang, J. Liu, Z. Xu, R. Yin, P. Zhai, and L. Zhang, “How2comm: Communication-efficient and collaboration-pragmatic multi-agent perception,” Advances in Neural Information Processing Systems , vol. 36, pp. 25 151–25 164, 2023. [10] K. Yang, D. Yang, J. Zhang, M. Li, Y. Liu, J. Liu, H. Wang, P. Sun, and L. Song, “Spatio-temporal domain awareness for multi-agent col-laborative perception,” in Proceedings of the IEEE/CVF international conference on computer vision , 2023, pp. 23 383–23 392. [11] Y. Hu, S. Fang, Z. Lei, Y. Zhong, and S. Chen, “Where2comm: Communication-efficient collaborative perception via spatial confidence maps,” Advances in neural information processing systems , vol. 35, pp. 4874–4886, 2022. [12] H. Lin, D. Pan, Q. Xia, H. Wu, C. Wang, S. Shen, and C. Wen, “Pretend benign: A stealthy adversarial attack by exploiting vulnerabilities in cooperative perception,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 19 947–19 956. [13] Y. Li, Q. Fang, J. Bai, S. Chen, F. Juefei-Xu, and C. Feng, “Among us: Adversarially robust collaborative perception by consensus,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 186–195. [14] C. Wang, R. Muller, R. Song, J.-P. Monteuuis, J. Petit, Y. Man, R. Gerdes, Z. B. Celik, and M. Li, “From threat to trust: Exploiting at-tention mechanisms for attacks and defenses in cooperative perception,” in 34th USENIX Security Symposium (USENIX Security 25) , 2025, pp. 7387–7406. [15] Y. Zhao, Z. Xiang, S. Yin, X. Pang, Y. Wang, and S. Chen, “MADE: Malicious agent detection for robust multi-agent collaborative percep-tion,” in 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) . IEEE, 2024, pp. 13 817–13 823. [16] R. Xu, H. Xiang, X. Xia, X. Han, J. Li, and J. Ma, “OPV2V: An open benchmark dataset and fusion pipeline for perception with vehicle-to-vehicle communication,” in 2022 International Conference on Robotics and Automation (ICRA) . IEEE, 2022, pp. 2583–2589. [17] A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, “Towards deep learning models resistant to adversarial attacks,” arXiv preprint arXiv:1706.06083 , 2017. [18] C. Xie, J. Wang, Z. Zhang, Y. Zhou, L. Xie, and A. Yuille, “Adversarial examples for semantic segmentation and object detection,” in Proceed-ings of the IEEE international conference on computer vision , 2017, pp. 1369–1378. [19] Y.-C.-T. Hu, B.-H. Kung, D. S. Tan, J.-C. Chen, K.-L. Hua, and W.-H. Cheng, “Naturalistic physical adversarial patch for object detectors,” in Proceedings of the IEEE/CVF international conference on computer vision , 2021, pp. 7848–7857. [20] Y. Li, X. Bian, M.-C. Chang, and S. Lyu, “Exploring the vulnerability of single shot module in object detectors via imperceptible background patches,” arXiv preprint arXiv:1809.05966 , 2018. [21] Y.-C. Liu, J. Tian, N. Glaser, and Z. Kira, “When2com: Multi-agent perception via communication graph grouping,” in Proceedings of the IEEE/CVF Conference on computer vision and pattern recognition ,2020, pp. 4106–4115. [22] R. Xu, H. Xiang, Z. Tu, X. Xia, M.-H. Yang, and J. Ma, “V2X-ViT: Vehicle-to-everything cooperative perception with vision transformer,” in European conference on computer vision . Springer, 2022, pp. 107– 124. [23] J. Tu, T. Wang, J. Wang, S. Manivasagam, M. Ren, and R. Urtasun, “Adversarial attacks on multi-agent communication,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2021, pp. 7768–7777. [24] J. Li, B. Li, X. Liu, J. Fang, F. Juefei-Xu, Q. Guo, and H. Yu, “AdvGPS: Adversarial GPS for multi-agent perception attack,” in 2024 IEEE International Conference on Robotics and Automation (ICRA) .IEEE, 2024, pp. 18 421–18 427. [25] Q. Zhang, S. Jin, R. Zhu, J. Sun, X. Zhang, Q. A. Chen, and Z. M. Mao, “On data fabrication in collaborative vehicular perception: Attacks and countermeasures,” in 33rd USENIX Security Symposium (USENIX Security 24) , 2024, pp. 6309–6326. [26] H. Wu, S. Zhao, X. Huang, C. Wen, X. Li, and C. Wang, “Commonsense prototype for outdoor unsupervised 3D object detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion , 2024, pp. 14 968–14 977. [27] A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang, and O. Beijbom, “PointPillars: Fast encoders for object detection from point clouds,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2019, pp. 12 697–12 705. [28] Y. Yan, Y. Mao, and B. Li, “SECOND: Sparsely embedded convolutional detection,” Sensors , vol. 18, no. 10, p. 3337, 2018. [29] H. Zhao, A. Pacheco, V. Strobel, A. Reina, X. Liu, G. Dudek, and M. Dorigo, “A generic framework for byzantine-tolerant consensus achievement in robot swarms,” in 2023 IEEE/RSJ International Con-ference on Intelligent Robots and Systems (IROS) . IEEE, 2023, pp. 8839–8846. [30] A. Kurakin, I. J. Goodfellow, and S. Bengio, “Adversarial examples in the physical world,” in Artificial intelligence safety and security .Chapman and Hall/CRC, 2018, pp. 99–112. [31] R. Xu, Y. Guo, X. Han, X. Xia, H. Xiang, and J. Ma, “OpenCDA: an open cooperative driving automation framework integrated with co-simulation,” in 2021 IEEE International Intelligent Transportation Systems Conference (ITSC) . IEEE, 2021, pp. 1155–1162. [32] A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, “CARLA: An open urban driving simulator,” in Conference on robot learning . PMLR, 2017, pp. 1–16.
