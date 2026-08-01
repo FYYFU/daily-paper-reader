@@ -1,0 +1,1599 @@
+Title: dtControl2+ε: Trading Optimality for Explainability in MDPs via Decision Trees
+
+URL Source: https://arxiv.org/pdf/2607.25925v1
+
+Published Time: Wed, 29 Jul 2026 01:22:33 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+Formal Methods in Computer-Aided Design 2026 
+
+# dtControl2+ ε: Trading Optimality for Explainability in MDPs via Decision Trees 
+
+Tereza Kinská 1 , Jan Kˇ retínský 1,2 , Tobias Meggendorfer 3 , Sabine Rieder 1,2 , Maximilian Weininger 4
+
+> 1
+
+Masaryk University, Brno, Czech Republic Email: {xkinska, jan.kretinsky, xrieder}@fi.muni.cz 
+
+> 2
+
+Technical University of Munich, Munich, Germany Email: {jan.kretinsky, sabine.rieder}@tum.de 
+
+> 3
+
+Lancaster University Leipzig, Leipzig, Germany Email: t.meggendorfer@lancaster.ac.uk 
+
+> 4
+
+Ruhr-University Bochum, Bochum, Germany Email: maximilian.weininger@rub.de 
+
+Abstract —Over the past decade, decision trees have been used to represent controllers (a.k.a. policies) in an explainable way, with dtControl 2 as a current state-of-the-art tool. However, for systems that are large or have many corner cases, even such representations tend to be too complex and not human-comprehensible. Unfortunately, reducing the size of the decision tree is not straightforward, as missing just a single crucial case might result in an incorrect controller. We tackle this issue in the setting of Markov decision processes, extending 
+
+dtControl 2 by “ ε” functionality: Given an allowed imprecision 
+
+ε ≥ 0, we construct a smaller decision tree, distilling the essence of the controller, while still guaranteeing its ε-optimality. This enables us to provide tunably simpler explanations, omitting a controllable amount of detail. Our tool constructs decision trees that are orders of magnitude smaller than the state of the art. 
+
+I. I NTRODUCTION 
+
+Need for Compact and Explainable Controllers. Controller synthesis [64, 61] automatically constructs a controller for a non-deterministic system so that it satisfies a given specifica-tion. While being a tempting alternative to error-prone human-designed controllers, several hurdles prevent widespread adop-tion: Automatically synthesised controllers are typically rep-resented explicitly as unstructured, large tables , assigning to each state of the system an action to take. In contrast, numerous practical purposes require controllers to be concise 
+
+and explainable . Regarding size, it may be challenging to implement tables with millions of rows, especially on embed-ded devices with limited hardware. Regarding explainability, such a table’s sheer size and lack of structure prohibits even domain experts from understanding the controller. In addition to engineers’ natural reluctance to use controllers they cannot understand (and thus sensibly maintain and certify), explaining the controller contributes significantly to validating the whole modelling process. Finally, explainability per se may even become a legal requirement [39, 59] whenever AI techniques are aiding the process. A plethora of surveys on explainability underline its relevance [32, 6, 5, 68, 31, 55, 56]. 
+
+Decision trees (DT) are among the most explainable for-malisms, being both transparent and interpretable, e.g. [5, 60, 23]. For a decade, they have been used for representing controllers, e.g. [52, 14, 9, 8, 69, 71, 28] and as such found various usages, namely for detecting bugs [14, 8], as part of modelling [45], or for explaining complex strategies [16]. Mature tool support is available [8, 4]. However, in an in-teresting contrast to (generally imprecise) DT learning, the safety-criticality motivated these tools to focus on precise representation of controllers, i.e. for every state providing an optimal (winning/safe) action. 
+
+Our focus is on representing controllers arising in Markov decision processes (MDPs) [63]. There, representing the full controller completely is often not necessary, as many states are only reached with small probability and behaving sub-optimally in them does not significantly change the outcome, cf. [48, 53]. Moreover, most scalable methods for controller synthesis do not provide an optimal controller, but only an ε-optimal one [17, 33], i.e. whose performance is ε-close to op-timal for a given ε ≥ 0. Exploiting this fact, we allow the DT to ignore some decisions, provided the resulting performance is still ε-optimal. DTs [60, 65], though comprehensibility also depends on predicate complexity, not size alone [37]. A related idea was presented in [14] for reachability objectives, where simulation was used to heuristically learn only the decision in frequently visited states, ignoring others. However, this heuristic was “aggressive”, potentially compromising ε-optimality. Moreover, the prototypical implementation of [14] is unavailable. In contrast, we provide a self-contained, richly parametrisable tool that guarantees ε-optimality of the result-ing controller across the full standard spectrum of objectives. 
+
+Our contribution is the tool dtControl 2+ ε: It ex-tends dtControl 2 [8], most importantly by adding the functionality—dubbed “ ε”—to construct smaller and more explainable DTs , exploiting the allowed imprecision ε.The workflow description (Fig. 2, Section III-C) outlines all the technical novelties. The key enabler is our tight coupling of the tool with the probabilistic model checker 
+
+Storm [36], based on which we provide numerous ways for DT size reduction while guaranteeing ε-optimality: (i) The initial controller is permissive, containing multiple optimal        
+
+> https://doi.org/ This article is licensed under aCreative Commons Attribution 4.0 International License arXiv:2607.25925v1 [cs.AI] 28 Jul 2026
+
+actions per state. Thus, we can profit from dtControl 2 ’s powerful determinisation heuristics. (ii) We reduce the size of the controller by identifying which decisions are of key importance, and which have little or no impact on the resulting behaviour. While dtControl 2 captures decisions in all states, dtControl 2+ ε builds smaller DTs containing only relevant decisions. Unlike [14], most of these heuristics are “safe”, i.e. they do not compromise ε-optimality. (iii) The high-level description of the model allows us to suggest more efficient predicates to be used in DT construction, improving on the semi-automatic approach of [8]. (iv) Model checking a DT before returning it provides its current precision, which allows for trying aggressive heuristics such as the one of [14] or extensive pruning while still guaranteeing ε-optimality. Practically, we encountered several (unexpected) technical challenges, such as needing to extend stormpy , e.g. to handle randomising and non-deterministic controllers, required for efficient DT validation. Finally, our approach is applicable to all the standard objectives such as reachability/safety, reach-avoid, or reward-based objectives, covering the standard benchmark collec-tions [35, 34]. Notably, our tool is the only one supporting linear temporal logic (LTL) properties, see Appendix A. 
+
+Improvements over other tools. Our evaluation compares to 
+
+dtControl 2 [8], dtPaynt [4], and dtNESt [3]. Already for precise representation ( ε = 0 ), dtControl 2+ ε achieves order-of-magnitude improvements over dtControl 2 due to the improved initial controller, safe heuristics, and automatic predicate suggestions. dtPaynt mostly times out, and on over half the remaining benchmarks produces larger DTs. 
+
+dtNESt is the strongest competitor; still, dtControl 2+ ε
+
+produces DTs at most half the size in 23 of 38 bench-marks and an order of magnitude smaller in 10. Moreover, 
+
+dtControl 2+ ε is best at exploiting allowed imprecision: when allowing ε = 10 −2, we obtain single-node DTs for nearly half the benchmarks, exposing that focusing on asingle action is ε-optimal — a previously unobserved fact. In contrast, dtNESt mostly fails due to internal errors and, surprisingly, may even produce larger DTs when ε > 0.
+
+Related work. dtControl 2 [8], the direct predecessor of 
+
+dtControl 2+ ε, comes from a stream of work on precise 
+
+controller representation [14, 9, 7, 8, 43]. The closest work to our ε-approach is [14]: it prunes the DT and weights learning by visit frequency from simulation. Both ideas are aggressive , i.e., they can compromise ε-optimality, and [14] handles this by restarting from scratch if the result is unsound. In contrast, dtControl 2+ ε cleanly separates safe from aggressive heuristics, guaranteeing ε-optimality with-out restarting, and builds on dtControl 2 ’s tailored DT algorithms rather than a general-purpose ML package [14, Sec. 6.1]. Verification of the resulting DT is automated in 
+
+dtControl 2+ ε. In contrast, [14] required manual binary search over hyperparameters. Finally, [14] covers only reacha-bility and uses a state ×action ( S×A → { 0, 1}) representation, while dtControl 2+ ε supports all standard objectives and the S → A representation of the dtControl 2 tradition. 
+
+dtPaynt [4] finds policies representable as minimal-depth DTs via abstraction-refinement and SMT. However, its scal-ability is limited, timing out on most of our benchmarks. 
+
+dtNESt [3] builds on both dtControl 2 and dtPaynt : it constructs a DT with dtControl 2 and iteratively shrinks subtrees with dtPaynt , feeding the result back to both tools for local search. This is orthogonal to our approach and can be seen as an elaborate pruning step; a tight cou-pling of dtControl 2+ ε with dtNESt could combine both strengths. OMDT [71] finds optimally performing trees of a prescribed size, but provides no error control and does not scale beyond depth 3; it is significantly outperformed by 
+
+dtPaynt [4, Sec. 5]. Standard DT learning [52] can represent controllers but is not tailored to the task of finding ε-optimal controllers that can be represented by small DTs. Furthermore, representing RL policies as DTs has received considerable attention, e.g. via direct RL frameworks [69, 12], policy gradients [25], distillation [46], and dynamic program-ming [26]. DTs have also been used for shields [15]. The RL community has also studied approximating value functions via linear programming [27], domain-specific languages [70, 13], and shallow neural networks [42, 66]. We do not compare to these, as they do not provide any control of the (im)precision. Binary decision diagrams (BDDs) are an alternative to DTs but are hindered in this context by bit-blasting of non-Boolean variables, and fixed variable ordering resulting in larger representations [7, 8]. Recent work [19] partially closes this gap. Neural networks are fundamentally less explainable than DTs [5]. II. T ECHNICAL PRELIMINARIES 
+
+A. Markov Decision Processes 
+
+Let ∆( X) denote the set of all probability distributions on a finite set X. A (finite-state) Markov decision process (MDP) [63, 11, 44] is a tuple (S, A, ¯s, δ ), where S and A are finite set of states and actions, ¯s ∈ S is an initial state, and δ : S ×
+
+A ⇀ ∆( S) is a (partial) transition function such that the set of available actions A(s) := {a | (s, a ) ∈ domain (δ)} is non-empty for all s ∈ S. Intuitively, in every state s ∈ S, there is a non-deterministic choice between the available actions A(s);choosing an action samples a successor according to δ(s, a ),where the process is repeated. For readability, we may write 
+
+δ(s, a, s ′) instead of δ(s, a )( s′).A (memoryless) controller (a.k.a. scheduler, policy, strat-egy) is a function π : S → ∆( A) that for every state resolves the non-deterministic choice by picking a distribution over (available) actions (i.e. π(s)( a) > 0 implies a ∈ A(s)). We write Π to denote the set of all controllers. The semantics of MDPs are defined as usual (e.g. [11, Chp. 10]): A path is an infinite sequence of states s1s2 . . . , and 
+
+Paths is the set of all such paths. Together with a controller 
+
+π and state s, we obtain a unique probability measure Pπs for (the standard σ-algebra over) Paths . We denote the expectation under this probability measure by Eπs .2An objective Φ assigns values to paths. Reachability is the objective we focus on in the main body. Given a set of goal states G, we are interested in ♢G = {ρ ∈ Paths | ∃ i. ρ i ∈ G},i.e. the set of all paths that reach any state of G. These paths are assigned 1, all others 0, i.e. Φ( ρ) = 1 if ρ ∈ ♢G and 
+
+0 otherwise. Safety is the dual of reachability. We want to 
+
+avoid reaching the given set of states, i.e. the set of paths with assigned 1 are Popt  
+
+> ¯s
+
+[♢G] = 1 − Popt  
+
+> ¯s
+
+[♢G]. Constrained reachability , also known as a reach-while-avoid property, is their combination: Given unsafe and goal states X and G, we are interested in the set of paths {ρ | ∃ i. ρ i ∈ G ∧ ∀ j < i. ρ j /∈ X}. Note that in general this is slightly different from 
+
+♢X ∩ ♢G, which prohibits reaching X even after goal G is reached. 
+
+Reward-based objectives make use of a reward function 
+
+r : S → R+0 , mapping states to non-negative numbers. There are also variants which additionally assign rewards to individual actions or transitions. Total reward is defined as 
+
+TR (ρ) = P∞ 
+
+> i=1
+
+r(ρi), i.e. the sum of all rewards along the path. Since the rewards are non-negative, the sum is well-defined. Reachability cost is then defined similarly. Addition-ally given a goal set G, we set RC (ρ) = ∞ if ρ / ∈ ♢G, i.e. the goal is not reached, and Pxi=1 r(ρi) where x = min {i |
+
+ρi ∈ G} − 1, i.e. the sum of all rewards (or, in this case, rather costs) until the goal set is reached. Further details and proof that (globally) optimal controllers exist can be found in [21]. 
+
+Linear temporal logic (LTL) can be used to express more complex goals (e.g., "pick up and deliver a package while ensuring safety"). We refer to [11] for a formal definition, as a precise treatment of LTL objectives for MDPs goes beyond the scope of this work. We highlight that in contrast to previously mentioned objectives, LTL requires controllers with memory, which dtControl 2+ ε supports (see Appendix A). The value of a state s under a given controller π is the expectation of Φ, the random variable assigning numbers to paths, under the probability measure Pπs , i.e. Vπ (s) := Eπs [Φ] .For reachability, safety, and constrained reachability, this coin-cides with the probability of the set of paths we are interested in, e.g. for reachability we have Vπ (s) = Eπs [Φ] = Pπs [♢G].The optimal value of a state is the optimal value over all controllers, i.e. Popt  
+
+> s
+
+[♢G] := opt π∈ΠPπs [♢G] (for opt ∈{min , max }). When the goal states and optimization are clear from the context, we write Vπ (s) := Pπs [♢G] for the value of a controller π in s, V(s) := Popt  
+
+> s
+
+[♢G] for the optimal value in s,and define the value of an MDP as the value of its initial state 
+
+V(¯ s). A controller is optimal (in ¯s) if Vπ (¯ s) = V(¯ s), and glob-ally optimal if Vπ (s) = V(s) for all s ∈ S. Globally optimal controllers exist for the objectives we consider [11, 21]. Fi-nally, for ε ∈ [0 , 1] , π is ε-optimal (in ¯s) if |Vπ (¯ s)−V(¯ s)| ≤ ε.We write V(s, a ) := P 
+
+> s′∈S
+
+δ(s, a )( s′) · V(s′) for the value obtained by following a in state s and then playing optimally. Note that this may be different from the value obtained by always choosing action a in s, e.g. if a loops back to s.
+
+Algorithm 1 DT-Construct 
+
+Input: Dataset D : S′ → A where S′ ⊆ S
+
+Output: Decision Tree representing D 
+
+> 1:
+
+if exists a ∈ A with D(s) = a for all s ∈ S′ then  
+
+> 2:
+
+return Leaf with label a 
+
+> 3:
+
+ρ∗ ← arg min ρ∈Preds Impurity (D, ρ ) 
+
+> 4:
+
+return Node with label ρ∗ and children 
+
+DT-Construct (ρ∗(D)) and 
+
+DT-Construct (¬ρ∗(D)) 
+
+B. Decision Trees 
+
+A decision tree (DT) T [57] is a binary tree where leafs are labelled by actions and inner nodes are labelled by predicates 
+
+ρ ∈ Preds , ρ : S → { true , false }. States typically comprise a tuple of variables, e.g. x- and y-coordinates, allowing for compact symbolic predicates, e.g. x ≤ 2, see Fig. 1 (right). A DT yields an action for a given state s as follows: Start from the root node. In an inner node, evaluate its predicate ρ(s)
+
+and go to the left or right child if it evaluates to true or false ,respectively. In a leaf node labelled a, pick a if a ∈ A(s), and otherwise uniformly at random choose an available action. We denote the last case by the special label Unif . We write T (s)
+
+for the action (or uniform choice) yielded by the DT T in state s and identify the DT with the corresponding controller. 
+
+Remark 1: Note that the above subtly assumes that the system can at runtime “pick any action (at random)”. Since even “do nothing” is an action to be modelled, we believe this assumption is natural. However, if this is not the case, one can simply disable related heuristics ( EqVal and AllOpt ,defined below); the rest of our approach does not rely on them. Constructing a minimal DT is NP-complete [38], so we base our approach on the standard heuristic-based algorithm outlined in Algorithm 1. Here, the input dataset is a controller, mapping states to actions. If all given states use the same action, the algorithm constructs a leaf node with that common action. Otherwise, we attempt to split the dataset using a pred-icate ρ∗, chosen from a set Preds using an impurity measure 
+
+Impurity , which intuitively assesses how “heterogeneous” 
+
+ρ(D) and ¬ρ(D) are (where ρ(D) = {(s, a ) ∈ D | ρ(s)} and 
+
+¬ρ(D) analogously). This heuristically indicates how many further splits are required to represent the dataset. Thus, we insert the predicate minimizing impurity as a tree node, split the dataset accordingly and recurse on the two smaller dataset which only contain choices for a subset S′ ⊆ S.
+
+Remark 2: We point out two differences to the definition in [8]: Firstly, we label leaves with a single action, whereas they use sets of actions. While our theory is also applicable to using sets, there are exponentially many sets of actions, and determinising , i.e. committing to one safe choice, reduces the final DT’s size and increases readability. (We, however, do employ non-determinism in intermediate steps, see below.) Secondly, [8] ensures that π(s) ∈ A(s) for every s, i.e. the DT only recommends available actions. We lift this requirement to allow cases where the choice in s is irrelevant and thus does 3{
+
+þ
+
+þ            
+
+> 07x
+> 0
+> 5
+> y
+> y≤0
+> x≤6
+> →↓
+> ↑
+> YN
+> YN
+> Figure 1. Visualisation of a grid-world robot navigation task (left) and a DT computed by our tool dtControl 2+ ε(right). In the example, the robot ( ) tries to reach the location in need of repair ( {) while avoiding the obstacles ( þ).
+
+not need to be represented explicitly. III. T OOL OVERVIEW 
+
+This section sketches the main ideas and overall structure of dtControl 2+ ε. The tool aims to efficiently create small, explainable decision tree controllers for probabilistic systems. The key novelty and difference to dtControl 2 is employing the information about the model and the allowed imprecision ε.Our goal then can be stated as follows: 
+
+PROBLEM STATEMENT 
+
+Given an MDP, objective, and precision ε ≥ 0, obtain a (small) decision tree T such that |VT (¯ s) − V(¯ s)| ≤ ε.(Note that ε = 0 means that T should represent an opti-mal controller.) The key challenge is to exploit the allowed imprecision while maintaining all: scalability (in contrast to, e.g., [3]), correctness (in contrast to, e.g., [14], which relies on discovering all important states during simulation, which sometimes yields a DT that is not epsilon-optimal), and completeness (if a decision tree exists, our tool will always find one by omitting aggressive heuristics when necessary). 
+
+A. Illustrative Example 
+
+We illustrate the core ideas of our tool: Consider a robot 
+
+in a grid world environment on a hillside. The robot can move in the cardinal directions →, ←, ↑, ↓, but always has a 10% 
+
+chance of sliding south instead. The goal is to reach the repair location { while avoiding the obstacles þ. Fig. 1 illustrates the environment and a near-optimal controller ( ε = 0 .001 )obtained by our tool. Modelling this scenario as an MDP, we can use a probabilis-tic model checker (like Storm [36]) to compute a controller achieving the optimal reachability probability. Despite the simplicity of the example, this optimal controller consists of dozens of state-action mappings. The DT computed by 
+
+dtControl 2 , accurately representing this controller, uses 33 nodes (see Fig. 7 (left) in Appendix B). In contrast, 
+
+dtControl 2+ ε uses information about the model to apply several reductions, e.g. that states with x = 0 are not reached under the optimal controller and there is no need to learn choices for them. This and similar observations already allow to reduce the DT size to 21 nodes (see Fig. 7 (right)). This reduced DT still achieves the optimal value. By allowing for an imprecision ε, we can afford to make sub-optimal choices in some states and prune parts of the DT that are only relevant with very small probability. Concretely, allowing a minuscule deviation of ε = 0 .001 , we can reduce the DT to five nodes and only three decision paths (see Fig. 1 (right)). This DT captures the “essence” of the behaviour: Go up to the top border, then go right to the border, then go down. Note that this controller is indeed not optimal, as it risks repeatedly sliding down into an obstacle by going up rather then moving to the right. 
+
+B. Functionality and Usage 
+
+Our tool fully automatically builds a DT representing a controller satisfying the problem stated above. For example, to construct the DT in Fig. 1 (right) from the model in Fig. 1 (left), the call is:              
+
+> $python main.py --model tinyrobot.prism \--property ’Pmax=?[(!"dead") U"repair"]’ \build --precision 1e-3 --export-dot tinyrobot.dot
+
+The output DT is given in JSON or GraphViz format. The former can be used to apply a DT to different versions of a model, in the spirit of [10]. 
+
+C. Tool Structure 
+
+We summarise the major steps of the workflow of 
+
+dtControl 2+ ε (see Fig. 2). Technical insights are provided in the following section. 
+
+Step 1: Model Building and Solving. We use stormpy to construct the provided model (supporting both PRISM and JANI format), parse the objective, and compute the optimal value and an optimal controller for the given objective. 
+
+Step 2: Dataset Construction. Using the optimal value and controller, we construct an initial dataset D, where any controller consistent with it (i.e., T (s) ∈ D(s) for all s
+
+where D is defined) is guaranteed to be ( ε-)optimal; espe-cially, these can be permissive (non-deterministic), enabling determinisation heuristics. Moreover, we identify and remove 
+
+irrelevant states, i.e. where the controller’s choice does not affect the obtained value, using model- and objective-specific information. In contrast, for dtControl 2 , the user has to manually obtain a (non-permissive) controller from Storm 
+
+for which dtControl 2 then learns all decisions, including for irrelevant states. We discuss the details in Section IV. 
+
+Step 3: DT Learning. We employ our adaptation of 
+
+dtControl 2 to learn a DT based on the reduced dataset. Among other improvements, we extract model-specific pred-icates as potential decision nodes in the tree and employ specialised impurity calculations and pruning techniques. We provide details in Section V. 
+
+Remark 3: Most of our improvements in Steps 2 and 3 rely on the tight integration with the model checking pipeline; e.g., by automatically deriving algebraic predicates from the model description, which previously required expert guid-ance [8]. Moreover, we can employ “aggressive” heuristics, namely [14], early-stopping or pruning, which in some cases might yield DTs that are not ε-optimal ( |VT (¯ s) − V(¯ s)| > ε ). 4Input     
+
+> •Model
+> •Objective
+> •Precision ε≥0
+
+1: Solve     
+
+> •Model
+> •opt. value
+> •opt. π
+
+2: Dataset        
+
+> Initial:
+> ✓Controller
+> ✓Permissive
+> ✓Combined
+> Reduction:
+> ✓Unreach (D)
+> ✓AllOpt
+> ¥Agency
+> ✓Dominance
+
+3: Learn DT            
+
+> dtControl 2 [8]
+> +
+> ✓Better Preds
+> ✓Better Impurity
+> ✓Agency
+> ✓Cost of Error
+> ✓Simulation
+> ]CAV15 [14]
+> ]Early-Stopping
+> ]Pruning
+
+Ë Build+Solve [36] Ë Check [36] 
+
+dtControl 2+ ε
+
+DT repr. of ε-opt. π           
+
+> •GraphViz (dot)
+> •JSON
+> •. . .
+> Figure 2. Structural overview of dtControl 2+ ε. The tool builds a DT representing an ε-optimal controller for an MDP. Given the model description, objective, and precision, our tool calls Storm (Ë) [36] to build the model and obtain the optimal value and controller. This controller is transformed into a reduced dataset of relevant decisions using our, in the DT-learning context novel, “safe” methods preserving the value of the controller ( ✓), and those that can result in bounded imprecision ( ¥). Then, we learn a small DT consistent with this dataset, potentially employing “aggressive” ( ]) heuristics, potentially resulting in unbounded imprecision. Using Storm , we check the ε-optimality of the constructed DT and, in case of violation, reduce aggressive optimisations. The new tool components are initial dataset construction and reduction, predicate extraction, improved impurity measures except [14], early stopping, pruning, and, enabling all of these, the overall pipeline and connection to Storm .
+
+We check this using model checking and, if needed, relax the aggressive heuristics and repeat Step 3. 
+
+Remark 4: dtControl 2+ ε employs the same pipeline for all objectives, with adjustments within each step. While most objectives, like reachability, safety, and total reward, can be achieved with a memoryless controller, this is not the case for LTL, where the controller is extended with a finite set of memory states M . Therefore, the DT maps from a state-memory pair, instead just the state, to an action, i.e. the action chosen in a state depends on the current memory state (see Appendix A for details). Additionally, we output the under-lying memory structure in form of an automaton. Please note that while some works consider automata as an explainable structure, e.g. [58, 18], for instance the three state automata for Until formulae, this is disputable for more complex properties. There, semantic structure of automata states, e.g. [47], could provide information for future approaches. IV. D ETAILS OF STEP 2: D ATASET CONSTRUCTION 
+
+Following the procedure of our tool, we first provide in-sights into the creation of the initial dataset, which is then reduced using our heuristics. 
+
+A. Creation of the Initial Dataset/Controller 
+
+When creating the initial dataset, we can either focus on a controller that is itself small and only contains one action per state, or we can try to start with a permissive controller. For DT learning, a permissive dataset, i.e. one that maps states to a set of allowed actions, is often advantageous [7, 8]. When learning a DT consistent with a permissive dataset ( T (s) ∈D(s) for all s where D is defined), it is often possible to terminate the DT construction earlier by using that actions are shared between states and determinizing by choosing one of them. For example, consider the optimal controller π for the MDP in Fig. 3 with π(s) = l and π(t) = r. DT construction would yield a 3-node tree when representing the controller exactly. By additionally allowing action r in s, we can obtain a simpler 1-node tree that always picks r. Previously, the initial dataset was not permissive because tools like Storm export only deterministic optimal controllers. While, as discussed, a more permissive dataset generally yields good results, it has the disadvantage that more states are potentially reachable and need to be considered while learning. In particular, if Unif ∈D(s) then all potential successors of s need to be considered. Additionally, adding actions to the permissive dataset requires thought to not break optimality. 
+
+Example 1: One might be tempted to simply allow all “optimal” actions, i.e. those yielding optimal value, by D(s) = 
+
+{a ∈ A(s) | V(s, a ) = V(s)}. Indeed, this is correct for, e.g., safety. However, for other objectives such as reachability and total reward, it is not: Observe that all states and actions in Fig. 3 have a value of 1. If both actions are allowed for s and t,then the controller picking r in s and l in t is dataset-consistent but never reaches the target, yielding value 0. Intuitively, this is because it makes no “progress”. Moreover, there is no unique inclusion-maximal permissive dataset; both {s → { l}, t →{l, r }} and {s → { l, r }, t → { r}} are optimal. Thus, we introduce two methods for obtaining some optimal permissive dataset. 
+
+GoodActions : Building on [20], we allow all actions with optimal value that reduce the distance to the goal with non-zero probability. In the above example, this yields D = {s →{l}, t → { r}} . While this cannot break symmetry when states have the same distance to the goal, it often adds actions. For objectives not requiring progress, e.g. safety, GoodActions 
+
+adds all actions with optimal value. 
+
+EqVal : We can further exploit states where all actions have the same value. There, only making progress with some probability matters. If all actions in a state have the same value, we add the uniform-choice label Unif . This allows the 5s t
+
+{
+
+r
+
+l
+
+l r 
+
+> Figure 3. MDP illustrating permissive strategies.
+
+DT to “unify” states which otherwise have disjoint sets of allowed actions, as follows: In the example, Unif is added for both states, i.e. D = {s → { l, Unif }, t → { r, Unif }} , and thus there is a consistent one-node DT, recommending Unif .Note that explicitly adding Unif is different from setting 
+
+D(s) = A(s) or removing s from D: In the latter two cases, the constructed DT T may produce any action, even one which potentially compromises optimality. ( T (s) may lead to uniform choice, but is not required to do so.) In contrast, when adding Unif , the strategy resulting from the DT chooses an action uniformly at random, ensuring progress. For objectives not requiring progress, EqVal is unnecessary: If all actions are optimal, GoodActions adds all actions, and then we remove the state entirely by AllOpt (defined below). Based on the heuristics named above, we propose three variants of obtaining an initial dataset, or, in other words, the initial controller. 
+
+Controller Firstly, we directly use the dataset given by the optimal controller, i.e. D(s) = {π(a)}, without any permissive choices. 
+
+Permissive Secondly, as a fully permissive approach, we use the dataset computed by GoodActions and EqVal ,giving the best chances for determinization, but poten-tially increasing the size of the reachable state space. 
+
+Combined Lastly, we restrict the Permissive dataset to the set of states SR reached by the optimal controller from the initial states by removing all actions leaving SR, i.e. those with δ(s, a )( s′) > 0 for some s′ /∈ SR.
+
+Remark 5: Obtaining a dataset this way is fundamentally different from obtaining an ε-optimal controller and using that for DT-learning. Such a controller would assign one specific action to every single state, even if that choice is entirely inconsequential, leaving us with a much more re-stricted dataset. Moreover, we lose all “imprecision budget” for simplification – as the starting controller may already be sub-optimal, any additional imprecision might compromise the overall guarantees. 
+
+B. Dataset Reduction 
+
+After the computation of the initial dataset, we can identify states that can be removed entirely from the dataset, as choosing any actions in these states ensures optimality. We list the methods we use to identify these states. 
+
+AllOpt : If a dataset allows all actions in a state s, i.e. 
+
+D(s) = A(s), then it can be removed. Recall that if the DT suggests an action not available in s, then one of the available actions is chosen uniformly at random. This in particular removes states with a single available action, i.e. |A(s)| = 1 .
+
+Agency [22]: The agency of a state s is the maximum error that can be incurred by playing adversarially from s, formally 
+
+Pmax  
+
+> s
+
+[♢G] − Pmin  
+
+> s
+
+[♢G]. States with agency 0 can be removed without affecting the value of the controller. Moreover, we can exploit the allowed imprecision: Removing states with agency less than ε only reduces the controller’s value by at most ε.
+
+Dominance [24]: A state s is dominated by a state s′̸ = s
+
+if s′ is almost surely reached from s, i.e. Pmin  
+
+> s
+
+[♢s′] = 1 .Thus, s can be removed, since s′ is reached regardless of the choice in s. Slight adaptations are necessary for reward objectives. The intuitive idea of Dominance is that on the way from s to s′, choices are irrelevant, as no matter what we do, we always eventually end up in the same spot, namely s′.In other words, we want all ways from s to s′ to be the “same” to the objective. Hence, for reward-based objectives, we say that s′ dominates s if s′ is a.s. reached from s and under all controllers, the same reward is obtained in between. Formally, if S′ are all the states that are dominated by s′ and we have two controllers π and π′ which only differ on S′, then we have 
+
+Vπ (s) = Vπ (s′) + c = Vπ′
+
+(s′) + c = Vπ (s). To compute this set of states, we augment the classical algorithm for finding dominating states from [24] by additionally tracking whether a state can be reached by two different rewards. 
+
+Unreach : Since we only care about the value in the initial state ¯s, we let Unreach (D) denote all states from 
+
+D unreachable under any controller consistent with D when starting from the initial state. Removing these does not affect the achieved value. We highlight that these four conditions AllOpt , Agency ,
+
+Dominance , and Unreach are incomparable , i.e. none subsumes another, see Appendix C, and are always safe: 
+
+Theorem 1: For every MDP and precision ε, every dataset 
+
+D obtained using our initial dataset approaches and reduction procedure is ε-optimal, i.e. for every controller π consistent with D we have |V(¯ s) − Vπ (¯ s)| ≤ ε.We provide an outline of the proof here and, the full proof can be found in Appendix D. 
+
+Proof Sketch. We first argue that any initial dataset only contains optimal controllers and then that all reductions only introduce an ε-error at most. For the initial datasets, Controller 
+
+is correct by definition, Permissive follows from [20] (both 
+
+GoodActions and EqVal ), in particular their Section 3. Finally, for Combined , observe that we never remove all actions, as it contains Controller . Moreover, it is a subset of 
+
+Permissive . As any controller compatible with the latter is optimal, so is any compatible with the former. For the reductions, Unreach clearly does not change the value. For Dominance , correctness similarly follows directly by definition: No matter what we do, we always end up in the dominating state. Similarly, Agency says that no matter what we do, our overall value can only decrease by at most ε.Here, the only subtlety is to observe that this error does not compound. This however follows from the “global” definition of Agency . Finally, for AllOpt , note that as long as the 6DT outputs any action in the available actions, it is optimal by definition. If not, we uniformly choose among the available actions, which for all objectives yields the average value of the actions we randomize over, preserving optimality. Here, the only subtlety lies in objectives requiring progress. However, we make progress with non-zero probability, preserving the value. □
+
+V. D ETAILS OF STEP 3: DT L EARNING 
+
+Our tool provides three novelties regarding safe DT learn-ing: Firstly, we automatically extract relevant predicates from the high-level description of the model in PRISM language. Secondly, we improve the impurity calculation using a model-specific measure of importance. Thirdly, we apply aggressive early stopping and pruning heuristics, which was previously impossible to do safely, as ε-optimality could not be guaran-teed without re-validation. 
+
+A. Preds 
+
+We offer axis-aligned and linear splits as already imple-mented in dtControl 2 . This split divides the input space by choosing one variable and comparing it to a constant. An example is y ≤ 0 from the example in Fig. 1. Additionally, we propose a new set of predicates: When the model is given in the PRISM modelling language [51], we can access the expressions defining its dynamics. Using the transition guards as predicates gives us a fully automated way of exploiting domain knowledge and obtaining predicates that are likely relevant for the behaviour of the MDP. This improves on the semi-automatic approach in [8], where templates for predicates were manually provided using domain knowledge. 
+
+B. Impurity 
+
+As previously mentioned, the detailed analysis in [8] suggested that the best choice for Impurity measure is Shannon’s entropy [67], which is defined as H(D) =
+
+P(ρ(D)) log P(ρ(D)) + P(¬ρ(D)) log P(¬ρ(D)) . Usually, all states are weighed uniformly when computing the probability; we denote impurity with uniform weights by Imp_Uniform .We complement the idea by further weighting the impact of states with a model-specific measure of importance. We provide four heuristics: 
+
+Imp_CAV15 and Imp_Simulation : Imp_CAV15 de-notes the idea of [14]: simulate the system under the op-timal controller several times and weigh each state with the number of times it is sampled. As states may get weight 0, this importance heuristic implicitly reduces the dataset, potentially compromising ε-optimality. Thus, our vari-ant Imp_Simulation assigns a positive weight of 10 −6 to unsampled states to ensure ε-optimality. 
+
+Imp_Agency : We use the values computed by the reduc-tion method Agency (maximum vs. minimum probability to reach the goal) as weights. Removing states satisfying 
+
+Agency is equivalent to assigning weight 0 in the impu-rity computation, so this importance heuristic generalises the 
+
+Agency reduction. For other objectives, the weights are accordingly adjusted, e.g., the difference in maximum and minimum reward. 
+
+Imp_CoE (Cost of Error): While Agency captures the error incurred if we would choose the worst action in all states, 
+
+Imp_CoE considers the impact of only selecting the worst action in one state. A precise computation can in the worst case require a model checking query for every state (since states can depend on themselves). Thus, we approximate this by comparing the value of the worst and the best action of a state. Observe that this heuristic generalises AllOpt , as the cost of error in states with equal value on all actions is 0. To ensure ε-optimality, similar to Imp_Simulation , we add a small positive weight to all states. 
+
+C. Early-Stopping 
+
+The idea of stopping early is standard in machine learn-ing, but has not been employed in the context of controller representation, since so far, optimality had to be preserved. Exploiting the allowed imprecisions, we adopt this idea as follows. When the current impurity is below a given threshold 
+
+θ ≥ 0, we return a leaf node. This is an extension of the stopping condition of dtControl 2 (Line 1 of Algorithm 1) which requires all states to agree on an action. As the choice of label is no longer straightforward, we label the leaf with an action determined through weighted voting, described below. We start with a threshold of θ = 0 .5 and decrease it by 0.1 if the resulting controller is not ε-optimal; in the worst case (when the heuristic always increases the imprecision to more than ε), this results in a precise DT after 6 iterations. 
+
+Weighted Voting: Our Early-Stopping and Pruning heuris-tics require to decide on an action for a node when not all states agree. We employ the following weighted voting approach: Each state s has weight w(s) according to the 
+
+Impurity method we used for building the DT (see Sec-tion V-B). Then, denoting by D the given dataset and by X
+
+the set of states in the training dataset that reach the node, we select arg max a∈A
+
+P
+
+> s∈X,a ∈D (s)
+
+w(s), i.e. the action with the highest weight when summing up the weights of states for which this action is allowed by the dataset/controller. 
+
+D. Pruning 
+
+As part of building a reduced DT, we also apply a greedy pruning approach (see Algorithm 2), meaning that we try to delete nodes that have little influence on the value of the controller. In each iteration, we go over all nodes which have leaves as both their children. For each of these nodes, we obtain a new DT by replacing that inner node with a leaf whose label is determined by weighted voting as for Early-Stopping. Then we model-check each of these candidates. If any of these DTs still satisfy the precision constraints, we choose the one that decreases the value the least and repeat the process with the new DT. As this requires several model checking queries, the process is quite expensive. Nonetheless, since our goal is to obtain DTs that are as small as possible, it can be worth investing the time. We outline the algorithm for opt = max 
+
+in Algorithm 2; the variant for min is completely analogous. 7Algorithm 2 Greedy Pruning for max 
+
+Input: Optimal value v, precision ε, ε-precise DT T
+
+Output: Reduced ε-precise decision tree T ′ 
+
+> 1:
+
+T ′ ← T  
+
+> 2:
+
+if v ≤ ε then return trivial tree  
+
+> 3:
+
+while true do  
+
+> 4:
+
+b ← 0 
+
+> 5:
+
+for Node n in T ′ do  
+
+> 6:
+
+if both children of n are leaves then  
+
+> 7:
+
+Tn ← COLLAPSE (T ′, n ) 
+
+> 8:
+
+vn ← CHECK VALUE (Tn, ¯s) 
+
+> 9:
+
+if b < v n then ▷ Found a better pruned tree  
+
+> 10:
+
+b ← vn, Tb ← T n 
+
+> 11:
+
+if v − b > ε then ▷ No pruned tree is ε-optimal  
+
+> 12:
+
+return T ′ 
+
+> 13:
+
+T ′ ← T b ▷ Tb is the best performing prune 
+
+Note that even when early stopping is enabled, pruning can still reduce the size of the tree. Early stopping focuses on the quality of the prediction with respect to the given dataset, while pruning focuses on the learnt controller. This means that some splits, while necessary to represent the dataset well, are in the end not really important to the controller. We comment on two further related mechanisms: Firstly, in [9], a heuristic called “safe pruning” was presented. However, this heuristic was exploiting the non-determinism present in the given controller, and could only remove nodes if the resulting controller was still exactly represented. In contrast, we allow for the resulting controller to be less defined, potentially worsening its performance; then, we rely on the model checking to ensure ε-optimality. Secondly, the core idea of [3] is to take the DT constructed by dtControl 2 and then prune it by looking for subtrees that can be reduced using the exhaustive search of [2]. In principle, this post-processing can also be applied to our output; however, the prototypical implementation of [3] does not allow for this. VI. E VALUATION 
+
+Our evaluation focuses on the following questions: 
+
+RQ1: How do DT sizes compare between dtControl 2+ ε
+
+and its competitors? 
+
+RQ2: What is the impact of allowing imprecision ε?
+
+RQ3: How do dataset reduction, early stopping, and pruning influence DT size? 
+
+RQ4: Can dtControl 2+ ε handle large models in reason-able time? We additionally explain some obtained DTs in case studies. Appendix E contains full results, and, in particular, the impact of different methods for dataset construction and DT learning. 
+
+A. Experimental Setup 
+
+Configurations. dtControl 2+ ε has 12 different con-figurations, resulting from three initial datasets Con-troller , Permissive , and Combined , and four impurity measures Imp_Simulation , Imp_Agency , Imp_CoE ,
+
+Imp_Uniform . We consider three variants of these configu-rations: our best , i.e. running all 12 configurations and picking the smallest DT; a portfolio of three configurations to im-prove practical scalability ( Controller +Imp_Simulation ,
+
+Permissive +Imp_CoE , and Combined +Imp_Agency ); and 
+
+Combined +Imp_Agency as example single configuration. 
+
+Competitors are dtControl 2 [8], dtPaynt [4], 
+
+dtNESt [3], and “CAV15”, our reimplementation of [14] (the original code is unavailable). Appendix E1 provides the exact versions and describes technical challenges. 
+
+Benchmarks. We select models from two sources: first, all instances from the quantitative verification benchmark set [35] which are in PRISM language and have between 40 000 and 
+
+500 000 states; for models with more than one supported property, we take the first of each type, e.g., only one for reachability and one for total reward. Second, all instances used in [8] which are in PRISM language, have at least 100 
+
+states, and are not included (with some parametrisation) in our first selection. Overall, we obtain 38 benchmarks: 34 from the first selection and 4 from the second. While dtControl 2+ ε
+
+supports other modelling languages, we focus on PRISM 
+
+models, as these allow automatic extraction of predicates. For LTL, there are unfortunately neither any established non-trivial (i.e. beyond a simple Until) MDP benchmarks [1, Sec. 5], nor a competitor able to handle them (see Appendix A). 
+
+Quality Measure and Plots. We collect the runtime of the tools and the size (i.e. its number of nodes) of constructed DTs. We present our data as quantile plots, which are suitable for comparing several methods at once. A point (x, y ) for method X indicates that the x best instances of X measured at most 
+
+y in the considered metric (size or time). 
+
+Execution Environment. All executions for our benchmarks were run on a server with AMD EPYC 9274F CPUs inside a Docker container restricted to a single core and 16 GB of RAM. The timeout for dtControl 2+ ε is 5 minutes for model solving, 10 minutes for dataset creation and DT learn-ing, and an additional 5 minutes for pruning (if applicable). The competitors have a timeout of 20 minutes. 
+
+B. Results 
+
+RQ1: Comparison to Competitors. Fig. 4 compares DT sizes for dtControl 2 , dtNESt , CAV15, and our three variants. Our tool and CAV15 use an allowed imprecision ε.For dtControl 2 and dtNESt , we use ε = 0 (i.e. same in both plots): The former cannot exploit it, the latter sur-prisingly performs worse for ε > 0, see RQ2 below. We omit dtPaynt , which only solves 15 of 38 benchmarks, and produces larger DTs than dtControl 2+ ε in 9 cases (see Table VII in Appendix E4). Our best DTs are always smaller than those of dtControl 2 , even by more than two orders of magnitude on 12 of 38 benchmarks. Similarly, CAV15 is always outperformed by our best, and in only two cases beats the portfolio; also, CAV15 is aggressive and indeed sometimes produces DTs whose performance is suboptimal by more than 
+
+ε. For dtNESt , where both tools report solutions, our best 810 20 30                                              
+
+> 10 0
+> 10 2
+> 10 4
+> Number of Benchmarks Solved Precision of ε= 10 −6
+> Tree Size
+> dtControl 2
+> dtNESt
+> CAV15
+> Combined +Imp_Agency
+> Portfolio
+> Our Best
+> 10 20 30
+> 10 0
+> 10 2
+> 10 4
+> Number of Benchmarks Solved Precision of ε= 10 −2
+> Tree Size
+> Figure 4. Quantile plot comparing the DT size of different configurations of dtControl 2+ εwith dtControl 2 ,dtNESt and CAV15 for ε= 10 −6
+> (left) and ε= 10 −2(right). dtControl 2 and dtNESt have ε= 0 in both. The y-axis uses logarithmic scale.
+> 510 15 20 25 30 35
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Number of Benchmarks Solved
+> Tree Size
+> dtControl 2
+> dtControl 2+ ε ε =0
+> dtControl 2+ ε ε =10 −6
+> dtControl 2+ ε ε =10 −2
+> dtNESt ε=0
+> dtNESt ε=10 −6
+> dtNESt ε=10 −2
+> Figure 5. Comparison of dtControl 2 and dtNESt to our methods. The quantile plot compares the size of the final DT of dtControl 2 and dtNESt
+> to the best DTs of dtControl 2+ εwith different precision requirements. The y-axis uses logarithmic scale.
+
+DTs are always at least as small and more than an order of magnitude smaller in 10 cases (see Fig. 8 in Appendix E4). Overall, dtControl 2+ ε is a significant advancement of the state of the art, constructing very small DTs. We highlight that when allowing an imprecision of ε = 10 −2, our tool returns DTs of explainable size (at most 15 nodes) in 30 of 38 benchmarks. Moreover, we receive single-node DTs on 18 benchmarks (nearly half the benchmark set), identifying the previously unobserved fact that following a single action, and playing uniformly at random, when this action is not available, is ε-optimal in these benchmarks. 
+
+RQ2: Effect of Precision. Fig. 5 shows DT sizes for 
+
+dtControl 2+ ε and dtNESt for several precisions ε (in-cluding dtControl 2 for reference). The improvement over 
+
+dtControl 2 for ε = 0 is due to the improved initial controller, safe heuristics and automatic predicate suggestions. Allowing for imprecision always further reduces DT size. For example, we obtain 15, 28, and 30 DTs of explainable size when ε is 0, 10 −6 and 10 −2, respectively. In contrast, dtNESt 
+
+can yield larger DTs for increasing ε and mostly fails due to internal errors when the allowed imprecision is increased. 
+
+RQ3: Influence of Different Heuristics. We first investigate the effect of the different dataset reduction heuristics in Dataset Construction. Table I reports the effect of the dataset reduction heuristics on the size of the dataset created in Dataset Construction. To obtain comparable values, we divide the dataset size by the number of states in the model, which corresponds to the dataset size for dtControl 2 , and then compute the geometric mean, the minimum and the maximum over all benchmarks and configurations. We find that the final dataset is always significantly smaller than the number of states in the model. However, when comparing the different values for ε, we observed an increased geometric mean from 
+
+ε = 0 to ε = 10 −6. This is caused by benchmarks that resulted in numerical instability and could not be treated for the former. We further find that all reduction heuristics can help to decrease the dataset size. To quantify the contribution of individual parts of our pipeline, we additionally rerun all 38 benchmarks with the reduction heuristics of Dataset Construction ( AllOpt ,
+
+Agency , Dominance ) disabled, with Early-Stopping dis-abled, and with both disabled, and compare against the full pipeline. However, we always enable Unreach , as this heuris-tic is straight forward and often greatly reduces the dataset on its own. Table II reports the resulting effect on the pre-pruning DT size, as the ratio of the DT size obtained with a heuristic disabled to the DT size of the full pipeline. Values above 1
+
+indicate that disabling the heuristic increases DT size. On average, dataset reduction has the largest influence on 
+
+Permissive , but disabling it on average more than doubles the DT size. However, we also observe the fact, that the algorithm constructing the DT is only a heuristic, as the size may increase, even though the dataset size decreases through the reduction. When considering early stopping, we also observe that tree size increases on average, but not as drastically as for dataset reduction. The decrease of tree size observed in the row reporting the minima is caused by the simulation weight assignment and its inherent randomness. Without both earl stopping and dataset reduction, the DT sizes increase on average by at least 4. Overall, the data shows that early stopping and dataset reduction are helpful to decrease DT size. Table III reports the effect of pruning within the full pipeline, as the ratio of the DT size after pruning to the 9Table I AGGREGATED DATASET SIZE STATISTICS (GEOMETRIC MEAN , MIN , AND MAX OVER ALL 38 BENCHMARKS ) FOR THE THREE INITIAL DATASETS 
+
+PERMISSIVE , COMBINED , AND CONTROLLER . T HE TABLE SHOWS THE MODEL SIZE , AND DIVIDES THE RESULTING DATASET SIZE AFTER ALL REDUCTION HEURISTICS OF DATASET CONSTRUCTION FOR VARYING PRECISION ε, THE NUMBER OF STATES REMOVED BY AG E N C Y FOR VARYING ε, AND THE NUMBER OF STATES REMOVED BY AL L OP T , DO M I N A N C E , AND UN R E A C H (WHICH DO NOT DEPEND ON ε) BY THE MODEL SIZE .Final Dataset Size Agency 
+
+Dataset Stat ε=0 10 −6 10 −2 0 10 −6 10 −2 AllOpt Dominance Unreach 
+
+Permissive Mean 0.45% 0.78% 0.75% 8.08% 8.65% 8.65% 62.84% 29.88% 38.39% 
+
+Permissive Min 0% 0% 0% 0% 0% 0% 1.98% 0.98% 0% 
+
+Permissive Max 9.17% 33.14% 33.14% 100.0% 100.0% 100.0% 100.0% 99.09% 100.0% 
+
+Combined Mean 0.13% 0.14% 0.13% 8.08% 8.65% 8.65% 62.84% 29.88% 62.94% 
+
+Combined Min 0% 0% 0% 0% 0% 0% 1.98% 0.98% 0.33% 
+
+Combined Max 5.09% 13.32% 13.32% 100.0% 100.0% 100.0% 100.0% 99.09% 100.0% 
+
+Controller Mean 0.37% 0.39% 0.39% 8.08% 8.65% 8.65% 30.82% 29.88% 58.9% 
+
+Controller Min 0% 0% 0% 0% 0% 0% 0.98% 0.98% 0.33% 
+
+Controller Max 6.02% 16.15% 16.15% 100.0% 100.0% 100.0% 99.9% 99.09% 99.98% Table II RATIO OF THE FINAL DT SIZE OBTAINED WITH A HEURISTIC DISABLED TO THE DT SIZE OF THE FULL PIPELINE , AGGREGATED (GEOMETRIC MEAN ,
+
+> MIN
+
+, MAX ) OVER ALL 38 BENCHMARKS AND CONFIGURATIONS FOR THE THREE INITIAL DATASETS AND VARYING PRECISION ε.Disable Dataset Reduction No Early Stopping No Dataset Reduction or Early Stopping Dataset Stat ε=0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2
+
+Permissive Mean 3.35 2.53 2.12 1.14 1.29 1.56 5.00 4.42 5.33 
+
+Permissive Min 0.09 0.00 0.00 1.00 0.89 0.75 1.29 1.06 0.86 
+
+Permissive Max 221 .00 203 .00 219 .00 16 .68 47 .00 49 .00 209 .00 211 .00 221 .00 
+
+Combined Mean 2.61 2.30 2.18 1.09 1.25 1.68 3.74 3.88 5.16 
+
+Combined Min 0.65 0.10 0.10 0.91 0.92 0.48 1.27 1.01 0.91 
+
+Combined Max 209 .00 209 .00 209 .00 9.00 13 .32 40 .14 269 .00 239 .00 233 .00 
+
+Controller Mean 2.75 2.39 2.19 1.08 1.26 1.65 4.02 4.16 5.60 
+
+Controller Min 0.65 0.65 0.15 0.90 0.93 0.53 0.98 0.91 0.91 
+
+Controller Max 725 .00 725 .00 725 .00 9.00 28 .14 54 .71 773 .00 773 .00 773 .00 
+
+Table III EFFECT OF PRUNING WITHIN THE FULL PIPELINE . T HE TABLE REPORTS THE RATIO OF THE DT SIZE AFTER PRUNING TO THE DT SIZE BEFORE PRUNING , AGGREGATED (GEOMETRIC MEAN , MIN , MAX ) OVER ALL 38  
+
+> BENCHMARKS AND CONFIGURATIONS FOR THE THREE INITIAL DATASETS AND VARYING PRECISION
+
+ε. All CONSIDERS EVERY INSTANCE ; Attempted 
+
+> RESTRICTS TO INSTANCES WHERE PRUNING CHANGED THE TREE
+
+.Dataset Condition Stat ε=0 10 −6 10 −2
+
+Permissive All Mean 0.70 0.68 0.42 
+
+Permissive All Min 0.03 0.03 0.02 
+
+Permissive All Max 1.00 1.00 1.00 
+
+Permissive Attempted Mean 0.38 0.37 0.22 
+
+Permissive Attempted Min 0.03 0.03 0.02 
+
+Permissive Attempted Max 0.90 0.90 0.89 
+
+Combined All Mean 0.72 0.69 0.52 
+
+Combined All Min 0.05 0.05 0.02 
+
+Combined All Max 1.00 1.00 1.00 
+
+Combined Attempted Mean 0.39 0.38 0.23 
+
+Combined Attempted Min 0.05 0.05 0.02 
+
+Combined Attempted Max 0.93 0.94 0.87 
+
+Controller All Mean 0.84 0.77 0.58 
+
+Controller All Min 0.05 0.05 0.02 
+
+Controller All Max 1.00 1.00 1.00 
+
+Controller Attempted Mean 0.50 0.44 0.26 
+
+Controller Attempted Min 0.05 0.05 0.02 
+
+Controller Attempted Max 0.93 0.94 0.93 
+
+DT size before pruning, aggregated over all benchmarks and configurations ( All ) and restricted to only those where pruning was attempted, which is the case for DTs with less than 50 nodes ( Attempted ). On average, pruning reduces DT size by 
+
+16 –58% across all instances, and by 50 –79% when restricting to instances where it was applied, with the effect increasing for larger ε in both cases. 
+
+RQ4: Scalability. Fig. 4 shows that dtControl 2+ ε solved all but one benchmark within the time limit of 20 minutes. As our focus is on obtaining small explainable controllers, runtime is only important so long as the whole pipeline remains feasible. Nevertheless, we include full results in Tables VIII and IX in Appendix E5. We remark that the runtime of 
+
+dtNESt is similar, also handling all but one benchmark within the time limit, while dtControl 2 and dtPaynt often time out. Comparing the runtime of our methods to the size of the model, we observe no clear correlation, showing again that the structure is more important than size, cf. [54]. Overall, our methods are feasible even on large and complex models. 
+
+C. Case Studies 
+
+We illustrate three qualitatively different outcomes that 
+
+dtControl 2+ ε can produce, each revealing a structural 10 s1 ≤ 1                 
+
+> b≤1
+> end1 cd
+> end2
+> YN
+> YN
+> s1≤1
+> end1 end2
+> YN
+> Figure 6. CSMA/CD ( N=2 ,K=6 ) DTs produced by dtControl 2+ ε.Left: ε= 10 −6, right: ε= 10 −2.
+
+insight that is invisible to dtControl 2 . Recall that in states not covered by the DT actions are chosen randomly. 
+
+Pnueli-Zuck randomized mutual exclusion ( n=5 ) [35, 62] 
+
+models n processes competing for a shared resource. The non-determinism arises from the scheduler choosing which process to activate and from internal branching within each process. The property maximises the probability that process 1 eventually reaches state p1 = 10 on its way to the critical section. The DT states, that, whenever p1 = 1, it should be updated to p1 = 2. This sends it along a path that reaches p1 = 10 with probability 1. Consequently, the optimal value is 1 in every reachable state, making all scheduling and branching choices simultaneously optimal. dtControl 2 is unaware of this and encodes a decision for every state, yielding 
+
+171 373 nodes. dtControl 2+ ε reduces this to a single-node 
+
+DT, showing that following a simple rule satisfies the property. 
+
+CSMA time minimisation ( N =2 , K=6 ) [35] models N =2 
+
+stations competing for a shared bus with exponential backoff up to K=6 collision rounds. Each station checks whether the bus is free, and if so, sends its message. Otherwise, it waits for a random amount of time. The property time _min minimises the expected time until stations have delivered their messages. 
+
+dtControl 2 yields a 125 -node DT and dtNESt a 25 -node DT, while dtControl 2+ ε already produces a 5-node DT at 
+
+ε = 10 −6 (see Fig. 6). The DT encodes the following rule: if station 1 is in its initial or transmitting phase ( s1 ≤ 1), let it finish if the bus is collision-free ( b ≤ 1, action end1 ) or trigger collision detection ( cd ) otherwise. If station 1 is backing off or done, schedule station 2 ( end2 ). At ε = 10 −2, the DT collapses to 3 nodes : the collision-handling branch disappears and the rule reduces to choosing end1 or end2 .
+
+Israeli-Jalfon self-stabilisation ( n=10 ) [35, 40] is a self-stabilising algorithm with n processes. In the beginning, several processes have tokens. The scheduler chooses which process to activate in each step. However, it may only activate processes with tokens. After completion, the process randomly moves its token to its left or right neighbour, who deletes the token, if it already has one. The considered property states that there should finally be exactly one token. dtControl 2 
+
+produces a 1317 -node DT and dtNESt a 719 -node DT. 
+
+dtControl 2+ ε discovers a structural property of the pro-tocol: the probability of stabilisation is 1 for any scheduling strategy, so all scheduling choices are simultaneously optimal. Therefore, Dataset Construction produces an empty dataset. VII. C ONCLUSION AND FUTURE WORK 
+
+dtControl 2+ ε combines the maturity of dtControl 2 
+
+with the ability to trade the optimality of controllers for their compactness and explainability. Our methods for exploiting model knowledge and allowed imprecision ε enable our tool to produce controllers significantly smaller than the state of the art. Future work includes coupling our tool with SWITSS [41] or PET [54] to use witnessing subsystems or cores [48] for relevancy heuristics, as well as with dtPaynt [4] in the sense of [3] for advanced post-processing. Towards explainable con-trollers for LTL, we want to extend the API of stormpy and allow integration of semantic LTL-to-automaton translations as provided by e.g. Owl [49]. DATA AVAILABILITY STATEMENT 
+
+Our tool is continually developed at https://gitlab.com/ live-lab/software/dtcontrol-epsilon. Further, the version of the tool used for the experiments, together with all benchmarks and scripts to reproduce our results, is included in our artefact. ACKNOWLEDGEMENTS 
+
+This research has received funding from the European Union under Grant Agreement No. 101171844, European Research Council (ERC) project Intelligence-Oriented Ver-ification&Controller Synthesis (InOVationCS) and from the ERC Starting Grant 101077178 (DEUCE). Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or of the granting authority. Neither the European Union nor the granting authority can be held responsible for them. This research has also received funding from the MUNI Award in Science and Humanities MUNI/I/1757/2021 of the Grant Agency of Masaryk University. 11 REFERENCES [1] Andriushchenko, R., Bork, A., Budde, C.E., ˇCeška, M., Grover, K., Hahn, E.M., Hartmanns, A., Israelsen, B., Jansen, N., Jeppson, J., Junges, S., Köhl, M.A., Könighofer, B., Kˇ retínský, J., Meggendorfer, T., Parker, D., Pranger, S., Quatmann, T., Ruijters, E., Taylor, L., Volk, M., Weininger, M., Zhang, Z.: Tools at the frontiers of quantitative ver-ification - QComp 2023 competition report. In: TOOLympics@ETAPS. Lecture Notes in Computer Science, vol. 14550, pp. 90–146. Springer (2023). https://doi.org/10.1007/978-3-031-67695-6_4 [2] Andriushchenko, R., ˇCeška, M., Junges, S., Katoen, J.P.: Inductive synthesis of finite-state controllers for pomdps. In: Cussens, J., Zhang, K. (eds.) Proceedings of the Thirty-Eighth Conference on Uncertainty in Artificial Intelligence. Proceedings of Machine Learning Research, vol. 180, pp. 85–95. PMLR (01–05 Aug 2022), https://proceedings.mlr. press/v180/andriushchenko22a.html [3] Andriushchenko, R., ˇ Ceška, M., Chakraborty, D., Junges, S., Kˇ retínský, J., Macák, F.: Symbiotic local search for small decision tree poli-cies in MDPs. In: UAI. Proceedings of Machine Learning Research, vol. 286, pp. 132–148. PMLR (2025), https://openreview.net/forum?id= P0JNSkJtyN [4] Andriushchenko, R., ˇCeška, M., Junges, S., Macák, F.: Small deci-sion trees for MDPs with deductive synthesis. In: CAV (2). Lecture Notes in Computer Science, vol. 15932, pp. 169–192. Springer (2025). https://doi.org/10.1007/978-3-031-98679-6_8 [5] Angelov, P.P., Soares, E.A., Jiang, R., Arnold, N.I., Atkinson, P.M.: Ex-plainable artificial intelligence: an analytical review. WIREs Data Min-ing Knowl. Discov. 11 (5) (2021). https://doi.org/10.1002/WIDM.1424 [6] Arrieta, A.B., Rodríguez, N.D., Ser, J.D., Bennetot, A., Tabik, S., Bar-bado, A., García, S., Gil-Lopez, S., Molina, D., Benjamins, R., Chatila, R., Herrera, F.: Explainable artificial intelligence (XAI): concepts, taxonomies, opportunities and challenges toward responsible AI. Inf. Fusion 58 , 82–115 (2020). https://doi.org/10.1016/j.inffus.2019.12.012 [7] Ashok, P., Jackermeier, M., Jagtap, P., Kˇ retínský, J., Weininger, M., Zamani, M.: dtControl: decision tree learning algorithms for controller representation. In: HSCC. pp. 17:1–17:7. ACM (2020). https://doi.org/10.1145/3365365.3382220 [8] Ashok, P., Jackermeier, M., Kˇ retínský, J., Weinhuber, C., Weininger, M., Yadav, M.: dtControl 2.0: Explainable strategy representation via decision tree learning steered by experts. In: TACAS (2). Lecture Notes in Computer Science, vol. 12652, pp. 326–345. Springer (2021). https://doi.org/10.1007/978-3-030-72013-1_17 [9] Ashok, P., Kˇ retínský, J., Larsen, K.G., Coënt, A.L., Taankvist, J.H., Weininger, M.: SOS: safe, optimal and small strategies for hybrid Markov decision processes. In: QEST. Lecture Notes in Computer Science, vol. 11785, pp. 147–164. Springer (2019). https://doi.org/10.1007/978-3-030-30281-8_9 [10] Azeem, M., Chakraborty, D., Kanav, S., Kˇ retínský, J., Mohagheghi, M., Mohr, S., Weininger, M.: 1-2-3-go! Policy synthesis for parameterized Markov decision processes via decision-tree learning and generalization. In: VMCAI (2025). https://doi.org/10.1007/978-3-031-82703-7_5 [11] Baier, C., Katoen, J.: Principles of model checking. MIT Press (2008), https://mitpress.mit.edu/books/principles-model-checking [12] Bastani, O., Pu, Y., Solar-Lezama, A.: Verifiable reinforcement learning via policy extraction. In: Bengio, S., Wallach, H., Larochelle, H., Grauman, K., Cesa-Bianchi, N., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 31. Curran Associates, Inc. (2018), https://dl.acm.org/doi/10.5555/3327144.3327175 [13] Batz, K., Biskup, T.J., Katoen, J.P., Winkler, T.: Programmatic strategy synthesis: Resolving nondeterminism in probabilistic programs (2023). https://doi.org/10.1145/3632935 [14] Brázdil, T., Chatterjee, K., Chmelik, M., Fellner, A., Kˇ retínský, J.: Counterexample explanation by learning small strategies in Markov decision processes. In: CAV (1). Lecture Notes in Computer Science, vol. 9206, pp. 158–177. Springer (2015). https://doi.org/10.1007/978-3-319-21690-4_10 [15] Brorholt, A.H., Høeg-Petersen, A.H., Jensen, P.G., Larsen, K.G., Mikuˇ cionis, M., Schilling, C., W ˛ asowski, A.: Uppaal coshy: Au-tomatic synthesis of compact shields for hybrid systems (2025). https://doi.org/10.1007/978-3-032-09524-4_7 [16] Budde, C.E., D’Argenio, P.R., Hartmanns, A.: Digging for decision trees: A case study in strategy sampling and learning. In: AISoLA. Lecture Notes in Computer Science, vol. 15217, pp. 354–378. Springer (2024). https://doi.org/10.1007/978-3-031-75434-0_24 [17] Budde, C.E., Hartmanns, A., Klauck, M., Kˇ retínský, J., Parker, D., Quatmann, T., Turrini, A., Zhang, Z.: On correctness, precision, and performance in quantitative verification - QComp 2020 competition report. In: ISoLA (4). Lecture Notes in Computer Science, vol. 12479, pp. 216–241. Springer (2020). https://doi.org/10.1007/978-3-030-83723-5_15 [18] Carr, S., Jansen, N., Topcu, U.: Verifiable rnn-based policies for pomdps under temporal logic constraints. In: Proceedings of the Twenty-Ninth International Conference on International Joint Conferences on Artificial Intelligence. pp. 4121–4127 (2021) [19] Chakraborty, D., Dubslaff, C., Kanav, S., Kˇ retínský, J., Weinhu-ber, C.: Explaining control policies through predicate decision dia-grams. In: HSCC ’25: Proceedings of the 28th ACM International Conference on Hybrid Systems: Computation and Control (2025). https://doi.org/10.1145/3716863.3718049 [20] Chatterjee, K., Quatmann, T., Schäffeler, M., Weininger, M., Winkler, T., Zilken, D.: Fixed point certificates for reachability and expected rewards in MDPs. In: TACAS (2). Lecture Notes in Computer Science, vol. 15697, pp. 130–151. Springer (2025). https://doi.org/10.1007/978-3-031-90653-4_7 [21] Chen, T., Forejt, V., Kwiatkowska, M.Z., Parker, D., Simaitis, A.: Automatic verification of competitive stochastic systems. Formal Meth-ods Syst. Des. 43 (1), 61–92 (2013). https://doi.org/10.1007/s10703-013-0183-7 [22] Córdoba, F.C., Judson, S., Antonopoulos, T., Bjørner, K., Shoemaker, N., Shapiro, S.J., Piskac, R., Könighofer, B.: Analyzing intentional behavior in autonomous agents under uncertainty. In: IJCAI. pp. 372– 381. ijcai.org (2023). https://doi.org/10.24963/ijcai.2023/42 [23] Costa, V.G., Pedreira, C.E.: Recent advances in decision trees: an updated survey. Artif. Intell. Rev. 56 (5), 4765– 4800 (2023). https://doi.org/10.1007/S10462-022-10275-5, https://doi.org/10.1007/s10462-022-10275-5 [24] D’Argenio, P.R., Jeannet, B., Jensen, H.E., Larsen, K.G.: Reduction and refinement strategies for probabilistic analysis. In: PAPM-PROBMIV. LNCS, vol. 2399, pp. 57–76. Springer (2002). https://doi.org/10.1007/3-540-45605-8_5 [25] Das Gupta, U., Talvitie, E., Bowling, M.: Policy tree: Adaptive representation for policy gradient. Proceedings of the AAAI Conference on Artificial Intelligence 29 (1) (Feb 2015). https://doi.org/10.1609/aaai.v29i1.9613 [26] Demirovi´ c, E., Lukina, A., Hebrard, E., Chan, J., Bailey, J., Leckie, C., Ramamohanarao, K., Stuckey, P.J.: Murtree: Optimal decision trees via dynamic programming and search. Journal of Machine Learning Research 23 (26), 1–47 (2022), http://jmlr.org/papers/v23/20-520.html [27] Du, S.S., Kakade, S.M., Wang, R., Yang, L.F.: Is a good represen-tation sufficient for sample efficient reinforcement learning? CoRR (2019). https://doi.org/10.48550/arXiv.1910.03016, https://arxiv.org/abs/ 1910.03016 [28] Dubslaff, C., Klös, V., Päßler, J.: Template decision diagrams for meta control and explainability. In: xAI (2). Communications in Computer and Information Science, vol. 2154, pp. 219–242. Springer (2024). https://doi.org/10.1007/978-3-031-63797-1_12 [29] Eisentraut, J., Kelmendi, E., Kˇ retínský, J., Weininger, M.: Value iteration for simple stochastic games: Stopping criterion and learning algorithm. Inf. Comput. 285 (Part), 104886 (2022). https://doi.org/10.1016/j.ic.2022.104886 [30] Esparza, J., Kˇ retínský, J., Sickert, S.: A unified translation of linear temporal logic to ω-automata. J. ACM 67 (6), 33:1–33:61 (2020). https://doi.org/10.1145/3417995 [31] Gerlings, J., Shollo, A., Constantiou, I.D.: Reviewing the need for ex-plainable artificial intelligence (xAI). In: HICSS. pp. 1–10. ScholarSpace (2021). https://doi.org/10.24251/HICSS.2021.156 [32] Gunning, D., Stefik, M., Choi, J., Miller, T., Stumpf, S., Yang, G.: XAI - explainable artificial intelligence. Sci. Robotics 4(37) (2019). https://doi.org/10.1126/scirobotics.aay7120 [33] Hartmanns, A., Junges, S., Quatmann, T., Weininger, M.: A practitioner’s guide to MDP model checking algorithms. In: Sankaranarayanan, S., Sharygina, N. (eds.) 29th International Conference on Tools and Algo-rithms for the Construction and Analysis of Systems (TACAS). Lecture Notes in Computer Science, vol. 13993, pp. 469–488. Springer (2023). https://doi.org/10.1007/978-3-031-30823-9_24 [34] Hartmanns, A., Junges, S., Quatmann, T., Weininger, M.: The revised practitioner’s guide to MDP model checking algorithms. STTT (to 
+
+12 appear), preprint available on github (2026), https://sjunges.github.io/ files/revised_practitioners_guide.pdf [35] Hartmanns, A., Klauck, M., Parker, D., Quatmann, T., Ruijters, E.: The quantitative verification benchmark set. In: TACAS (1). Lecture Notes in Computer Science, vol. 11427, pp. 344–350. Springer (2019). https://doi.org/10.1007/978-3-030-17462-0_20 [36] Hensel, C., Junges, S., Katoen, J., Quatmann, T., Volk, M.: The proba-bilistic model checker Storm. Int. J. Softw. Tools Technol. Transf. 24 (4), 589–610 (2022). https://doi.org/10.1007/S10009-021-00633-Z [37] Huysmans, J., Dejaeger, K., Mues, C., Vanthienen, J., Baesens, B.: An empirical evaluation of the comprehensibility of decision table, tree and rule based predictive models. Decis. Support Syst. 51 (1), 141–154 (2011). https://doi.org/10.1016/j.dss.2010.12.003 [38] Hyafil, L., Rivest, R.L.: Constructing optimal binary decision trees is NP-complete. Inf. Process. Lett. 5(1), 15–17 (1976). https://doi.org/10.1016/0020-0190(76)90095-8 [39] Independent High-Level Expert Group on Artificial Intelligence: Ethics guidelines for trustworthy AI - European commission, directorate-general for communications networks, content and technology (2019). https://doi.org/10.2759/177365 [40] Israeli, A., Jalfon, M.: Token management schemes and random walks yield self-stabilizing mutual exclusion. In: Proceedings of the ninth annual ACM symposium on Principles of distributed computing. pp. 119–131 (1990) [41] Jantsch, S., Harder, H., Funke, F., Baier, C.: SWITSS: Computing small witnessing subsystems. In: FMCAD. pp. 236–244. IEEE (2020). https://doi.org/10.34727/2020/ISBN.978-3-85448-042-6_31 [42] Julian, K., Lopez, J., Brush, J., Owen, M., Kochenderfer, M.: Policy compression for aircraft collision avoidance systems. In: DASC. pp. 1– 10 (09 2016). https://doi.org/10.1109/DASC.2016.7778091 [43] Jüngermann, F., Kˇ retínský, J., Weininger, M.: Algebraically explain-able controllers: decision trees and support vector machines join forces. Int. J. Softw. Tools Technol. Transf. 25 (3), 249–266 (2023). https://doi.org/10.1007/S10009-023-00716-Z [44] Kallenberg, L.: Markov decision processes. Lecture Notes. University of Leiden 428 (2011), https://www.researchgate.net/profile/ Lodewijk-Kallenberg/publication/359893791_Lecture_Notes_Markov_ Decision_Processes_-_version_2022/links/62553afbb0cee02d6965cab0/ Lecture-Notes-Markov-Decision-Processes-version-2022.pdf [45] Kiesbye, J., Grover, K., Ashok, P., Kˇ retínský, J.: Planning via model checking with decision-tree controllers. In: 2022 International Conference on Robotics and Automation, ICRA 2022, Philadel-phia, PA, USA, May 23-27, 2022. pp. 4347–4354. IEEE (2022). https://doi.org/10.1109/ICRA46639.2022.9811980 [46] Kohler, H., Delfosse, Q., Akrour, R., Kersting, K., Preux, P.: Inter-pretable and editable programmatic tree policies for reinforcement learn-ing. In: Workshop on Interpretable Policies in Reinforcement Learning @RLC-2024 (2024), https://openreview.net/forum?id=zafp5CwoTq [47] Kˇ retínský, J., Meggendorfer, T., Prokop, M., Rieder, S.: Guessing winning policies in ltl synthesis by semantic learning. In: Enea, C., Lal, A. (eds.) Computer Aided Verification. pp. 390–414. Springer Nature Switzerland, Cham (2023) [48] Kˇ retínský, J., Meggendorfer, T.: Of cores: A partial-exploration frame-work for Markov decision processes. Log. Methods Comput. Sci. 16 (4) (2020). https://doi.org/10.23638/LMCS-16(4:3)2020 [49] Kˇ retínský, J., Meggendorfer, T., Sickert, S.: Owl: A library for ω-words, automata, and LTL. In: ATVA. Lecture Notes in Computer Science, vol. 11138, pp. 543–550. Springer (2018). https://doi.org/10.1007/978-3-030-01090-4_34 [50] Kˇ retínský, J., Meggendorfer, T., Sickert, S., Ziegler, C.: Rabinizer 4: From LTL to your favourite deterministic automaton. In: CAV (1). Lecture Notes in Computer Science, vol. 10981, pp. 567–577. Springer (2018). https://doi.org/10.1007/978-3-319-96145-3_30 [51] Kwiatkowska, M.Z., Norman, G., Parker, D.: PRISM 4.0: Verifi-cation of probabilistic real-time systems. In: CAV. Lecture Notes in Computer Science, vol. 6806, pp. 585–591. Springer (2011). https://doi.org/10.1007/978-3-642-22110-1_47 [52] Liu, S., Panangadan, A., Talukder, A., Raghavendra, C.S.: Compact rep-resentation of coordinated sampling policies for body sensor networks. In: 2010 IEEE Globecom Workshops. pp. 2044–2048. IEEE (2010). https://doi.org/10.1109/GLOCOMW.2010.5700304 [53] Meggendorfer, T.: PET - A partial exploration tool for probabilistic verification. In: Bouajjani, A., Holík, L., Wu, Z. (eds.) Automated Tech-nology for Verification and Analysis - 20th International Symposium, ATVA 2022, Virtual Event, October 25-28, 2022, Proceedings. Lecture Notes in Computer Science, vol. 13505, pp. 320–326. Springer (2022). https://doi.org/10.1007/978-3-031-19992-9_20 [54] Meggendorfer, T., Weininger, M.: Playing games with your PET: ex-tending the partial exploration tool to stochastic games. In: CAV (3). Lecture Notes in Computer Science, vol. 14683, pp. 359–372. Springer (2024). https://doi.org/10.1007/978-3-031-65633-0_16 [55] Meske, C., Bunde, E., Schneider, J., Gersch, M.: Explainable arti-ficial intelligence: objectives, stakeholders, and future research op-portunities. Information Systems Management 39 (1), 53–63 (2022). https://doi.org/10.1080/10580530.2020.1849465 [56] Miller, T., Hoffman, R.R., Amir, O., Holzinger, A.: Special issue on explainable artificial intelligence (XAI). Artif. Intell. 307 , 103705 (2022). https://doi.org/10.1016/j.artint.2022.103705 [57] Mitchell, T.M.: Machine learning, International Edition. McGraw-Hill Series in Computer Science, McGraw-Hill (1997), https://www.worldcat. org/oclc/61321007 [58] Neider, D., Topcu, U.: An automaton learning approach to solving safety games over infinite graphs. In: International Conference on Tools and Algorithms for the Construction and Analysis of Systems. pp. 204–221. Springer (2016) [59] Phillips, P.J., Hahn, C.A., Fontana, P.C., Broniatowski, D.A., Przy-bocki, M.A.: Four principles of explainable artificial intelligence -(U.S.) national institute of standards and technology (NIST) (2020), https://doi.org/10.6028/NIST.IR.8312-draft [60] Piltaver, R., Lustrek, M., Gams, M., Martincic-Ipsic, S.: What makes classification trees comprehensible? Expert Syst. Appl. 62 , 333–346 (2016). https://doi.org/10.1016/j.eswa.2016.06.009 [61] Pnueli, A., Rosner, R.: On the synthesis of a reactive module. In: POPL. pp. 179–190. ACM Press (1989). https://doi.org/10.1145/75277.75293 [62] Pnueli, A., Zuck, L.: Verification of multiprocess probabilistic protocols. In: Proceedings of the third annual ACM symposium on Principles of distributed computing. pp. 12–27 (1984) [63] Puterman, M.L.: Markov Decision Processes: Discrete Stochastic Dy-namic Programming. Wiley Series in Probability and Statistics, Wiley (1994). https://doi.org/10.1002/9780470316887 [64] Ramadge, P.J., Wonham, W.M.: The control of discrete event systems. Proc. IEEE 77 (1), 81–98 (1989). https://doi.org/10.1109/5.21072 [65] Rudin, C.: Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. Nat. Mach. Intell. 
+
+1(5), 206–215 (2019). https://doi.org/10.1038/s42256-019-0048-x [66] Rusu, A.A., Colmenarejo, S.G., Gülçehre, Ç., Desjardins, G., Kirk-patrick, J., Pascanu, R., Mnih, V., Kavukcuoglu, K., Hadsell, R.: Policy distillation. CoRR (2016), http://arxiv.org/abs/1511.06295 [67] Shannon, C.E.: A mathematical theory of communication. Bell Syst. Tech. J. 27 (4), 623–656 (1948). https://doi.org/10.1002/j.1538-7305.1948.tb00917.x [68] Tjoa, E., Guan, C.: A survey on explainable artificial intelligence (XAI): Toward medical XAI. IEEE Trans. Neural Networks Learn. Syst. 32 (11), 4793–4813 (2021). https://doi.org/10.1109/TNNLS.2020.3027314 [69] Topin, N., Milani, S., Fang, F., Veloso, M.: Iterative bounding MDPs: Learning interpretable policies via non-interpretable methods. In: AAAI. pp. 9923–9931. AAAI Press (2021). https://doi.org/10.1609/AAAI.V35I11.17192 [70] Verma, A., Murali, V., Singh, R., Kohli, P., Chaudhuri, S.: Programmat-ically interpretable reinforcement learning. In: Dy, J., Krause, A. (eds.) Proceedings of the 35th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 80, pp. 5045–5054. PMLR (10–15 Jul 2018), https://proceedings.mlr.press/v80/verma18a. html [71] Vos, D., Verwer, S.: Optimal decision tree policies for Markov decision processes. In: IJCAI. pp. 5457–5465. ijcai.org (2023). https://doi.org/10.24963/IJCAI.2023/606 
+
+13 APPENDIX 
+
+A. Linear Temporal Logic and Decision Trees 
+
+We extend our approach to also represent ( ε-optimal) con-trollers for LTL queries. The major challenge is that LTL requires controllers with finite memory, such as the states of an ω-automaton for the LTL formula, see, e.g., [11, Chapter 10.6.4]. In essence, instead of simply yielding an action in each state, finite state controllers have a set of memory states 
+
+M , and produce for each state-memory pair (s, m ) an action a,i.e. the action chosen in a state depends on the current memory state. Additionally, we output the underlying memory structure in form of an automaton. Using tight coupling with Storm ,
+
+dtControl 2+ ε captures this information by extending the state with an additional variable that represents the current memory state. Thus, the learned DT is a mapping from MDP states and memory states to actions. We highlight that other tools like dtPaynt or dtNESt could theoretically represent such a mapping, too; however, Storm currently does not offer the option to export the mapping in this form, whereas our tool explicitly constructs it. Thus, dtControl 2+ ε is the only tool with LTL support. Still, due to technical limitations, the interpretability of DTs obtained this way is somewhat questionable. In particular, the memory states we can obtain through stormpy are opaque numbers without any further context. For example, the state representing “waiting for a request” may have the number 1, while “request received, preparing for send” may have the number 2, and so on. As such, a predicate of the form “automaton state ≤ 2” has no connection to the LTL formula and thus hardly any interpretable meaning. In particular, the numbering we obtain is arbitrary and may change from run to run. To tackle this issue, a connection to semantic 
+
+automaton constructions (see [30]) implemented by tools such as Rabinizer [50] or Owl [49] would be required to obtain interpretable trees, which Storm does not (yet) support. We successfully evaluated our tool on several hand-crafted instances, confirming that dtControl 2+ ε can indeed con-struct DTs for strategies including memory. We omit LTL properties from our experimental evaluation because there are no established true LTL benchmarks on MDPs (i.e. more than constrained reachability), see [1, Section 5]. 
+
+B. Extended Example Decision Tree 
+
+Fig. 7 shows the complete and reduced DT for the example in Section III. 
+
+C. Incomparability of the Relevance Heuristics 
+
+For Unreach (D), observe that whether a state is reachable or not under one particular controller is orthogonal to how many actions it has, whether it is dominated, whether its agency value is zero, or what the value of its actions are. For example, suppose we have two copies of an MDP and, in the initial state, we choose between them. Then one of the two copies will always be unreachable, yet whichever states satisfy one condition also satisfy it in the other copy. In particular, observe that all other methods do not depend on the controller or initial state. For AllOpt , consider the following example. Suppose in state s the single action goes to a state t or sink with probability 0.5 each. In t, we have two choices: one leads to the goal and the other to the sink. Here, s is not dominated (no other state is reached with probability 1 under every controller), and its agency equals 0.5 > 0. However, as there is only one available action, all available actions are optimal, and the state can be removed. When comparing Agency and Dominance , note that in a dominated state it is indeed relevant how the controller acts once the dominating (a.k.a. essential) state is reached. In contrast, Agency prescribes that all subsequent actions do not matter. For example, consider state s with a single action leading to state t, which in turn can choose between moving to the goal or a sink. The state s is dominated by t, but the agency of s equals 1. For the other way, consider a state with a single action that leads to a goal and sink each with probability 0.5. This state has no agency but is not dominated. We also note that AllOpt , Agency , and Dominance all imply EqVal . The former provides stronger guarantees, as these allow us to completely remove a state from the dataset instead of only adding the uniform action. However, EqVal 
+
+indeed is a strictly weaker criterion, as exemplified in Fig. 3: The controller in which both states allow all actions is not optimal (since one can loop back and forth without reaching the goal), but the controller in which both play uniformly is optimal. 
+
+D. Proof of Theorem 1 
+
+For simplicity, we assume that, for all goal-based objectives (reachability, safety, and reachability cost), the goal/sink states are absorbing. (Note that most model checkers, in particu-lar Storm , perform this transformation automatically.) We formulate the proofs for reachability/safety, then outline the adaptation to reward-based objectives. Before we prove the overall correctness, we introduce some useful lemmas. 
+
+Lemma 1: Let M = ( S, A, ¯s, δ ) be an MDP with reach-ability or safety objective G, s ∈ S a state, and π an ε-optimal controller. Let Aε ⊆ A(s) be all ε-optimal actions, i.e. |V (s, a ) − V (s)| ≤ ε for all a ∈ Aε. Then, randomly choosing among Aε is ε-optimal, i.e. replacing the choice of 
+
+π in s with randomising over Aε in any way yields an ε-optimal controller. 
+
+Proof. For now, we focus on the case of maximising reachabil-ity (equivalent to minimising safety). Let π′ be the controller obtained from π by randomising over Aε in s. Clearly, if s
+
+is never visited, then the probability of reaching the goal is unchanged. Moreover, the probability of visiting s for the first time is the same under π and π′. Consider the set of paths that go through s and split them into those that then do not reach 
+
+s again, and those that do. If they never visit s again, due to the Markov property, the value they achieve is exactly the one achieved by following π afterwards, i.e. ε-optimal. However, if they visit s again, we can split the paths again. Thus, by 14 Figure 7. Complete DT (left) and reduced DT (right) learnt for the optimal controller of the example in Section III. 
+
+induction, we can prove for all paths that visit s finitely often that they achieve the same value as under π. Now, suppose that the set of paths that visit s infinitely often is not a zero measure set. Then, the probability of going back to s under 
+
+π′ must be equal to 1. The same holds true for π, since until we come back to s, π and π′ behave the same. Consequently, the value of π′ is 0, meaning that V(s) ≤ ε and the choice in this state does not matter. (Note that, for this argument, it is important that π randomises over all actions in Aε, or at least has π′(s)( a) > 0 for all a with π(s)( a) > 0.) For maximising safety (and minimising reachability), the proof follows analogously. Notably, there we could even prove a slightly stronger statement, namely that π could randomise over any subset of Aε, as looping back to s infinitely often is optimal. □
+
+To extend to reward based objectives, we simply need to exchange probabilities with rewards and observe that either we loop back to s infinitely often (meaning that we get 0 or ∞
+
+reward), or, if not, we cannot obtain significantly more reward than π in between, as otherwise π would not be optimal. Observe that the controller π we started with only needs to be ε-optimal, and the controller we get by randomising is ε-optimal, too. Hence, we can apply Lemma 1 repeatedly to obtain that randomising in several states maintains ε-optimality. 
+
+Lemma 2: Let D be an optimal dataset for an MDP 
+
+(S, A, ¯s, δ ), i.e. every controller consistent with D is optimal. Further, let D′ be a dataset obtained by applying Dominance 
+
+and Agency . Then |V(¯ s) − Vπ′
+
+(¯ s)| ≤ ε for any controller π′
+
+consistent with D′.
+
+Proof. Let S′ be all states in which D′ differs from D, i.e. where Dominance or Agency are applied. Moreover, let 
+
+SA be all states which have been removed through Agency 
+
+but not Dominance .Further, let π′ be an arbitrary controller consistent with D′;for it, we want to prove ε-optimality. To do so, we will relate it to π, a controller that (i) is consistent with D and hence optimal, and (ii) where for all states s ∈ S\S′, we have π(s) = 
+
+π′(s). Such a controller π exists, since for the unmodified states s ∈ S \ S′, we have D(s) = D′(s), so every action π′
+
+chooses is also available to π.Now, we partition the set of paths according to the state of SA they reach first: For all s ∈ SA, let Paths s = {ρ ∈
+
+Paths | ∃ i. ρ i = s ∧ ∀ j < i.ρ j /∈ SA} be the paths for which s is the first agency-modified state reached on it; and let Paths ′ = ♢SA denote the set of paths which never reach any state of SA. Since these sets Paths s and Paths ′ partition the set of paths, we can write the value as: 
+
+V(¯ s) = Vπ (¯ s) = Pπ 
+
+> ¯s
+
+[♢G]= Pπ 
+
+> ¯s
+
+[♢G ∩ Paths ′] + X
+
+> s∈SA
+
+Pπ 
+
+> ¯s
+
+[♢G ∩ Paths s]. (1) Now, by Bayes’ rule and linearity of reachability, we can rewrite: 
+
+Pπ 
+
+> ¯s
+
+[♢G ∩ Paths s] = Pπ 
+
+> ¯s
+
+[Paths s] · Pπs [♢G] (2) 15 Next, observe that Pπ 
+
+> ¯s
+
+[Paths s] = Pπ′ 
+
+> ¯s
+
+[Paths s] for all s ∈ SA:On the way from ¯s to s, we either have states where π and 
+
+π′ agree, or dominated states which a.s. lead to their “exit” 
+
+s′. As the states in SA are not dominated by construction, the differences between π and π′ on dominated states have no influence on the probability of reaching s. (Formally, we can apply the same reasoning, splitting the set of paths by the sequence of dominating states they visit on their way from 
+
+¯s to s and observing that the individual segments have the same probability.) By the analogous argument and the fact that no states from SA are on the path, we also obtain Pπ 
+
+> ¯s
+
+[♢G ∩
+
+Paths ′] = Pπ′ 
+
+> ¯s
+
+[♢G ∩ Paths ′] Together: 
+
+Pπ 
+
+> ¯s
+
+[Paths s] = Pπ′ 
+
+> ¯s
+
+[Paths s],
+
+Pπ 
+
+> ¯s
+
+[♢G ∩ Paths ′] = Pπ′ 
+
+> ¯s
+
+[♢G ∩ Paths ′] (3) Moreover, we can bound the difference between Pπs [♢G] and 
+
+Pπ′ 
+
+> s
+
+[♢G] using the knowledge that s ∈ SA: When considering maximising reachability, we have Pπs [♢G] = Pmax  
+
+> s
+
+[♢G] and 
+
+Pπ′ 
+
+> s
+
+[♢G] ≥ Pmin  
+
+> s
+
+[♢G]; dually, for minimizing reachability, we have Pπs [♢G] = Pmin  
+
+> s
+
+[♢G] and Pπ′ 
+
+> s
+
+[♢G] ≤ Pmax  
+
+> s
+
+[♢G].Combining these with the fact that s satisfies Agency , we obtain: 
+
+|Pπs [♢G] − Pπ′ 
+
+> s
+
+[♢G]| ≤ ε. (4) Overall, we have 
+
+V(¯ s) = Pπ 
+
+> ¯s
+
+[♢G ∩ Paths ′] + X
+
+> s∈SA
+
+Pπ 
+
+> ¯s
+
+[♢G ∩ Paths s]
+
+(By Eq. (1)) 
+
+= Pπ 
+
+> ¯s
+
+[♢G ∩ Paths ′] + X
+
+> s∈SA
+
+Pπ 
+
+> ¯s
+
+[Paths s] · Pπs [♢G]
+
+(By Eq. (2)) 
+
+= Pπ′ 
+
+> ¯s
+
+[♢G ∩ Paths ′] + X
+
+> s∈SA
+
+Pπ′ 
+
+> ¯s
+
+[Paths s] · Pπs [♢G]
+
+(By Eq. (3)) By analogously unfolding Vπ′
+
+(¯ s) using Eqs. (1) and (2) and applying Eq. (4), we obtain our goal: 
+
+|V(¯ s) − Vπ′
+
+(¯ s)| ≤ ε
+
+To adapt the proof to reward-based objectives, we only need to swap out probabilities with expected rewards, e.g. the overall expected reward can be split into the expected reward obtained until reaching a modified state s ∈ SA and the reward obtained afterwards. The key observation is that Paths s and 
+
+Paths ′ still partition the set of paths, hence by bounding the difference between π and π′ in each s ∈ SA, we obtain an overall bound. □
+
+Lemma 3: Permissive yields an optimal dataset, i.e. every controller consistent with the dataset is optimal. 
+
+Proof. For safety objectives (minimizing reachability), choos-ing any action with optimal value in every state yields an optimal controller; this follows from, e.g., [29, Lemma 8] by inserting the value function for the upper bound U (note that that lemma even proves the claim for stochastic games, which generalize MDPs). Thus, it is correct that GoodActions 
+
+picks all actions with optimal value. For reachability objectives, we additionally have to ensure progress, as exemplified in Example 1. For this, we first provide more detail on how the dataset is computed, i.e. on the GoodActions heuristic. Essentially, we restrict to the MDP where only locally optimal actions are allowed and then perform a backwards breadth-first search from the goal states, thus computing the minimum number of steps required to reach a goal state with positive probability. This is exactly what the distance operator described in [20, Section 3] does. Let r be the resulting distance function. Then, for each state 
+
+s ∈ S, we add all actions a to the dataset that (i) are optimal, i.e. V(s) = V(s, a ), and that (ii) reduce the distance to the goal, i.e. there exists an s′ ∈ S such that δ(s, a, s ′) > 0 and 
+
+r(s′) < r (s). For states with positive value, this set is non-empty, since they have a path to the target, and the distance function was computed based on only the optimal actions. Let π be a controller consistent with the dataset computed by GoodActions . This means that, for every state, there is an optimal action that reduces the distance to the goal with positive probability. Then, we apply [20, Proposition 5], using the value V as the lower bound x, the distance function 
+
+r, and the controller π. Condition 1) of the proposition is satisfied because the controller picks actions reducing the distance; Condition 2) is satisfied as the controller picks optimal actions; Condition 3) is trivially satisfied since x = V.Thus, the proposition yields: Pπs [♢G] ≥ V(s). Since the value of a controller cannot be greater than the optimal value by definition, we conclude that for all states s ∈ S,we have Vπ (s) = Pπs [♢G]( s) = V(s). As we picked an arbitrary controller consistent with the dataset computed by 
+
+GoodActions , we know that all controllers consistent with the dataset computed by GoodActions are optimal. 
+
+□
+
+Theorem 1: For every MDP and precision ε, every dataset 
+
+D obtained using our initial dataset approaches and reduction procedure is ε-optimal, i.e. for every controller π consistent with D we have |V(¯ s) − Vπ (¯ s)| ≤ ε.
+
+Proof. We split the proof into two parts, primarily referring to the lemmas above and combining the insights. First, we show that the initial dataset is optimal for all three possible choices. Second, we show that the reductions yield a dataset that is 
+
+ε-optimal. For the initial dataset, Controller is optimal by definition, as it uses the actions of an optimal controller. Permissive 
+
+is optimal by Lemma 3. Finally, for Combined , optimality follows from the fact that we effectively obtain a subset of 
+
+Permissive , which is hence consistent with Permissive and thus optimal by Lemma 3. Finally, for all initial datasets, we also apply Unreach and 
+
+EqVal . For Unreach , observe that removing unreachable states does not change the value of any consistent controller, as the induced probability measures are equal. To maintain this optimality argument when further modifying the dataset, we need to ensure that whenever we remove a state, we do not allow reaching what has been removed by Unreach and thereby make its choices matter. This restriction is part of how 16 we apply EqVal , making sure that we do not reach states that were removed by Unreach . The optimality of the uniform action added by EqVal follows from Lemma 1. Now for the reduction methods, our previous lemmas show that applying them to a safe dataset again yields a safe dataset, as follows. Correctness of Agency and Dominance follows from Lemma 2. Note that after applying these, the dataset is now only ε-optimal, since Agency utilises the allowed im-precision. For AllOpt , observe that if T (s) ∈ A(s) = D(s),the action is already safe by assumption. If instead T (s)
+
+yields uniform choice (by virtue of s not being defined by T ), correctness of this choice follows from Lemma 1. In terms of “escaping” the reachable set, observe that as soon as we reach a state satisfying Agency , no subsequent actions matter. For 
+
+Dominance , if s is reachable, then s′ is always reached, no matter what we choose in s. Thus, s′ must be reachable as well. Similarly, for AllOpt , if s is reachable and all of its actions are in the dataset, then none of its successors could have been removed by Unreach . □
+
+E. Additional Experimental Results 
+
+In this section, we provide additional data on our experimen-tal evaluation. First, Appendix E1 details the tool versions used for our competitors. Then, Appendix E2 summarises the main insights gained from all tables and figures in this appendix. Finally, we provide the detailed results in the form of tables and plots: Appendix E3 concerns the dataset construction, Appendix E4 the DT size, and Appendix E5 the runtime. Throughout this appendix, we employ scatter plots for visualisation. Scatter plots compare two methods X and Y, and each point (x, y ) indicates that for one concrete instance, the considered metric for X and Y equals x and y, respectively. The plots contain additional lines for ≥ 512 , where we map all points that have a value of at least 512, TO which indicates points that produced a timeout, and err showing that an error occurred. In addition, plots comparing size contain dotted lines for double and ten times the size of the other tool. Lastly, in all plots, our tool performs better on points below the diagonal. 
+
+1) Details on Tool Configurations: For the competitors in our experimental evaluation, we used the following configura-tions:  
+
+> •
+
+dtControl 2 : We use the default con-figuration of dtControl 2 , using commit 6e0eb73c2d67a77611ad015c4fea9f7917c83da1 of our extension (https://gitlab.com/live-lab/software/ dtcontrol-epsilon).  
+
+> •
+
+dtNESt : We tried using the artefact at DOI 10.5281/ zenodo.15642001. However, this is hard-coded to spe-cific models and pre-computed datasets. After personal communication with the authors, we used the version of the tool available at https://github.com/TheGreatfpmK/ synthesis/tree/dtnest, commit 9dbec52.  
+
+> •
+
+dtPaynt : We first tried the default configuration available here (https://github.com/randriu/synthesis). Sur-prised by the fact that the resulting DTs are not mini-mal, we contacted the authors, who recommended using commit 9dbec52 here (https://github.com/TheGreatfpmK/ synthesis/tree/dtnest). This improved performance, but did not remove the problem that some DTs are not minimal.  
+
+> •
+
+CAV15: Due to technical limitations, our reimplemen-tation slightly differs from [14]: stormpy does not provide information on whether a simulation fulfilled the property, and hence we cannot calculate importance as in [14, Sec. 4]. We use their similar performing “I ∀P”variant [14, Tbl. 2]. As [14] does not provide details for their pruning method, we allow the approach to use ours for fairness. Furthermore, we explain our reasoning behind the selection of methods in the portfolio:  
+
+> •
+
+Controller +Imp_Simulation : Simulation benefits from fewer choices being available, leading to a smaller state space that needs to be traversed.  
+
+> •
+
+Permissive +Imp_CoE : As this dataset contains a large portion of the state space, we expect that the DT only chooses wrongly in a few of the states.  
+
+> •
+
+Combined +Imp_Agency : Imp_Agency estimates the error if a state is mapped incorrectly. This helps when many actions are available, but struggles for large datasets, as it does not capture the probability of reaching this state in the first place. 
+
+2) Summary of Additional Results: The following sections provide deeper insights and more data about our experiments. We start by comparing the different datasets in Tables IV to VI and find that, depending on the model, the impact of the heuristics varies widely. Applying the combination of heuristics generally reduces the dataset more than any heuristic on its own. Further, we see that Permissive is, as expected, mostly larger than the other two options. We compare the DT sizes of the different tools in Table VII and Figs. 9 and 10. We see that dtPaynt is often unable to provide results. Especially for ε = 0 , these were often caused by excessive memory usage. We also conducted another run where we allowed them 128GB of memory instead of the usual 16GB, but in these cases, dtPaynt unfortunately timed out. 
+
+dtNESt , as discussed, was not able to benefit from larger values for ε. Furthermore, when comparing our portfolio with an overall runtime of 20 minutes with dtNESt , Fig. 10 shows that the portfolio generally performs better than dtNESt with few exceptions. Often, dtControl 2+ ε generates trees at most half the size of dtNESt .Lastly, we analyse the runtime of our methods. Fig. 11 shows that there is no correlation between model size and the runtime of our methods. Table VIII contains the tree building time (without model building and pruning) for completeness. In Fig. 12 we compare the runtime of the portfolio approach with dtNESt . Surprisingly, despite the portfolio executing three different configurations, the runtime is comparable. For completeness, we also include Table IX, which contains the runtime of dtNESt , dtPaynt , and the portfolio approach, measured outside Docker. 17 3) Sizes for Dataset Construction: We compare the number of states that can be reduced by the different relevance heuris-tics across the different dataset configurations. Results are shown in Table IV for Permissive , Table V for Combined ,and Table VI and Controller . Mostly, we found that all heuristics are sometimes able to reduce large portions of the dataset size and have little influence, showing that none outper-forms the other. Applying all the heuristics together generally outperforms a single one. Furthermore, when focusing on 
+
+Permissive , we see that it produces larger datasets than the other methods. As expected, Unreach does not provide as much of a benefit in this case as it does for Combined and 
+
+Controller . Since the DTs constructed from Permissive are comparable to those for other methods, we can observe the impact of determinisation. Note that for several entries with ε = 0 , the table contains a “dash”. This is because for these, the controller we obtained through a model checking query to Storm was not optimal, as confirmed through a second model checking query; it also differed by more than the float precision of 10 −14 from the claimed value of the first query. Even though we set Storm 
+
+to sound solving, we were not able to avoid such cases. In these cases, dtControl 2+ ε aborts. Lastly, when analysing Agency , we see that ε only has a minor influence on the number of states that can be removed. 
+
+4) Results on DT Sizes: Table VII shows the sizes of the computed DTs. We highlight the columns for dtPaynt .While the tool aims to provide the smallest possible DTs, we found provably smaller ones, suggesting either an internal timeout during some steps of the computation or a bug in the code. Note that for several entries with ε = 0 , dtControl 2+ ε
+
+does not produce a result, indicated by a “dash”. This is because for these, the controller we obtained through a model checking query to Storm was not optimal, as confirmed through a second model checking query; it also differed by more than the float precision of 10 −14 from the claimed value of the first query. Even though we set Storm to sound solving, we were not able to avoid such cases. In these cases, 
+
+dtControl 2+ ε aborts. Even though we set Storm to sound solving, we were not able to avoid such cases. The comparison to CAV15 in Fig. 9 shows that the heuristics of the portfolio are, at least for ε = 10 −6, often incomparable to CAV15. However, as has been shown before in Fig. 4, their combination outperforms CAV15. Furthermore, CAV15 is not guaranteed to provide results as it is aggressive. We compare the size of DTs produced by our portfolio and dtNESt in Fig. 10. For this plot, we ran the port-folio with an overall timeout of 10 minutes in addition to 5 minutes for model solving and 5 minutes for pruning. We start with Combined +Imp_Agency , continue with Per-missive +Imp_CoE , and, if time permits, finish with Con-troller +Imp_Simulation . dtNESt had a total time budget of 20 minutes. For ε = 0 , we can see the computation errors for dtControl 2+ ε mentioned above. Generally, especially for larger values of ε, dtControl 2+ ε outperforms dtNESt .                                  
+
+> 124816 64 256
+> 1
+> 2
+> 4
+> 8
+> 16
+> 32
+> 64
+> 128
+> 256
+> TO err
+> ≥512
+> TO
+> err
+> dtNESt ε= 0 Size
+> Virtual Best  ε = 0
+> 124816 64 256
+> 1
+> 2
+> 4
+> 8
+> 16
+> 32
+> 64
+> 128
+> 256
+> TO err
+> ≥512
+> TO
+> err
+> dtNESt ε= 0 Size
+> Virtual Best  ε = 10 −6
+> 124816 64 256
+> 1
+> 2
+> 4
+> 8
+> 16
+> 32
+> 64
+> 128
+> 256
+> TO err
+> ≥512
+> TO
+> err
+> dtNESt ε= 0 Size
+> Virtual Best  ε = 10 −2
+> Figure 8. DT sizes comparing dtNESt with the best of dtControl 2+ ε.
+
+18 1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+CAV15 
+
+> Imp_Simulation , Controller
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+CAV15 
+
+> Imp_Agency , Combined
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+CAV15 
+
+> Imp_CoE , Permissive
+
+Figure 9. DT size after Step 3, comparing our portfolio heuristics to CAV15 for ε = 10 −6.
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt Size 
+
+> Portfolio
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt Size 
+
+> Portfolio
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt Size 
+
+> Portfolio
+
+Figure 10. DT size comparison between dtNESt and the dtControl 2+ ε
+
+portfolio. While dtNESt always uses ε = 0 , dtControl 2+ ε is shown with ε = 0 (top left), ε = 10 −6 (top right) and ε = 10 −2 (bottom). 
+
+19 5) Results on Runtime: This section compares run-time across the different configurations implemented in 
+
+dtControl 2+ ε, as well as with dtNESt .
+
+6) Comparison of Different Configurations: For the follow-ing experiments, we measured the time within dtControl 2 
+
+and excluded the time required for model solving, as it is the same for all methods. We also exclude the time for pruning, as pruning often tends to exhaust the given budget. Table VIII provides an overview of the runtime observed. A "-" either reports a timeout, precision error in model checking as described before, or cases where the size of the dataset is 0, meaning that no tree building is required. We find that in many cases, the time required for tree building is relatively low. For example, with Combined +Agency and ε = 10 −6,we have only one actual timeout for wlan4-0-cost-max 
+
+and solve 28 benchmarks in less than one minute. Fig. 11 compares the size of the model to the required runtime. We find no correlation, showing that model structure has a bigger influence than model size. 
+
+7) Runtime Comparison to dtNESt : In this section, we report on the runtime of the dtControl 2+ ε portfolio and 
+
+dtNESt . For both, we measured the time outside of the Docker container, meaning the time includes startup and shut-down. Experiments were repeated 5 times. dtControl 2+ ε
+
+is again run as a portfolio, meaning there is a timeout of 5 minutes for model solving, 10 minutes for running all portfolio configurations (first Combined +Imp_Agency , then Permis-sive +Imp_CoE , last Controller +Imp_Simulation ) until the time budget is exhausted, and a 5-minute timeout for pruning. Fig. 12 shows results. We always choose ε = 0 for 
+
+dtNESt , as we have seen before that dtNESt struggles when this value is replaced and solves fewer benchmarks. Surpris-ingly, even though dtControl 2+ ε ran consecutively in three configurations, the runtime is often comparable, especially for larger values of ε.For completeness, we include the runtime of our portfolio, 
+
+dtNESt and dtPaynt in Table IX. We ran dtPaynt 
+
+with 16GB and 128GB of memory, as we encountered many cases in which the process was killed due to memory usage. Unfortunately, these cases then mostly turned into timeouts.              
+
+> 20 000 100 000 500 000
+> 1
+> 100
+> 200
+> 300
+> 400
+> 500
+> TO
+> model size
+> runtime
+> Imp_Simulation Imp_Agency Imp_CoE
+> CAV15 dtControl 2
+> 20 000 100 000 500 000
+> 1
+> 10
+> 100
+> 1000
+> 10000
+> model size
+> tree size
+> Imp_Simulation Imp_Agency Imp_CoE
+> CAV15 dtControl 2
+> Figure 11. Comparison of runtime and DT size in relationship to the underlying model size for ε= 10 −6.
+
+20 1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt 
+
+> Portfolio
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt 
+
+> Portfolio
+
+1 2 4 8 16 64 256 
+
+1
+
+2
+
+4
+
+8
+
+16 
+
+32 
+
+64 
+
+128 
+
+256 
+
+TO err 
+
+≥512 
+
+TO 
+
+err 
+
+dtNESt 
+
+> Portfolio
+
+Figure 12. Runtime comparison between dtNESt and the dtControl 2+ ε
+
+portfolio. While dtNESt always uses ε = 0 , dtControl 2+ ε is shown with ε = 0 (top left), ε = 10 −6 (top right) and ε = 10 −2 (bottom). 
+
+21 Table IV COMPARISON OF RELEVANCE HEURISTICS FOR THE PERMISSIVE DATASET .Name  Model Size  Final  ε = 0  Final  ε = 10 −6 Final  ε = 10 −2 Agency ε = 0  Agency ε = 10 −6 Agency ε = 10 −2 AllOpt  Dominance  Unreach 
+
+> consensus4-4-c2  43136  - 2832  2832  - 23430  23436  30706  4442  16771 consensus4-4-disagree  43136  - 14296  14296  - 12026  12026  24824  4442  10813 consensus4-4-steps-max  43136  - 3924  3924  - 5810  5810  14620  3600  37450 consensus4-4-steps-min  43136  - 4976  4976  - 5810  5810  21236  3600  36153 csma2-6-all-before-max  66718  0 0 0 66718  66718  66718  66681  66110  2115 csma2-6-time-max  66718  37  37  37  49109  49109  49109  66681  66063  65 csma2-6-time-min  66718  37  37  37  49109  49109  49109  66681  66063  2115 eajs3-150-exputil  143155  4936  4936  4888  31736  31736  32194  123967  63371  107653 firewire-dl-3-400-deadline  69683  2020  2020  2020  44093  44093  44093  67435  62789  6580 firewire-dl-3-600-deadline  168411  3189  3189  3189  102720  102720  102720  162246  150988  80249 firewire-dl-36-200-deadline  68056  1966  1966  1966  45214  45214  45214  61417  43374  48941 firewire-dl-36-400-deadline  530965  48712  48712  48712  238854  238854  238854  451779  290496  165516 firewire-dl-36-600-deadline  68056  1966  1966  1966  45214  45214  45214  61417  43374  48941 firewire-false-36-400-timemax  212268  - 431  431  - 4 4 136233  27353  209746 firewire-false-36-400-timemin  212268  12  12  12  4 4 4 199995  27353  210488 ij10  1023  0 0 0 1023  1023  1023  103  10  20 pacman5  235  0 0 0 235  235  235  235  195  0pnueli-zuck-5-live  307523  4 4 4 4096  4096  4096  6094  4096  307518 pnueli3-live  1949  4 4 4 64  64  64  202  64  1944 rabin3-live  1088  0 0 0 1088  1088  1088  794  384  1057 wlan3-0-cost-max  96302  5545  5541  5545  7 7 7 89857  83972  9155 wlan3-0-cost-min  96302  21  21  21  7 7 7 90407  83972  96178 wlan4-0-cost-max  345000  10791  10687  10791  9 9 9 331807  311003  25717 wlan4-0-cost-min  345000  21  21  21  9 9 9 333169  311003  344876 wlandl0-80-deadline  189703  727  727  727  117876  117876  117876  186506  140065  62571 wlandl1-80-deadline  450627  727  727  727  313182  313182  313182  446782  354173  142272 zeroconf-1000-2-false-correctmax  88858  - 732  732  - 29186  29189  56351  22875  85992 zeroconf-1000-2-false-correctmin  88858  - 308  331  - 29186  29189  48515  22875  86370 zeroconf-1000-4-false-correctmax  306585  - 3959  3959  - 93317  93323  188509  82336  292348 zeroconf-1000-4-false-correctmin  306585  - 3614  1562  - 93317  93323  182670  82336  286602 zeroconf-20-2-false-correctmax  88858  732  732  732  29186  29186  29192  56362  22875  85992 zeroconf-20-2-false-correctmin  88858  354  707  354  29186  29186  29192  50507  22875  85251 zeroconf-20-4-false-correctmax  306585  2717  2717  2717  93317  93317  93329  188752  82336  296553 zeroconf-20-4-false-correctmin  306585  - 34433  39296  - 93317  93329  217779  82336  120081 zeroconfdl-1000-1-false-20-deadlinemax  43947  749  749  748  27405  27405  27600  34925  18040  31648 zeroconfdl-1000-1-false-20-deadlinemin  43947  838  838  838  27405  27405  27600  38207  18040  35341 zeroconfdl-1000-1-false-50-deadlinemax  380681  4229  4229  4228  155738  155738  156341  250073  101663  357797 zeroconfdl-1000-1-false-50-deadlinemin  380681  19102  19102  19102  155738  155738  156341  326528  101663  188897
+
+22 Table V COMPARISON OF RELEVANCE HEURISTICS FOR THE COMBINED DATASET .Name  Model Size  Final  ε = 0  Final  ε = 10 −6 Final  ε = 10 −2 Agency ε = 0  Agency ε = 10 −6 Agency ε = 10 −2 AllOpt  Dominance  Unreach 
+
+> consensus4-4-c2  43136  - 335  335  - 23430  23436  30706  4442  40199 consensus4-4-disagree  43136  - 5746  5746  - 12026  12026  24824  4442  31291 consensus4-4-steps-max  43136  - 1169  1169  - 5810  5810  14620  3600  41809 consensus4-4-steps-min  43136  - 1692  1692  - 5810  5810  21236  3600  40883 csma2-6-all-before-max  66718  0 0 0 66718  66718  66718  66681  66110  2248 csma2-6-time-max  66718  37  37  37  49109  49109  49109  66681  66063  218 csma2-6-time-min  66718  37  37  37  49109  49109  49109  66681  66063  2248 eajs3-150-exputil  143155  2119  2119  2095  31736  31736  32194  123967  63371  129961 firewire-dl-3-400-deadline  69683  126  126  126  44093  44093  44093  67435  62789  65239 firewire-dl-3-600-deadline  168411  331  331  331  102720  102720  102720  162246  150988  159688 firewire-dl-36-200-deadline  68056  176  176  176  45214  45214  45214  61417  43374  66805 firewire-dl-36-400-deadline  530965  1387  1387  1387  238854  238854  238854  451779  290496  521146 firewire-dl-36-600-deadline  68056  176  176  176  45214  45214  45214  61417  43374  66805 firewire-false-36-400-timemax  212268  - 216  216  - 4 4 136233  27353  211393 firewire-false-36-400-timemin  212268  9 9 9 4 4 4 199995  27353  211691 ij10  1023  0 0 0 1023  1023  1023  103  10  568 pacman5  235  0 0 0 235  235  235  235  195  180 pnueli-zuck-5-live  307523  4 4 4 4096  4096  4096  6094  4096  307518 pnueli3-live  1949  4 4 4 64  64  64  202  64  1944 rabin3-live  1088  0 0 0 1088  1088  1088  794  384  1077 wlan3-0-cost-max  96302  4897  4890  4897  7 7 7 89857  83972  30239 wlan3-0-cost-min  96302  11  11  11  7 7 7 90407  83972  96238 wlan4-0-cost-max  345000  10000  10000  10000  9 9 9 331807  311003  102211 wlan4-0-cost-min  345000  11  11  11  9 9 9 333169  311003  344936 wlandl0-80-deadline  189703  478  478  478  117876  117876  117876  186506  140065  138867 wlandl1-80-deadline  450627  478  478  478  313182  313182  313182  446782  354173  293641 zeroconf-1000-2-false-correctmax  88858  - 328  328  - 29186  29189  56351  22875  87540 zeroconf-1000-2-false-correctmin  88858  - 3 4 - 29186  29189  48515  22875  88411 zeroconf-1000-4-false-correctmax  306585  - 2108  2108  - 93317  93323  188509  82336  300571 zeroconf-1000-4-false-correctmin  306585  - 3 1 - 93317  93323  182670  82336  305876 zeroconf-20-2-false-correctmax  88858  355  355  355  29186  29186  29192  56362  22875  87479 zeroconf-20-2-false-correctmin  88858  1 3 1 29186  29186  29192  50507  22875  88413 zeroconf-20-4-false-correctmax  306585  1437  1437  1437  93317  93317  93329  188752  82336  302164 zeroconf-20-4-false-correctmin  306585  - 2 1 - 93317  93329  217779  82336  305877 zeroconfdl-1000-1-false-20-deadlinemax  43947  359  359  358  27405  27405  27600  34925  18040  39740 zeroconfdl-1000-1-false-20-deadlinemin  43947  554  554  554  27405  27405  27600  38207  18040  39038 zeroconfdl-1000-1-false-50-deadlinemax  380681  1890  1890  1889  155738  155738  156341  250073  101663  371991 zeroconfdl-1000-1-false-50-deadlinemin  380681  991  991  991  155738  155738  156341  326528  101663  369439
+
+23 Table VI COMPARISON OF RELEVANCE HEURISTICS FOR THE CONTROLLER DATASET .Name  Model Size  Final  ε = 0  Final  ε = 10 −6 Final  ε = 10 −2 Agency ε = 0  Agency ε = 10 −6 Agency ε = 10 −2 AllOpt  Dominance  Unreach 
+
+> consensus4-4-c2  43136  - 418  418  - 23430  23436  4480  4442  40199 consensus4-4-disagree  43136  - 6966  6966  - 12026  12026  4480  4442  31022 consensus4-4-steps-max  43136  - 1309  1309  - 5810  5810  4480  3600  41809 consensus4-4-steps-min  43136  - 2243  2243  - 5810  5810  4480  3600  40883 csma2-6-all-before-max  66718  0 0 0 66718  66718  66718  66648  66110  485 csma2-6-time-max  66718  43  43  43  49109  49109  49109  66648  66063  218 csma2-6-time-min  66718  43  43  43  49109  49109  49109  66648  66063  2248 eajs3-150-exputil  143155  2201  2201  2177  31736  31736  32194  119406  63371  129961 firewire-dl-3-400-deadline  69683  150  150  150  44093  44093  44093  63361  62789  65239 firewire-dl-3-600-deadline  168411  391  391  391  102720  102720  102720  152288  150988  159688 firewire-dl-36-200-deadline  68056  250  250  250  45214  45214  45214  43614  43374  66805 firewire-dl-36-400-deadline  530965  2008  2008  2008  238854  238854  238854  293136  290496  521146 firewire-dl-36-600-deadline  68056  250  250  250  45214  45214  45214  43614  43374  66805 firewire-false-36-400-timemax  212268  - 512  512  - 4 4 26161  27353  211393 firewire-false-36-400-timemin  212268  232  232  232  4 4 4 26161  27353  211691 ij10  1023  0 0 0 1023  1023  1023  10  10  452 pacman5  235  0 0 0 235  235  235  199  195  180 pnueli-zuck-5-live  307523  2395  2395  2395  4096  4096  4096  4096  4096  305127 pnueli3-live  1949  71  71  71  64  64  64  64  64  1877 rabin3-live  1088  0 0 0 1088  1088  1088  741  384  561 wlan3-0-cost-max  96302  5795  5807  5795  7 7 7 68957  83972  30239 wlan3-0-cost-min  96302  12  12  12  7 7 7 68957  83972  96236 wlan4-0-cost-max  345000  12082  12082  12082  9 9 9 249897  311003  102211 wlan4-0-cost-min  345000  12  12  12  9 9 9 249897  311003  344934 wlandl0-80-deadline  189703  3517  3517  3517  117876  117876  117876  126234  140065  138867 wlandl1-80-deadline  450627  4260  4260  4260  313182  313182  313182  309376  354173  293641 zeroconf-1000-2-false-correctmax  88858  - 464  464  - 29186  29189  24338  22875  87519 zeroconf-1000-2-false-correctmin  88858  - 32  27  - 29186  29189  24338  22875  88411 zeroconf-1000-4-false-correctmax  306585  - 2844  2844  - 93317  93323  82170  82336  300456 zeroconf-1000-4-false-correctmin  306585  - 50  47  - 93317  93323  82170  82336  305876 zeroconf-20-2-false-correctmax  88858  496  496  496  29186  29186  29192  24338  22875  87454 zeroconf-20-2-false-correctmin  88858  25  28  25  29186  29186  29192  24338  22875  88413 zeroconf-20-4-false-correctmax  306585  1910  1910  1910  93317  93317  93329  82170  82336  302062 zeroconf-20-4-false-correctmin  306585  - 47  46  - 93317  93329  82170  82336  305877 zeroconfdl-1000-1-false-20-deadlinemax  43947  614  614  609  27405  27405  27600  17986  18040  37889 zeroconfdl-1000-1-false-20-deadlinemin  43947  614  614  614  27405  27405  27600  17986  18040  39038 zeroconfdl-1000-1-false-50-deadlinemax  380681  3134  3134  3129  155738  155738  156341  116170  101663  369543 zeroconfdl-1000-1-false-50-deadlinemin  380681  1731  1731  1731  155738  155738  156341  116170  101663  369439
+
+24 Table VII CONCRETE SIZES OF THE DT S OBTAINED THROUGH THE PORTFOLIO METHODS FOR INDIVIDUAL BENCHMARKS (S TEP 3, S ECTION V), ALSO CONSIDERING DIFFERENT PRECISION REQUIREMENTS . A “-” DENOTES A FAILURE TO FINISH .
+
+> Name  Imp_Simulation , Controller  Imp_Agency , Combined  Imp_CoE , Permissive  Our Best  CAV15  dtControl 2  dtNESt  dtPaynt
+> 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2
+> consensus4-4-c2  err  59  25  err  31  23  err  31  25  - 31  23  err  107  107  err  - - - - - -
+> consensus4-4-disagree  err  1883  197  err  1561  895  err  829  267  - 741  197  err  err  1479  err  - - - - - -
+> consensus4-4-steps-max  err  271  147  err  231  231  err  241  241  - 231  147  err  341  341  err  - - - - - -
+> consensus4-4-steps-min  err  929  575  err  767  737  err  1785  435  - 767  435  err  1021  1021  err  - - - - - -
+> csma2-6-all-before-max  1 1 1 1 1 1 1 1 1 1 1 1 105  105  105  133  29  29  29  - 1 1
+> csma2-6-time-max  11  11  9 5 5 3 5 5 3 5 5 3 107  107  107  135  25  5 5 - 5 5
+> csma2-6-time-min  11  11  9 5 5 3 5 5 3 5 5 3 83  83  83  125  25  7 7 - 11  5
+> eajs3-150-exputil  13  13  11  13  13  13  21  21  25  13  13  11  59  59  59  467  75  75  75  - - -
+> firewire-dl-3-400-deadline  9 9 9 9 9 9 9 9 9 7 7 7 15  15  15  57  37  9 9 - 41  41
+> firewire-dl-3-600-deadline  13  13  9 13  13  13  19  19  7 13  13  7 15  15  15  57  35  15  15  - 27  27
+> firewire-dl-36-200-deadline  13  11  13  13  13  13  17  17  17  11  11  11  13  13  13  57  23  13  13  - - -
+> firewire-dl-36-400-deadline  15  15  11  13  13  13  19  19  17  13  13  11  21  21  23  57  - 15  15  - - -
+> firewire-dl-36-600-deadline  13  13  13  13  13  13  17  17  17  11  11  11  13  13  13  57  23  13  13  - - -
+> firewire-false-36-400-timemax  err  21  21  err  19  19  err  9 7 - 9 7 err  51  51  err  17  21  17  - - -
+> firewire-false-36-400-timemin  21  21  19  21  21  9 13  13  7 11  11  5 31  31  25  12913  31  - - - - -
+> ij10  1 1 1 1 1 1 1 1 1 1 1 1 753  753  753  1317  719  719  719  - 1 1
+> pacman5  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 15  3 3 3 - 1 1
+> pnueli-zuck-5-live  1319  1319  1149  1 1 1 1 1 1 1 1 1 2673  2673  2673  171373  - - - - 1 1
+> pnueli3-live  89  89  89  1 1 1 1 1 1 1 1 1 99  99  99  1729  97  97  97  - 1 1
+> rabin3-live  1 1 1 1 1 1 1 1 1 1 1 1 119  119  119  113  33  33  33  - 1 1
+> wlan3-0-cost-max  233  233  233  279  279  227  157  157  157  119  119  119  err  221  221  775  325  101  - - - -
+> wlan3-0-cost-min  15  15  13  13  13  9 19  19  11  13  13  9 41  41  35  633  13  13  9 - 13  13
+> wlan4-0-cost-max  613  613  613  397  397  381  245  245  245  103  103  103  err  149  149  1263  - - - - - -
+> wlan4-0-cost-min  15  15  13  13  13  9 19  19  11  13  13  9 41  41  35  1053  13  13  9 - 15  15
+> wlandl0-80-deadline  515  547  541  539  539  539  73  73  23  59  59  23  TO  TO  TO  3233  617  139  - - - -
+> wlandl1-80-deadline  551  519  519  575  575  557  73  73  23  61  61  23  TO  TO  TO  4035  659  - - - - -
+> zeroconf-1000-2-false-correctmax  err  67  1 err  77  1 err  17  1 - 15  1 err  err  77  err  111  - - - - -
+> zeroconf-1000-2-false-correctmin  err  5 1 err  3 1 err  1 1 - 1 1 err  23  1 err  9 - - - - -
+> zeroconf-1000-4-false-correctmax  err  379  1 err  139  117  err  9 1 - 9 1 err  65  65  err  509  - - - - -
+> zeroconf-1000-4-false-correctmin  err  5 1 err  3 1 err  61  61  - 1 1 err  err  1 err  9 - - - - -
+> zeroconf-20-2-false-correctmax  73  61  61  93  11  1 17  9 1 17  9 1 err  err  1 1373  127  - - - - -
+> zeroconf-20-2-false-correctmin  5 3 1 3 3 1 1 1 1 1 1 1 err  err  1 7737  9 - - - - -
+> zeroconf-20-4-false-correctmax  219  1 1 241  71  71  109  1 1 31  1 1 err  3 1 4553  303  - - - - -
+> zeroconf-20-4-false-correctmin  err  1 1 err  1 1 err  933  933  - 1 1 err  1 1 err  9 - - - - -
+> zeroconfdl-1000-1-false-20-deadlinemax  115  115  1 101  101  65  17  17  1 17  17  1 err  err  113  1553  303  - - - - -
+> zeroconfdl-1000-1-false-20-deadlinemin  15  7 1 13  3 1 15  15  1 13  3 1 19  9 1 823  35  - - - - -
+> zeroconfdl-1000-1-false-50-deadlinemax  195  195  1 171  171  105  37  37  1 23  23  1 err  err  107  5045  389  - - - - -
+> zeroconfdl-1000-1-false-50-deadlinemin  19  19  1 1 1 1 1 1 1 1 1 1 13  15  9 2215  35  - - - - -
+
+25 Table VIII DETAILED RUNTIME OF OUR CONSIDERED METHODS (EXCLUDING PRUNING ) PER CONCRETE INSTANCE (IN SECONDS ). 
+
+> Name  Imp_Simulation , Controller  Imp_Agency , Combined  Imp_CoE , Permissive  Our Best  CAV15  dtControl 2
+> 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2
+> consensus4-4-c2  err  5.9  5.0  err  4.7  4.7  err  3.3  3.3  - 1.2  1.2  err  0.8  0.8  err
+> consensus4-4-disagree  err  25.3  10.2  err  24.8  13.5  err  30.4  19.3  - 22.5  10.2  err  err  1.6  err
+> consensus4-4-steps-max  err  10.8  3.3  err  7.1  6.9  err  17.2  17.2  - 7.0  3.3  err  1.1  1.1  err
+> consensus4-4-steps-min  err  13.0  9.9  err  6.9  5.5  err  21.4  9.6  - 6.6  5.1  err  1.2  1.2  err
+> csma2-6-all-before-max  - - - - - - - - - - - - 1.3  1.3  1.3  2.1
+> csma2-6-time-max  7.8  7.8  1.3  5.7  5.8  1.4  8.4  8.5  1.4  1.4  1.4  1.3  1.3  1.3  1.3  2.2
+> csma2-6-time-min  8.6  8.8  1.5  5.7  5.7  1.4  8.2  8.4  1.4  1.4  1.4  1.4  1.2  1.2  1.2  2.1
+> eajs3-150-exputil  6.5  6.6  3.4  15.9  16.3  15.9  15.9  16.1  15.8  3.7  3.8  3.4  2.5  2.6  2.5  4.9
+> firewire-dl-3-400-deadline  4.2  1.5  1.5  1.7  1.7  1.8  2.3  2.3  2.3  1.5  1.5  1.5  1.2  1.2  1.2  2.7
+> firewire-dl-3-600-deadline  20.5  20.6  3.7  4.0  4.1  4.0  4.8  4.9  4.8  4.0  4.1  3.3  2.6  2.7  2.6  7.7
+> firewire-dl-36-200-deadline  1.4  6.8  1.4  4.8  4.8  4.8  2.0  2.0  2.0  1.4  1.4  1.4  1.1  1.1  1.1  2.2
+> firewire-dl-36-400-deadline  77.0  78.5  13.3  37.1  38.2  37.5  32.7  33.4  32.9  11.4  11.6  11.4  8.4  8.4  8.5  29.6
+> firewire-dl-36-600-deadline  1.5  1.5  1.4  4.9  4.8  4.8  2.0  2.0  2.0  1.5  1.5  1.4  1.1  1.1  1.1  2.2
+> firewire-false-36-400-timemax  err  19.5  20.2  err  12.8  13.1  err  13.2  13.5  - 9.9  10.1  err  3.9  4.0  err
+> firewire-false-36-400-timemin  25.6  25.7  25.9  22.4  23.6  23.7  42.1  42.4  42.5  7.0  7.0  7.0  4.1  4.1  4.1  18.0
+> ij10  - - - - - - - - - - - - 0.1  0.1  0.1  0.2
+> pacman5  - - - - - - - - - - - - 0.0  0.0  0.0  0.0
+> pnueli-zuck-5-live  160.7  162.6  116.3  17.8  17.8  17.7  17.9  18.0  17.9  17.7  17.7  17.7  12.8  12.8  12.8  40.2
+> pnueli3-live  0.5  0.5  0.5  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.1  0.3
+> rabin3-live  - - - - - - - - - - - - 0.0  0.0  0.0  0.1
+> wlan3-0-cost-max  35.9  35.7  35.6  49.2  48.9  42.2  45.4  45.6  45.8  34.9  35.3  35.2  err  1.6  1.6  2.7
+> wlan3-0-cost-min  2.7  2.7  2.7  10.3  10.4  5.2  15.7  15.8  15.7  2.2  2.2  2.2  1.7  1.7  1.7  2.5
+> wlan4-0-cost-max  94.5  96.1  98.6  130.5  131.5  119.4  124.4  125.5  130.4  94.1  95.0  95.7  err  5.0  5.0  9.7
+> wlan4-0-cost-min  9.7  9.8  9.6  36.9  37.1  18.4  55.8  56.5  55.6  7.9  7.9  7.9  5.8  5.9  5.8  9.1
+> wlandl0-80-deadline  42.2  41.5  40.8  44.8  44.9  44.6  32.4  32.5  5.4  24.2  24.4  4.8  TO  TO  TO  7.6
+> wlandl1-80-deadline  92.3  91.7  96.7  78.7  78.4  67.0  74.4  74.2  11.0  55.3  55.3  10.0  TO  TO  TO  15.9
+> zeroconf-1000-2-false-correctmax  err  15.2  2.7  err  14.6  2.5  err  13.4  2.5  - 2.5  2.4  err  err  1.8  err
+> zeroconf-1000-2-false-correctmin  err  2.2  2.2  err  2.1  2.1  err  2.4  2.5  - 2.1  2.0  err  1.9  1.9  err
+> zeroconf-1000-4-false-correctmax  err  57.9  10.2  err  20.5  8.3  err  20.6  8.1  - 9.8  7.5  err  5.4  5.4  err
+> zeroconf-1000-4-false-correctmin  err  46.4  7.7  err  7.1  7.1  err  10.0  10.0  - 7.1  7.1  err  err  6.5  err
+> zeroconf-20-2-false-correctmax  8.5  2.5  2.5  12.5  2.4  2.4  13.3  2.5  2.5  8.5  2.3  2.3  err  err  1.8  3.6
+> zeroconf-20-2-false-correctmin  2.1  2.1  2.1  2.1  2.1  2.1  2.9  3.0  3.0  2.0  2.1  2.1  err  err  1.9  4.9
+> zeroconf-20-4-false-correctmax  55.9  9.8  9.8  43.8  8.7  8.5  39.1  7.4  7.3  7.8  7.4  7.3  err  6.3  6.2  13.1
+> zeroconf-20-4-false-correctmin  err  7.9  8.0  err  8.0  8.1  err  46.6  47.2  - 7.8  7.9  err  6.8  6.9  err
+> zeroconfdl-1000-1-false-20-deadlinemax  9.5  9.5  1.7  7.2  7.1  1.5  8.3  8.3  1.6  1.5  1.5  1.4  err  err  0.8  2.1
+> zeroconfdl-1000-1-false-20-deadlinemin  7.4  7.5  1.3  1.4  1.4  1.5  1.7  1.7  1.7  1.4  1.3  1.3  0.8  0.8  0.8  1.7
+> zeroconfdl-1000-1-false-50-deadlinemax  79.4  79.1  13.7  63.3  63.1  11.7  70.1  69.5  12.4  11.7  11.5  11.3  err  err  7.3  18.8
+> zeroconfdl-1000-1-false-50-deadlinemin  63.5  65.2  10.7  10.3  10.6  10.5  21.6  22.1  21.7  9.4  9.6  9.6  7.3  7.4  7.4  15.2
+
+26 Table IX DETAILED RUNTIME OF OUR PORTFOLIO , D T NES T , AND D T PA Y N T WITH 128GB AND 16GB OF RAM ( IN SECONDS ). 
+
+> Name  dtControl 2+ ε dtNESt  dtPaynt , 16GB  dtPaynt , 128GB
+> 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2 0 10 −6 10 −2
+> consensus4-4-c2  err  43  38  err  err  err  err  err  err  err  err  err
+> consensus4-4-disagree  err  512  66  err  err  err  err  err  err  err  err  err
+> consensus4-4-steps-max  err  125  94  err  err  err  err  err  err  err  err  err
+> consensus4-4-steps-min  err  109  43  err  err  err  err  err  err  err  err  err
+> csma2-6-all-before-max  11  11  10  10  10  10  err  2 2 TO  2 1
+> csma2-6-time-max  58  57  20  15  24  24  err  94  69  TO  94  69
+> csma2-6-time-min  60  59  21  18  16  16  err  95  49  TO  95  49
+> eajs3-150-exputil  69  72  63  50  51  50  err  err  err  TO  err  err
+> firewire-dl-3-400-deadline  25  25  21  6 78  78  err  132  131  err  131  131
+> firewire-dl-3-600-deadline  214  215  65  29  104  104  err  134  135  err  133  134
+> firewire-dl-36-200-deadline  29  29  29  7 36  35  err  err  err  err  err  err
+> firewire-dl-36-400-deadline  241  172  240  err  107  106  err  err  err  err  1035  1033
+> firewire-dl-36-600-deadline  30  29  29  7 36  36  err  err  err  err  err  err
+> firewire-false-36-400-timemax  err  142  148  249  174  256  err  err  err  err  260  262
+> firewire-false-36-400-timemin  340  337  409  86  err  err  err  err  err  err  261  261
+> ij10  6 7 6 17  17  18  err  0 1 TO  1 0
+> pacman5  7 7 6 3 3 3 err  1 0 TO  0 1
+> pnueli-zuck-5-live  408  410  361  TO  TO  TO  err  67  69  err  67  68
+> pnueli3-live  14  14  14  11  11  11  err  1 1 TO  0 1
+> rabin3-live  7 7 7 8 7 8 err  0 1 TO  1 0
+> wlan3-0-cost-max  512  512  512  310  1220  TO  err  TO  TO  TO  TO  TO
+> wlan3-0-cost-min  54  54  48  14  47  54  err  72  81  TO  72  81
+> wlan4-0-cost-max  TO  TO  512  1233  TO  TO  err  err  err  TO  TO  TO
+> wlan4-0-cost-min  176  175  157  38  83  105  err  131  146  TO  133  146
+> wlandl0-80-deadline  507  497  487  239  1225  TO  err  err  err  err  TO  TO
+> wlandl1-80-deadline  512  512  512  747  1229  TO  err  err  err  TO  TO  TO
+> zeroconf-1000-2-false-correctmax  err  239  43  138  err  err  err  err  err  TO  err  err
+> zeroconf-1000-2-false-correctmin  err  44  33  19  err  err  err  err  err  TO  err  err
+> zeroconf-1000-4-false-correctmax  err  290  112  337  err  err  err  err  err  TO  err  err
+> zeroconf-1000-4-false-correctmin  err  127  87  59  err  err  err  err  err  TO  err  err
+> zeroconf-20-2-false-correctmax  91  37  43  72  err  err  err  err  err  TO  err  err
+> zeroconf-20-2-false-correctmin  28  29  29  18  err  err  err  err  err  TO  err  err
+> zeroconf-20-4-false-correctmax  244  133  134  133  err  err  err  err  err  TO  err  err
+> zeroconf-20-4-false-correctmin  err  117  118  55  err  err  err  err  err  TO  err  err
+> zeroconfdl-1000-1-false-20-deadlinemax  60  60  27  37  err  err  err  err  err  TO  err  err
+> zeroconfdl-1000-1-false-20-deadlinemin  39  38  18  27  err  err  err  err  err  TO  TO  TO
+> zeroconfdl-1000-1-false-50-deadlinemax  512  512  177  201  err  err  err  err  err  TO  TO  TO
+> zeroconfdl-1000-1-false-50-deadlinemin  417  417  120  192  err  err  err  err  err  TO  TO  TO
+
+27

@@ -8,92 +8,74 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-07-31
-- 运行时间：2026-07-31 22:20:22 UTC
+- 最新运行日期：2026-08-01
+- 运行时间：2026-08-01 20:38:56 UTC
 - 运行状态：成功
-- 本次总论文数：24
-- 精读区：10
-- 速读区：14
+- 本次总论文数：18
+- 精读区：9
+- 速读区：9
 
 ### 今日简报（AI）
-今日聚焦 24 篇 AI 安全新论文，精读 2 篇、速读 3 篇。最值得关注的是自博弈红队框架 GPT-Red（9.0）与面向智能体的证据背书权限图 FAVA（9.0），两者直击大模型安全测试与授权验证痛点。建议普通读者优先看这两篇精读，速读可关注扩散模型蒸馏与多智能体信息流管控方向。
-- 详情：[/202607/31/README](/202607/31/README)
+今日读18篇，精读9篇，核心围绕大模型蒸馏与推理优化。最值得看两篇满分工作：多模态在线自蒸馏（RP-OPSD）与轨迹中继蒸馏（Pass the Baton）。下一步可关注速读中的SVR自适应推理与TRACE-ROUTER智能体路由。
+- 详情：[/202608/01/README](/202608/01/README)
 
 ### 精读区论文标签
-1. [GPT-Red: Automated Red Teaming via Self-Play at Scale](/202607/31/2607.26115v1-gpt-red-automated-red-teaming-via-self-play-at-scale)  
+1. [RP-OPSD: Resolution-Privileged On-Policy Self-Distillation for Multimodal Large Language Models](/202608/01/2607.24447v1-rp-opsd-resolution-privileged-on-policy-self-distillation-for-multimodal-large-language-models)  
+   标签：评分：10.0/10、query:opd
+   evidence：面向多模态大模型的在线策略自蒸馏
+2. [Pass the Baton: Trajectory-Relayed On-Policy Distillation](/202608/01/2607.26057v1-pass-the-baton-trajectory-relayed-on-policy-distillation)  
+   标签：评分：10.0/10、query:opd
+   evidence：轨迹中继的在线策略蒸馏方法
+3. [Flux-OPD: On-Policy Distillation with Evolving Contexts](/202608/01/2607.28022v1-flux-opd-on-policy-distillation-with-evolving-contexts)  
+   标签：评分：10.0/10、query:opd
+   evidence：直接提出用于大模型训练的在线策略蒸馏(OPD)方法，并引入演化上下文
+4. [Forecasting Trajectory-Level Safety Risks in Black-Box Multi-Turn Interactions](/202608/01/2607.26820v1-forecasting-trajectory-level-safety-risks-in-black-box-multi-turn-interactions)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：通过自博弈训练自动化红队智能体，用于发现提示注入攻击并对抗训练防御
-2. [FAVA: Formal Authorization for Verified Agents with Evidence-Backed Permission Graphs](/202607/31/2607.27267v1-fava-formal-authorization-for-verified-agents-with-evidence-backed-permission-graphs)  
+   evidence：面向LLM智能体多轮交互的轨迹级安全风险预测
+5. [AgentS4D: Benchmarking Runtime Risks across the Execution Lifecycle of LLM-Based Workspace Agents](/202608/01/2607.27294v1-agents4d-benchmarking-runtime-risks-across-the-execution-lifecycle-of-llm-based-workspace-agents)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：面向可验证LLM智能体的形式化授权框架，直接面向智能体安全
-3. [RoguePrompt: Dual-Layer Encoding for Self-Reconstruction to Circumvent LLM Moderation](/202607/31/2607.27373v1-rogueprompt-dual-layer-encoding-for-self-reconstruction-to-circumvent-llm-moderation)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：通过提示词逃逸绕过LLM审核的越狱攻击
-4. [Beyond the Best Teacher: Expanding and Compressing the Reasoning Solution Manifold](/202607/31/2607.27770v1-beyond-the-best-teacher-expanding-and-compressing-the-reasoning-solution-manifold)  
-   标签：评分：9.0/10、query:opd
-   evidence：提出多教师策略蒸馏的扩展-压缩框架，将RL策略视为局部探测
-5. [Not All Tokens Deserve Equal Credit: Counterfactual Sensitivity Credit Reallocation for Long-CoT Reasoning](/202607/31/2607.27888v1-not-all-tokens-deserve-equal-credit-counterfactual-sensitivity-credit-reallocation-for-long-cot-reasoning)  
-   标签：评分：9.0/10、query:opd
-   evidence：面向长思维链推理的在线策略自蒸馏，通过非特权策略与特权自教师之间的前向KL提供密集监督
-6. [One Anchor for All: Unified Multilingual and Multimodal Safety Alignment for LVLMs](/202607/31/2607.27917v1-one-anchor-for-all-unified-multilingual-and-multimodal-safety-alignment-for-lvlms)  
-   标签：评分：9.0/10、query:ai-safety
-   evidence：神经元级安全对齐，统一防御多语言多模态大型视觉语言模型的复合攻击
-7. [From Scoring to Acting: Outcome-Verified Comparative Self-Distillation for LLM Agents](/202607/31/2607.27937v1-from-scoring-to-acting-outcome-verified-comparative-self-distillation-for-llm-agents)  
-   标签：评分：9.0/10、query:opd
-   evidence：直接提出结果验证比较自蒸馏，属于LLM智能体的on-policy自蒸馏方法
-8. [Contrastive Reinforced Policy Optimization via Privileged Self-Distillation](/202607/31/2607.28026v1-contrastive-reinforced-policy-optimization-via-privileged-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：直接提出基于在线自蒸馏的对比强化策略优化方法
-9. [Group-Reflective Self-Distillation for Agentic Reinforcement Learning](/202607/31/2607.28076v1-group-reflective-self-distillation-for-agentic-reinforcement-learning)  
-   标签：评分：9.0/10、query:opd
-   evidence：利用策略自身验证轨迹进行自蒸馏，用于智能体强化学习
-10. [$β$-OPSD: Deriving with Policy Optimization, Training with Self-Distillation](/202607/31/2607.28582v1--opsd-deriving-with-policy-optimization-training-with-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：将在线自蒸馏推导为β权重的策略优化族，用于推理语言模型
+   evidence：提供面向LLM工作空间智能体运行时安全风险的基准
+6. [A Sparse Glimpse of the Whole: Train-Free Self-Speculative Decoding](/202608/01/2607.27735v1-a-sparse-glimpse-of-the-whole-train-free-self-speculative-decoding)  
+   标签：评分：9.0/10、query:eff-reason
+   evidence：用于推理效率提升的免训练投机解码
+7. [Understanding Is Done Early: A Depth Division of Labor in Large Language Models and Its Use for Unbounded-Context Memory](/202608/01/2607.28263v1-understanding-is-done-early-a-depth-division-of-labor-in-large-language-models-and-its-use-for-unbounded-context-memory)  
+   标签：评分：9.0/10、query:eff-reason
+   evidence：提出CoMem，通过中间层写入和查询条件上层重计算，使长上下文推理的计算与内存开销固定，属于推理效率优化。
+8. [MANTA: Multi-Agent Network Topology Adaptation for Self-Evolving Multi-Agent Systems](/202608/01/2607.28527v1-manta-multi-agent-network-topology-adaptation-for-self-evolving-multi-agent-systems)  
+   标签：评分：9.0/10、query:agent-swarm
+   evidence：面向智能体集群的自演化拓扑调整与动态协作
+9. [Matryoshka Agent: Unfolding Sub-Agents for Long-Horizon Machine Learning Engineering](/202608/01/2607.25090v1-matryoshka-agent-unfolding-sub-agents-for-long-horizon-machine-learning-engineering)  
+   标签：评分：8.0/10、query:agent-swarm
+   evidence：提出由编排器与子智能体组成的分层智能体框架，用于复杂长周期任务
 
 ### 速读区论文标签
-1. [Rethinking Classifier-Free Guidance in On-Policy Diffusion Distillation](/202607/31/2607.24731v2-rethinking-classifier-free-guidance-in-on-policy-diffusion-distillation)  
-   标签：评分：8.0/10、query:opd
-   evidence：在线扩散蒸馏，分析无分类器指导与速度匹配的交互
-2. [The Missing Layer: Specification Infrastructure for AI Oversight](/202607/31/2607.24866v1-the-missing-layer-specification-infrastructure-for-ai-oversight)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：面向智能体系统的监督基础设施，涉及智能体安全与评估
-3. [SafeFlow: Semantic Information-Flow Control for Blocking Malicious Propagation in Multi-Agent Systems](/202607/31/2607.25255v2-safeflow-semantic-information-flow-control-for-blocking-malicious-propagation-in-multi-agent-systems)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：多智能体安全防御，阻断恶意传播
-4. [Bridging Inference-Time Scaling and Episodic Memory with Action-Centric Graphs](/202607/31/2607.27415v1-bridging-inference-time-scaling-and-episodic-memory-with-action-centric-graphs)  
+1. [SVR: Self-Verifying Refinement via Joint Verdict-Confidence Reinforcement Learning for Adaptive Test-Time Compute](/202608/01/2607.28457v1-svr-self-verifying-refinement-via-joint-verdict-confidence-reinforcement-learning-for-adaptive-test-time-compute)  
    标签：评分：8.0/10、query:eff-reason
-   evidence：针对智能体推理时扩展的低效问题，提出基于动作图的情节记忆
-5. [Compliance2LoRA: On-Demand Safety Alignment on Arbitrary Policy Subsets via Hypernetwork-Generated LoRA Adapters](/202607/31/2607.27594v1-compliance2lora-on-demand-safety-alignment-on-arbitrary-policy-subsets-via-hypernetwork-generated-lora-adapters)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：通过超网络生成LoRA适配器实现任意策略子集的按需安全对齐
-6. [AttriMem: Attribution-Guided Process Feedback for Agent Memory Learning](/202607/31/2607.21106v1-attrimem-attribution-guided-process-feedback-for-agent-memory-learning)  
-   标签：评分：7.0/10、query:l-context-rl
-   evidence：用强化学习学习智能体记忆策略，并利用过程反馈，支持长上下文
-7. [From RLVR to RLSVR: Task Transformation Induces Self-Verifiable Rewards for Open-Ended LLM Self-Improvement](/202607/31/2607.23802v1-from-rlvr-to-rlsvr-task-transformation-induces-self-verifiable-rewards-for-open-ended-llm-self-improvement)  
+   evidence：面向高效推理的自适应测试时计算
+2. [TRACE-ROUTER: Task-Consistent and Adaptive Online Routing for Agentic AI](/202608/01/2607.22465v1-trace-router-task-consistent-and-adaptive-online-routing-for-agentic-ai)  
    标签：评分：7.0/10、query:eff-reason
-   evidence：通过可自验证奖励替代LLM评测者，降低推理成本
-8. [Asymmetric Collapse in Model Merging: When Refusal Over- writes Recognition](/202607/31/2607.27240v1-asymmetric-collapse-in-model-merging-when-refusal-over--writes-recognition)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：模型合并保留越狱拒绝但覆盖识别能力，影响安全评测与防御
-9. [SKIMIX: Multi-Agent Harness-Time Scaling with Skill Mixture for Dynamic Harness Engineering](/202607/31/2607.27994v1-skimix-multi-agent-harness-time-scaling-with-skill-mixture-for-dynamic-harness-engineering)  
+   evidence：面向LLM路由的成本-质量权衡优化，直接涉及推理效率。
+3. [SKIMIX: Multi-Agent Harness-Time Scaling with Skill Mixture for Dynamic Harness Engineering](/202608/01/2607.27994v1-skimix-multi-agent-harness-time-scaling-with-skill-mixture-for-dynamic-harness-engineering)  
    标签：评分：7.0/10、query:agent-swarm
-   evidence：多智能体框架，具备动态技能路由与演化，契合智能体集群主题
-10. [Hierarchical Multilevel Monte Carlo for Order-Optimal Neural Actor-Critic in Average-Reward CMDPs](/202607/31/2607.28390v1-hierarchical-multilevel-monte-carlo-for-order-optimal-neural-actor-critic-in-average-reward-cmdps)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：面向安全关键强化学习的约束MDP与神经actor-critic
-11. [PATS: Policy-Aware Training Scaffolding for Agentic Reinforcement Learning](/202607/31/2607.21419v2-pats-policy-aware-training-scaffolding-for-agentic-reinforcement-learning)  
+   evidence：多智能体技能混合与迭代协作机制与智能体集群架构需求相关。
+4. [MemChain: Learning Interpretable Memory Traces for Memory-Augmented LLM Agents](/202608/01/2607.24097v1-memchain-learning-interpretable-memory-traces-for-memory-augmented-llm-agents)  
+   标签：评分：6.0/10、query:eff-reason
+   evidence：降低记忆增强智能体的上下文开销，提升推理效率
+5. [PLATO: Pointer Learner for Agent and Task Openness](/202608/01/2607.25082v1-plato-pointer-learner-for-agent-and-task-openness)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：面向开放智能体系统的多智能体强化学习，处理智能体与任务动态变化，与智能体集群协作相关。
+6. [Tools Are Not Islands: Set-Level Tool Retrieval for LLM Agents via Query-Conditioned Hyperedge Prediction](/202608/01/2607.25718v2-tools-are-not-islands-set-level-tool-retrieval-for-llm-agents-via-query-conditioned-hyperedge-prediction)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：面向LLM智能体的集合级工具检索，支持自主工具使用
+7. [dtControl2+$\varepsilon$: Trading Optimality for Explainability in MDPs via Decision Trees](/202608/01/2607.25925v1-dtcontrol2varepsilon-trading-optimality-for-explainability-in-mdps-via-decision-trees)  
    标签：评分：6.0/10、query:opd
-   evidence：基于最新策略回滚构建训练支架，与on-policy蒸馏主题相关
-12. [Nanbeige4.2-3B: Unlocking Agentic Capabilities in a Compact Mode](/202607/31/2607.22083v1-nanbeige42-3b-unlocking-agentic-capabilities-in-a-compact-mode)  
+   evidence：在MDP中用决策树蒸馏控制器策略，通过允许误差换取更小的可解释表示
+8. [Kalman Meets Curriculum: Efficient Dynamic Prompt Selection for Adaptive RL Finetuning](/202608/01/2607.27610v1-kalman-meets-curriculum-efficient-dynamic-prompt-selection-for-adaptive-rl-finetuning)  
    标签：评分：6.0/10、query:eff-reason
-   evidence：紧凑智能体模型与参数高效架构兼顾推理能力，契合高效推理模型需求
-13. [Nanbeige4.2-3B: Unlocking Agentic Capabilities in a Compact Model](/202607/31/2607.22083v2-nanbeige42-3b-unlocking-agentic-capabilities-in-a-compact-model)  
-   标签：评分：6.0/10、query:eff-reason
-   evidence：3B参数紧凑模型结合RL流水线提升推理效率与智能体能力
-14. [GLST: Defending Confidence-Driven V2X Collaborative Perception Against Stealthy Multi-Attacker Feature Injection](/202607/31/2607.23059v1-glst-defending-confidence-driven-v2x-collaborative-perception-against-stealthy-multi-attacker-feature-injection)  
-   标签：评分：6.0/10、query:ai-safety
-   evidence：针对协同感知中隐秘特征注入攻击的防御机制
+   evidence：卡尔曼引导的提示选择使推理RL微调更高效
+9. [$Σ$-Mem: An Online Reliability Memory for LLM-based Multi-Agent Systems](/202608/01/2607.27958v1--mem-an-online-reliability-memory-for-llm-based-multi-agent-systems)  
+   标签：评分：6.0/10、query:agent-swarm
+   evidence：面向大模型多智能体系统的在线可靠性记忆，建模智能体可信度，为智能体集群协同与安全提供支持
 
 
 <div class="dpr-home-promo-card">
