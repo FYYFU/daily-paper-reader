@@ -1,0 +1,1589 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-04T22:12:53.585293+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 4,
+    "deep_divecandidates": 27,
+    "deep_cap": 9,
+    "deep_selected": 22,
+    "quick_candidates": 18,
+    "quick_skim_target": 14,
+    "quick_selected": 14
+  },
+  "deep_dive": [
+    {
+      "id": "2608.00485v1",
+      "source": "arxiv",
+      "title": "SERL-SQL: Selective Hindsight Distillation for Text-to-SQL Reinforcement Agentic Learning",
+      "abstract": "Recent Text-to-SQL systems increasingly rely on multi-turn interaction, execution feedback, and reinforcement learning. However, most existing methods use execution correctness only as a trajectory-level reward, which provides limited guidance for identifying the SQL decisions responsible for success or failure. We propose SERL-SQL, a selective execution-grounded reinforcement learning framework for multi-turn Text-to-SQL agents. SERL-SQL samples on-policy SQL interaction trajectories and uses a training-only teacher to re-score student actions with execution feedback. The resulting teacher--student likelihood gap is converted into bounded, masked weights that reweight GRPO advantages only on SQL and tool-action tokens. In this way, task rewards preserve the optimization direction, while execution hindsight provides localized credit assignment. Experiments on BIRD, Spider, and cross-domain benchmarks show that SERL-SQL achieves competitive performance, reaching 76.56% execution accuracy on BIRD-Dev and 89.92% on Spider-Test. Moreover, our reward-based selection strategy closely approaches the oracle Best-of-N upper bound and consistently outperforms consistency-based selection, showing that SERL-SQL produces high-quality candidates that can be reliably identified by lightweight execution-grounded rewards. Our code will be released at https://github.com/Ffunkytao/SERL-SQL.",
+      "authors": [
+        "Tao Liu",
+        "Tao Feng",
+        "Xiangheng Li",
+        "Jinwang Song",
+        "Yifan Li",
+        "Xiaoqing Cheng",
+        "Dixuan Zhang",
+        "Siquan Li",
+        "Lin Lan",
+        "Hongying Zan",
+        "Kunli Zhang",
+        "Chao Wu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-01T07:24:12+00:00",
+      "link": "https://arxiv.org/pdf/2608.00485v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "on-policy teacher-student distillation for Text-to-SQL reinforcement learning",
+      "llm_evidence_cn": "面向Text-to-SQL强化学习的on-policy师生蒸馏",
+      "llm_evidence": "面向Text-to-SQL强化学习的on-policy师生蒸馏",
+      "canonical_evidence": "面向Text-to-SQL强化学习的on-policy师生蒸馏",
+      "llm_tldr_en": "Proposes SERL-SQL, sampling on-policy interaction trajectories and using a training-only teacher to rescore student actions with execution feedback, converting teacher-student likelihood gaps into masked GRPO advantages.",
+      "llm_tldr_cn": "该工作针对多轮Text-to-SQL智能体在强化学习中仅把执行正确率作为轨迹级奖励、难以定位成功或失败决策的问题，提出SERL-SQL框架。框架采样on-policy SQL交互轨迹，使用训练专用教师以执行反馈重新为学生动作评分，并把师生似然差距转换为有界掩码权重，只对SQL和工具动作token重加权GRPO优势。这一设计能更精准地引导智能体学习关键决策，显著提升多轮文本到SQL任务的强化训练效果。",
+      "llm_tldr": "该工作针对多轮Text-to-SQL智能体在强化学习中仅把执行正确率作为轨迹级奖励、难以定位成功或失败决策的问题，提出SERL-SQL框架。框架采样on-policy SQL交互轨迹，使用训练专用教师以执行反馈重新为学生动作评分，并把师生似然差距转换为有界掩码权重，只对SQL和工具动作token重加权GRPO优势。这一设计能更精准地引导智能体学习关键决策，显著提升多轮文本到SQL任务的强化训练效果。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00782v1",
+      "source": "arxiv",
+      "title": "Distill Where You Fail: Recovering Learning Signals of Negative RL-Groups from Adaptive Teacher Guidance",
+      "abstract": "Reinforcement learning with verifiable rewards (RLVR) has become a standard paradigm for post-training large language models (LLMs). While Group Relative Policy Optimization (GRPO) is widely adopted, it suffers from sparse reward signals and loses gradients entirely when all responses within a group receive identical rewards. On-policy distillation (OPD) offers a natural remedy by providing dense, token-level supervision from a teacher model. However, naively combining GRPO with OPD leads to degraded performance, due to three underlying causes: not all samples benefit from distillation; fitting too quickly to the teacher undermines the exploratory capacity of RL; and OPD's advantages are asymmetric, suppressing most tokens. To address these challenges, we propose RSTG (Recovering Learning Signals via Adaptive Teacher Guidance), which applies distillation selectively and precisely where it matters most. At the sample level, OPD is restricted to negative zero-variance prompts with each sample weighted by the teacher's confidence score. At the token level, distillation targets only tokens with high student entropy or large teacher-student divergence. We further augment training with SFT on correct trajectories generated by the teacher model, injecting positive gradient signals where RL yields none. Experiments demonstrate that RSTG substantially outperforms naive GRPO+OPD by +4.02% on math and +3.05% on code.",
+      "authors": [
+        "Zhuowen Han",
+        "Jinwei Xiao",
+        "Zhengxi Lu",
+        "Renren Jin",
+        "Zhiyuan Yao",
+        "Yuxin Liu",
+        "Hongyan Hao",
+        "Yueqing Sun",
+        "Yu Yang",
+        "Qi GU",
+        "Xunliang Cai",
+        "Deyi Xiong"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-01T17:29:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.00782v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "on-policy distillation (OPD) for RLVR/GRPO; teacher guidance to recover RL training signals",
+      "llm_evidence_cn": "针对强化学习的在线策略蒸馏；利用教师指导恢复负样本组的学习信号",
+      "llm_evidence": "针对强化学习的在线策略蒸馏；利用教师指导恢复负样本组的学习信号",
+      "canonical_evidence": "针对强化学习的在线策略蒸馏；利用教师指导恢复负样本组的学习信号",
+      "llm_tldr_en": "Identifies why naively combining GRPO with on-policy distillation hurts LLM post-training, and proposes adaptive teacher guidance that selectively distills according to group learning difficulty, restoring dense token-level signals without suppressing exploration.",
+      "llm_tldr_cn": "论文指出将GRPO与在线策略蒸馏（OPD）简单结合反而会降低性能，原因是并非所有样本都适合蒸馏、过早拟合教师会削弱探索能力且OPD收益不对称。为此提出自适应的教师引导策略，针对RL分组中学习失败的负样本组提供密集的token级监督，避免破坏探索并有效恢复训练信号。在RLVR训练中验证了该方法能显著改善学习效果，为策略蒸馏与强化学习结合提供了更好范式。",
+      "llm_tldr": "论文指出将GRPO与在线策略蒸馏（OPD）简单结合反而会降低性能，原因是并非所有样本都适合蒸馏、过早拟合教师会削弱探索能力且OPD收益不对称。为此提出自适应的教师引导策略，针对RL分组中学习失败的负样本组提供密集的token级监督，避免破坏探索并有效恢复训练信号。在RLVR训练中验证了该方法能显著改善学习效果，为策略蒸馏与强化学习结合提供了更好范式。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01117v1",
+      "source": "arxiv",
+      "title": "SoK: Intent-Oriented Systematization of Multi-Turn LLM Jailbreaks",
+      "abstract": "Large Language Models (LLMs) are increasingly deployed in interactive settings, where user intent commonly unfolds through multi-turn dialogue. Multi-turn jailbreaks exploit this pattern by advancing a harmful intent across turns, so that no single message exposes the full objective. However, existing work treats these attacks as a loose collection of prompt patterns and does not analyze how the adversary organizes and advances harmful intent across an interaction. We develop a four-part, intent-oriented taxonomy that organizes multi-turn jailbreaks by adversarial intent structure. Through controlled ablations, we find that effectiveness is driven by how deliberately intent is organized across turns rather than by context length or query count. We further show that the way intent is organized determines the level at which it becomes detectable, pushing the required detection surface outward from the turn level to the session level to the cross-session level. These findings indicate that turn-local safety mechanisms are structurally insufficient and that single-point evaluation overlooks how intent is organized, motivating evaluation protocols aligned to the level at which harmful intent becomes observable. The code is available at: https://github.com/SiyuanLi00/INTACT.",
+      "authors": [
+        "Siyuan Li",
+        "Aodu Wulianghai",
+        "Zehao Liu",
+        "Xi Lin",
+        "Qinghua Mao",
+        "Haoyu Li",
+        "Xiang Chen",
+        "Siyuan Liang",
+        "Jun Wu",
+        "Jianhua Li",
+        "Dacheng Tao"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-08-02T09:24:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.01117v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Systematization of multi-turn LLM jailbreak attacks",
+      "llm_evidence_cn": "面向意图的多轮LLM越狱攻击系统化研究",
+      "llm_evidence": "面向意图的多轮LLM越狱攻击系统化研究",
+      "canonical_evidence": "面向意图的多轮LLM越狱攻击系统化研究",
+      "llm_tldr_en": "This SoK proposes an intent-oriented taxonomy for multi-turn LLM jailbreaks and shows through controlled ablations that deliberate intent organization, not context length, drives attack effectiveness.",
+      "llm_tldr_cn": "多轮越狱利用跨轮推进有害意图来规避单条消息审查，但已有研究缺乏对意图组织机制的系统分析。本文提出一个四部分的面向意图分类体系，并通过受控消融实验验证其解释力。实验发现攻击效果主要取决于意图刻意组织的程度，而非上下文长度或查询数量。该工作为多轮LLM越狱的理解、评估与防御提供了结构化基础。",
+      "llm_tldr": "多轮越狱利用跨轮推进有害意图来规避单条消息审查，但已有研究缺乏对意图组织机制的系统分析。本文提出一个四部分的面向意图分类体系，并通过受控消融实验验证其解释力。实验发现攻击效果主要取决于意图刻意组织的程度，而非上下文长度或查询数量。该工作为多轮LLM越狱的理解、评估与防御提供了结构化基础。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "jailbreak attacks",
+      "matched_requirement_id": "req-16",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01735v1",
+      "source": "arxiv",
+      "title": "DAPD: Dual-Anchored Policy Distillation",
+      "abstract": "On-policy (self) distillation (OPSD) is increasingly adopted for language-model post-training. It strengthens the teacher with privileged information but can induce a privilege illusion: the student learns privilege-dependent behavior it cannot reproduce from its inference-time context, yet behaves as if the training-time privileged information remained available, ultimately degrading performance. In this paper, we identify information asymmetry between the privileged teacher and the student at inference as the root cause of this failure in OPSD. To resolve this asymmetry, we propose Dual-Anchored Policy Distillation (DAPD), a unified framework with two levels of anchoring. Dual-Path Anchoring (DPA) introduces a self-conditioned bridge and aligns reference and rollout behavior along two matched-information paths, preventing privilege-dependent behavior from being transferred to the inference-time student. Dual-Source Anchoring (DSA) applies these paths in both reference-to-rollout and rollout-to-reference directions, reducing reliance on privileged reference guidance while preserving correctness supervision. Extensive experiments show that DAPD significantly alleviates privilege illusion, outperforming OPSD on Qwen3-4B by +2.00 points on average across tasks. Notably, its gains persist across scales, reaching +2.69 at 4B and +2.78 at 32B.",
+      "authors": [
+        "Jianyu Wu",
+        "Yizhou Wang",
+        "Encheng Su",
+        "Chen Tang",
+        "Shixiang Tang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T06:00:44+00:00",
+      "link": "https://arxiv.org/pdf/2608.01735v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Dual-anchored policy distillation for on-policy self-distillation",
+      "llm_evidence_cn": "提出双锚定策略蒸馏，修正on-policy自蒸馏中的特权幻觉",
+      "llm_evidence": "提出双锚定策略蒸馏，修正on-policy自蒸馏中的特权幻觉",
+      "canonical_evidence": "提出双锚定策略蒸馏，修正on-policy自蒸馏中的特权幻觉",
+      "llm_tldr_en": "The DAPD framework fixes the privilege illusion in on-policy self-distillation by introducing dual-path anchoring with a self-conditioned bridge and aligning reference/rollout behavior, improving LM post-training.",
+      "llm_tldr_cn": "论文针对on-policy自蒸馏中因特权教师与推理学生之间的信息不对称而出现的特权幻觉问题，提出双锚定策略蒸馏（DAPD）框架。其通过双路径锚定引入自条件桥梁，并对参考与回滚行为进行对齐，从而消除推理时无法复现的训练期特权信息。实验表明DAPD能缓解特权幻觉并提升语言模型后训练性能。该工作为on-policy蒸馏提供了统一的稳定化框架。",
+      "llm_tldr": "论文针对on-policy自蒸馏中因特权教师与推理学生之间的信息不对称而出现的特权幻觉问题，提出双锚定策略蒸馏（DAPD）框架。其通过双路径锚定引入自条件桥梁，并对参考与回滚行为进行对齐，从而消除推理时无法复现的训练期特权信息。实验表明DAPD能缓解特权幻觉并提升语言模型后训练性能。该工作为on-policy蒸馏提供了统一的稳定化框架。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01837v1",
+      "source": "arxiv",
+      "title": "PCSD: Persistent Consistency for Self-Distillation in Agentic Reinforcement Learning",
+      "abstract": "Large language model agents have shown strong potential in complex interactive tasks, yet their reinforcement learning (RL) is often hindered by sparse rewards, as a long multi-turn trajectory may receive only a single outcome-level signal. On-policy self-distillation (OPSD) provides dense token-level supervision from a privileged teacher, but the teacher may not be reliable at every position. Existing methods commonly rely on isolated token-level discrepancies, which can be sensitive to noise, or assign a shared step-level weight that may overlook positional variation. We propose Persistent Consistency Self-Distillation (PCSD), which derives token-level distillation weights from the local persistence of teacher-favoring signals. PCSD combines adaptive windows with exponentially decayed aggregation to capture persistent relative teacher support, applies trend-aware modulation to attenuate locally declining support, and produces continuous weights through sigmoid gating. The resulting objective is jointly optimized with GRPO, combining dense teacher guidance with sparse environmental feedback. Without inference-time skills, PCSD achieves the best ALFWorld Overall results among all baselines on both backbones, exceeding GRPO by 15.6 and 13.3 points and SDAR by 6.2 and 5.5 points, while remaining competitive on WebShop and gaining 15.8 points over GRPO on unseen ALFWorld split.",
+      "authors": [
+        "Chunji Lv",
+        "Yangguang Wei",
+        "Junlin Liu",
+        "Yang Gao",
+        "Ming Liu",
+        "Xinming Wang",
+        "Jinyang Wu",
+        "Guoren Wang",
+        "Changsheng Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T07:47:59+00:00",
+      "link": "https://arxiv.org/pdf/2608.01837v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Persistent consistency for on-policy self-distillation in agentic RL",
+      "llm_evidence_cn": "提出持久一致性机制，改进智能体强化学习中的在线策略自蒸馏",
+      "llm_evidence": "提出持久一致性机制，改进智能体强化学习中的在线策略自蒸馏",
+      "canonical_evidence": "提出持久一致性机制，改进智能体强化学习中的在线策略自蒸馏",
+      "llm_tldr_en": "Introduces PCSD, deriving token-level distillation weights from local persistence of teacher-favoring signals in on-policy self-distillation for agentic RL.",
+      "llm_tldr_cn": "针对智能体强化学习稀疏奖励下在线策略自蒸馏（OPSD）教师信号在部分位置不可靠的问题，论文提出持久一致性自蒸馏（PCSD），从教师偏好信号的局部持续性导出 token 级蒸馏权重，降低单一 token 噪声干扰。该方法能更稳健地利用教师监督，提升长轨迹多回合任务的 RL 训练效果，为在线策略自蒸馏提供了更精细的加权机制。",
+      "llm_tldr": "针对智能体强化学习稀疏奖励下在线策略自蒸馏（OPSD）教师信号在部分位置不可靠的问题，论文提出持久一致性自蒸馏（PCSD），从教师偏好信号的局部持续性导出 token 级蒸馏权重，降低单一 token 噪声干扰。该方法能更稳健地利用教师监督，提升长轨迹多回合任务的 RL 训练效果，为在线策略自蒸馏提供了更精细的加权机制。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.02101v1",
+      "source": "arxiv",
+      "title": "Cross-Domain Hybrid OPD for Generalizable Search Agents",
+      "abstract": "Recent advances in Reinforcement Learning (RL) have substantially improved the capabilities of autonomous search agents, enabling sophisticated planning, and iterative retrieval over dynamic information sources. However, optimizing language models for specialized search behaviors often incurs an alignment tax, where gains in search performance come at the expense of general-purpose capabilities, limiting their effectiveness as universal assistants. In this technical report, we present the training framework behind the Yuanbao search agent, designed to achieve search specialization without sacrificing general intelligence. Built upon the Hunyuan3 architecture, our framework combines agentic reinforcement learning for autonomous search with a cross-domain expert On-Policy Distillation (OPD) pipeline. Experts specializing in complementary general-purpose domains are distilled into the search-specialized student, restoring and further enhancing its broad capabilities. Rather than treating specialization and general capability as competing objectives, our hybrid training strategy jointly optimizes both, effectively mitigating the alignment tax. Extensive experiments demonstrate that the resulting model achieves competitive search performance while consistently improving its general-purpose capabilities, providing a favorable balance between specialized execution and broad generalization in real-world search scenarios.",
+      "authors": [
+        "Hongzhan Chen",
+        "Xiaoyu Liu",
+        "Dengming Zhang",
+        "Minzhou Huang",
+        "Dongliang Xu",
+        "Jingcheng Xie",
+        "Dongxiang Fang",
+        "Bowen Qin",
+        "Minsheng Hao",
+        "Yaozong Shen",
+        "Xiaojun Quan",
+        "Mona Zhou",
+        "Haosheng Zou",
+        "Jeff Chen"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-03T12:01:18+00:00",
+      "link": "https://arxiv.org/pdf/2608.02101v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Cross-domain hybrid OPD training framework for search agents",
+      "llm_evidence_cn": "提出跨领域混合在线策略蒸馏（OPD）训练框架，用于搜索智能体",
+      "llm_evidence": "提出跨领域混合在线策略蒸馏（OPD）训练框架，用于搜索智能体",
+      "canonical_evidence": "提出跨领域混合在线策略蒸馏（OPD）训练框架，用于搜索智能体",
+      "llm_tldr_en": "Presents cross-domain hybrid OPD framework for search agents, combining agentic RL with cross-domain expert on-policy distillation to avoid alignment tax.",
+      "llm_tldr_cn": "该工作针对搜索智能体专用化训练带来的对齐税问题，提出结合智能体强化学习与跨领域专家在线策略蒸馏（OPD）的混合训练框架，使搜索能力专精的同时保持通用智能。构建于 Hunyuan3 架构上，框架支持自主搜索与通用能力的协同优化，为通用型搜索助手提供了可行训练范式。",
+      "llm_tldr": "该工作针对搜索智能体专用化训练带来的对齐税问题，提出结合智能体强化学习与跨领域专家在线策略蒸馏（OPD）的混合训练框架，使搜索能力专精的同时保持通用智能。构建于 Hunyuan3 架构上，框架支持自主搜索与通用能力的协同优化，为通用型搜索助手提供了可行训练范式。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.28076v2",
+      "source": "arxiv",
+      "title": "Group-Reflective Self-Distillation for Agentic Reinforcement Learning",
+      "abstract": "Reinforcement learning with verifiable rewards (RLVR) is effective for training large language model agents. However, terminal rewards provide only coarse trajectory-level supervision, leaving successful behaviors, recurring mistakes, and incidental choices entangled in the same outcome signal. Existing agentic self-distillation methods enrich sparse supervision with natural-language skills, but skills retrieved externally or extracted from a single trajectory by stronger models may mismatch current experience, exceed the policy's capability, or remain path-specific. We propose Group-Reflective Self-Distillation (GRSD), which derives capability-aligned and outcome-discriminative guidance from the policy's own verified rollouts. For each prompt, the policy reflects on each verified trajectory in an on-policy group, and a stop-gradient snapshot contrasts the resulting reflections from successful and failed rollouts to construct group-level privileged guidance. Conditioned on this guidance, a self-teacher refines turn-level credit assignment by modulating outcome-based advantages while preserving the verifier-determined learning direction. Experiments across multiple agentic environments and model scales demonstrate that GRSD consistently outperforms competitive baselines and generalizes more effectively to unseen tasks.",
+      "authors": [
+        "Binbin Zheng",
+        "Zijun Xie",
+        "Guanqun Zhao",
+        "Enlei Gong",
+        "Xing Ma",
+        "Xiaoliang Fu",
+        "Zeyu Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-30T11:49:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.28076v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-distillation from the policy's own verified rollouts in agentic RL",
+      "llm_evidence_cn": "基于策略自身rollout的自蒸馏",
+      "llm_evidence": "基于策略自身rollout的自蒸馏",
+      "canonical_evidence": "基于策略自身rollout的自蒸馏",
+      "llm_tldr_en": "Presents Group-Reflective Self-Distillation (GRSD), which generates capability-aligned, outcome-discriminative natural-language skills from the policy's own verified rollouts to improve agentic RL under sparse terminal rewards.",
+      "llm_tldr_cn": "针对可验证奖励强化学习（RLVR）中终端奖励仅提供粗粒度轨迹监督、成功与失败行为纠缠的问题，本文提出群体反思自蒸馏（GRSD）。该方法从策略自身的已验证rollout中提炼能力对齐且结果判别性的自然语言指导，避免外部模型或单轨迹提取带来的不匹配。实验显示其能有效利用策略自身经验改善智能体RL训练，为在线策略自蒸馏提供了新机制。",
+      "llm_tldr": "针对可验证奖励强化学习（RLVR）中终端奖励仅提供粗粒度轨迹监督、成功与失败行为纠缠的问题，本文提出群体反思自蒸馏（GRSD）。该方法从策略自身的已验证rollout中提炼能力对齐且结果判别性的自然语言指导，避免外部模型或单轨迹提取带来的不匹配。实验显示其能有效利用策略自身经验改善智能体RL训练，为在线策略自蒸馏提供了新机制。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.29010v1",
+      "source": "arxiv",
+      "title": "EvoReason: Self-Evolving Reasoning Primitive-Guided On-Policy Distillation for Latent Reasoning in Generative Recommendation",
+      "abstract": "Generative recommendation benefits from reasoning-enhanced inference, and latent reasoning offers an efficient paradigm by encoding intermediate reasoning processes into compact continuous representations for latency-sensitive deployment. Despite its efficiency, existing latent reasoning approaches typically rely on directly distilling raw chain-of-thought (CoT) trajectories into latent representations, assuming that textual reasoning traces provide sufficient supervision. However, recommendation reasoning trajectories contain diverse reasoning processes with redundant expressions and unstable reasoning paths, making raw CoT supervision suboptimal for learning transferable latent reasoning representations. To address this challenge, we propose EvoReason, a self-evolving latent reasoning framework that adaptively aligns explicit reasoning supervision with the student's latent reasoning space through primitive-guided on-policy distillation. First, EvoReason extracts reusable reasoning primitives from high-quality agentic recommendation trajectories, where each primitive captures an essential reasoning behavior and serves as a pseudo-tool for structured teacher reasoning. Then, based on these primitives, we equip the teacher with primitive-aware reasoning capabilities, enabling it to generate structured CoT supervision with reduced redundancy and improved consistency. Finally, during latent reasoning optimization, EvoReason introduces a self-evolving on-policy distillation mechanism, where the primitive-guided reasoning process evolves according to the student's latent reasoning outcomes. Through this closed-loop co-evolution, policy updates continuously improve latent reasoning behaviors is refined according to the resulting latent reasoning outcomes, enabling progressively better-aligned CoT supervision and more effective reasoning transfer.",
+      "authors": [
+        "Zhuang Zhuang",
+        "Zhipeng Wei",
+        "Rongfeng Guo",
+        "Shijie Li",
+        "Peng Zhao",
+        "Jie Chen",
+        "Fei Pan"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-07-31T04:24:16+00:00",
+      "link": "https://arxiv.org/pdf/2607.29010v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "on-policy distillation with self-evolving reasoning primitives for latent reasoning",
+      "llm_evidence_cn": "基于自演化推理原语的在线策略蒸馏用于潜推理",
+      "llm_evidence": "基于自演化推理原语的在线策略蒸馏用于潜推理",
+      "canonical_evidence": "基于自演化推理原语的在线策略蒸馏用于潜推理",
+      "llm_tldr_en": "EvoReason guides on-policy distillation with self-evolving reasoning primitives for latent reasoning in generative recommendation, improving performance while keeping low latency.",
+      "llm_tldr_cn": "该论文针对生成式推荐中原始思维链轨迹冗余、不稳定，直接蒸馏潜推理效果不佳的问题，提出自演化推理原语引导的在线策略蒸馏框架EvoReason。EvoReason将推理过程编码为紧凑连续表示，并用自演化原语指导蒸馏，适合延迟敏感场景。实验表明该方法能提升生成式推荐的推理与推荐性能，同时保持低延迟部署。该工作为潜推理的在线策略蒸馏提供了新方法。",
+      "llm_tldr": "该论文针对生成式推荐中原始思维链轨迹冗余、不稳定，直接蒸馏潜推理效果不佳的问题，提出自演化推理原语引导的在线策略蒸馏框架EvoReason。EvoReason将推理过程编码为紧凑连续表示，并用自演化原语指导蒸馏，适合延迟敏感场景。实验表明该方法能提升生成式推荐的推理与推荐性能，同时保持低延迟部署。该工作为潜推理的在线策略蒸馏提供了新方法。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy knowledge distillation methods",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00677v1",
+      "source": "arxiv",
+      "title": "OpenART: Scaling Agent Red Teaming via Open-Ended Environment Evolution",
+      "abstract": "AI agents operate in persistent environments where early state changes can influence decisions far into the future. Unlike conventional language-model interactions, agent behavior is mediated through a shared state that is repeatedly modified and reused across long-horizon workflows. Current safety benchmarks often fail to capture these cumulative risks because they focus on short, static tasks. To address these limitations, we introduce OpenART, an open-ended arena for scalable agent red teaming through environment evolution. OpenART provides over 10,000 validated stateful scenarios across 50 domains, drawing from a pool of more than 500,000 tools and skills. These tasks require a median of 97 tool calls and enable unified evaluation across 75 different agent-model configurations. To systematically explore these evolving attack surfaces, we propose the Evolutionary Markov Hypergraph Attack (EMHA). EMHA is a black-box policy that performs feedback-driven environment evolution by coordinating authorized state transitions without requiring parameter updates. Throughout the evaluation, task objectives remain fixed while only the environment state changes. Across all configurations, EMHA achieves a pooled Attack Success Rate (ASR) of 85.0%. Its advantage over instruction-only evolution increases from approximately 2% on simple environments to over 17% on the most complex ones, demonstrating that environment evolution increasingly exposes safety failures as task complexity grows. Furthermore, our analysis shows that the specific runtime implementation of an agent explains a significant portion of safety variation beyond the underlying model's capabilities. These results establish OpenART as a scalable foundation for studying agent safety in complex, evolving environments.",
+      "authors": [
+        "Yunhao Chen",
+        "Xin Wang",
+        "Yixu Wang",
+        "Yi Liu",
+        "Jie Li",
+        "Yan Teng",
+        "Xingjun Ma",
+        "Xia Hu",
+        "Yu-Gang Jiang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-01T13:51:55+00:00",
+      "link": "https://arxiv.org/pdf/2608.00677v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Open-ended arena for scalable agent red teaming and safety benchmark",
+      "llm_evidence_cn": "用于可扩展智能体红队测试与安全基准的开放竞技场",
+      "llm_evidence": "用于可扩展智能体红队测试与安全基准的开放竞技场",
+      "canonical_evidence": "用于可扩展智能体红队测试与安全基准的开放竞技场",
+      "llm_tldr_en": "OpenART builds an open-ended environment-evolution arena with over 10,000 stateful scenarios and 500,000 tools for scalable agent red teaming.",
+      "llm_tldr_cn": "现有安全基准多为短静态任务，难以捕捉智能体在长期状态共享环境中的累积风险。OpenART 通过环境进化构建开放竞技场，提供超过 10,000 个跨 50 个领域的状态场景，以及超过 500,000 个工具和技能，支持统一的智能体红队评估。任务平均需要 97 次工具调用，能够揭示长期依赖下的真实安全缺陷，为智能体安全评测提供了可扩展的基础设施。",
+      "llm_tldr": "现有安全基准多为短静态任务，难以捕捉智能体在长期状态共享环境中的累积风险。OpenART 通过环境进化构建开放竞技场，提供超过 10,000 个跨 50 个领域的状态场景，以及超过 500,000 个工具和技能，支持统一的智能体红队评估。任务平均需要 97 次工具调用，能够揭示长期依赖下的真实安全缺陷，为智能体安全评测提供了可扩展的基础设施。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "red teaming",
+      "matched_requirement_id": "req-19",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00783v1",
+      "source": "arxiv",
+      "title": "Safety Invariants for Agents Orchestrating Irreversible State Transitions: A Four-Dimensional Formalism Evaluated on Public Ledgers",
+      "abstract": "Autonomous agents are increasingly asked to produce irreversible effects on external systems - transferring funds, writing to durable storage, actuating hardware. Existing agent frameworks (ReAct, Reflexion, MCP) optimize task success on benchmarks and give little attention to the safety of irreversible side-effects. We formalize one such setting, movement of value across public ledgers, as state transitions in a four-dimensional space indexed by (wallet, chain, address, protocol), and use that formalism to state and prove a guarantee we call execution fidelity: under a fault model admitting planner mis-mapping, ambiguous outcomes, retries, at-least-once delivery, and delegated non-human callers, a session's realized effect on the ledger is either nothing at all or exactly the transition that was rendered to the user, exactly once. The theorem deliberately does not claim that the rendered transition matches the user's intent - no runtime layer can decide that - but it confines that unbounded question to a single predicate over a finite object, which is what makes a preview a sufficient control rather than a formality. Seven safety invariants, derived from the fidelity condition rather than enumerated from experience, discharge the guarantee. Empirically, on a controlled N=60 adversarial suite the stack lifts pass rate by ~74 percentage points over a naive-ReAct baseline on two write-aggressive backing models, but by only ~3 points on a write-cautious one - evidence that single-model evaluations of agent safety stacks are close to unfalsifiable. The system is deployed; 108 production write operations across 8 chains back the failure taxonomy. Although the evaluation setting is public ledgers, the formalism and invariants apply to any probabilistic agent acting on irreversible external state.",
+      "authors": [
+        "Zhaoming Yin"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-08-01T17:29:42+00:00",
+      "link": "https://arxiv.org/pdf/2608.00783v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "safety invariants for agents performing irreversible state transitions",
+      "llm_evidence_cn": "为编排不可逆状态转换的智能体提供安全不变量形式化",
+      "llm_evidence": "为编排不可逆状态转换的智能体提供安全不变量形式化",
+      "canonical_evidence": "为编排不可逆状态转换的智能体提供安全不变量形式化",
+      "llm_tldr_en": "Formalizes safety invariants for agents performing irreversible state transitions in public ledgers; introduces execution fidelity guarantee under a fault model covering mis-mapping, retries, and delegated calls.",
+      "llm_tldr_cn": "针对自主智能体在外部系统上执行不可逆副作用（如资金转移、持久化写入）时缺乏安全保障的问题，提出一种四维空间形式化方法，将公共账本上的价值移动建模为状态转换。基于该形式化定义了执行保真度保证，并在包含规划器误映射、结果模糊、重试、至少一次投递以及委托调用等故障模型下给出证明。该工作为编排不可逆操作的智能体提供了可证明的安全不变量，弥补了现有智能体框架在副作用安全性上的不足。",
+      "llm_tldr": "针对自主智能体在外部系统上执行不可逆副作用（如资金转移、持久化写入）时缺乏安全保障的问题，提出一种四维空间形式化方法，将公共账本上的价值移动建模为状态转换。基于该形式化定义了执行保真度保证，并在包含规划器误映射、结果模糊、重试、至少一次投递以及委托调用等故障模型下给出证明。该工作为编排不可逆操作的智能体提供了可证明的安全不变量，弥补了现有智能体框架在副作用安全性上的不足。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00902v1",
+      "source": "arxiv",
+      "title": "Practical Online KV Cache Compaction for LLM Agents: An Empirical Study",
+      "abstract": "LLM agents accumulate long trajectories of reasoning steps, tool calls, and environment feedback, making the KV cache a major inference bottleneck. KV cache compaction can reduce this cost, but most prior methods assume a static context where future queries are known or can be approximated offline. Agents instead require online compaction: new information must be compressed before future relevance is known, using proxy queries cheap enough for the inference path. We study online compaction across token eviction (TE) and attention matching (AM), adapting both to compact agent turns and comparing cheap proxy sources such as boundary, repeat-prefill, and delayed future-generation queries. Experiments on BrowseComp-Plus and WideSearch show that immediate compaction often hurts performance, whereas delaying compaction to use the agent's future queries recovers much of the gap. Moreover, TE is often more robust than AM under imperfect proxies. Across models at different scales, TE preserves most of the accuracy while reducing KV cache by 80%, and can improve throughput over the no compaction baseline. These results position proxy-query selection as a core design choice for practical online KV compaction.",
+      "authors": [
+        "Yujian Liu",
+        "Jiabao Ji",
+        "Li An",
+        "Rohit Jain",
+        "Gungor Polatkan",
+        "Siyu Zhu",
+        "Shiyu Chang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T00:08:44+00:00",
+      "link": "https://arxiv.org/pdf/2608.00902v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "online KV cache compaction for LLM agent inference efficiency",
+      "llm_evidence_cn": "LLM智能体推理中的在线KV缓存压缩",
+      "llm_evidence": "LLM智能体推理中的在线KV缓存压缩",
+      "canonical_evidence": "LLM智能体推理中的在线KV缓存压缩",
+      "llm_tldr_en": "Studies practical online KV cache compaction for LLM agents, comparing token eviction and attention matching with cheap proxy queries to reduce inference bottlenecks from long trajectories.",
+      "llm_tldr_cn": "该工作关注LLM智能体因不断累积推理步骤、工具调用和环境反馈而导致的KV缓存推理瓶颈。现有压缩方法大多假设静态上下文，而智能体需要在未来查询未知时进行在线压缩。论文系统比较了token淘汰与注意力匹配两类在线压缩方案，并评估了边界、重预填充和延迟未来生成等廉价代理查询，在BrowseComp-Plus和WideSearch上验证了即时压缩策略的有效性与实用性，显著降低长程推理成本。",
+      "llm_tldr": "该工作关注LLM智能体因不断累积推理步骤、工具调用和环境反馈而导致的KV缓存推理瓶颈。现有压缩方法大多假设静态上下文，而智能体需要在未来查询未知时进行在线压缩。论文系统比较了token淘汰与注意力匹配两类在线压缩方案，并评估了边界、重预填充和延迟未来生成等廉价代理查询，在BrowseComp-Plus和WideSearch上验证了即时压缩策略的有效性与实用性，显著降低长程推理成本。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00973v1",
+      "source": "arxiv",
+      "title": "Mind the Gap: Zero-Query Jailbreaks via Filter-Generator Discrepancy in Text-to-Image Systems",
+      "abstract": "Text-to-image (T2I) systems typically have prompt-level safety filters before the generator to block unsafe requests, yet such systems remain vulnerable to malicious jailbreak prompts. Transfer-based attacks construct adversarial prompts offline without querying the target, but they tend to overfit to a single surrogate. Moreover, they explore a large search space in which semantic or perceptual similarity alone cannot guarantee both filter evasion and preservation of the unsafe generation intent, wasting effort on low-potential candidates. We observe that the filter and the generator process the same prompt under different objectives and representations, and term this gap the Filter-Generator Discrepancy (FGD), which allows a perturbation to reduce a prompt's perceived risk to the filter while preserving the visual concept needed by the generator. Building on FGD, we propose a zero-query jailbreak framework that screens perturbations into a high-potential candidate set via observable discrepancy rules at the tokenization and semantic stages, and then performs a surrogate-ensemble evolutionary search that requires no access to the target. Experiments on six black-box pipelines and a commercial online service show that our method consistently outperforms representative baselines, raising the average attack success rate to 29.2\\% (MHSC) and 33.3\\% (Q16) across the six pipelines and improving over the strongest baseline by about 8 and 12 percentage points, respectively.",
+      "authors": [
+        "Wanguang Li",
+        "Zhaoxin Wang",
+        "Handing Wang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T03:53:30+00:00",
+      "link": "https://arxiv.org/pdf/2608.00973v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "zero-query jailbreak via filter-generator discrepancy in T2I systems",
+      "llm_evidence_cn": "利用文本到图像系统中过滤器与生成器的差异实现零查询越狱",
+      "llm_evidence": "利用文本到图像系统中过滤器与生成器的差异实现零查询越狱",
+      "canonical_evidence": "利用文本到图像系统中过滤器与生成器的差异实现零查询越狱",
+      "llm_tldr_en": "Identifies Filter-Generator Discrepancy to craft transferable zero-query jailbreak prompts against T2I safety filters, enabling effective attacks without querying target.",
+      "llm_tldr_cn": "文生图系统通常有提示级安全过滤器，但仍易受恶意越狱提示攻击。本文发现过滤器和生成器对同一提示的目标与表征不同，提出利用这种差距构造零查询可迁移的越狱对抗提示。在多个系统上验证了该攻击的有效性，揭示了现有安全机制的结构性漏洞。",
+      "llm_tldr": "文生图系统通常有提示级安全过滤器，但仍易受恶意越狱提示攻击。本文发现过滤器和生成器对同一提示的目标与表征不同，提出利用这种差距构造零查询可迁移的越狱对抗提示。在多个系统上验证了该攻击的有效性，揭示了现有安全机制的结构性漏洞。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "jailbreak attacks",
+      "matched_requirement_id": "req-16",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01263v1",
+      "source": "arxiv",
+      "title": "Distill What the Student Can See: Fisher-Projected On-Policy Distillation for Vision-Language Models",
+      "abstract": "On-policy distillation (OPD) samples trajectories from the current student policy and minimizes token-level divergence between student and teacher next-token distributions at prefixes along those trajectories. This aligns the distillation states with the student's own generation distribution. However, it still assumes that the complete teacher distribution is an appropriate target across student capacities. In vision--language reasoning, teacher corrections can depend on visual distinctions that a compact student cannot represent. Our target-scaling study shows that, as the target approaches the complete teacher distribution, the student realizes less of the prescribed shift and obtains worse downstream performance. We therefore propose \\emph{Fisher-Projected On-Policy Distillation} (FP-OPD), which distills only locally realizable teacher corrections. FP-OPD uses continuous visual perturbations to estimate the student's local visual tangent space and projects the centered teacher--student log-probability gap onto this space under the student's Fisher metric. The resulting capacity-aware target is optimized with full-vocabulary reverse KL on student trajectories, retaining the standard OPD framework. In 8B-to-2B distillation, FP-OPD improves all seven evaluated multimodal benchmarks. It raises the average score by 2.77 points over the pretrained student and by 1.60 points over standard OPD. These results demonstrate that locally realizable teacher corrections provide a more effective target for distilling compact vision--language models.",
+      "authors": [
+        "Leyan Xue",
+        "Feng Xiong",
+        "Mingjun Ma",
+        "Changqing Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-02T14:16:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.01263v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "On-policy distillation method for vision-language models, central to OPD theme",
+      "llm_evidence_cn": "面向视觉语言模型的在线策略蒸馏方法，属于OPD主题核心",
+      "llm_evidence": "面向视觉语言模型的在线策略蒸馏方法，属于OPD主题核心",
+      "canonical_evidence": "面向视觉语言模型的在线策略蒸馏方法，属于OPD主题核心",
+      "llm_tldr_en": "This paper identifies a failure mode of OPD when the teacher distribution includes visual distinctions a compact student cannot represent, and proposes Fisher-projected on-policy distillation to scale targets to student capacity.",
+      "llm_tldr_cn": "在线策略蒸馏假设完整教师分布始终是合适目标，但在视觉-语言推理中，紧凑学生可能无法表征教师依赖的视觉区分。论文通过目标缩放实验发现，目标越接近完整教师分布，学生获得的迁移越少、下游表现越差。据此提出Fisher投影的在线策略蒸馏，将教师分布投影到学生可表征的空间。该方法为跨能力蒸馏与视觉语言推理提供了更稳健的训练目标。",
+      "llm_tldr": "在线策略蒸馏假设完整教师分布始终是合适目标，但在视觉-语言推理中，紧凑学生可能无法表征教师依赖的视觉区分。论文通过目标缩放实验发现，目标越接近完整教师分布，学生获得的迁移越少、下游表现越差。据此提出Fisher投影的在线策略蒸馏，将教师分布投影到学生可表征的空间。该方法为跨能力蒸馏与视觉语言推理提供了更稳健的训练目标。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; on policy self distillation; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01291v1",
+      "source": "arxiv",
+      "title": "ArabicDialectSafety: A Dialect-Aware Benchmark for Arabic Content Safety Classification",
+      "abstract": "We present ArabicDialectSafety, a human-curated Arabic safety dataset of 25,071 prompts covering six Arabic varieties: Modern Standard Arabic, Syrian, Egyptian, Algerian, Palestinian, and Moroccan. The dataset is annotated with dialect labels and seven fine-grained harm categories. We introduce a dual-task evaluation framework for binary safe/unsafe detection and granular harm classification across dialects. Benchmarking seven supervised and generative models, we find that fine-tuned MARBERTv2 achieves the strongest performance, with Macro-F1 scores of 0.95 for binary classification and 0.90 for granular classification, substantially outperforming prompted frontier LLMs, including Arabic-specialized models. Our analyses show that dialect conditioning is most effective when integrated at the representation level, while significant performance gaps remain for low-resource Maghrebi dialects. We further evaluate seven frontier LLMs as response generators on harmful dialectal Arabic prompts and observe unsafe generation rates below 5 percent across models. We release the dataset and code upon acceptance to support future research on dialect-aware Arabic safety evaluation. Warning: This paper contains examples of harmful and potentially offensive content included solely for research purposes.",
+      "authors": [
+        "Wajdi Zaghouani",
+        "Md. Rafiul Biswas",
+        "Kholoud Khalil Aldous",
+        "Mabrouka Bessghaier"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T15:00:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.01291v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "safety benchmark for Arabic content safety classification",
+      "llm_evidence_cn": "面向阿拉伯语内容安全分类的安全基准",
+      "llm_evidence": "面向阿拉伯语内容安全分类的安全基准",
+      "canonical_evidence": "面向阿拉伯语内容安全分类的安全基准",
+      "llm_tldr_en": "Presents a human-curated Arabic safety benchmark covering six dialects and seven harm categories; dual-task evaluation shows fine-tuned MARBERTv2 outperforms prompted frontier LLMs by a large margin.",
+      "llm_tldr_cn": "针对阿拉伯语内容安全评测缺乏方言覆盖和细粒度危害标注的问题，构建了包含25,071条提示、覆盖六种阿拉伯语方言和七个危害类别的安全数据集，并提出二分类与细粒度分类的双任务评测框架。基准测试表明微调的MARBERTv2在二分类和细粒度分类上分别达到0.95和0.90的Macro-F1，显著优于包括阿拉伯语专用模型在内的提示式前沿大模型。该工作提升了阿拉伯语安全评估的方言感知能力，为多方言安全评测提供了重要资源。",
+      "llm_tldr": "针对阿拉伯语内容安全评测缺乏方言覆盖和细粒度危害标注的问题，构建了包含25,071条提示、覆盖六种阿拉伯语方言和七个危害类别的安全数据集，并提出二分类与细粒度分类的双任务评测框架。基准测试表明微调的MARBERTv2在二分类和细粒度分类上分别达到0.95和0.90的Macro-F1，显著优于包括阿拉伯语专用模型在内的提示式前沿大模型。该工作提升了阿拉伯语安全评估的方言感知能力，为多方言安全评测提供了重要资源。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "safety benchmarks",
+      "matched_requirement_id": "req-18",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01314v1",
+      "source": "arxiv",
+      "title": "Remember-R1: Mitigating Long-Context Visual Forgetting through Reinforcement Learning",
+      "abstract": "Multimodal large language models (MLLMs) increasingly rely on long chain-of-thought reasoning for complex tasks. However, as reasoning sequences lengthen, models may gradually rely less on visual evidence and more on accumulated textual context, leading to visual forgetting. Existing approaches do not directly constrain how visual evidence is used and maintained along the original reasoning trajectory, leaving long-context visual forgetting insufficiently addressed. To address this issue, we propose Remember-R1, a reinforcement learning framework that mitigates long-context visual forgetting by applying process-level supervision directly on the original reasoning trajectory. Specifically, Remember-R1 introduces rewards that encourage broader coverage of matched visual keywords, stronger persistence of visual dependence in later reasoning steps, and greater focus on question-relevant image regions. Experiments across multiple model scales and diverse multimodal benchmarks demonstrate that Remember-R1 consistently improves reasoning performance. Additional analyses further show that it slows the decline of visual attention during generation, supporting its effectiveness in mitigating long-context visual forgetting.",
+      "authors": [
+        "Jianmin Chen",
+        "Jiaqi Tang",
+        "Wei Wei",
+        "Xiaogang Xu",
+        "Jiafei Wu",
+        "Zhe Liu",
+        "Qianzhou Wang",
+        "Yingying Yan",
+        "Botong Geng",
+        "Yuyang Xia",
+        "Lei Zhang",
+        "Qifeng Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-02T15:31:31+00:00",
+      "link": "https://arxiv.org/pdf/2608.01314v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:eff-reason",
+        "query:l-context-rl"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "RL framework to mitigate long-context visual forgetting in MLLMs",
+      "llm_evidence_cn": "用强化学习缓解多模态大模型长上下文视觉遗忘",
+      "llm_evidence": "用强化学习缓解多模态大模型长上下文视觉遗忘",
+      "canonical_evidence": "用强化学习缓解多模态大模型长上下文视觉遗忘",
+      "llm_tldr_en": "Proposes Remember-R1, an RL framework applying process-level supervision on original reasoning trajectories to counter long-context visual forgetting in MLLMs.",
+      "llm_tldr_cn": "针对多模态大语言模型在长链推理中逐渐忽视视觉证据、产生长上下文视觉遗忘的问题，论文提出 Remember-R1 强化学习框架，直接在原始推理轨迹上施加过程级奖励，鼓励模型保持对视觉证据的使用。实验表明该方法能有效缓解视觉遗忘，提升长上下文推理质量，为多模态长上下文 RL 训练提供了新思路。",
+      "llm_tldr": "针对多模态大语言模型在长链推理中逐渐忽视视觉证据、产生长上下文视觉遗忘的问题，论文提出 Remember-R1 强化学习框架，直接在原始推理轨迹上施加过程级奖励，鼓励模型保持对视觉证据的使用。实验表明该方法能有效缓解视觉遗忘，提升长上下文推理质量，为多模态长上下文 RL 训练提供了新思路。",
+      "llm_tags": [
+        "query:l-context-rl:composite"
+      ],
+      "matched_query_tag": "query:l-context-rl:composite",
+      "matched_query_text": "Papers central to long-context相关的RL训练论文，了解当前进展, especially work that connects or combines: training reinforcement learning models on long input sequences; reinforcement learning applied to long context language models; research papers on reinforcement learning for long context language models; current progress in reinforcement learning for long context tasks.",
+      "matched_requirement_id": "req-composite-l-context-rl",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01359v1",
+      "source": "arxiv",
+      "title": "EviSD: Evidence-Conditioned Self-Distillation for Search-Augmented Agents",
+      "abstract": "Outcome-based reinforcement learning enables search-augmented language agents to learn from verifiable final answers, but its trajectory-level credit cannot distinguish the contributions of individual actions in a multi-turn search process. We propose EviSD, an evidence-conditioned self-distillation framework that uses instance-level supporting evidence as privileged information for search actions and golden answers as complementary privilege for answer actions. During training, the student samples actions from the original context, while the same model re-scores them as a privileged teacher under an action-aligned context. EviSD converts the detached teacher--student gap into a bounded correction to the outcome-derived GRPO advantage and applies it only to generated action spans. This design localizes privileged guidance while preserving the update direction determined by the outcome reward, without an auxiliary distillation objective or any change at inference time. Across seven question-answering benchmarks and three backbones spanning model scales and generations, EviSD achieves the highest macro-average Exact Match in all evaluated settings, outperforming the strongest compared methods by 1.3--2.3 points while modulating only 6.7%--15.1% of response tokens. Code is available at https://github.com/JiananXie/EviSD.",
+      "authors": [
+        "Jianan Xie",
+        "Xin Sun",
+        "Zhongqi Chen",
+        "Xing Zheng",
+        "Shu Wu",
+        "Bowen Song",
+        "Liang Wang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T16:22:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.01359v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Evidence-conditioned self-distillation for search-augmented agents under outcome-based RL",
+      "llm_evidence_cn": "面向搜索增强智能体的证据条件自蒸馏，结合结果型RL与教师-学生信号",
+      "llm_evidence": "面向搜索增强智能体的证据条件自蒸馏，结合结果型RL与教师-学生信号",
+      "canonical_evidence": "面向搜索增强智能体的证据条件自蒸馏，结合结果型RL与教师-学生信号",
+      "llm_tldr_en": "In outcome-based RL, uses instance-level evidence as privileged information for self-distillation, correcting GRPO advantages by the teacher-student gap to improve credit assignment in search agents.",
+      "llm_tldr_cn": "结果型强化学习能让搜索增强型语言智能体从可验证的最终答案中学习，但轨迹级信用难以区分多轮搜索中各动作的贡献。EviSD利用实例级支持证据作为搜索动作的特权信息，并以黄金答案作为答案动作的补充特权。训练中由同一模型在动作对齐环境下作为特权教师重新评分，将教师-学生差距转化为对GRPO优势的有界修正。该方法改善了多轮搜索中的信用分配，提升了智能体的搜索策略学习。",
+      "llm_tldr": "结果型强化学习能让搜索增强型语言智能体从可验证的最终答案中学习，但轨迹级信用难以区分多轮搜索中各动作的贡献。EviSD利用实例级支持证据作为搜索动作的特权信息，并以黄金答案作为答案动作的补充特权。训练中由同一模型在动作对齐环境下作为特权教师重新评分，将教师-学生差距转化为对GRPO优势的有界修正。该方法改善了多轮搜索中的信用分配，提升了智能体的搜索策略学习。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01373v1",
+      "source": "arxiv",
+      "title": "The Boy Who Cried Wolf: Adversarial Misclassification of Safe Inputs as Unsafe in Multimodal Guardrails",
+      "abstract": "Multimodal guard models have emerged as critical safety components for screening content in vision-language systems. While adversarial research has extensively studied jailbreaking attacks that produce false negatives, the inverse threat of inducing false positives on benign inputs remains unexplored. We introduce Unsafe Induction Attacks, where adversaries distribute imperceptibly perturbed safe images that trigger guard models to reject legitimate user requests, causing a \"Boy Who Cried Wolf\" effect that degrades service availability and erodes trust. This reveals an availability failure mode in deployed safety filters. To realize this threat under diverse user prompts, we propose Unsafe Semantic Distillation (USD), which aligns adversarial perturbations with distributional representations of unsafe content rather than prompt-specific instances. Evaluated on four state-of-the-art guard models across realistic user simulation scenarios, USD achieves 84% attack success rates, outperforming existing methods and exposing fundamental vulnerabilities in current multimodal safety architectures.",
+      "authors": [
+        "Shuo Shi",
+        "Rui Yin",
+        "Naen Xu",
+        "Jiahao Chen",
+        "Chunyi Zhou",
+        "Tianyu Du",
+        "Zhihui Fu",
+        "Jun Wang",
+        "Zhaoxiang Wang",
+        "Shouling Ji"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-08-02T16:49:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.01373v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "adversarial attacks on multimodal guardrails; safety filter false positives",
+      "llm_evidence_cn": "针对多模态护栏的对抗攻击；安全过滤器误报问题",
+      "llm_evidence": "针对多模态护栏的对抗攻击；安全过滤器误报问题",
+      "canonical_evidence": "针对多模态护栏的对抗攻击；安全过滤器误报问题",
+      "llm_tldr_en": "Introduces Unsafe Induction Attacks that trick multimodal guard models into rejecting safe inputs, and proposes Unsafe Semantic Distillation to craft such attacks, exposing an availability failure mode in safety filters.",
+      "llm_tldr_cn": "论文首次研究多模态护栏的误报攻击，即诱导安全模型将良性输入误判为不安全，导致合法请求被拒绝、服务可用性下降。作者提出不安全语义蒸馏（USD）方法，在多种用户提示下构造微小扰动的安全图像以触发误报。实验表明该攻击能够普遍欺骗已有护栏系统，揭示了部署安全过滤器时容易忽视的可用性风险。",
+      "llm_tldr": "论文首次研究多模态护栏的误报攻击，即诱导安全模型将良性输入误判为不安全，导致合法请求被拒绝、服务可用性下降。作者提出不安全语义蒸馏（USD）方法，在多种用户提示下构造微小扰动的安全图像以触发误报。实验表明该攻击能够普遍欺骗已有护栏系统，揭示了部署安全过滤器时容易忽视的可用性风险。",
+      "llm_tags": [
+        "query:ai-safety:composite"
+      ],
+      "matched_query_tag": "query:ai-safety:composite",
+      "matched_query_text": "Papers central to 帮我找一下safety相关的论文，比如agent safety以及model本身的safety，jailbreak， defense以及benchmark等, especially work that connects or combines: agent safety; model safety; jailbreak attacks; defense mechanisms against attacks; safety benchmarks; red teaming; safety issues in large language models; jailbreak attacks and defenses; benchmarks for model safety evaluation; agent safety in reinforcement learning.",
+      "matched_requirement_id": "req-composite-ai-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01388v1",
+      "source": "arxiv",
+      "title": "Why Formal Monitors Fail: Attack Distribution Entropy as a Coverage Bound for LTL-Based LLM Agent Safety",
+      "abstract": "Runtime safety monitors based on Linear Temporal Logic (LTL) and finite automata (FSA) are increasingly deployed to intercept unsafe tool-call sequences in LLM agents. Yet the same monitor achieves 68-75% attack coverage on some model architectures and near-zero on others, with no explanation from capability scores, training data, or prompt design. We provide the missing theory. We prove that the recall of any fixed-invariant FSA monitor is bounded above by the concentration of the attack distribution: the fraction of attacks covered by the k most frequent trigger-completion patterns. When attacks concentrate (low Shannon entropy), a small fixed invariant set achieves high recall; when they disperse across many structurally distinct patterns (high entropy), no fixed invariant set of tractable size can, regardless of how the invariants were derived. We validate this entropy-coverage bound across eight frontier LLM architectures. GPT-class and DeepSeek backends yield highly concentrated attacks (H ~ 0.24 bits; one pattern covers 96%), explaining 68-75% recall; Gemini variants yield high-entropy distributions (H ~ 2.81 bits; 7 clusters each <= 7%), explaining near-zero recall (6-13%), invariant to architecture-matched retraining. Entropy accounts for 76% of variance in coverage (Pearson r = -0.87, p = 0.005, 95% CI [-0.98, -0.78]), holding under leave-one-out (r in [-0.91, -0.82]). We introduce a pre-deployment entropy test that predicts monitor coverage from a small attack sample, enabling architecture-aware monitor selection before deployment. The bound and test are architecture-agnostic and apply to any FSA-based runtime monitor over discrete action sequences.",
+      "authors": [
+        "Ruiyang Zhang"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-02T17:08:21+00:00",
+      "link": "https://arxiv.org/pdf/2608.01388v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Theoretical bound on LTL-based monitor recall for LLM agent safety",
+      "llm_evidence_cn": "为基于 LTL 的 LLM 智能体安全监控覆盖率提供理论界",
+      "llm_evidence": "为基于 LTL 的 LLM 智能体安全监控覆盖率提供理论界",
+      "canonical_evidence": "为基于 LTL 的 LLM 智能体安全监控覆盖率提供理论界",
+      "llm_tldr_en": "Proves FSA monitor recall is bounded by attack distribution concentration, explaining architecture-dependent coverage for LLM agent safety.",
+      "llm_tldr_cn": "针对基于线性时序逻辑（LTL）和有限自动机（FSA）的 LLM 智能体运行时安全监控在某些架构上攻击覆盖率差异巨大的问题，论文从理论上证明固定不变式 FSA 监控器的召回率受攻击分布集中度约束：攻击模式越集中，固定不变式越有效；越分散则覆盖率越低。该理论解释了现有监控器失效的原因，并为安全监控设计提供了分布熵层面的指导。",
+      "llm_tldr": "针对基于线性时序逻辑（LTL）和有限自动机（FSA）的 LLM 智能体运行时安全监控在某些架构上攻击覆盖率差异巨大的问题，论文从理论上证明固定不变式 FSA 监控器的召回率受攻击分布集中度约束：攻击模式越集中，固定不变式越有效；越分散则覆盖率越低。该理论解释了现有监控器失效的原因，并为安全监控设计提供了分布熵层面的指导。",
+      "llm_tags": [
+        "query:ai-safety:composite"
+      ],
+      "matched_query_tag": "query:ai-safety:composite",
+      "matched_query_text": "Papers central to 帮我找一下safety相关的论文，比如agent safety以及model本身的safety，jailbreak， defense以及benchmark等, especially work that connects or combines: agent safety; model safety; jailbreak attacks; defense mechanisms against attacks; safety benchmarks; red teaming; safety issues in large language models; jailbreak attacks and defenses; benchmarks for model safety evaluation; agent safety in reinforcement learning.",
+      "matched_requirement_id": "req-composite-ai-safety",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01414v1",
+      "source": "arxiv",
+      "title": "No Single Neuron of Failure: Distributed Safety Alignment Against White-Box Attacks",
+      "abstract": "With the rapid release of open-weight large foundation models, safety threats are shifting from black-box jailbreaks to neuron-level white-box attacks that directly identify and manipulate safety-related neurons. Existing alignment methods often investigate the safety behavior on a small number of neurons, creating fragile single point of failure with limited redundancy. To address this issue, we propose distributed safety alignment (DSA), which redundantly encodes safety capabilities across multiple computational neurons, ensuring that the model maintains its safety baseline even when critical safety neurons are disrupted. Specifically, we localize the intervention to the inputs of the down-projection layers in language-side feed-forward networks and treat each feature coordinate as the activation of an individual neuron. DSA then combines neuron activations with loss gradients to compute a direction-aware first-order Taylor score that globally identifies the neurons that contribute most to the current refusal behavior of the model. Finally, targeted disruption via deterministic masking and stochastic dropout is coupled, forcing the model to abandon narrow safety neurons and redundantly encode safety behavior across multiple compensatory neurons. Extensive experiments show that DSA substantially improves robustness against white-box neuron-level safety attacks while preserving the model's general language and multimodal utility.",
+      "authors": [
+        "Simiao Xie",
+        "Chuancheng Shi",
+        "Shangze Li",
+        "Wenhua Wu",
+        "Fei Shen",
+        "Ying Zhou",
+        "Zhiyong Wang",
+        "Tat-Seng Chua"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-08-02T17:49:07+00:00",
+      "link": "https://arxiv.org/pdf/2608.01414v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "distributed safety alignment defends against white-box neuron-level jailbreak attacks",
+      "llm_evidence_cn": "通过分布式安全对齐防御白盒神经元级越狱攻击",
+      "llm_evidence": "通过分布式安全对齐防御白盒神经元级越狱攻击",
+      "canonical_evidence": "通过分布式安全对齐防御白盒神经元级越狱攻击",
+      "llm_tldr_en": "Open-weight models face white-box attacks that manipulate safety-related neurons. DSA redundantly encodes safety across multiple neurons, so the model keeps its safety baseline even when critical neurons are disrupted, improving robustness against neuron-level attacks.",
+      "llm_tldr_cn": "开放权重大模型的越狱攻击已从黑盒转向可定位并操纵安全相关神经元的白盒攻击，现有对齐方法在少数神经元上形成单点故障。本文提出分布式安全对齐DSA，将安全能力冗余编码到多个计算神经元中，并针对语言侧前馈网络下投影层输入进行干预。实验表明，即使关键安全神经元被破坏，模型仍能维持安全基线，显著提升安全性鲁棒性。",
+      "llm_tldr": "开放权重大模型的越狱攻击已从黑盒转向可定位并操纵安全相关神经元的白盒攻击，现有对齐方法在少数神经元上形成单点故障。本文提出分布式安全对齐DSA，将安全能力冗余编码到多个计算神经元中，并针对语言侧前馈网络下投影层输入进行干预。实验表明，即使关键安全神经元被破坏，模型仍能维持安全基线，显著提升安全性鲁棒性。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "defense mechanisms against attacks",
+      "matched_requirement_id": "req-17",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01589v1",
+      "source": "arxiv",
+      "title": "Is More Privileged Information Better? From Solution Traces to Problem-Solving Structure in Self-Distilled Reasoning",
+      "abstract": "On-policy self-distillation (OPSD) improves reasoning by using a privileged view of a model conditioned on reference solutions to supervise a student view that observes only the question. However, the teacher-provided token-level targets may depend on reference-specific information unavailable at inference time. We propose Problem-Space-Guided OPSD (PS-OPSD), which replaces the complete solution with trajectory-grounded guidance describing the initial state, goal conditions, constraints, and a selected state-transition path. The student rollout and OPSD objective remain unchanged. Across three mathematical reasoning benchmarks and model scales ranging from 1.7B to 8B, PS-OPSD achieves the highest aggregate question-only accuracy among the compared methods. Controlled experiments further indicate that guidance relevance and path coherence contribute to these gains, highlighting the representation of privileged information as an important design choice in OPSD.",
+      "authors": [
+        "Xuyang Zhao",
+        "Liting Zhang",
+        "Zichen Xu",
+        "Zhihu Wang",
+        "Xu Caiyue",
+        "Shiwan Zhao",
+        "Qicheng Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T01:47:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.01589v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "on-policy self-distillation for reasoning with privileged information",
+      "llm_evidence_cn": "基于策略自蒸馏用于推理并利用特权信息",
+      "llm_evidence": "基于策略自蒸馏用于推理并利用特权信息",
+      "canonical_evidence": "基于策略自蒸馏用于推理并利用特权信息",
+      "llm_tldr_en": "Questions whether complete solution traces are the best teacher signal in on-policy self-distillation; proposes PS-OPSD that uses trajectory-grounded problem-space guidance; achieves SOTA on math reasoning across 1.7B-8B models.",
+      "llm_tldr_cn": "针对on-policy自蒸馏中教师提供的完整解轨迹可能包含推理时不可用的信息、从而限制学生泛化的问题，提出问题空间引导的PS-OPSD方法。它用轨迹化的问题结构描述（初始状态、目标、约束和状态转移路径）替代完整参考答案，监督学生模型，同时不改变学生rollout和OPSD目标。在三个数学推理基准及1.7B至8B不同规模模型上取得最优聚合性能，表明问题求解结构是比完整解轨迹更优的特权信息形式，为自蒸馏推理提供了新思路。",
+      "llm_tldr": "针对on-policy自蒸馏中教师提供的完整解轨迹可能包含推理时不可用的信息、从而限制学生泛化的问题，提出问题空间引导的PS-OPSD方法。它用轨迹化的问题结构描述（初始状态、目标、约束和状态转移路径）替代完整参考答案，监督学生模型，同时不改变学生rollout和OPSD目标。在三个数学推理基准及1.7B至8B不同规模模型上取得最优聚合性能，表明问题求解结构是比完整解轨迹更优的特权信息形式，为自蒸馏推理提供了新思路。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01597v1",
+      "source": "arxiv",
+      "title": "HindSearch: Trajectory-Level Hindsight Critique for Search-Augmented Reinforcement Learning",
+      "abstract": "Search-augmented LM agents are typically trained with a binary exact-match reward, which throws away most of what a failed trajectory tells us about why it failed. We introduce HindSearch, a hindsight self-distillation procedure for GRPO: after each rollout, a frozen judge writes a short critique of every failed trajectory using the gold answer, and the critique supplies an auxiliary on-policy distillation signal on the student's search actions. On the standard seven-benchmark suite with Qwen2.5-3B-Instruct, HindSearch reaches 39.4% average EM, outperforming prior search-RL baselines. Removing the judge's access to the gold answer erases most of the gain, isolating hindsight as the source of the improvement.",
+      "authors": [
+        "Haowei Liu",
+        "Jiamian Wang",
+        "Hsin-Tai Wu",
+        "Zhiqiang Tao",
+        "Yi Fang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.IR"
+      ],
+      "published": "2026-08-03T02:06:29+00:00",
+      "link": "https://arxiv.org/pdf/2608.01597v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Uses auxiliary on-policy distillation signal in GRPO for search-augmented LM agents",
+      "llm_evidence_cn": "在GRPO中使用辅助在线策略蒸馏信号训练搜索增强语言智能体",
+      "llm_evidence": "在GRPO中使用辅助在线策略蒸馏信号训练搜索增强语言智能体",
+      "canonical_evidence": "在GRPO中使用辅助在线策略蒸馏信号训练搜索增强语言智能体",
+      "llm_tldr_en": "HindSearch adds a frozen-judge hindsight critique to each failed GRPO rollout and uses it as an auxiliary on-policy distillation signal, reaching 39.4% average EM and beating prior search-RL baselines on seven benchmarks.",
+      "llm_tldr_cn": "搜索增强的语言智能体通常只用二元精确匹配奖励训练，浪费了失败轨迹的信息。HindSearch在GRPO每次rollout后让冻结的评判器依据标准答案写出简短批评，并将其作为辅助的在线策略蒸馏信号约束学生的搜索动作。在七个基准上以Qwen2.5-3B-Instruct达到39.4%平均EM，超过此前搜索RL基线。若取消评判器对标准答案的访问，增益基本消失，表明事后回看是性能提升的关键。",
+      "llm_tldr": "搜索增强的语言智能体通常只用二元精确匹配奖励训练，浪费了失败轨迹的信息。HindSearch在GRPO每次rollout后让冻结的评判器依据标准答案写出简短批评，并将其作为辅助的在线策略蒸馏信号约束学生的搜索动作。在七个基准上以Qwen2.5-3B-Instruct达到39.4%平均EM，超过此前搜索RL基线。若取消评判器对标准答案的访问，增益基本消失，表明事后回看是性能提升的关键。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.02018v1",
+      "source": "arxiv",
+      "title": "Invisible Ink Threats: Adversarial Goals Behind Legitimate Tasks in Computer-Use Agents",
+      "abstract": "Computer-use agents (CUAs), which empower large language models to autonomously operate operating systems and the web, are increasingly vulnerable to indirect prompt injection attacks. A widely adopted defense is the human-in-the-loop paradigm, in which the agent pauses for explicit user confirmation before executing sensitive operations. While effective against conspicuously high-harm attacks, this defense offers little protection against what we term Invisible Ink Threats: low-harm injected goals, such as starring a repository or installing a package, that are behaviorally indistinguishable from legitimate task execution and thus evade both model safety mechanisms and human oversight. To systematically investigate this blind spot, we present II-Bench, a collection of seemingly harmless adversarial tasks. II-Bench comprises 444 examples targeting confidentiality and integrity attacks across three platforms, spanning three attack categories: page navigation and interaction, sensitive information exfiltration, and code download and execution. Each category is instantiated in both natural language and code forms under two levels of instruction specificity. Furthermore, we construct HITLCUA, a comprehensive adversarial testing framework that integrates a real virtual machine operating system environment with isolated Docker-based web platforms, and simulates human participation by allowing CUAs to consult an API-simulated user before proceeding with suspicious operations. Extensive evaluations of leading CUAs reveal that low-harm injections frequently bypass both agent defenses and simulated user review, exposing severe and previously underexplored security risks in current CUAs.",
+      "authors": [
+        "Jia-Chen Zhang",
+        "Ze-Yu Zhang",
+        "Kai-Wei Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-03T10:16:53+00:00",
+      "link": "https://arxiv.org/pdf/2608.02018v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Agent safety: novel Invisible Ink Threats from low-harm injected goals in computer-use agents",
+      "llm_evidence_cn": "提出计算机使用智能体面临的隐形墨水威胁，关注低危害注入目标绕过安全机制与人工监督",
+      "llm_evidence": "提出计算机使用智能体面临的隐形墨水威胁，关注低危害注入目标绕过安全机制与人工监督",
+      "canonical_evidence": "提出计算机使用智能体面临的隐形墨水威胁，关注低危害注入目标绕过安全机制与人工监督",
+      "llm_tldr_en": "Identifies a blind spot in human-in-the-loop defenses for computer-use agents: low-harm injected goals that look legitimate. Systematically investigates these Invisible Ink Threats and demonstrates they evade safety mechanisms.",
+      "llm_tldr_cn": "计算机使用智能体容易受到间接提示注入攻击，而常见的人工在环防御只对高危害攻击有效。本文提出隐形墨水威胁：低危害注入目标（如星标仓库、安装包）与合法任务在行为上难以区分，能同时绕过模型安全机制和人工监督。系统研究展示了这类盲区的普遍性，说明仅靠人工确认不足以保障智能体安全。该工作为智能体安全防御与红队测试提供了新方向。",
+      "llm_tldr": "计算机使用智能体容易受到间接提示注入攻击，而常见的人工在环防御只对高危害攻击有效。本文提出隐形墨水威胁：低危害注入目标（如星标仓库、安装包）与合法任务在行为上难以区分，能同时绕过模型安全机制和人工监督。系统研究展示了这类盲区的普遍性，说明仅靠人工确认不足以保障智能体安全。该工作为智能体安全防御与红队测试提供了新方向。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.27594v2",
+      "source": "arxiv",
+      "title": "Compliance2LoRA: Personalizable On-Demand Safety Alignment on Arbitrary Policy Subsets via Hypernetwork-Generated LoRA Adapters",
+      "abstract": "Post-training alignment in large reasoning models (LRMs) has significantly improved their adaptability to diverse safety compliance settings. However, as LRMs personalization for downstream users takes center stage, the demand for varying levels of policy compliance grows as different user-specific LRMs must adhere to distinct subsets of safety policies. Training a separate LRM for each policy subset introduces severe combinatorial overhead. While in context learning methods overcome this combinatorial overhead, they introduce additional computational challenges associated with long context generation. To address this challenge, we propose \\ours, a unified adaptive hypernetwork-based framework for multi-policy compliance. In our framework, safety policies serve as customizable inputs to a LoRA adapter generator, which learns to produce policy compliant LoRA weights for downstream LRM. When added to the LRM these weights enable the generation of responses compliant with the specified policy subsets. In this work, we demonstrate that training such a hypernetwork enables on-demand policy adjustments on a single LRM without sacrificing task performance across reasoning models of different sized and different evaluation datasets. This highlights the effectiveness and practicality of adaptive hypernetwork based alignment in LRMs.",
+      "authors": [
+        "Pankayaraj Pathmanathan",
+        "Furong Huang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-30T02:30:03+00:00",
+      "link": "https://arxiv.org/pdf/2607.27594v2",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "safety alignment with LoRA adapters for arbitrary policy subsets",
+      "llm_evidence_cn": "面向任意策略子集的安全对齐方法",
+      "llm_evidence": "面向任意策略子集的安全对齐方法",
+      "canonical_evidence": "面向任意策略子集的安全对齐方法",
+      "llm_tldr_en": "Proposes Compliance2LoRA, a hypernetwork framework that generates LoRA adapters for on-demand safety alignment on arbitrary policy subsets, avoiding combinatorial training overhead and long-context generation costs.",
+      "llm_tldr_cn": "针对大型推理模型在不同用户场景下需遵守不同安全策略子集的问题，本文提出Compliance2LoRA，利用超网络为任意策略子集生成LoRA适配器，实现按需安全对齐。该方法避免了为每个策略子集单独训练模型的组合开销，也绕开了上下文学习带来的长上下文生成负担。实验表明其能灵活适配个性化安全要求，为模型安全对齐提供了高效可扩展的新途径。",
+      "llm_tldr": "针对大型推理模型在不同用户场景下需遵守不同安全策略子集的问题，本文提出Compliance2LoRA，利用超网络为任意策略子集生成LoRA适配器，实现按需安全对齐。该方法避免了为每个策略子集单独训练模型的组合开销，也绕开了上下文学习带来的长上下文生成负担。实验表明其能灵活适配个性化安全要求，为模型安全对齐提供了高效可扩展的新途径。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "safety issues in large language models",
+      "matched_requirement_id": "req-20",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.27958v1",
+      "source": "arxiv",
+      "title": "$Σ$-Mem: An Online Reliability Memory for LLM-based Multi-Agent Systems",
+      "abstract": "Memory is central to long-horizon LLM agents, yet existing memory systems primarily preserve interaction content rather than modeling which agents can be trusted and under what conditions. This limitation is particularly important in multi-agent systems, where a central model may be unable to directly verify plausible or correlated peer responses. We introduce $Σ$-Mem, an online reliability memory that records historical competence evidence for individual peers and peer relationship evidence across the peer set. Both forms of evidence are maintained as real symmetric states and updated from post-decision correctness feedback. By Weyl's inequality, the spectral change caused by each event-level update is bounded, enabling stable online adaptation without retraining the underlying models. $Σ$-Mem provides a general write-and-read interface: the same memory can be used for residual steering of a central model, response-free peer routing, or reliability-weighted voting. Across five Qwen-family models, $Σ$-Mem adapts to counterfactual reliability shifts and generalizes to unseen peers and task domains. Direct memory readouts also outperform majority voting and the best fixed peer over the full OOD evaluation set. Moreover, performance improves consistently as more correctness feedback becomes available, indicating that $Σ$-Mem progressively accumulates actionable reliability information. These results establish reliability memory as a reusable foundation for adaptive coordination in LLM-based multi-agent systems.",
+      "authors": [
+        "Peilin Feng",
+        "Suorong Yang",
+        "Soujanya Poria"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.AI"
+      ],
+      "published": "2026-07-30T10:05:50+00:00",
+      "link": "https://arxiv.org/pdf/2607.27958v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "reliability memory for multi-agent LLM systems, supporting agent swarm dynamic coordination",
+      "llm_evidence_cn": "为多智能体 LLM 系统提供在线可靠性记忆，支撑智能体集群的动态协调与信任建模",
+      "llm_evidence": "为多智能体 LLM 系统提供在线可靠性记忆，支撑智能体集群的动态协调与信任建模",
+      "canonical_evidence": "为多智能体 LLM 系统提供在线可靠性记忆，支撑智能体集群的动态协调与信任建模",
+      "llm_tldr_en": "Introduces online reliability memory for LLM multi-agent systems, tracking peer competence and relationships via symmetric state updates with bounded spectral change.",
+      "llm_tldr_cn": "针对长程多智能体 LLM 系统中缺乏对智能体可信度建模的问题，论文提出 Σ-Mem 在线可靠性记忆，记录单个智能体的能力证据和智能体间的关系证据，并利用对称状态更新与 Weyl 不等式保证在线更新的稳定性。该方法能帮助中心模型识别可靠同伴，提升多智能体协作质量，为智能体集群架构提供了重要的信任记忆组件。",
+      "llm_tldr": "针对长程多智能体 LLM 系统中缺乏对智能体可信度建模的问题，论文提出 Σ-Mem 在线可靠性记忆，记录单个智能体的能力证据和智能体间的关系证据，并利用对称状态更新与 Weyl 不等式保证在线更新的稳定性。该方法能帮助中心模型识别可靠同伴，提升多智能体协作质量，为智能体集群架构提供了重要的信任记忆组件。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.25082v1",
+      "source": "arxiv",
+      "title": "PLATO: Pointer Learner for Agent and Task Openness",
+      "abstract": "Open agent systems (OASYS) are increasingly prevalent in real-world domains where the sets of agents and tasks change unpredictably over time. Such openness, including agent openness (AO) and task openness (TO), poses a fundamental challenge to multi-agent reinforcement learning (MARL), which typically assumes fixed state and action spaces. Existing methods address openness only partially: padding and masking approaches introduce artificial bounds, while recent graph-based or hypergraph methods handle one dimension of openness but still depend on restrictive assumptions. In this paper, we introduce Pointer Learner for Agent and Task Openness (PLATO), a pointer-network-based actor combined with a centralized graph neural network (GNN) critic, trained with multi-agent proximal policy optimization under a centralized training and decentralized execution paradigm. Our pointer-based actor outputs distributions directly over the current task set. This directly supports changing action spaces without masking or retraining. Our GNN critic encodes agent-task interactions as a graph that changes shape with task and agent composition. Together, these components consider AO and TO without the boundedness of existing approaches. We formalize PLATO in a Task-and-Agent-Open Markov Game (TaAgO-MG), extending prior task-open formulations, and prove it is well-defined over the resulting unbounded state and action spaces. We evaluate PLATO with the Methods for Open Agent Systems Evaluation Initiative (MOASEI) wildfire suppression domain, an environment designed for open multi-agent system evaluation, and we demonstrate strong performance and more consistent zero-shot generalization than state-of-the-art baselines in OASYS.",
+      "authors": [
+        "Alireza Saleh Abadi",
+        "Leen-Kiat Soh",
+        "Daniel Alan Redder",
+        "Adam Eck",
+        "Prashant Doshi"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-07-27T21:20:13+00:00",
+      "link": "https://arxiv.org/pdf/2607.25082v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "pointer-network MARL for open agent systems, enabling dynamic agent/task coordination",
+      "llm_evidence_cn": "面向开放智能体系统的指针网络多智能体强化学习，支持动态协调",
+      "llm_evidence": "面向开放智能体系统的指针网络多智能体强化学习，支持动态协调",
+      "canonical_evidence": "面向开放智能体系统的指针网络多智能体强化学习，支持动态协调",
+      "llm_tldr_en": "Proposes PLATO, a pointer-network actor with GNN critic for MARL in open agent systems where agent and task sets change.",
+      "llm_tldr_cn": "针对开放智能体系统中智能体与任务集合动态变化、传统 MARL 无法处理的问题，论文提出 PLATO，以指针网络作为演员并配合集中式图神经网络评论家，采用多智能体近端策略优化进行训练。该方法能自然地适应智能体开放与任务开放，为分布式动态智能体集群提供了可扩展的强化学习架构。实验显示在开放场景中优于已有方法，为智能体集群动态协调提供了新工具。",
+      "llm_tldr": "针对开放智能体系统中智能体与任务集合动态变化、传统 MARL 无法处理的问题，论文提出 PLATO，以指针网络作为演员并配合集中式图神经网络评论家，采用多智能体近端策略优化进行训练。该方法能自然地适应智能体开放与任务开放，为分布式动态智能体集群提供了可扩展的强化学习架构。实验显示在开放场景中优于已有方法，为智能体集群动态协调提供了新工具。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.01034v1",
+      "source": "arxiv",
+      "title": "Opt.Gear Technical Report",
+      "abstract": "We introduce Opt.Gear, a foundation model designed for efficient on-device deployment, real-tim inference, and strong task capability. It includes a dense model (1M, 270M, and 1B) with a context length of 64K. We designed a new hybrid architecture that combines a convolutional key-value gated mixer with local-global attention to reduce the KV-cache memory that tends to increase exponentially with long context. This architecture delivers up to X4.9 faster prefill and decoding speeds on the NPUs compared to models of a similar scale models. From a 2T tokens candidate corpus, Opt.Gear is trained on a curated 0.5T tokens subset without knowledge distillation. This is the most data-efficient of the existing foundation models. All models are released with open weights and deployment binaries for ONNX, Qualcomm NPU, and Apple ANE making Opt.Gear a practical base for edge applications that need fast, memory-efficient inference and strong task capabilities. Furthermore, to expand the ecosystem of on-device generative language models, we are introducing the Opt.Gear-1M that can be deployed on Micro-Controller Units (MCUs), a Tiny Language Model (TLM). Opt.Gear-1M is the first generative language model to achieve 20 TPS with W4A32 quantization on the ARM Cortex-M7 CPU of the STM32H747I-DISCO.",
+      "authors": [
+        "Juneyoung Park",
+        "Youngwook Kwon"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T06:43:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.01034v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hybrid architecture reduces KV-cache memory and delivers faster prefill/decoding for long context",
+      "llm_evidence_cn": "混合架构减少KV缓存内存，在长上下文中加速预填充和解码",
+      "llm_evidence": "混合架构减少KV缓存内存，在长上下文中加速预填充和解码",
+      "canonical_evidence": "混合架构减少KV缓存内存，在长上下文中加速预填充和解码",
+      "llm_tldr_en": "Opt.Gear introduces a hybrid convolutional KV-gated mixer with local-global attention for 64K context, achieving up to 4.9x faster on-device inference without distillation.",
+      "llm_tldr_cn": "端侧部署大模型需要同时满足高效推理和长上下文支持。Opt.Gear设计了卷积键值门控混合器与局部-全局注意力结合的混合架构，减少KV缓存内存占用。在NPU上相比同规模模型预填充和解码速度最高提升4.9倍，并使用0.5T token数据高效训练。该模型在长上下文中兼顾性能与部署效率。",
+      "llm_tldr": "端侧部署大模型需要同时满足高效推理和长上下文支持。Opt.Gear设计了卷积键值门控混合器与局部-全局注意力结合的混合架构，减少KV缓存内存占用。在NPU上相比同规模模型预填充和解码速度最高提升4.9倍，并使用0.5T token数据高效训练。该模型在长上下文中兼顾性能与部署效率。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.28390v2",
+      "source": "arxiv",
+      "title": "Hierarchical Multilevel Monte Carlo for Order-Optimal Neural Actor-Critic in Average-Reward CMDPs",
+      "abstract": "Constrained Markov Decision Processes (CMDPs) provide a natural framework for reinforcement learning in safety-critical applications, where agents maximize long-term reward while satisfying long-term constraints. Although primal-dual actor-critic methods with linear critics are well understood, extending order-optimal convergence guarantees to neural critics in average-reward CMDPs has remained open. The main challenge is a fundamental bias-cost trade-off in neural critic estimation: under Neural Tangent Kernel (NTK) analysis, reducing critic bias substantially increases critic optimization cost, preventing order-optimal convergence in the primal-dual framework. We resolve this bottleneck by introducing a hierarchical Multilevel Monte Carlo (MLMC) neural critic that performs debiasing simultaneously across trajectory sampling and critic optimization. The resulting estimator attains the bias of a long critic optimization run with only logarithmic expected sample cost. Building on this estimator, we develop a primal-dual Natural Actor-Critic algorithm that achieves both an optimality gap and a constraint violation of order $\\tilde{O}(T^{-1/2})$. This establishes the first order-optimal convergence guarantees for infinite-horizon average-reward CMDPs with general policy parameterization and neural critics, while eliminating the need to know the underlying mixing time. Our results are novel even in the unconstrained setting.",
+      "authors": [
+        "Ankur Naskar",
+        "Vaneet Aggarwal"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-30T15:46:22+00:00",
+      "link": "https://arxiv.org/pdf/2607.28390v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "safety-constrained RL via neural actor-critic in average-reward CMDPs; convergence guarantees for safe RL",
+      "llm_evidence_cn": "平均奖励CMDP中的神经演员-评论家方法，为安全约束强化学习提供最优收敛保证",
+      "llm_evidence": "平均奖励CMDP中的神经演员-评论家方法，为安全约束强化学习提供最优收敛保证",
+      "canonical_evidence": "平均奖励CMDP中的神经演员-评论家方法，为安全约束强化学习提供最优收敛保证",
+      "llm_tldr_en": "Resolves the bias-cost trade-off in neural critic estimation for average-reward CMDPs by hierarchical multilevel Monte Carlo, achieving order-optimal convergence for neural actor-critic while satisfying safety constraints.",
+      "llm_tldr_cn": "安全关键应用采用CMDP平衡长期奖励与约束，但神经评论家在NTK分析下存在偏差与优化成本的权衡，难以达到阶最优收敛。本文引入分层多级蒙特卡洛方法，在降低评论家偏差的同时控制优化成本，为平均奖励CMDP的神经演员-评论家算法建立阶最优收敛保证，推进了安全强化学习理论。",
+      "llm_tldr": "安全关键应用采用CMDP平衡长期奖励与约束，但神经评论家在NTK分析下存在偏差与优化成本的权衡，难以达到阶最优收敛。本文引入分层多级蒙特卡洛方法，在降低评论家偏差的同时控制优化成本，为平均奖励CMDP的神经演员-评论家算法建立阶最优收敛保证，推进了安全强化学习理论。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety in reinforcement learning",
+      "matched_requirement_id": "req-23",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.00419v1",
+      "source": "arxiv",
+      "title": "Unleashing the Potential of Large Language Models: A Blueprint for Real-Time, Enterprise-Ready Deployments",
+      "abstract": "Large language models deployed in real-time, regulated settings face knowledge staleness, catastrophic forgetting, hallucination, and weak feedback loops. We present a unified, pattern-driven LLMOps architecture integrating real-time data ingestion, continual learning, retrieval-augmented generation (RAG), and human-in-the-loop feedback into a single operational pipeline. Four contributions map to established software design patterns: an adaptive ingestion pattern orchestrator (AIPO) evaluated with FreshStreamBench; STAR+FAR continual learning with sparse temporal adapter routing and freshness-aware replay; SAGE, an SLO-aware adaptive retrieval policy predicting a per-query passage budget to meet tail-latency targets; and an automated feedback-driven convergence stage with RLHF triggers. The result reduces latency-cost-accuracy trade-offs while supporting auditability and rollback for high-risk sectors such as health care and finance.",
+      "authors": [
+        "Muhammad Faizan Raza",
+        "Shuo",
+        "Yang",
+        "Satish Mahadevan Srinivasan",
+        "Joanna F. DeFranco"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL",
+        "cs.IR"
+      ],
+      "published": "2026-08-01T03:40:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.00419v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Real-time enterprise LLM deployment with SLO-aware adaptive retrieval to meet tail-latency targets",
+      "llm_evidence_cn": "面向实时企业级LLM部署，提出SLO感知自适应检索策略以优化推理延迟",
+      "llm_evidence": "面向实时企业级LLM部署，提出SLO感知自适应检索策略以优化推理延迟",
+      "canonical_evidence": "面向实时企业级LLM部署，提出SLO感知自适应检索策略以优化推理延迟",
+      "llm_tldr_en": "Presents a pattern-driven LLMOps pipeline integrating continual learning, RAG, and human-in-the-loop feedback; introduces SAGE, an SLO-aware adaptive retrieval policy to meet tail-latency targets.",
+      "llm_tldr_cn": "实时监管场景下的大语言模型部署面临知识过时、幻觉和反馈回路弱等问题。本文提出统一的模式驱动LLMOps架构，整合实时数据接入、持续学习、检索增强生成和人工在环反馈。其中SAGE策略通过预测每个查询的段落预算来满足尾延迟目标。该工作为LLM的实时企业级推理效率提供了可复用的系统级优化方案。",
+      "llm_tldr": "实时监管场景下的大语言模型部署面临知识过时、幻觉和反馈回路弱等问题。本文提出统一的模式驱动LLMOps架构，整合实时数据接入、持续学习、检索增强生成和人工在环反馈。其中SAGE策略通过预测每个查询的段落预算来满足尾延迟目标。该工作为LLM的实时企业级推理效率提供了可复用的系统级优化方案。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.01043v1",
+      "source": "arxiv",
+      "title": "Decoy Images Amplify Caption-Mediated Defenses Against Encoded Jailbreaks",
+      "abstract": "We report a counter-intuitive interaction between image inputs and existing black-box defenses on Vision--Language Models (VLMs): pairing an encoded jailbreak prompt with an unrelated decoy image can sharply lower attack success rate (ASR). The operative change is in the defense pipeline, not in the image. Across five frontier VLMs, two encoded-attack families, and three black-box defenses, a caption-mediated defense (ECSO) that leaves ASR essentially unchanged on text-only encoded input drops it by up to $73$pp once a content-free decoy is attached; every non-saturated contrast is significant under exact McNemar tests. We advance two hypotheses for this pattern, supported by indirect evidence rather than pipeline introspection, since a black-box threat model precludes inspecting vendor internals: caption-mediated defenses branch on image presence, and intrinsic image-side safety engages on image-resident content. Three controls constrain the explanation. Blank-canvas and natural-photograph decoys reproduce the effect on every model, implicating image presence rather than content; the effect replicates on three open-weight VLMs served with no moderation layer, so it is not a vendor-filtering artifact; and a non-symbolic, meaning-based encoder reproduces it, so it is not specific to symbolic obfuscation. Attaching a decoy unconditionally is not deployable --- it raises benign refusal to $20$--$79\\%$, an inflation of $+10$ to $+67$pp --- but gating attachment on a lightweight encoded-input detector returns benign refusal to the text baseline while preserving the safety gain wherever the detector fires, making detector recall the binding constraint. Under adaptive attacks that target the caption-mediated re-check, the effect degrades but holds. We frame this as an observation about pipeline interaction, not as a robust defense.",
+      "authors": [
+        "Haoyu Zhang",
+        "Xiangchen Guan",
+        "Shibo Zheng",
+        "Mohammad Zandsalimy",
+        "Shanu Sushmita"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-08-02T07:00:49+00:00",
+      "link": "https://arxiv.org/pdf/2608.01043v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "defense against encoded jailbreaks on VLMs via decoy images",
+      "llm_evidence_cn": "利用诱饵图像增强对视觉语言模型编码越狱的防御",
+      "llm_evidence": "利用诱饵图像增强对视觉语言模型编码越狱的防御",
+      "canonical_evidence": "利用诱饵图像增强对视觉语言模型编码越狱的防御",
+      "llm_tldr_en": "This paper shows that pairing an encoded jailbreak prompt with an unrelated decoy image sharply lowers attack success rate under caption-mediated defenses, revealing a counter-intuitive interaction on VLMs.",
+      "llm_tldr_cn": "论文报告了一个反直觉现象：在视觉语言模型上，将编码越狱提示与无关的诱饵图像配对，可以显著降低基于标题介导的防御的攻击成功率，最高降幅达73个百分点。作者提出两种假设并通过间接证据支持，说明图像输入与防御流程之间存在尚未充分理解的交互，对多模态模型的安全评估具有重要意义。",
+      "llm_tldr": "论文报告了一个反直觉现象：在视觉语言模型上，将编码越狱提示与无关的诱饵图像配对，可以显著降低基于标题介导的防御的攻击成功率，最高降幅达73个百分点。作者提出两种假设并通过间接证据支持，说明图像输入与防御流程之间存在尚未充分理解的交互，对多模态模型的安全评估具有重要意义。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "jailbreak attacks and defenses",
+      "matched_requirement_id": "req-21",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.00315v1",
+      "source": "arxiv",
+      "title": "Towards General Language-Conditioned Latent Safety Filters",
+      "abstract": "Robot policies are becoming increasingly general, with vision-language-action (VLA) models enabling a single policy to execute diverse tasks specified in natural language. Safe deployment, however, requires adapting not only to new tasks but also to varying safety requirements across users, environments, and applications. Existing safety filters remain largely constraint-specific and thus must be redesigned or relearned when safety requirements change. In this paper, we investigate language-conditioned safety filtering, in which a Hamilton-Jacobi safety actor and critic are conditioned on language-specified constraints. We evaluate this formulation across pick-and-place, table-wiping, and block-stacking tasks in the vision-based setting, examining its ability to enforce language-specified constraints and transfer to unseen constraint instances within the evaluated constraint families. Our experiments provide evidence that language-conditioned safety filters reduce constraint violations and exhibit partial transfer to unseen constraint instances.",
+      "authors": [
+        "Ihab Tabbara",
+        "Yuxuan Yang",
+        "Hussein Sibai"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.LG",
+        "eess.SY"
+      ],
+      "published": "2026-07-31T22:00:35+00:00",
+      "link": "https://arxiv.org/pdf/2608.00315v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "language-conditioned safety filters for robot policies",
+      "llm_evidence_cn": "语言条件化安全过滤与智能体安全部署",
+      "llm_evidence": "语言条件化安全过滤与智能体安全部署",
+      "canonical_evidence": "语言条件化安全过滤与智能体安全部署",
+      "llm_tldr_en": "Introduces language-conditioned safety filtering where a Hamilton-Jacobi safety actor and critic are conditioned on language constraints, enabling a single robot policy to adapt to varying safety requirements across tasks and environments.",
+      "llm_tldr_cn": "针对机器人策略通用化后安全过滤器难以随安全要求变化而调整的问题，本文提出语言条件化安全过滤方法。该方法以Hamilton-Jacobi安全演员与评论家为基础，通过语言约束条件化实现跨任务与环境的灵活安全适配。在拾放、擦桌和堆垛等视觉任务中验证了其泛化能力，为通用机器人策略的安全部署提供了一种可扩展的解决方案。",
+      "llm_tldr": "针对机器人策略通用化后安全过滤器难以随安全要求变化而调整的问题，本文提出语言条件化安全过滤方法。该方法以Hamilton-Jacobi安全演员与评论家为基础，通过语言约束条件化实现跨任务与环境的灵活安全适配。在拾放、擦桌和堆垛等视觉任务中验证了其泛化能力，为通用机器人策略的安全部署提供了一种可扩展的解决方案。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.00969v1",
+      "source": "arxiv",
+      "title": "PROGRESS: Coverage-guided RL to Train Search-augmented LLM Agent",
+      "abstract": "Existing search-augmented LLM agents are trained using Reinforcement Learning to boost its reasoning capabilities. However, these approaches primarily rely on outcome-level rewards, which provide little supervision over search behavior and overlook agent's ability to decompose complex queries properly. To mitigate this issue, we propose PROGRESS which utilizes teacher-guided coverage reward to explicitly shape decomposed query generation of the policy model. During training, frozen teacher models are used to decompose complex queries into essential search queries. These essential search queries are utilized to guide the search behavior of the policy model. Integrated into an R1-style training framework, our approach provides lightweight guidance over query decomposition decisions without dense process-level supervision. Experiments show that coverage-guided RL improves overall task performance, highlighting the importance of explicitly supervising search strategies in agentic LLMs.",
+      "authors": [
+        "Sudipta Paul",
+        "Vijay Srinivasan",
+        "Vivek Kulkarni",
+        "Aounon Kumar",
+        "Yashas Malur Saidutta",
+        "Wenbo Li",
+        "Srinivas Chappidi"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-02T03:48:41+00:00",
+      "link": "https://arxiv.org/pdf/2608.00969v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses frozen teacher models to guide policy learning in RL, resembling a teacher-student framework for distillation-like transfer",
+      "llm_evidence_cn": "在 RL 中利用冻结教师模型指导策略学习，类似蒸馏式知识迁移的师生框架",
+      "llm_evidence": "在 RL 中利用冻结教师模型指导策略学习，类似蒸馏式知识迁移的师生框架",
+      "canonical_evidence": "在 RL 中利用冻结教师模型指导策略学习，类似蒸馏式知识迁移的师生框架",
+      "llm_tldr_en": "PROGRESS uses teacher-guided coverage rewards to shape query decomposition in R1-style RL training of search-augmented LLM agents.",
+      "llm_tldr_cn": "搜索增强的 LLM 智能体通常使用强化学习训练，但奖励仅基于最终结果，缺少对搜索行为等中间步骤的监督。PROGRESS 提出利用冻结教师模型将复杂查询分解为基本搜索查询，并在 R1 风格训练框架中引入覆盖奖励来显式塑造策略模型的查询生成过程。实验表明该方法能在保持轻量监督的同时提升智能体在多步搜索任务中的推理能力，展示了教师指导与 RL 结合的有效性。",
+      "llm_tldr": "搜索增强的 LLM 智能体通常使用强化学习训练，但奖励仅基于最终结果，缺少对搜索行为等中间步骤的监督。PROGRESS 提出利用冻结教师模型将复杂查询分解为基本搜索查询，并在 R1 风格训练框架中引入覆盖奖励来显式塑造策略模型的查询生成过程。实验表明该方法能在保持轻量监督的同时提升智能体在多步搜索任务中的推理能力，展示了教师指导与 RL 结合的有效性。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "teacher student framework reinforcement learning distillation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.02087v1",
+      "source": "arxiv",
+      "title": "Instruction-Conditioned Exploration with Asymmetric Reinforcement Learning and Self-Distillation",
+      "abstract": "Post-training Large Language Models (LLMs) with Reinforcement Learning (RL) has become an important tool for improving model capabilities, but the LLM action-space structure introduces challenges distinct from classical RL, with implications for inducing exploration. New methods are required that leverage the broad knowledge and flexibility of pre-trained LLMs to deliberately generate diverse experience at training time. We propose Instruction-Conditioned Exploration (ICE), which supplements task prompts during training with one of several distinct instructions, increasing the coverage of behaviours attempted. To facilitate ICE, we propose Asymmetric-RL/SD, a combined Reinforcement Learning and Self-Distillation training objective, to transfer explored behaviours to the unconditioned test-time policy. ICE with the Asymmetric-RL/SD objective improves Qwen3-1.7B held-out pass@1 performance at $4$K response length on mathematical reasoning tasks by $5.0\\%$ relative to training with DAPO, with improvement persisting at a longer 8K context.",
+      "authors": [
+        "Jim Dilkes",
+        "Vahid Yazdanpanah",
+        "Sebastian Stein"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-03T11:47:52+00:00",
+      "link": "https://arxiv.org/pdf/2608.02087v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-distillation integrated with RL post-training",
+      "llm_evidence_cn": "自蒸馏与RL训练结合",
+      "llm_evidence": "自蒸馏与RL训练结合",
+      "canonical_evidence": "自蒸馏与RL训练结合",
+      "llm_tldr_en": "Combines instruction-conditioned exploration with asymmetric RL and self-distillation to diversify LLM training-time experience, addressing action-space exploration challenges in RL post-training.",
+      "llm_tldr_cn": "针对LLM强化学习后训练中探索不足的问题，本文提出指令条件化探索（ICE），在任务提示中补充不同指令以扩大行为覆盖，并设计非对称RL/自蒸馏联合目标。该方法利用预训练模型知识生成多样化经验，缓解动作空间带来的探索困难。相关工作为在策略自蒸馏类方法提供了借鉴。",
+      "llm_tldr": "针对LLM强化学习后训练中探索不足的问题，本文提出指令条件化探索（ICE），在任务提示中补充不同指令以扩大行为覆盖，并设计非对称RL/自蒸馏联合目标。该方法利用预训练模型知识生成多样化经验，缓解动作空间带来的探索困难。相关工作为在策略自蒸馏类方法提供了借鉴。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.00693v1",
+      "source": "arxiv",
+      "title": "AttnLink: Turning Attention into Schema Links for Text-to-SQL",
+      "abstract": "Schema linking is a critical component of Text-to-SQL systems, but existing approaches often trade off contextual modeling capacity, score-based controllability, and inference efficiency. We introduce AttnLink, an attention-based framework that converts LLMs' internal attention into continuous relevance scores for schema items. AttnLink extracts the attention from the generation-start position to candidate schema spans, enabling all candidates to be ranked in a single prefill pass without autoregressive decoding. We develop two variants: AttnLink-U, which directly probes pretrained attention without parameter updates, and AttnLink-S, which aligns the attention distribution with gold schema items through direct supervision. To improve coverage of multiple relevant schema items, AttnLink-S combines a set-mass objective with an adaptive probability-floor regularizer. The resulting scores support post-hoc precision-recall control through temperature scaling and cumulative-mass selection. Experiments on Spider, BIRD, and Spider2-SQLite show that AttnLink-S achieves mAP scores of 99.22%, 95.95%, and 83.29%, respectively, with millisecond-scale schema-linking latency. It also yields the best or tied-best execution accuracy for downstream SQL generation in seven of nine generator-dataset settings.",
+      "authors": [
+        "Jinwang Song",
+        "Tao Liu",
+        "Haowen Zheng",
+        "Xiangheng Li",
+        "Yifan Li",
+        "Hongying Zan"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-01T14:44:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.00693v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "query:ai-safety",
+        "query:eff-reason"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "improves inference efficiency via attention-based schema linking for Text-to-SQL",
+      "llm_evidence_cn": "通过基于注意力的模式链接提升Text-to-SQL的推理效率",
+      "llm_evidence": "通过基于注意力的模式链接提升Text-to-SQL的推理效率",
+      "canonical_evidence": "通过基于注意力的模式链接提升Text-to-SQL的推理效率",
+      "llm_tldr_en": "AttnLink converts LLM attention into relevance scores for schema items, enabling single-pass ranking without autoregressive decoding; two variants balance efficiency and supervision for Text-to-SQL.",
+      "llm_tldr_cn": "针对Text-to-SQL中模式链接在上下文建模、可控性与推理效率之间的权衡问题，提出AttnLink框架，将LLM内部注意力转化为模式项的连续相关分数，在一次预填充即可完成排序，避免自回归解码。包含直接探测预训练注意力的AttnLink-U和通过监督对齐的AttnLink-S两种变体，在提升覆盖率和效率方面表现出潜力。",
+      "llm_tldr": "针对Text-to-SQL中模式链接在上下文建模、可控性与推理效率之间的权衡问题，提出AttnLink框架，将LLM内部注意力转化为模式项的连续相关分数，在一次预填充即可完成排序，避免自回归解码。包含直接探测预训练注意力的AttnLink-U和通过监督对齐的AttnLink-S两种变体，在提升覆盖率和效率方面表现出潜力。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.01321v1",
+      "source": "arxiv",
+      "title": "BiCAA: Bidirectional Credit Assignment for Search-Augmented Agent",
+      "abstract": "Multi-step search is a fundamental capability for search agents, enabling them to iteratively acquire, refine, and integrate external evidence for complex reasoning QA. However, vanilla GRPO allocates rewards exclusively based on the model's final outputs, yielding outcome-only supervision with no supervisory signals for intermediate reasoning steps. Such sparse supervision easily causes training instability and redundant search behaviors on multi-step search tasks. To mitigate this limitation, we adopt process reward to deliver stepwise supervision signals. For this process reward, we propose two complementary criteria to judge each search step: whether the step yields new evidence to facilitate problem solving, and whether it forms an efficient, pivotal intermediate decision within the overall reasoning trajectory. Building on this insight, we propose BiCAA: a bidirectional credit assignment framework that delivers dense, distinguishing process rewards for search-augmented agents. BiCAA builds bidirectional process rewards by fusing two complementary signals: forward solvability gain and hindsight success criticality. The former quantifies step-wise improvements in answer plausibility, while the latter evaluates each step's necessity for final success via hindsight outcome-based criticality scoring. We modulate and aggregate the two signals and then fuse them with the outcome reward. Experiments on search-augmented QA benchmarks show that BiCAA stabilizes policy optimization, reduces redundant search behavior, and achieves competitive performance.",
+      "authors": [
+        "Yibin Huang",
+        "Bin Xu",
+        "Hailong Cao",
+        "Conghui Zhu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T15:41:57+00:00",
+      "link": "https://arxiv.org/pdf/2608.01321v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "RL process rewards to reduce redundant multi-step search",
+      "llm_evidence_cn": "用过程奖励强化多步搜索，减少冗余搜索行为",
+      "llm_evidence": "用过程奖励强化多步搜索，减少冗余搜索行为",
+      "canonical_evidence": "用过程奖励强化多步搜索，减少冗余搜索行为",
+      "llm_tldr_en": "BiCAA addresses outcome-only supervision in multi-step search RL by proposing bidirectional credit assignment with process rewards that judge evidence gain and pivotal efficiency, stabilizing training and reducing redundant search.",
+      "llm_tldr_cn": "针对多步搜索智能体在GRPO中仅依赖最终答案奖励、中间步骤缺乏监督导致的训练不稳定与冗余搜索问题，本文提出双向信用分配方法。其引入过程奖励，分别用是否产生新证据和是否构成高效关键步来评估每个搜索步骤。实验结果表明该方法能有效减少冗余搜索并提升搜索智能体的训练稳定性。这项工作为多步搜索强化学习提供了逐步监督的实用方案。",
+      "llm_tldr": "针对多步搜索智能体在GRPO中仅依赖最终答案奖励、中间步骤缺乏监督导致的训练不稳定与冗余搜索问题，本文提出双向信用分配方法。其引入过程奖励，分别用是否产生新证据和是否构成高效关键步来评估每个搜索步骤。实验结果表明该方法能有效减少冗余搜索并提升搜索智能体的训练稳定性。这项工作为多步搜索强化学习提供了逐步监督的实用方案。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "optimizing reasoning processes for efficiency",
+      "matched_requirement_id": "req-29",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.02139v1",
+      "source": "arxiv",
+      "title": "Self-Improving Large Language Models via Progressive Experience Evolution",
+      "abstract": "Large language models (LLMs) capable of self-improvement require not only effective policy optimization, but also a principled mechanism for transforming transient interaction experience into persistent model capabilities. Existing self-improvement paradigms remain fragmented: test-time methods can explicitly extract experience but cannot internalize it into model parameters, whereas training-time optimization methods can update model parameters but lack an explicit mechanism for accumulating transferable experience. Bridging these two paradigms requires a critical intermediate stage that remains underexplored, namely \\emph{experience distillation}. To address this gap, we propose \\textbf{SPEE} (\\textbf{S}elf-\\textbf{P}rogressive \\textbf{E}xperience \\textbf{E}volution), a unified post-training framework that sequentially performs explicit experience evolution followed by implicit policy optimization. During explicit experience evolution, SPEE reflects on trajectories collected from multiple interactions to extract, verify, and progressively evolve transferable experience, which is subsequently internalized into the policy through privilege-guided On-Policy Self-Distillation (OPSD). During implicit policy optimization, reward-driven reinforcement learning leverages these internalized priors to explore novel solution strategies. In the experience evolution stage, a continuously evolving global experience pool consolidates knowledge from both successful and failed trajectories, filters out low-utility experience, and mitigates post-hoc rationalization induced by individual trajectories. Experiments on five mathematical reasoning benchmarks demonstrate that SPEE consistently outperforms both test-time and training-time self-evolution baselines across three model scales. The source code is available at https://github.com/rrrsj/SPEE.",
+      "authors": [
+        "Shijie Ren",
+        "Xiting Wang",
+        "Meng Li",
+        "Yujie Guo",
+        "Yunhang Yao",
+        "Ziheng Peng",
+        "Xunlong Wang",
+        "Yuetan Chen",
+        "Haoyang Zhou",
+        "Yunlong Liang",
+        "Fandong Meng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-03T12:27:32+00:00",
+      "link": "https://arxiv.org/pdf/2608.02139v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "proposes experience distillation to internalize self-generated experience into the policy",
+      "llm_evidence_cn": "提出经验蒸馏，将模型自身生成的经验转化为策略参数，属自蒸馏",
+      "llm_evidence": "提出经验蒸馏，将模型自身生成的经验转化为策略参数，属自蒸馏",
+      "canonical_evidence": "提出经验蒸馏，将模型自身生成的经验转化为策略参数，属自蒸馏",
+      "llm_tldr_en": "SPEE bridges test-time and training-time self-improvement by introducing experience distillation, which progressively converts a model's self-generated experience into persistent policy parameters. This enables accumulation of transferable experience and sustained capability improvement, unifying prior fragmented paradigms.",
+      "llm_tldr_cn": "现有大模型自我改进范式彼此割裂：测试时方法能提取经验却无法固化为参数，训练时方法虽能更新参数却缺少经验积累机制。本文提出的SPEE通过渐进式经验蒸馏这一关键中间环节，将模型自身生成的经验转化为可持久化的策略能力，打通两种范式。实验显示该机制能够累积可迁移经验并持续提升策略性能，为自学习大模型提供了统一且可扩展的框架。",
+      "llm_tldr": "现有大模型自我改进范式彼此割裂：测试时方法能提取经验却无法固化为参数，训练时方法虽能更新参数却缺少经验积累机制。本文提出的SPEE通过渐进式经验蒸馏这一关键中间环节，将模型自身生成的经验转化为可持久化的策略能力，打通两种范式。实验显示该机制能够累积可迁移经验并持续提升策略性能，为自学习大模型提供了统一且可扩展的框架。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.00962v1",
+      "source": "arxiv",
+      "title": "PMMC: Prospective Multimodal Memory Compilation for Long-Term LVLM Agents",
+      "abstract": "Long-term memory is essential for LVLM agents to maintain consistency and integrate information across extended multimodal interactions. Existing agent memory systems, however, often reduce visual experiences into textual summaries or rely on static retrieve-then-reason pipelines, which are inefficient at query time and brittle when questions require image-text binding, temporal updates, or visual details. We propose Prospective Multimodal Memory Compilation, a framework that shifts part of the memory reasoning process from query time to memory consolidation time. Given accumulated multimodal interactions, a Questioner predicts future question candidates, a Planner compiles question-conditioned multimodal memory programs, and a Doubter verifies whether the planned evidence path can support the predicted answer. The verified question-program pairs form a structured question bank for efficient query-time routing and evidence retrieval. Experiments on multimodal long-term memory benchmarks show that our method improves answer quality and visual evidence recall while reducing query-time token and latency costs. Extensive ablations analyze the effects of self-feedback, dynamic planning, raw-image access, and question bank coverage.",
+      "authors": [
+        "Jingyu Sun",
+        "Yan Lin",
+        "Yuyang Xue",
+        "Yifan Wang",
+        "Zhengtao Yao",
+        "Rui Qian",
+        "Zefeng Xu",
+        "Jiachen Li",
+        "Xianyang Liu",
+        "Jiancheng Pan",
+        "Jingyuan Sun",
+        "Syed Murtuza Baker",
+        "Hongpeng Zhou"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-02T03:20:54+00:00",
+      "link": "https://arxiv.org/pdf/2608.00962v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Shifts memory reasoning to consolidation time to improve query-time inference efficiency",
+      "llm_evidence_cn": "将记忆推理转移到整理阶段以提高查询时推理效率",
+      "llm_evidence": "将记忆推理转移到整理阶段以提高查询时推理效率",
+      "canonical_evidence": "将记忆推理转移到整理阶段以提高查询时推理效率",
+      "llm_tldr_en": "PMMC compiles prospective multimodal memory programs at consolidation time to make long-term LVLM agents more query-efficient.",
+      "llm_tldr_cn": "长期多模态智能体需要保持一致性和跨交互的信息整合，但现有系统常将视觉体验压缩为文本摘要或使用静态检索-推理流水线，导致查询时低效且难以处理图像-文本绑定等细节。PMMC 提出前瞻性多模态记忆编译框架，在记忆整理阶段由提问者预测未来问题，规划者编译条件化记忆程序，怀疑者进行验证，从而将部分推理负担从查询时转移到整理时。实验表明该方法在不牺牲记忆质量的前提下提升了查询效率，为长期多模态智能体提供了高效的记忆推理方案。",
+      "llm_tldr": "长期多模态智能体需要保持一致性和跨交互的信息整合，但现有系统常将视觉体验压缩为文本摘要或使用静态检索-推理流水线，导致查询时低效且难以处理图像-文本绑定等细节。PMMC 提出前瞻性多模态记忆编译框架，在记忆整理阶段由提问者预测未来问题，规划者编译条件化记忆程序，怀疑者进行验证，从而将部分推理负担从查询时转移到整理时。实验表明该方法在不牺牲记忆质量的前提下提升了查询效率，为长期多模态智能体提供了高效的记忆推理方案。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
