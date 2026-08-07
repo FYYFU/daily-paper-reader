@@ -1,0 +1,1089 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-07T02:00:45.669769+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 4,
+    "deep_divecandidates": 16,
+    "deep_cap": 9,
+    "deep_selected": 10,
+    "quick_candidates": 16,
+    "quick_skim_target": 14,
+    "quick_selected": 14
+  },
+  "deep_dive": [
+    {
+      "id": "2608.04408v1",
+      "source": "arxiv",
+      "title": "Not Every Divergence Should Be Suppressed: Counterfactual Recoverability in On-Policy Distillation",
+      "abstract": "On-policy distillation (OPD) supervises student-visited trajectories, yet divergence-based rules cannot determine whether an erroneous prefix remains correctable. We formulate this decision as counterfactual recoverability and replay each error state through budget-matched teacher-continuation and rollback branches. Based on their relative success, states are categorized as recoverable, irreversible-but-avoidable, or ambiguous, and these labels guide whether training retains, rolls back, or conventionally supervises the corresponding trajectory. On AIME branch diagnostics, the mean continuation-minus-rollback effect is 0.185 for recoverable states and -1.000 for irreversible-but-avoidable states, demonstrating opposite intervention preferences. A branch-derived recoverability proxy achieves an AUC of 1.000, substantially outperforming divergence alone at 0.392. Across frozen evaluations, recoverability-aware control achieves the strongest recorded performance, reaching 0.578 success on held-out AIME2025 compared with 0.517 for the best baseline. It also improves AIME2024-2025 average@32 from 0.2656 to 0.3125 and GPQA-Diamond average@32 from 0.2702 to 0.3070. Component ablations further show that retaining teacher-correctable prefixes provides the largest individual contribution. These findings establish recoverability as an outcome-grounded decision variable for selective supervision in OPD.",
+      "authors": [
+        "De Jiang",
+        "Zhengyang Zhang",
+        "Kehong Yuan",
+        "Shaohua Ma"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T03:32:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.04408v1",
+      "tags": [
+        "keyword:opd",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Directly targets on-policy distillation; introduces counterfactual recoverability to decide whether erroneous prefixes should be corrected.",
+      "llm_evidence_cn": "直接针对同策略蒸馏；提出反事实可恢复性来判断错误前缀是否可纠正。",
+      "llm_evidence": "直接针对同策略蒸馏；提出反事实可恢复性来判断错误前缀是否可纠正。",
+      "canonical_evidence": "直接针对同策略蒸馏；提出反事实可恢复性来判断错误前缀是否可纠正。",
+      "llm_tldr_en": "Proposes counterfactual recoverability for on-policy distillation, categorizing error states via teacher-continuation vs rollback branches to decide retention or rollback. Shows opposite continuation-minus-rollback effects on AIME diagnostics.",
+      "llm_tldr_cn": "同策略蒸馏依赖学生采样的轨迹进行监督，但现有基于散度的规则无法判断错误前缀是否仍可纠正。本文提出反事实可恢复性，通过预算匹配的教师延续分支与回滚分支重放错误状态，将状态划分为可恢复、不可逆但可避免和模糊三类，并据此选择保留、回滚或常规监督。在AIME分支诊断中，可恢复状态和不可逆但可避免状态的延续减去回滚效应分别为0.185和-1.000，表明该方法能有效区分两类状态。该工作为同策略蒸馏提供了更细粒度的监督信号选择依据。",
+      "llm_tldr": "同策略蒸馏依赖学生采样的轨迹进行监督，但现有基于散度的规则无法判断错误前缀是否仍可纠正。本文提出反事实可恢复性，通过预算匹配的教师延续分支与回滚分支重放错误状态，将状态划分为可恢复、不可逆但可避免和模糊三类，并据此选择保留、回滚或常规监督。在AIME分支诊断中，可恢复状态和不可逆但可避免状态的延续减去回滚效应分别为0.185和-1.000，表明该方法能有效区分两类状态。该工作为同策略蒸馏提供了更细粒度的监督信号选择依据。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04419v1",
+      "source": "arxiv",
+      "title": "SPOT: Sparse Probing and Outcome Calibration for On-Policy Distillation",
+      "abstract": "On-policy distillation (OPD) provides dense teacher supervision on student-generated trajectories, but standard reverse-KL training can assign insufficient probability to other plausible continuations. Teacher entropy alone does not reveal whether uncertainty is concentrated among a few plausible next tokens or dispersed over a long probability tail, nor whether the student already represents those candidates well. Moreover, local teacher probabilities may not predict downstream success. We introduce Sparse Probing and Outcome-calibrated Targets OPD (SPOT), which addresses two coupled decisions, where to probe and what to distill, through an acquisition--exploration--exploitation procedure. During acquisition, a position-level score combines normalized teacher entropy, the probability mass captured by a small top-$k$ candidate set, and student--teacher mismatch to allocate a limited probing budget. During exploration, SPOT evaluates teacher-proposed candidates through verifier-scored student continuations. During exploitation, these outcomes produce a closed-form, KL-regularized target that favors candidates with better downstream outcomes while remaining anchored to the teacher distribution. Extensive experiments across multiple student models and reasoning benchmarks demonstrate the effectiveness of SPOT in improving reasoning performance while balancing solution quality and coverage.",
+      "authors": [
+        "Zikun Qu",
+        "Min Zhang",
+        "Mingze Kong",
+        "Zhiwei Shang",
+        "Yikun Ban",
+        "Shuang Qiu",
+        "Zhongxiang Dai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T03:59:24+00:00",
+      "link": "https://arxiv.org/pdf/2608.04419v1",
+      "tags": [
+        "keyword:opd",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "SPOT method for on-policy distillation",
+      "llm_evidence_cn": "SPOT：面向在策略蒸馏的稀疏探测与结果校准",
+      "llm_evidence": "SPOT：面向在策略蒸馏的稀疏探测与结果校准",
+      "canonical_evidence": "SPOT：面向在策略蒸馏的稀疏探测与结果校准",
+      "llm_tldr_en": "SPOT improves on-policy distillation with sparse probing and outcome-calibrated targets, deciding where to probe and what to distill via acquisition-exploration-exploitation.",
+      "llm_tldr_cn": "在策略蒸馏（OPD）在学生生成轨迹上提供密集教师监督，但标准反KL训练会给其他合理延续分配不足概率，教师熵也无法区分不确定性类型。本文提出SPOT，通过采集-探索-利用过程联合决策探测位置与蒸馏目标，引入稀疏探测与结果校准目标。方法能更准确定位关键token并预测下游成功，提升学生策略学习效果。",
+      "llm_tldr": "在策略蒸馏（OPD）在学生生成轨迹上提供密集教师监督，但标准反KL训练会给其他合理延续分配不足概率，教师熵也无法区分不确定性类型。本文提出SPOT，通过采集-探索-利用过程联合决策探测位置与蒸馏目标，引入稀疏探测与结果校准目标。方法能更准确定位关键token并预测下游成功，提升学生策略学习效果。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.05086v1",
+      "source": "arxiv",
+      "title": "Item Response Theory for AI Safety",
+      "abstract": "Language models differ in how safely they behave and these differences are measured by safety benchmarks. But aggregated benchmark scores are hard to trust and interpret, because benchmarks duplicate one another, correlate heavily, and models may sandbag when they detect evaluation. To address these issues, we draw on Item Response Theory (IRT), a statistical toolkit for measuring these latents from performance on items with inferred psychometric properties. We fit IRT models to eight safety benchmarks across 192 language models, the largest psychometric analysis of LLM safety evaluations to date, and contribute three results. First, we find that three interpretable factors of refusal strictness, truthfulness, and contextual harm explain most of the variance between models across benchmarks. Second, psychometrically selected items recover full benchmark scores with lower error than random subsets of the same size, and roughly ten adaptively chosen items suffice for several individual benchmarks, cutting evaluation cost by 97-99%. Third, IRT supports audits of individual models, showing that it can be used to detect naive sandbagging and changes of model behind APIs. Overall, we show IRT is a ready-made toolkit for reading, reducing, and auditing safety benchmarks, which we recommend frontier labs and evaluators adopt.",
+      "authors": [
+        "Joshua Fonseca Rivera",
+        "Neil Shah",
+        "David Demitri Africa",
+        "Konstantinos Voudouris"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-05T17:25:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.05086v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "query:ai-safety",
+        "query:eff-reason"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "psychometric IRT analysis of eight safety benchmarks across many LLMs",
+      "llm_evidence_cn": "对多项安全基准开展项目反应理论分析",
+      "llm_evidence": "对多项安全基准开展项目反应理论分析",
+      "canonical_evidence": "对多项安全基准开展项目反应理论分析",
+      "llm_tldr_en": "Applies Item Response Theory to eight LLM safety benchmarks across 192 models, revealing three interpretable safety factors and a way to make benchmark scores more reliable and interpretable.",
+      "llm_tldr_cn": "论文针对LLM安全基准的可信度与可解释性问题，引入项目反应理论（IRT），对8个安全基准、192个语言模型进行大规模心理测量学分析。研究发现拒绝严格性、真实性和情境危害三个可解释因子能解释模型间的大部分差异。基于IRT可以诊断基准重复、模型沙袋等行为，从而修正聚合分数。这项工作为更可靠的安全评测与模型安全分析提供了统计学框架。",
+      "llm_tldr": "论文针对LLM安全基准的可信度与可解释性问题，引入项目反应理论（IRT），对8个安全基准、192个语言模型进行大规模心理测量学分析。研究发现拒绝严格性、真实性和情境危害三个可解释因子能解释模型间的大部分差异。基于IRT可以诊断基准重复、模型沙袋等行为，从而修正聚合分数。这项工作为更可靠的安全评测与模型安全分析提供了统计学框架。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "safety benchmarks",
+      "matched_requirement_id": "req-18",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.02087v2",
+      "source": "arxiv",
+      "title": "Instruction-Conditioned Exploration for Reinforcement Learning with Self-Distillation to an Unconditioned Policy",
+      "abstract": "Post-training Large Language Models (LLMs) with Reinforcement Learning (RL) has become an important tool for improving model capabilities, but the LLM action-space structure introduces challenges distinct from classical RL, with implications for inducing exploration. New methods are required that leverage the broad knowledge and flexibility of pre-trained LLMs to deliberately generate diverse experience at training time. We propose Instruction-Conditioned Exploration (ICE), which appends one of a small fixed set of instructions to task prompts during training, using the same set for every problem, increasing the coverage of behaviours attempted. To facilitate ICE, we combine RL on the instruction-conditioned policy with self-distillation of its correct rollouts into the unconditioned test-time policy. ICE with this objective improves Qwen3-1.7B held-out pass@1 performance at 4K response length on mathematical reasoning tasks by $5.0\\%$ relative to training with DAPO, with improvement persisting at a longer 8K context. The improvement does not appear for Qwen3-4B at 4K, where the instructions do not expand base-model coverage.",
+      "authors": [
+        "Jim Dilkes",
+        "Vahid Yazdanpanah",
+        "Sebastian Stein"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-03T11:47:52+00:00",
+      "link": "https://arxiv.org/pdf/2608.02087v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-distillation in RL exploration",
+      "llm_evidence_cn": "强化学习中的自蒸馏与探索",
+      "llm_evidence": "强化学习中的自蒸馏与探索",
+      "canonical_evidence": "强化学习中的自蒸馏与探索",
+      "llm_tldr_en": "ICE appends instructions to task prompts during RL training to increase behavior coverage, then self-distills the instruction-conditioned policy into an unconditioned policy, improving post-training exploration.",
+      "llm_tldr_cn": "LLM后训练的RL面临动作空间结构带来的探索挑战。本文提出指令条件化探索（ICE），在训练时为任务提示附加一小组固定指令以增加行为覆盖，同时在指令条件策略上做RL，并将其自蒸馏到无条件策略。实验表明ICE能稳定提升训练时探索的多样性并改善下游任务性能。",
+      "llm_tldr": "LLM后训练的RL面临动作空间结构带来的探索挑战。本文提出指令条件化探索（ICE），在训练时为任务提示附加一小组固定指令以增加行为覆盖，同时在指令条件策略上做RL，并将其自蒸馏到无条件策略。实验表明ICE能稳定提升训练时探索的多样性并改善下游任务性能。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.02683v1",
+      "source": "arxiv",
+      "title": "$S^3$: Improving Agent Safety through Multi-Stage Defense",
+      "abstract": "Large Language Model (LLM) agents rely on multi-stage agentic workflows, with stages such as memory, planning, and tool execution, to accomplish complex tasks. However, risks may emerge at different stages, propagate across steps, and become difficult to detect and mitigate. Existing safety methods protect only isolated stages and are difficult to integrate, leaving agents without comprehensive protection throughout the workflow. To address these limitations, we introduce Stage-Specific Safety Skills, a unified abstraction that represents heterogeneous safety designs as reusable and composable components with explicit stage semantics. We further develop an automated transformation pipeline that converts existing safety designs into reusable safety skills and establish a community-driven safety skill library. Building on this abstraction, we propose $S^3$, a multi-stage defense framework in which a guard agent orchestrates stage-specific safety skills for risk detection and mitigation throughout the agentic workflow. We also construct the Multi-Stage Risk Benchmark (MSRB) to evaluate representative risks across workflow stages. Experimental results show that $S^3$ consistently outperforms representative state-of-the-art baselines in both safety effectiveness and utility preservation. These results demonstrate the potential of stage-specific safety skills as a scalable and composable foundation for building resilient and trustworthy agent systems.",
+      "authors": [
+        "Zibo Xiao",
+        "Haoyu Wang",
+        "Jun Sun"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-08-03T02:06:06+00:00",
+      "link": "https://arxiv.org/pdf/2608.02683v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Multi-stage defense for LLM agent safety",
+      "llm_evidence_cn": "面向LLM智能体安全的多阶段防御",
+      "llm_evidence": "面向LLM智能体安全的多阶段防御",
+      "canonical_evidence": "面向LLM智能体安全的多阶段防御",
+      "llm_tldr_en": "Introduces Stage-Specific Safety Skills, a unified abstraction representing heterogeneous safety designs as reusable composable components, plus an automated pipeline to convert existing safety designs into safety skills for comprehensive multi-stage agent defense.",
+      "llm_tldr_cn": "LLM智能体通过记忆、规划、工具执行等多阶段工作流完成任务，风险可能在不同阶段出现并跨步骤传播，而现有方法仅保护孤立阶段且难以集成。作者提出阶段特定安全技能（S^3），将异构安全设计抽象为可复用可组合的组件，并提供自动化转换流程。该方法将已有安全设计转化为带阶段语义的安全技能，从而为智能体提供全流程保护。实验显示S^3能有效提升多阶段攻击下的智能体安全性。",
+      "llm_tldr": "LLM智能体通过记忆、规划、工具执行等多阶段工作流完成任务，风险可能在不同阶段出现并跨步骤传播，而现有方法仅保护孤立阶段且难以集成。作者提出阶段特定安全技能（S^3），将异构安全设计抽象为可复用可组合的组件，并提供自动化转换流程。该方法将已有安全设计转化为带阶段语义的安全技能，从而为智能体提供全流程保护。实验显示S^3能有效提升多阶段攻击下的智能体安全性。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04565v1",
+      "source": "arxiv",
+      "title": "Breadcrumbing Search Agents",
+      "abstract": "LLM-based search agents are widely used for information-seeking tasks, but their reliance on external tool returns introduces a critical security risk: web content retrieved during execution is untrusted, exposing agents to prompt injection and goal hijacking. Prior work on search-agent safety primarily focuses on static web-content injection, but modern agents issue follow-up queries and cross-check competing sources, so a single injected page is often diluted or rejected. We show that the channel delivering search and page observations is a fragile security boundary: beyond exposing the agent to a single poisoned page, a mediated search interface can repeatedly steer how the agent gathers evidence and forms its final answer. Under a constrained tool-intermediary threat model, appending only one controlled result per query can substantially increase attack success when the evidence is coordinated across the agent's trajectory. We study this setting with a strategy-driven long-horizon attack system and introduce Authority-Chain Hijack (ACH), an expert-refined strategy that turns isolated search-result and page-content manipulations into a coherent evidence chain across seemingly corroborating sources. ACH achieves the highest Overall ASR among all baselines, reaching 55.9% / 83.3% ASR / MaxN ASR on the full SafeSearch test split. We further introduce Trace-Guided Strategy Evolution (TGSE), which automatically improves attacker strategies from execution traces, replacing manual redesign with trace-driven refinement; its strongest single setting reaches 71.4% / 95.0% in held-out evaluation.",
+      "authors": [
+        "Xuebin Li",
+        "Hanqing Zhao",
+        "Siyuan Liang",
+        "Kejiang Chen",
+        "Weiming Zhang",
+        "Dacheng Tao",
+        "Nenghai Yu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-05T07:57:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.04565v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Search agent safety against prompt injection and goal hijacking",
+      "llm_evidence_cn": "搜索智能体的提示注入与目标劫持安全风险",
+      "llm_evidence": "搜索智能体的提示注入与目标劫持安全风险",
+      "canonical_evidence": "搜索智能体的提示注入与目标劫持安全风险",
+      "llm_tldr_en": "Shows that mediated search interfaces can repeatedly steer LLM search agents, enabling prompt injection and goal hijacking beyond single poisoned pages; highlights a fragile security boundary in search-agent pipelines.",
+      "llm_tldr_cn": "论文指出基于LLM的搜索智能体在获取外部工具返回内容时面临严重安全风险：检索网页不可信，可能遭受提示注入和目标劫持。作者证明，经过中介的搜索接口可以反复操纵智能体收集证据和形成答案，而不只是单页投毒。在受限的工具中介威胁模型下，仅附加恶意内容即可持续误导智能体。该研究为搜索智能体的安全评估和防御提供了新的攻击面。",
+      "llm_tldr": "论文指出基于LLM的搜索智能体在获取外部工具返回内容时面临严重安全风险：检索网页不可信，可能遭受提示注入和目标劫持。作者证明，经过中介的搜索接口可以反复操纵智能体收集证据和形成答案，而不只是单页投毒。在受限的工具中介威胁模型下，仅附加恶意内容即可持续误导智能体。该研究为搜索智能体的安全评估和防御提供了新的攻击面。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04771v1",
+      "source": "arxiv",
+      "title": "Fewer Tokens, Smaller Cache: Reward-Coordinated Efficient Reasoning",
+      "abstract": "Large Reasoning Models (LRMs) excel on complex tasks through long chain-of-thought (CoT) reasoning, but their lengthy intermediate steps cause severe overthinking that inflates inference cost. KV-cache compression is a common solution, yet existing reasoning-oriented methods apply a uniform policy across the trajectory and judge compression only by what it removes from the cache. Two observations point the other way. First, a reasoning state's tolerance to context loss varies along the trajectory, and process reward tracks it: deleting tokens at high-reward steps preserves accuracy far better than deleting the same budget at random. Second, compression is not free on the generation side, since a smaller cache leads the model to generate more tokens, partly canceling the saving. Together these motivate coordinating both sides under a single process reward. We propose ReCo (Reward-Coordinated Compression), a step-wise framework in which a lightweight process-reward estimator scores each completed step and drives three components: (1) reward-adaptive KV-cache compression that shrinks the retained cache harder at high-reward steps and less at low-reward ones, (2) a reward-banded penalty on reflection tokens that curbs redundant generation, and (3) confidence-based early stopping that triggers when the reasoning is reliable. Across three reasoning models and six benchmarks, ReCo reduces generated tokens by 37%-65% and end-to-end latency by 2.08x-2.35x over Full CoT, all while largely preserving accuracy.",
+      "authors": [
+        "Qiyuan Zhu",
+        "Dezhi Li",
+        "Pengyu Cheng",
+        "Tianle Chen",
+        "Jiacheng Wang",
+        "Ruijie Shen",
+        "Hao Gu",
+        "Sida Lin",
+        "Zirui Liu",
+        "Jiacheng Liu",
+        "Sirui Han"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-05T12:36:28+00:00",
+      "link": "https://arxiv.org/pdf/2608.04771v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Directly targets efficient reasoning by compressing KV-cache with process reward guidance",
+      "llm_evidence_cn": "直接针对高效推理，用过程奖励引导KV缓存压缩",
+      "llm_evidence": "直接针对高效推理，用过程奖励引导KV缓存压缩",
+      "canonical_evidence": "直接针对高效推理，用过程奖励引导KV缓存压缩",
+      "llm_tldr_en": "Large reasoning models suffer overthinking and high inference cost. This paper coordinates KV-cache compression with process rewards, showing reward-guided compression preserves accuracy and reduces generated tokens, making long CoT reasoning more efficient.",
+      "llm_tldr_cn": "大型推理模型在长思维链推理中常因过度思考导致推理成本高企。本文发现推理状态对上下文丢失的容忍度沿轨迹变化，且过程奖励能够反映这一容忍度；为此将KV缓存压缩与过程奖励协调，在高奖励步骤优先保留Token。实验显示，这种奖励引导的压缩比随机压缩或统一策略显著保持准确率，同时压缩还会减少后续生成Token，从而整体提升推理效率。",
+      "llm_tldr": "大型推理模型在长思维链推理中常因过度思考导致推理成本高企。本文发现推理状态对上下文丢失的容忍度沿轨迹变化，且过程奖励能够反映这一容忍度；为此将KV缓存压缩与过程奖励协调，在高奖励步骤优先保留Token。实验显示，这种奖励引导的压缩比随机压缩或统一策略显著保持准确率，同时压缩还会减少后续生成Token，从而整体提升推理效率。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04788v1",
+      "source": "arxiv",
+      "title": "Agentic Reinforcement Learning with Observation-Calibrated Self-Distillation",
+      "abstract": "Large language model agents are commonly trained through reinforcement learning with sparse trajectory-level rewards, which offer limited guidance on how strongly individual tokens should be updated. On-Policy Self-Distillation (OPSD) addresses this by re-scoring generated tokens under a privileged replay view to obtain dense, token-level supervision. However, we identify a confounding issue: the resulting support may reflect both the privileged information contained in the replay view and score shifts induced by the replay scaffold, making it difficult to attribute the support specifically to that information. This issue is especially pronounced when future environment observations serve as privileged information, since replaying them requires reconstructing an extended scaffold that itself perturbs token scores. To resolve this confounding, we propose Observation-Calibrated Self-Distillation (OCSD), which contrasts two structurally matched replay views, Full and Observation-Ablated, differing only in whether the actual future observation is present, to derive an observation residual that discounts score changes shared by the replay scaffold. OCSD then applies this residual to modulate token-level GRPO updates at high-uncertainty steps, while preserving the trajectory-level update direction. Experiments on ALFWorld, WebShop, and Search-QA across three Qwen3 model scales show that OCSD consistently outperforms strong baselines. Diagnostic analyses further confirm that the calibrated residual aligns better with local environment feedback. Our code is publicly available at https://github.com/yiy1x/OCSD.",
+      "authors": [
+        "Yi Yang",
+        "Cong Qin",
+        "Xiaodan Liu",
+        "Chishui Chen",
+        "Qing Dong",
+        "Yan Zhang",
+        "Cao Liu",
+        "Zhao Yang",
+        "Lu Pan",
+        "Jiaye Lin",
+        "Yi Feng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-05T12:52:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.04788v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Focused on On-Policy Self-Distillation (OPSD) for LLM agents, addressing token-level supervision in RL.",
+      "llm_evidence_cn": "聚焦于基于同策略自蒸馏的LLM智能体强化学习，处理token级监督信号的密度问题。",
+      "llm_evidence": "聚焦于基于同策略自蒸馏的LLM智能体强化学习，处理token级监督信号的密度问题。",
+      "canonical_evidence": "聚焦于基于同策略自蒸馏的LLM智能体强化学习，处理token级监督信号的密度问题。",
+      "llm_tldr_en": "Identifies a confounding issue in On-Policy Self-Distillation where privileged replay view mixes information with score shifts, and proposes observation-calibrated self-distillation to better attribute token-level support.",
+      "llm_tldr_cn": "大型语言模型智能体常用稀疏的轨迹级奖励进行强化学习，同策略自蒸馏（OPSD）通过特权重放视图为生成的token提供密集的逐token监督。然而这种支持可能同时来自特权信息和重放框架带来的分数偏移，尤其在未来环境观察作为特权信息时难以归因。本文提出基于观测校准的自蒸馏方法，以更准确地分离并校准这些信号。相关工作为智能体强化学习中的稠密监督信号设计提供了新的思路。",
+      "llm_tldr": "大型语言模型智能体常用稀疏的轨迹级奖励进行强化学习，同策略自蒸馏（OPSD）通过特权重放视图为生成的token提供密集的逐token监督。然而这种支持可能同时来自特权信息和重放框架带来的分数偏移，尤其在未来环境观察作为特权信息时难以归因。本文提出基于观测校准的自蒸馏方法，以更准确地分离并校准这些信号。相关工作为智能体强化学习中的稠密监督信号设计提供了新的思路。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.05108v1",
+      "source": "arxiv",
+      "title": "Agent Against Agent: An Agentic System for Automatic Prompt Injection Red Teaming",
+      "abstract": "Prompt injection poses significant security risks to LLM agents. Efficient and effective red-teaming is therefore critical, both for evaluating these risks and for collecting training data to improve defenses. Existing state-of-the-art prompt injection red-teaming methods primarily rely on reinforcement learning (RL), producing attacker models that often generalize poorly to new target LLMs. In this work, we develop PIMiner, an agentic system for prompt injection red-teaming. During training, PIMiner is trained on a sequence of (dataset, target model) pairs and builds a strategy library from scratch. At test time, the learned strategy library can be directly transferred to a previously unseen target LLM without additional training. PIMiner requires only a small number of queries to a target agent (e.g., 10) per test sample. Experimental results demonstrate that PIMiner achieves strong performance. On IPIArena, it attains a 76.2% ASR against Gemini-2.5-Pro, 61.9% ASR against GPT-5.1, and 42.9% ASR against Claude-Sonnet-4.5. On AgentDojo, it achieves an 86.7% ASR against Gemini-2.5-Pro, 53.3% ASR against GPT-5.1, and 40.0% ASR against Claude-Sonnet-4.5.",
+      "authors": [
+        "Yanting Wang",
+        "Chenlong Yin",
+        "Runpeng Geng",
+        "Jinyuan Jia"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR"
+      ],
+      "published": "2026-08-05T17:44:09+00:00",
+      "link": "https://arxiv.org/pdf/2608.05108v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:opd",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "automatic prompt injection red teaming system, directly addressing red teaming and agent safety",
+      "llm_evidence_cn": "自动提示注入红队测试系统，直接面向红队测试与智能体安全",
+      "llm_evidence": "自动提示注入红队测试系统，直接面向红队测试与智能体安全",
+      "canonical_evidence": "自动提示注入红队测试系统，直接面向红队测试与智能体安全",
+      "llm_tldr_en": "PIMiner builds a strategy library from scratch via agentic training on dataset-target model pairs, then transfers to unseen target LLMs for prompt injection red teaming without retraining, addressing generalization failures of RL-based attackers.",
+      "llm_tldr_cn": "提示注入对LLM智能体构成重大安全威胁，高效的红队测试对评估风险与收集防御训练数据至关重要。现有基于强化学习的攻击模型常难以泛化到新目标，该论文提出PIMiner，一个在多个数据集与目标模型上训练并构建策略库的智能体系统。测试时，策略库可直接迁移至未见过的目标模型，无需额外训练即可生成有效的提示注入攻击。它在多个基准上表现出良好的转移能力和攻击成功率，为智能体安全评估提供了实用工具。",
+      "llm_tldr": "提示注入对LLM智能体构成重大安全威胁，高效的红队测试对评估风险与收集防御训练数据至关重要。现有基于强化学习的攻击模型常难以泛化到新目标，该论文提出PIMiner，一个在多个数据集与目标模型上训练并构建策略库的智能体系统。测试时，策略库可直接迁移至未见过的目标模型，无需额外训练即可生成有效的提示注入攻击。它在多个基准上表现出良好的转移能力和攻击成功率，为智能体安全评估提供了实用工具。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "red teaming",
+      "matched_requirement_id": "req-19",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.05131v1",
+      "source": "arxiv",
+      "title": "OPD-V: Visual On-Policy Self-Distillation with Modality Balance",
+      "abstract": "On-Policy Self-Distillation (OPSD) has become a standard post-training approach for improving visual reasoning in multimodal large language models (MLLMs). Existing methods draw privileged information from diverse input sources to guide self-distillation. Yet these designs overlook Modality Imbalance, a challenge inherent to MLLM reasoning. When textual information dominates generation, the model cannot fully integrate its multimodal input. Consequently, carefully designed privileged information remains underused, limiting the effectiveness of OPSD. To examine this limitation, we construct a Positive Teacher with the Zoom-In Image and a Negative Teacher with the Mask Image, which exhibit different degrees of Modality Imbalance. Changes in their reasoning correctness and token logits reveal that Modality Balance can itself serve as privileged information. Motivated by this finding, we introduce OPD-V, a visual OPSD paradigm that instantiates such information through the Positive Teacher and Negative Teacher. Positive Modality-Balance Logits Margins define a Modality-Balance Trust Region that selects the on-policy tokens used for self-distillation. Experiments across 6 benchmarks, 4 MLLM backbones, and 5 post-training methods show that OPD-V consistently improves reasoning performance while reducing training cost.",
+      "authors": [
+        "Aniri",
+        "Jinhe Bi",
+        "Peng Liao",
+        "Zengjie Jin",
+        "Volker Tresp",
+        "Fei Shen",
+        "Yunpu Ma",
+        "Tat-Seng Chua"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T17:53:06+00:00",
+      "link": "https://arxiv.org/pdf/2608.05131v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Visual on-policy self-distillation addressing modality imbalance in MLLMs",
+      "llm_evidence_cn": "面向多模态大模型的视觉on-policy自蒸馏，解决模态不平衡",
+      "llm_evidence": "面向多模态大模型的视觉on-policy自蒸馏，解决模态不平衡",
+      "canonical_evidence": "面向多模态大模型的视觉on-policy自蒸馏，解决模态不平衡",
+      "llm_tldr_en": "Proposes OPD-V to address modality imbalance in visual on-policy self-distillation, constructing positive and negative teachers to examine and correct textual dominance in MLLM reasoning.",
+      "llm_tldr_cn": "多模态大语言模型中的模态不平衡会削弱视觉信息在推理中的作用，导致on-policy自蒸馏中特权信息未被充分利用。OPD-V通过构造Zoom-In正教师和Mask负教师显式建模模态不平衡，并据此调整蒸馏信号。实验结果表明该方法改善了MLLM的视觉推理表现，验证了模态平衡对OPSD的重要性。",
+      "llm_tldr": "多模态大语言模型中的模态不平衡会削弱视觉信息在推理中的作用，导致on-policy自蒸馏中特权信息未被充分利用。OPD-V通过构造Zoom-In正教师和Mask负教师显式建模模态不平衡，并据此调整蒸馏信号。实验结果表明该方法改善了MLLM的视觉推理表现，验证了模态平衡对OPSD的重要性。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.02665v1",
+      "source": "arxiv",
+      "title": "Single Canonical Prompts Underestimate LLM Safety's Surface-Form Sensitivity",
+      "abstract": "A benchmark score is a measurement instrument, yet most benchmarks read each item at a single canonical surface form. We ask whether that reading is faithful: when an item's intent is held fixed and only its meaning-preserving surface form varies, does the canonical-form score estimate model behavior well, and how much of any variation is decoding/judge noise rather than signal? We instantiate this in safety, a high-stakes setting with no gold label to average toward. To avoid prior confounds, we pre-author the reformulations (refusal-free, mostly non-LLM: machine back-translation and a Matrix-Language-Frame code-switch generator) so an identical surface form reaches every model, score all responses with one human-anchored, vendor-neutral judge (Claude, kappa = 0.86 vs. human on unsafe compliance, stable across languages, cross-checked by GPT-4o), and verify intent preservation. On 370 seeds x 5 surface forms x 5 models, no single transformation is uniformly most dangerous (6 of 20 per-transformation McNemar tests survive correction, most protective). Yet evaluating only the canonical prompt underestimates unsafe compliance: the union of unsafe outcomes across forms exceeds even the worst single form by 3.3-12.9 pp, with bootstrap 95% CIs excluding zero for all five models, and 5-13% of seeds safe on canonical are unsafe under some reformulation -- above a zero stochasticity floor (canonical resampled five times at temperature 0 gives 0/370 new exposures). The size of this gap is model-dependent (largest on Gemini 2.5 Pro). One form recovers only ~53% of a model's observed unsafe surface and about three reach 85% -- a redundancy characterization of this form set, not of a defined population. A benign control (XSTest) suggests the instability is bidirectional, though the benign and harmful pools are not item-matched. We release the dataset, code, and per-response labels.",
+      "authors": [
+        "Yongxi Zhou",
+        "Junwei Yao",
+        "Yuanzhe Liu",
+        "Zihan Dong",
+        "Wenbo Ye",
+        "Jiaxi Wen",
+        "Lai Yun Choi"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-01T22:28:31+00:00",
+      "link": "https://arxiv.org/pdf/2608.02665v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Safety benchmark faithfulness and surface-form sensitivity",
+      "llm_evidence_cn": "安全基准忠实性与表面形式敏感性",
+      "llm_evidence": "安全基准忠实性与表面形式敏感性",
+      "canonical_evidence": "安全基准忠实性与表面形式敏感性",
+      "llm_tldr_en": "Shows that single canonical prompts underestimate LLM safety's surface-form sensitivity; uses pre-authored reformulations and a human-anchored judge to separate signal from decoding or judge noise.",
+      "llm_tldr_cn": "安全基准通常以单一规范提示来评估模型，本文质疑这种读数是忠实的。作者通过固定意图、仅改变保持语义的表面形式（如机器回译和代码混合生成），并采用人类锚定的中立裁判来避免混淆因素。结果显示规范形式的安全分数低估了模型对表面形式的敏感性，且相当一部分变异是解码或裁判噪声而非信号。这对安全基准的设计与解读具有重要意义。",
+      "llm_tldr": "安全基准通常以单一规范提示来评估模型，本文质疑这种读数是忠实的。作者通过固定意图、仅改变保持语义的表面形式（如机器回译和代码混合生成），并采用人类锚定的中立裁判来避免混淆因素。结果显示规范形式的安全分数低估了模型对表面形式的敏感性，且相当一部分变异是解码或裁判噪声而非信号。这对安全基准的设计与解读具有重要意义。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "safety benchmarks",
+      "matched_requirement_id": "req-18",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.02139v2",
+      "source": "arxiv",
+      "title": "Self-Improving Large Language Models via Progressive Experience Evolution",
+      "abstract": "Large language models (LLMs) capable of self-improvement require not only effective policy optimization, but also a principled mechanism for transforming transient interaction experience into persistent model capabilities. Existing self-improvement paradigms remain fragmented: test-time methods can explicitly extract experience but cannot internalize it into model parameters, whereas training-time optimization methods can update model parameters but lack an explicit mechanism for accumulating transferable experience. Bridging these two paradigms requires a critical intermediate stage that remains underexplored, namely \\emph{experience distillation}. To address this gap, we propose \\textbf{SPEE} (\\textbf{S}elf-\\textbf{P}rogressive \\textbf{E}xperience \\textbf{E}volution), a unified post-training framework that sequentially performs explicit experience evolution followed by implicit policy optimization. During explicit experience evolution, SPEE reflects on trajectories collected from multiple interactions to extract, verify, and progressively evolve transferable experience, which is subsequently internalized into the policy through privilege-guided On-Policy Self-Distillation (OPSD). During implicit policy optimization, reward-driven reinforcement learning leverages these internalized priors to explore novel solution strategies. In the experience evolution stage, a continuously evolving global experience pool consolidates knowledge from both successful and failed trajectories, filters out low-utility experience, and mitigates post-hoc rationalization induced by individual trajectories. Experiments on five mathematical reasoning benchmarks demonstrate that SPEE consistently outperforms both test-time and training-time self-evolution baselines across three model scales. The source code is available at https://github.com/rrrsj/SPEE.",
+      "authors": [
+        "Shijie Ren",
+        "Xiting Wang",
+        "Meng Li",
+        "Yujie Guo",
+        "Yunhang Yao",
+        "Ziheng Peng",
+        "Xunlong Wang",
+        "Yuetan Chen",
+        "Haoyang Zhou",
+        "Yunlong Liang",
+        "Fandong Meng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-03T12:27:32+00:00",
+      "link": "https://arxiv.org/pdf/2608.02139v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-improvement via experience distillation from interaction trajectories",
+      "llm_evidence_cn": "通过经验蒸馏将交互轨迹内化为模型能力",
+      "llm_evidence": "通过经验蒸馏将交互轨迹内化为模型能力",
+      "canonical_evidence": "通过经验蒸馏将交互轨迹内化为模型能力",
+      "llm_tldr_en": "Proposes SPEE (Self-Progressive Experience Evolution) to bridge test-time experience extraction and training-time optimization through experience distillation, enabling LLMs to accumulate transferable experience and self-improve.",
+      "llm_tldr_cn": "论文指出LLM自我改进缺少将交互经验固化为模型参数的中间阶段，测试时方法无法内化经验，训练时优化缺乏经验累积机制。为此提出SPEE框架，引入经验蒸馏阶段，将交互轨迹逐步转化为持久能力。实验表明SPEE能提升LLM的自改进能力，并实现可迁移经验的积累。该工作连接了测试时与训练时两种自我改进范式。",
+      "llm_tldr": "论文指出LLM自我改进缺少将交互经验固化为模型参数的中间阶段，测试时方法无法内化经验，训练时优化缺乏经验累积机制。为此提出SPEE框架，引入经验蒸馏阶段，将交互轨迹逐步转化为持久能力。实验表明SPEE能提升LLM的自改进能力，并实现可迁移经验的积累。该工作连接了测试时与训练时两种自我改进范式。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.02026v1",
+      "source": "arxiv",
+      "title": "HPFA: Hypergraph-Based Paired Failure Attribution for LLM Reasoning",
+      "abstract": "Reflection is a powerful mechanism for LLM reasoning, yet its effectiveness hinges on accurately attributing failures to specific reasoning steps, a capability that current models notably lack. Existing failure attribution methods either require expensive step-by-step counterfactual testing that scales poorly with trajectory length, or treat reasoning traces as flat sequences that ignore the inherent non-linear logical dependencies. We propose a hypergraph-based paired failure attribution (HPFA) framework that attributes the failure root cause by comparing the hyperedges of the targeted failure reasoning path against a reference successful path. By reducing the search space, our method efficiently localizes root causes and enables scalable synthesis of attribution data for training a lightweight attributor model via supervised fine-tuning and reinforcement learning. Experiments on mathematical reasoning and agentic coding tasks demonstrate that HPFA can dramatically increase attribution accuracy and efficiency, and the trained attributor consistently improves reasoning accuracy at test time, outperforming baselines that lack graph structure or paired analysis.",
+      "authors": [
+        "Runchuan Zhu",
+        "Hongbin Lai",
+        "Bowen Jiang",
+        "Junrui Zhang",
+        "Zhangheng LI",
+        "Ostap Kilbasovych",
+        "Junyuan Hong"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T10:23:48+00:00",
+      "link": "https://arxiv.org/pdf/2608.02026v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "efficient failure attribution for LLM reasoning via hypergraph",
+      "llm_evidence_cn": "基于超图的LLM推理失败根因高效定位",
+      "llm_evidence": "基于超图的LLM推理失败根因高效定位",
+      "canonical_evidence": "基于超图的LLM推理失败根因高效定位",
+      "llm_tldr_en": "HPFA attributes reasoning failures to specific steps using hypergraph-based comparison with successful paths, reducing search space and enabling scalable failure synthesis.",
+      "llm_tldr_cn": "反思机制依赖准确归因推理失败步骤，现有方法要么代价高昂，要么忽略非线性逻辑依赖。本文提出超图配对失败归因（HPFA），通过对比失败路径与参考成功路径的超边来定位根因，缩小搜索空间。该框架显著提高失败定位效率，并支持大规模合成训练数据，从而提升LLM反思与推理能力。",
+      "llm_tldr": "反思机制依赖准确归因推理失败步骤，现有方法要么代价高昂，要么忽略非线性逻辑依赖。本文提出超图配对失败归因（HPFA），通过对比失败路径与参考成功路径的超边来定位根因，缩小搜索空间。该框架显著提高失败定位效率，并支持大规模合成训练数据，从而提升LLM反思与推理能力。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03137v1",
+      "source": "arxiv",
+      "title": "Verifiable Memory: Learning Unified Memory Management with Local and Global Verifiers for Large Language Model Agents",
+      "abstract": "Large language model (LLM) agents must retain reusable information, control a bounded active context, and recover earlier evidence during long-horizon interaction. Existing methods commonly optimize long-term memory (LTM) and short-term memory (STM) separately, while unified policies are often trained primarily with trajectory-level feedback, which provides weak credit for individual memory decisions. We present Verifiable Memory (VerMem), a framework that represents LTM, active context, and episodic history as distinct states and controls them with one memory operation policy. Seven atomic operations let the policy add, revise, or soft-delete LTM entries; retrieve LTM into the active context; filter or summarize the active context; and restore selected episodic fragments. VerMem is initialized by supervised fine-tuning and trained with a three-stage reinforcement-learning curriculum. The local verifier scores executable memory transitions, and a global verifier assesses evidence coherence and terminal-memory consistency after task completion. These scores are combined with programmatically computed task, evidence-recall, efficiency, and constraint signals through hierarchical credit assignment. The verifiers are used only during training. Across five benchmarks and two LLM backbones, VerMem achieves the best result on the vast majority of reported metrics and consistently outperforms strong memory baselines. Under controlled online-token budgets on three interactive benchmarks, it also achieves the strongest efficiency--performance frontier among the compared methods. Code is available at https://github.com/Sun-SYSU-24/VerMem.",
+      "authors": [
+        "Xiaolong Sun",
+        "Qichao Wang",
+        "Hangyu Li",
+        "Liang Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T05:06:24+00:00",
+      "link": "https://arxiv.org/pdf/2608.03137v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "memory management with RL for long-horizon LLM agents",
+      "llm_evidence_cn": "面向长程交互LLM智能体的可验证记忆管理",
+      "llm_evidence": "面向长程交互LLM智能体的可验证记忆管理",
+      "canonical_evidence": "面向长程交互LLM智能体的可验证记忆管理",
+      "llm_tldr_en": "This paper presents VerMem, a unified memory-management policy for LLM agents, trained with local and global verifiers via RL, balancing long-term and short-term memory to improve long-horizon task performance.",
+      "llm_tldr_cn": "大语言模型智能体需保留可复用信息、控制有界上下文并恢复早期证据，但现有方法常分别优化长期与短期记忆，且统一策略主要依赖轨迹级反馈，对单个记忆决策信用分配弱。本文提出可验证记忆（VerMem），将长期记忆、活动上下文和片段历史表示为不同状态，用一个记忆操作策略控制七种原子操作。通过局部和全局验证器提供细粒度监督，实验显示VerMem在长程交互任务中记忆管理更有效，提升了智能体任务完成率。",
+      "llm_tldr": "大语言模型智能体需保留可复用信息、控制有界上下文并恢复早期证据，但现有方法常分别优化长期与短期记忆，且统一策略主要依赖轨迹级反馈，对单个记忆决策信用分配弱。本文提出可验证记忆（VerMem），将长期记忆、活动上下文和片段历史表示为不同状态，用一个记忆操作策略控制七种原子操作。通过局部和全局验证器提供细粒度监督，实验显示VerMem在长程交互任务中记忆管理更有效，提升了智能体任务完成率。",
+      "llm_tags": [
+        "query:l-context-rl"
+      ],
+      "matched_query_tag": "query:l-context-rl",
+      "matched_query_text": "training reinforcement learning models on long input sequences",
+      "matched_requirement_id": "req-10",
+      "selection_source": "carryover_cache",
+      "paper_id": "2608.03137v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.02356v2",
+      "source": "arxiv",
+      "title": "SkillTrace: Traversing a Query-Skill Graph for Composable LLM Agents",
+      "abstract": "Large language model agents increasingly solve complex tasks by composing reusable skills from a library. To address this, the key challenge is not merely to retrieve individually relevant skills, but to identify a complete and executable skill composition. In this paper, we argue that this problem can be solved in a graph with three levels: compositional relations among skill queries, similarity between queries and candidates in the skill library, and the dependencies among the selected candidates. We introduce SkillTrace, which organizes the user query into a semantic hierarchy, matches skill queries and candidates, and propagates over the skill dependencies. Experiments on SkillsBench and ALFWorld demonstrate that SkillTrace achieves state-of-the-art performance, reaching a success rate of 53.17% on SkillsBench and 91.43% on ALFWorld. SkillTrace also delivers consistent improvements across different backbone language models, demonstrating the generality and robustness of graph-based skill retrieval.",
+      "authors": [
+        "Yue Yao",
+        "Shengyuan Wang",
+        "Xin Chen",
+        "Minke Zhang",
+        "Jia He",
+        "Bingjun Luo",
+        "Tom Gedeon"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T15:07:11+00:00",
+      "link": "https://arxiv.org/pdf/2608.02356v2",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Graph-based skill composition for LLM agents; supports composable agent architectures relevant to agent swarm tool-use",
+      "llm_evidence_cn": "面向LLM智能体的图式技能组合方法，与智能体集群/工具调用主题相关",
+      "llm_evidence": "面向LLM智能体的图式技能组合方法，与智能体集群/工具调用主题相关",
+      "canonical_evidence": "面向LLM智能体的图式技能组合方法，与智能体集群/工具调用主题相关",
+      "llm_tldr_en": "SkillTrace organizes queries into a semantic hierarchy and propagates over skill dependencies on a query-skill graph, enabling complete executable skill compositions for LLM agents, with SOTA results on SkillsBench and ALFWorld.",
+      "llm_tldr_cn": "大型语言模型智能体需要组合可复用技能来完成复杂任务，其关键不仅是检索单个技能，而是找到完整可执行的技能组合。SkillTrace将用户查询组织成语义层次，在查询-技能图上匹配并传播依赖关系，从而选出可组合的技能链。在SkillsBench和ALFWorld上取得最先进结果。该方法为智能体集群的技能编排提供了一种图式路径。",
+      "llm_tldr": "大型语言模型智能体需要组合可复用技能来完成复杂任务，其关键不仅是检索单个技能，而是找到完整可执行的技能组合。SkillTrace将用户查询组织成语义层次，在查询-技能图上匹配并传播依赖关系，从而选出可组合的技能链。在SkillsBench和ALFWorld上取得最先进结果。该方法为智能体集群的技能编排提供了一种图式路径。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.03972v1",
+      "source": "arxiv",
+      "title": "ReflectRL: Learning from Golden Negative Trajectories via Reflective-to-Direct Reasoning",
+      "abstract": "On-policy training has emerged as a powerful post-training paradigm for improving the reasoning capabilities of large language models, and is often enhanced by golden trajectories from stronger expert models. However, when the expert fails on harder problems, existing trajectory-guided methods lose their main source of supervision, and these failed trajectories are typically discarded as negative samples. We argue that such failures, which we call Golden Negative Trajectories, can still provide valuable reasoning signals when treated not as demonstrations to imitate, but as flawed trajectories to reflect upon. We identify a Reflection Advantage: for hard problems, reflecting on a flawed trajectory can be easier and more effective than solving the problem directly from scratch. Motivated by this, we propose ReflectRL, a lightweight plug-and-play framework that learns from Golden Negative Trajectories during on-policy training. ReflectRL first uses these trajectories to elicit Reflective Reasoning, then applies Reflective-to-Direct Policy Transition to transfer the acquired reasoning behavior back to Direct Reasoning. Experiments across 9 benchmarks, 4 LLM backbones, and 4 on-policy training methods show that ReflectRL consistently improves reasoning performance with minimal overhead.",
+      "authors": [
+        "Jinhe Bi",
+        "Chennan Zhou",
+        "Zengjie Jin",
+        "Aniri",
+        "Shuo Lu",
+        "Wenke Huang",
+        "Hu Cao",
+        "Xun Xiao",
+        "Zhihong Zhu",
+        "Volker Tresp",
+        "Fei Shen",
+        "Yunpu Ma",
+        "Tat-Seng Chua"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T17:40:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.03972v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "On-policy training with expert golden negative trajectories via reflective reasoning, a teacher-student style framework",
+      "llm_evidence_cn": "利用专家失败轨迹进行反思式on-policy训练，属于教师-学生式框架",
+      "llm_evidence": "利用专家失败轨迹进行反思式on-policy训练，属于教师-学生式框架",
+      "canonical_evidence": "利用专家失败轨迹进行反思式on-policy训练，属于教师-学生式框架",
+      "llm_tldr_en": "Uses golden negative trajectories from expert failures to improve on-policy RL reasoning, treating flawed trajectories as reflective signals; demonstrates Reflection Advantage on hard problems.",
+      "llm_tldr_cn": "针对on-policy训练中专家模型在难题上失败导致轨迹引导方法失去主要监督的问题，本文提出Golden Negative Trajectories，将失败轨迹视为可反思的样本而非丢弃或直接模仿。通过反思到直接的推理机制，模型从错误轨迹中提取推理信号，并利用Reflection Advantage提升难题上的训练效果。该工作拓展了on-policy训练利用负样本的方式，为基于专家轨迹的推理优化提供新思路。",
+      "llm_tldr": "针对on-policy训练中专家模型在难题上失败导致轨迹引导方法失去主要监督的问题，本文提出Golden Negative Trajectories，将失败轨迹视为可反思的样本而非丢弃或直接模仿。通过反思到直接的推理机制，模型从错误轨迹中提取推理信号，并利用Reflection Advantage提升难题上的训练效果。该工作拓展了on-policy训练利用负样本的方式，为基于专家轨迹的推理优化提供新思路。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "teacher student framework reinforcement learning distillation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03223v1",
+      "source": "arxiv",
+      "title": "Agentic Reinforcement Learning with Self-Distilled Reward Shaping",
+      "abstract": "Agentic reinforcement learning enables LLM agents to learn through interaction, but sparse trajectory-level rewards reveal success without identifying which intermediate decisions deserve credit. Training-only privileged skills can provide denser supervision by allowing the same frozen policy snapshot to rescore fixed tokens from skill-free trajectories while conditioned on task-matched procedural skills. Existing methods, however, do not jointly calibrate teacher scores across interaction steps, relate teacher confidence to realized returns, and integrate the resulting signal into native reward-to-advantage construction. We introduce Agentic Reinforcement Learning with Self-Distilled Reward Shaping (ADRS), a framework for constructing return-associated token-level credit for multi-turn language agents. ADRS centers and normalizes privileged token scores within each step, modulates them with a return-associated Teacher Value Advantage (TVA) gate based on within-group confidence--return association, and incorporates the gated token signal into native RL credit construction. Together, these components determine what the teacher prefers, when that preference is return-relevant, and how it enters the native reinforcement-learning credit path, while keeping rollouts and inference skill-free. Finally, experiments across three interactive benchmarks show that ADRS consistently improves performance on long-horizon tasks, with gains persisting across RL backbones, reduced-data settings, unseen tasks, and extended training. For anonymous review, our code is available at the following the link: https://github.com/gitrxh/ADRS-arxiv",
+      "authors": [
+        "Ranxu Zhang",
+        "Guinan Chen",
+        "Chenshaodong",
+        "Jinghao Lin",
+        "Xiaozhou Xu",
+        "Sunzhe",
+        "Yanyong Zhang",
+        "Chao Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-04T06:56:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.03223v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-distilled reward shaping to densify sparse supervision in agentic RL",
+      "llm_evidence_cn": "用自蒸馏奖励塑形为智能体RL提供更稠密监督",
+      "llm_evidence": "用自蒸馏奖励塑形为智能体RL提供更稠密监督",
+      "canonical_evidence": "用自蒸馏奖励塑形为智能体RL提供更稠密监督",
+      "llm_tldr_en": "Proposes ADRS, a framework for constructing return-associated token rewards with self-distilled procedural skills, calibrating teacher scores and integrating them into native reward-to-advantage construction for agentic RL.",
+      "llm_tldr_cn": "Agentic RL中端末奖励稀疏，难以定位中间决策，既有基于训练期特权技能的监督未能在交互步间联合校准。论文提出ADRS框架，用冻结策略快照对无技能轨迹的固定token重打分，并关联教师置信度与真实回报，最后融入奖励到优势的构造。实验表明ADRS能提供更稠密且与回报相关的监督，提升LLM智能体学习效率。该方法为自蒸馏在奖励塑形中的应用提供了新视角。",
+      "llm_tldr": "Agentic RL中端末奖励稀疏，难以定位中间决策，既有基于训练期特权技能的监督未能在交互步间联合校准。论文提出ADRS框架，用冻结策略快照对无技能轨迹的固定token重打分，并关联教师置信度与真实回报，最后融入奖励到优势的构造。实验表明ADRS能提供更稠密且与回报相关的监督，提升LLM智能体学习效率。该方法为自蒸馏在奖励塑形中的应用提供了新视角。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy self distillation",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.02876v1",
+      "source": "arxiv",
+      "title": "BAP-SQL: Budget-Aware Observation Planning for Agentic Text-to-SQL",
+      "abstract": "Tool-using agents do not merely consume observations: their actions determine what arrives next. In agentic text-to-SQL, a broad query can spend context and database work before useful evidence appears, while post-hoc compression cannot recover omitted rows or expended work. We present BAP-SQL, which treats observation formation as a budget-control stage: it estimates query risk, rewrites SQL when useful, and delegates hard limits to an independent runtime shield. Across general 4B, specialized FINER-SQL 4B, and 7B backbones, BAP-SQL improves tight-budget success. On the primary BIRD-derived setting, it gains 3.4/3.6 percentage points over matched SFT while using 4.5/5.0% fewer tokens. Matched retraining and task-level transfer associate the gain with policy-visible planning and budget-sensitive rescue. The benefit attenuates as model capability and budget increase, reverses at the loosest setting, and does not reduce database work.",
+      "authors": [
+        "Chong Peng",
+        "Pin Qian",
+        "Su Wang",
+        "Yihang Chen",
+        "Varun Sah"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T20:55:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.02876v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Budget-aware observation planning reduces token usage in agentic text-to-SQL",
+      "llm_evidence_cn": "预算感知的观测规划在智能体文本到SQL中减少token使用",
+      "llm_evidence": "预算感知的观测规划在智能体文本到SQL中减少token使用",
+      "canonical_evidence": "预算感知的观测规划在智能体文本到SQL中减少token使用",
+      "llm_tldr_en": "Treats observation formation as a budget-control stage, estimating query risk, rewriting SQL, and delegating hard limits to a runtime shield, improving tight-budget success with fewer tokens.",
+      "llm_tldr_cn": "智能体文本到SQL中，观测会消耗上下文与数据库资源，事后压缩无法恢复遗漏的行。本文提出BAP-SQL，将观测形成视为预算控制阶段，通过估计查询风险、在需要时重写SQL，并将硬性限制交给独立的运行时防护层来管理。在通用4B、专用FINER-SQL 4B和7B骨干上的实验显示，该方案提升了紧预算下的成功率，同时比匹配的SFT减少4.5%到5.0%的token使用。关联重训练与任务级迁移表明收益来自策略改进。",
+      "llm_tldr": "智能体文本到SQL中，观测会消耗上下文与数据库资源，事后压缩无法恢复遗漏的行。本文提出BAP-SQL，将观测形成视为预算控制阶段，通过估计查询风险、在需要时重写SQL，并将硬性限制交给独立的运行时防护层来管理。在通用4B、专用FINER-SQL 4B和7B骨干上的实验显示，该方案提升了紧预算下的成功率，同时比匹配的SFT减少4.5%到5.0%的token使用。关联重训练与任务级迁移表明收益来自策略改进。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.04843v1",
+      "source": "arxiv",
+      "title": "MemoryCPT: An End-to-End Agent Memory Framework for Cost-Performance Trade-off",
+      "abstract": "Long-horizon LLM agents require memory systems that recover useful evidence from large interaction histories without passing excessive context to downstream models. Existing memory pipelines often rely on hand-crafted heuristics and repeated LLM calls, which can introduce redundant context and high inference cost. We propose MemoryCPT, an end-to-end trainable agent memory pipeline that spans offline memory construction and online query-conditioned context generation. MemoryCPT consists of two stages: Query-agnostic Distillation (QAD), which distills a modular memory-construction pipeline into a compact model using explicit reasoning traces; and Query-aware Retrieval and Summarization (QAR), which combines reciprocal rank fusion (RRF) with a LoRA-based summarizer trained via Group Relative Policy Optimization (GRPO) under a cost-aware reward. We further introduce Quality per Cost (QPC) to quantify answer quality per unit inference cost. Experiments on LoCoMo and LongMemEval show that MemoryCPT improves the cost-performance trade-off over the evaluated baselines, while ablation and sensitivity analyses characterize the contributions of its components and the effects of key design choices.",
+      "authors": [
+        "Songxin Lei",
+        "Kun Ouyang",
+        "Weilin Ruan",
+        "Yuqian Wu",
+        "Zhijiang Guo",
+        "Yushi Sun",
+        "Fugee Tsung"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-08-05T13:37:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.04843v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "agent memory framework to reduce inference cost",
+      "llm_evidence_cn": "减少推理成本的智能体记忆框架",
+      "llm_evidence": "减少推理成本的智能体记忆框架",
+      "canonical_evidence": "减少推理成本的智能体记忆框架",
+      "llm_tldr_en": "MemoryCPT is an end-to-end trainable agent memory pipeline that combines query-agnostic distillation with query-aware retrieval and summarization to reduce redundant context and inference cost for long-horizon LLM agents.",
+      "llm_tldr_cn": "长程智能体需要从大量交互历史中恢复有用证据，现有记忆流水线依赖手工启发式和反复LLM调用，导致冗余上下文和高推理成本。MemoryCPT提出端到端可训练的记忆流水线，包含两阶段：查询无关蒸馏将模块化记忆构建流水线压缩为紧凑模型，查询感知检索与摘要结合RRF和LoRA生成上下文。实现了成本与性能的更优权衡。",
+      "llm_tldr": "长程智能体需要从大量交互历史中恢复有用证据，现有记忆流水线依赖手工启发式和反复LLM调用，导致冗余上下文和高推理成本。MemoryCPT提出端到端可训练的记忆流水线，包含两阶段：查询无关蒸馏将模块化记忆构建流水线压缩为紧凑模型，查询感知检索与摘要结合RRF和LoRA生成上下文。实现了成本与性能的更优权衡。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03276v1",
+      "source": "arxiv",
+      "title": "TaskPress: Query-Agnostic KV Cache Compression via Task-Guided Pruning",
+      "abstract": "Long-context inference with large language models is constrained by the linear growth of the key-value cache to sequence length. While pruning offers mitigation, prevailing methods determine query-specific token importance that cannot be reused across unseen queries. In contrast, we introduce TaskPress, a framework for task-guided, query-agnostic KV cache eviction. Instead of optimizing the cache for a single query, TaskPress constructs a reusable memory representation conditioned on a high-level task guide. The guide functions as a meta-query during prefill to filter irrelevant tokens before downstream queries are issued. In addition, TaskPress leverages quantization scale factors as a zero-cost signal for detecting influential representation outliers, providing an efficient proxy for token importance. Experiments on conducted on various tasks with long context input demonstrate that TaskPress efficiently creates a compact, reusable cache across diverse queries.",
+      "authors": [
+        "Wonpyo Park",
+        "Seung-won Hwang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T07:51:37+00:00",
+      "link": "https://arxiv.org/pdf/2608.03276v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Query-agnostic KV cache compression for long-context inference efficiency",
+      "llm_evidence_cn": "KV缓存压缩，长上下文推理效率，查询无关",
+      "llm_evidence": "KV缓存压缩，长上下文推理效率，查询无关",
+      "canonical_evidence": "KV缓存压缩，长上下文推理效率，查询无关",
+      "llm_tldr_en": "TaskPress constructs a reusable task-guided memory to evict irrelevant tokens before queries, using quantization scale factors to detect outliers, improving long-context inference efficiency.",
+      "llm_tldr_cn": "针对长上下文推理中KV缓存随序列长度线性增长的问题，提出TaskPress框架。该方法利用高层任务指导作为元查询，在预填充阶段过滤无关token，构建可复用的查询无关记忆，并借助量化缩放因子检测重要表征离群点。实验显示TaskPress在压缩缓存的同时保持任务性能，提升了长上下文推理的效率。这项工作为查询无关KV缓存剪枝提供了新的思路。",
+      "llm_tldr": "针对长上下文推理中KV缓存随序列长度线性增长的问题，提出TaskPress框架。该方法利用高层任务指导作为元查询，在预填充阶段过滤无关token，构建可复用的查询无关记忆，并借助量化缩放因子检测重要表征离群点。实验显示TaskPress在压缩缓存的同时保持任务性能，提升了长上下文推理的效率。这项工作为查询无关KV缓存剪枝提供了新的思路。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.03048v1",
+      "source": "arxiv",
+      "title": "PI-Mem: Pushing Long-Context Reasoning to 3.6M Tokens with Parallel-Iterative Memory",
+      "abstract": "Long-context reasoning remains a critical bottleneck for large language models, as recent recurrent-memory approaches face two inherent challenges: sequential chunk-wise updates can overwrite early critical evidence with later irrelevant content, and serial inter-chunk dependencies limit parallelism and cause latency to increase with context length. To address these issues, we propose PI-Mem (Parallel-Iterative Memory), a mechanism that processes all chunks in parallel and iteratively refines a shared memory over a bounded number of turns. In each turn, PI-Mem reads all chunks in parallel conditioned on the current memory, selects new or complementary evidence from each chunk, and merges the selected evidence into a compact shared memory for the next turn. To discourage redundant turns, we optimize the workflow through reinforcement learning with an auxiliary turn-efficiency reward, enabling the model to adaptively exit once sufficient evidence has been accumulated. We evaluate PI-Mem with Qwen3.5-35B-A3B and Qwen2.5-7B on the HotpotQA benchmark across context lengths up to 3.6 million tokens and find that it outperforms the recurrent-memory baseline by +6.25 and +7.81 absolute points while achieving 6.1$\\times$ and 2.1$\\times$ inference speedups, respectively. These results demonstrate that PI-Mem breaks the accuracy--efficiency trade-off in long-context reasoning and provides a scalable approach to complex multi-hop question answering over extremely long documents.",
+      "authors": [
+        "Dawei Liu",
+        "Haixu Song",
+        "Shuang Cheng",
+        "Shijie Wang",
+        "Haozheng Hou",
+        "Kaifeng Liu",
+        "Ermo Hua",
+        "Zhonghang Yuan",
+        "Zhijie Zhong",
+        "Yuchen Fan",
+        "Biqing Qi",
+        "Bowen Zhou"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-08-04T02:59:16+00:00",
+      "link": "https://arxiv.org/pdf/2608.03048v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Parallel-iterative memory processes chunks in parallel and iteratively refines shared memory for long-context reasoning",
+      "llm_evidence_cn": "并行迭代记忆机制并行处理所有块并迭代精炼共享记忆，实现3.6M tokens长上下文推理",
+      "llm_evidence": "并行迭代记忆机制并行处理所有块并迭代精炼共享记忆，实现3.6M tokens长上下文推理",
+      "canonical_evidence": "并行迭代记忆机制并行处理所有块并迭代精炼共享记忆，实现3.6M tokens长上下文推理",
+      "llm_tldr_en": "PI-Mem processes all context chunks in parallel and iteratively refines a shared memory over bounded turns, avoiding overwriting of early evidence and enabling efficient long-context reasoning to 3.6M tokens with reduced latency.",
+      "llm_tldr_cn": "长上下文推理是大型语言模型的瓶颈，现有循环记忆方法存在顺序更新覆盖早期证据和序列依赖导致延迟升高的问题。本文提出PI-Mem（并行迭代记忆），在每一轮并行读取所有块并依据当前记忆筛选新证据，然后合并到紧凑共享记忆中。实验表明该方法可将长上下文推理扩展到3.6M token，同时提升并行度和推理效率。这项工作为长上下文任务的记忆机制提供了新思路。",
+      "llm_tldr": "长上下文推理是大型语言模型的瓶颈，现有循环记忆方法存在顺序更新覆盖早期证据和序列依赖导致延迟升高的问题。本文提出PI-Mem（并行迭代记忆），在每一轮并行读取所有块并依据当前记忆筛选新证据，然后合并到紧凑共享记忆中。实验表明该方法可将长上下文推理扩展到3.6M token，同时提升并行度和推理效率。这项工作为长上下文任务的记忆机制提供了新思路。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.03838v1",
+      "source": "arxiv",
+      "title": "LatentGuard: Efficient and Inspectable Latent Reasoning for LLM Safeguards",
+      "abstract": "Reasoning-based guard models improve LLM safeguards, but decoding explicit rationales for every interaction makes them costly to deploy. Although latent-reasoning methods reduce token generation by moving reasoning into continuous states, they remain underexplored for safety moderation and lack an inspection interface for deployment. In this paper, we propose LatentGuard, an efficient and inspectable safeguard framework that brings continuous latent reasoning to guard models. LatentGuard uses a staged curriculum to progressively compress task-aligned textual rationales into compact latent states, enabling safety verdicts to be predicted directly from continuous representations. To preserve inspectability, an isolated auxiliary decoder generates compact audit artifacts on demand, keeping rationale generation off the standard inference path. Experiments show that LatentGuard-8B improves mean weighted F1 from 83.95 to 84.91 over GuardReasoner-8B, while reducing critical-path reasoning cost from 268.56 generated rationale tokens to 1.60 latent reasoning tokens. Its audit decoder achieves an audit utility score of 85.75, demonstrating an efficient and inspectable path toward deployable LLM safeguards.",
+      "authors": [
+        "Zhinan Liu",
+        "Jie Li",
+        "Mingyu Kang",
+        "Jiayi Ji"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T15:47:41+00:00",
+      "link": "https://arxiv.org/pdf/2608.03838v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "presents an efficient and inspectable safeguard framework using continuous latent reasoning for safety moderation",
+      "llm_evidence_cn": "提出高效可检查的安全防护框架，用连续潜在推理支持安全审查",
+      "llm_evidence": "提出高效可检查的安全防护框架，用连续潜在推理支持安全审查",
+      "canonical_evidence": "提出高效可检查的安全防护框架，用连续潜在推理支持安全审查",
+      "llm_tldr_en": "LatentGuard uses staged curriculum compression of textual rationales into latent states for safety verdicts, retaining an auxiliary decoder for inspectability, enabling efficient and inspectable LLM safeguards.",
+      "llm_tldr_cn": "基于推理的防护模型通过显式理由提升LLM安全性，但代价是逐token解码成本高。LatentGuard提出将文本理由通过课程学习压缩为紧凑潜在状态，直接从连续表示输出安全判定，同时用辅助解码器保留可检查接口。这样既降低了推理开销，又具备可部署的检查能力，为防护模型提供了高效可行的潜在推理方案。",
+      "llm_tldr": "基于推理的防护模型通过显式理由提升LLM安全性，但代价是逐token解码成本高。LatentGuard提出将文本理由通过课程学习压缩为紧凑潜在状态，直接从连续表示输出安全判定，同时用辅助解码器保留可检查接口。这样既降低了推理开销，又具备可部署的检查能力，为防护模型提供了高效可行的潜在推理方案。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "model safety",
+      "matched_requirement_id": "req-15",
+      "selection_source": "carryover_cache",
+      "paper_id": "2608.03838v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.04444v1",
+      "source": "arxiv",
+      "title": "D$^2$F-ReAG: Dynamic Decomposition and Filtering for Multi-Hop Reasoning-Augmented Generation",
+      "abstract": "Large language models (LLMs) often generate inaccurate answers due to their reliance on static internal knowledge. Retrieval-augmented generation (RAG) addresses this limitation by integrating external knowledge and excelling at single-hop queries. However, it struggles with multi-hop questions that require cross-document reasoning. Existing methods, such as graph structured RAG or question decomposition, often lack dynamic decomposition and effective filtering, which leads to lower efficiency and accuracy. To overcome these limitations, we propose Dynamic Decomposition and Filtering for Multi-Hop Reasoning-Augmented Generation (D2F-ReAG), a novel paradigm that adaptively controls reasoning depth by judging the reliability of the root-level reasoning. If the root reasoning is reliable, the model directly generates the answer. Otherwise, the question is logically decomposed into sub-questions, and the verified reasoning derived from these sub-questions is used to refine the root reasoning. Experiments on three multi-hop benchmarks demonstrate the effectiveness of our method in handling complex multi-hop questions.",
+      "authors": [
+        "Jiaoyang Li",
+        "Junhao Ruan",
+        "Shengwei Tang",
+        "Kaiyan Chang",
+        "Zhengtao Yu",
+        "Tong Xiao",
+        "Jingbo Zhu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T04:41:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.04444v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Dynamic decomposition and filtering for efficient multi-hop RAG",
+      "llm_evidence_cn": "面向多跳RAG的动态分解与过滤提升效率",
+      "llm_evidence": "面向多跳RAG的动态分解与过滤提升效率",
+      "canonical_evidence": "面向多跳RAG的动态分解与过滤提升效率",
+      "llm_tldr_en": "D2F-ReAG adaptively controls reasoning depth by judging reliability of retrieved evidence in multi-hop RAG, combining dynamic decomposition and filtering to improve accuracy and efficiency.",
+      "llm_tldr_cn": "大语言模型常依赖静态内部知识产生不准确答案，RAG通过外部知识改善单跳查询，但在多跳跨文档推理上存在困难。现有基于图或问题分解的方法缺少动态分解和有效过滤，导致效率与准确性不高。作者提出D2F-ReAG，通过判断检索证据的可靠性来动态控制推理深度，并引入分解与过滤机制。实验表明该方法在多跳推理任务上提升了准确率与效率。",
+      "llm_tldr": "大语言模型常依赖静态内部知识产生不准确答案，RAG通过外部知识改善单跳查询，但在多跳跨文档推理上存在困难。现有基于图或问题分解的方法缺少动态分解和有效过滤，导致效率与准确性不高。作者提出D2F-ReAG，通过判断检索证据的可靠性来动态控制推理深度，并引入分解与过滤机制。实验表明该方法在多跳推理任务上提升了准确率与效率。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "reasoning efficiency improvement",
+      "matched_requirement_id": "req-25",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.04405v1",
+      "source": "arxiv",
+      "title": "Training-Free Hashing-Based Attention via Binary Principal Components",
+      "abstract": "Long-context large language models (LLMs) are increasingly deployed in real-world applications, yet self-attention remains a major efficiency bottleneck -- especially during decoding -- due to the necessity of repeatedly processing ever-growing key-value (KV) caches. Existing sparse attention reduce computation by attending to fewer KV pairs, but often suffer from substantial accuracy degradation, require additional training, or rely on expensive hashing. In this work, we present BinaryPC, a training-free, data-aware hashing-based sparse attention for long-context LLMs. BinaryPC constructs compact binary hash codes and corresponding hash function by computing binary principal components of data. Unlike Locality-Sensitive Hashing (LSH) with data-independent random projections or learned non-linear hashing methods, BinaryPC constructs binary codes that explicitly preserve the structural information of data without requiring gradient-based training. Comprehensive experiments across multiple model families and long-context benchmarks show that BinaryPC preserves accuracy relative to full attention while achieving superior performance among sparse and hashing-based baselines. On modern GPUs, BinaryPC improves end-to-end decoding throughput by 3.56$\\times$ over the FlashAttention kernel. Our code is available at https://github.com/yudaohai666/BPC.",
+      "authors": [
+        "Daohai Yu",
+        "Zhanpeng Zeng",
+        "Keyu Chen",
+        "Wenhao Li",
+        "Zhifeng Shen",
+        "Luxi Lin",
+        "Ruizhi Qiao",
+        "Xing Sun",
+        "Rongrong Ji"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-05T03:19:21+00:00",
+      "link": "https://arxiv.org/pdf/2608.04405v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "query:ai-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Long-context attention efficiency, training-free sparse attention",
+      "llm_evidence_cn": "长上下文注意力效率，无训练稀疏注意力",
+      "llm_evidence": "长上下文注意力效率，无训练稀疏注意力",
+      "canonical_evidence": "长上下文注意力效率，无训练稀疏注意力",
+      "llm_tldr_en": "BinaryPC is a training-free hashing-based sparse attention for long-context LLMs, using binary principal components to build compact hash codes, reducing KV-cache compute and preserving accuracy.",
+      "llm_tldr_cn": "长上下文大语言模型的自注意力在解码时因处理不断增长的KV缓存而成为效率瓶颈，现有稀疏注意力方法或需训练或依赖昂贵哈希。本文提出BinaryPC，一种无训练的数据感知哈希稀疏注意力方法，通过对数据计算二元主成分来构造紧凑的二元哈希码。该方法在降低计算开销的同时保持了较好的准确率，为长上下文LLM的高效推理提供了实用方案。",
+      "llm_tldr": "长上下文大语言模型的自注意力在解码时因处理不断增长的KV缓存而成为效率瓶颈，现有稀疏注意力方法或需训练或依赖昂贵哈希。本文提出BinaryPC，一种无训练的数据感知哈希稀疏注意力方法，通过对数据计算二元主成分来构造紧凑的二元哈希码。该方法在降低计算开销的同时保持了较好的准确率，为长上下文LLM的高效推理提供了实用方案。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}

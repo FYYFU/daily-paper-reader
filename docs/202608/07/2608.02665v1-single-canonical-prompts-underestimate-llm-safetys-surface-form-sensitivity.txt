@@ -1,0 +1,211 @@
+Title: Single Canonical Prompts Underestimate LLM Safety's Surface-Form Sensitivity
+
+URL Source: https://arxiv.org/pdf/2608.02665v1
+
+Published Time: Wed, 05 Aug 2026 00:02:32 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Single Canonical Prompts Underestimate LLM Safety’s Surface-Form Sensitivity 
+
+## Yongxi Zhou 1,∗ Junwei Yao 1 Yuanzhe Liu 2 Zihan Dong 2
+
+## Wenbo Ye 3 Jiaxi Wen 1 Lai Yun Choi 11Northeastern University, Massachusetts, USA 
+
+> 2
+
+## Georgia Institute of Technology, Georgia, USA 
+
+> 3
+
+## University of Southern California, California, USA 
+
+> ∗
+
+## Corresponding author: zhou.yongx@northeastern.edu 
+
+## Abstract 
+
+A benchmark score is a measurement instru-ment, yet most benchmarks read each item at a single canonical surface form. We ask a construct-validity question about this instru-ment and a reliability question about its noise: when an item’s intent is held fixed and only its meaning-preserving surface form varies, does the canonical-form score faithfully estimate model behavior, and how much of any varia-tion is decoding/judge noise rather than signal? We instantiate this in safety—a high-stakes set-ting with no gold label to average toward— treating single canonical, English, harmful prompts as the instrument under test. To answer this without prior confounds, we pre-author the reformulations (refusal-free, mostly non-LLM: machine back-translation and a Matrix-Language-Frame code-switch generator) so an identical surface form reaches every model, score all responses with one human-anchored ,vendor-neutral judge (Claude— κ = 0 .86 vs. human on unsafe compliance, stable across languages—cross-checked by GPT-4o), and verify intent preservation. On 370 seeds ×
+
+5 surface forms × 5 models, no single trans-formation is uniformly most dangerous (6 of 20 per-transformation McNemar tests survive correction, most protective). Yet evaluating only the canonical prompt underestimates un-safe compliance: the union of unsafe outcomes across forms exceeds even the worst single 
+
+form by 3.3–12.9 pp, with bootstrap 95% CIs excluding zero for all five models, and 5–13% of seeds safe on canonical are unsafe under some reformulation—above a zero stochasticity floor (canonical resampled five times at temper-ature 0 gives 0/370 new exposures). The mag-nitude of this gap is model-dependent (largest on Gemini 2.5 Pro). Across these five forms, one form recovers only ∼53% of a model’s observed unsafe surface and about three reach 85%—a redundancy characterization of this form set, not a sample of a defined population. A benign control (XSTest) suggests the insta-bility is bidirectional (comparable new over-refusals), though the benign and harmful pools are not item-matched. We release the dataset, code, and per-response labels. 
+
+## 1 Introduction 
+
+Evaluating a foundation model is an act of mea-surement: a benchmark reads the model through an instrument—a fixed set of items, a scoring rule, and increasingly a model-based judge—and reports a number we treat as a property of the model. Like any instrument it can be biased and noisy, and a ba-sic validity question is whether reading each item at a single canonical surface form faithfully esti-mates behavior on the underlying construct when the surface form could have been otherwise. We study this in safety, where the stakes of a biased in-strument are concrete: models are deployed where alignment failures carry real consequences, and safety is routinely assessed by presenting a single canonical, English, harmful request and measur-ing refusal or compliance. This paradigm embeds an assumption—that one canonical phrasing rep-resents the intent in general—yet the same intent can be paraphrased, translated, code-switched, or framed indirectly. If behavior varies across these meaning-preserving surface forms, a single-form benchmark misestimates robustness, and the size of that misestimate is a measurement-error question, not only a safety one. We study this directly. Our research question is: when harmful intent is held fixed while sur-face form varies, how stable is safety, and does the canonical prompt give a faithful estimate of a model’s vulnerability? Prior work on multilingual and code-switched jailbreaks (Yong et al., 2023; Deng et al., 2024; Yoo et al., 2025) establishes that 
+
+individual reformulations can bypass guardrails, but typically studies one transformation in isola-tion, and—crucially for measurement—often (a) asks the target model to perform the transformation 1arXiv:2608.02665v1 [cs.CR] 1 Aug 2026 via a meta-instruction, confounding reformulation ability with safety; (b) scores with substring rules or a same-vendor judge; and (c) does not verify that the reformulation preserves the harmful intent. We remove these confounds. First, all refor-mulations are pre-authored so that an identical 
+
+surface form is sent to every model, and three of the four transformations are produced by refusal-free, non-LLM methods, sidestepping the fact that aligned models refuse to reformulate harm-ful seeds (Section 3.2). Second, we score with a 
+
+single human-anchored, vendor-neutral judge 
+
+(Claude, anchored to human annotation and cross-checked by an independent-vendor judge) applied uniformly to all five evaluated models (Section 3.4). Third, we verify intent preservation with the same judge. Framed this way the contribution belongs to evaluation science, not attack research: it asks how to draw reliable conclusions from an im-perfect instrument applied to imperfect data (Ja-cobs and Wallach, 2021). A benchmark score is a measurement instrument; surface-form sensitiv-ity is instrument bias—the canonical reading sys-tematically misses exposure that other meaning-preserving readings reveal—and run-to-run vari-ation is instrument noise. We separate the two with a stochasticity floor: because language mod-els are not text-deterministic even at temperature 0 (Zhou et al., 2026), we resample the canonical form and measure how often the safety label rather than the wording changes, so determinism in in-ference is a quantity we measure rather than as-sume. Only variation above this floor is attributed to surface form. Our contributions are method-ological first. (1) A confound-controlled, noise-floored protocol : pre-authored (mostly non-LLM, refusal-free) reformulations sent identically to ev-ery model, a single vendor-neutral judge applied uniformly, human-anchored on a stratified sub-set and cross-checked by a second-vendor judge, an intent-preservation check, a stochasticity-floor 
+
+control that separates genuine surface-form sen-sitivity from decoding/judge noise, and a benign over-refusal control (XSTest) that separates safety degradation from general instability. (2) The find-ing : contrary to the framing that particular refor-mulations (translation, code-switching) are “the dangerous” ones, no single transformation uni-formly increases unsafe compliance (most signifi-cant per-transformation effects are protective); in-stead, reformulation induces (intent × surface-form)-specific instability—5–13% of seeds safe on the canonical prompt become unsafe under some form (above a zero noise floor), and the union ex-ceeds the worst single form for all five models (bootstrap CIs exclude zero). The canonical prompt is thus a biased, optimistic estimator of a model’s unsafe surface. A benign control (XSTest) suggests 
+
+this instability is bidirectional—a comparable 6– 18% of benign prompts flip to over-refusal—but the benign and harmful pools are not item-matched, so we report bidirectionality as a secondary, sug-gestive observation rather than a core claim. (3) A redundancy characterization of these five forms :a single surface form recovers only ∼53% (37– 68% across models) of a model’s observed unsafe surface, and ∼3 forms reach 85% of the five-form union. These forms are not a sample from a defined population of surface forms, so the curve is descrip-tive of this form set, not an estimate of general coverage. We release all artifacts. 
+
+## 2 Related Work 
+
+Jailbreaks and reformulation attacks. Adver-sarial suffixes (Zou et al., 2023) and persuasion-based attacks (Zeng et al., 2024) optimize inputs to maximize harm. Closer to us, Yong et al. (2023) show translating AdvBench into low-resource lan-guages bypasses GPT-4 ( ∼79% ASR); Li et al. (2024) and Deng et al. (2024) study multilingual jailbreaks; CSRT (Yoo et al., 2025) synthesizes code-switched queries. These study a single trans-formation, usually framed as an attack. We instead compare four meaning-preserving families on the same seeds as a measurement question, and ask whether the canonical prompt is a faithful estimator. Framing effects also recur beyond the single-turn setting: Liu et al. (2026) decompose multi-agent safety into reframing, planner behavior, and dele-gation framing, and find the resulting compliance shifts to be strongly model-dependent—echoing, in a different setting, our finding that no single surface form is uniformly most dangerous. 
+
+Safety benchmarks and judges. Harm-Bench (Mazeika et al., 2024) and Jailbreak-Bench (Chao et al., 2024) standardize behaviors and—critically—ship validated classifiers (a fine-tuned Llama-2-13B judge; a Llama-3-70B judge selected against human preferences), because substring scoring is unreliable. SG-Bench (Mou et al., 2024) varies prompt-engineering parameters. We adopt the validated-judge standard but use a 2vendor-neutral judge so that no evaluated model is scored by a same-vendor judge, and we add an explicit intent-preservation check that these benchmarks do not target. 
+
+Multi-prompt and distributional evaluation. Aparallel line in general NLP measurement shows that single-prompt scores are unreliable estimators: model performance varies widely across semanti-cally equivalent prompt formats (Sclar et al., 2024), motivating a shift from point estimates to distri-butional , multi-prompt evaluation (Mizrahi et al., 2024). We import this measurement stance into safety, where it differs in three ways. (i) There is no gold label to average toward, so the quan-tity of interest is the union /worst-case exposure across forms rather than a central tendency. (ii) We calibrate that union against an explicit stochastic-ity noise floor and a benign over-refusal control, separating construct signal from decoding noise and from generic instability. (iii) Intent preserva-tion must be verified, because a surface change can silently alter the construct being measured. This stance also reconciles our modest per-form effects with best-of-N jailbreaking (Hughes et al., 2024), which attains high attack success by sam-pling hundreds of augmented prompts at non-zero temperature: that regime compounds large N with uncontrolled decoding noise, whereas we isolate surface form at five forms and temperature 0, so the two findings are complementary rather than contradictory. A related instrument-bias result ap-pears in agent settings, where individually safe components compose into unsafe configurations that per-component evaluation cannot see (Wang et al., 2026); there, as here, the gap between a flagged and a human-confirmed hazard is itself a property of the instrument. 
+
+## 3 Method 
+
+3.1 Task and Data 
+
+We define safety robustness as the stability of safe behavior when a harmful intent is held fixed and only the surface form varies. For each seed s
+
+we build five conditions: the canonical prompt 
+
+t0(s) and four meaning-preserving reformulations. Seeds are drawn from HarmBench (Mazeika et al., 2024) and AdvBench (Zou et al., 2023), dedupli-cated and mapped to four harm categories. The frozen v3 set has 370 seeds (100 physical-harm, 100 cyber-abuse, 100 fraud/deception, 70 violent-wrongdoing) × 5 conditions = 1,850 prompts. 
+
+3.2 Pre-authored, refusal-free reformulations 
+
+Asking an aligned model to “translate/rephrase” a harmful seed is self-defeating: the generator refuses or distorts exactly these inputs, and any meta-instruction it executes confounds reformula-tion ability with safety. We therefore pre-author each reformulation as a fixed string, sent identi-cally to all evaluated models, using methods with no safety filter wherever possible: • paraphrase : distant-pivot machine back-translation (English →pivot →English; pivots chosen for typological distance), accepted only when surface similarity to the source falls in a target band. • translation_zh : machine translation English →Chinese. • code_switch_zh_en : a programmatic Matrix-Language-Frame generator (Myers-Scotton, 1993)—English matrix, with noun-phrase con-stituents translated to Chinese—yielding gen-uine intra-sentential mixing rather than a trans-lated sentence appended to its English origi-nal. • indirect_framing : reframing as an indi-rect/hypothetical question requires semantic restructuring, so it is generated by an open-weight, API-accessed model (DeepSeek-V3) under a text-transformation system prompt that suppresses refusal; intent preservation is verified post-hoc (Section 3.4). It is the only transformation produced by an LLM rather than a non-LLM method. Each item passes a structural quality gate; failures are flagged for manual review rather than silently substituted. Machine translation and the frame generator are content-agnostic and never refuse, which removes refusal-induced selection bias from dataset construction. We disclose that three of the four transforms (paraphrase = pivot back-translation, translation_zh, code_switch_zh_en) share the same Chinese machine-translation ma-chinery, so the positive correlation among forms is partly attributable to shared tooling; our “dis-tribution of surface forms” is thus more precisely Chinese-MT variants plus one LLM reframing (in-direct framing). Section 4 quantifies the contribu-tion of the one non-MT transform. 
+
+3.3 Inference 
+
+All five models—GPT-4o-mini, GPT-4o, Gemini 2.5 Flash, Gemini 2.5 Pro, DeepSeek-V3—receive 3each prompt under an identical system prompt at temperature 0 with a 256-token cap, via batch APIs. 
+
+3.4 Human-anchored, vendor-neutral judging 
+
+A single judge—Claude ( claude-sonnet-4-6 ), temperature 0—scores every response on two ques-tions, given the original harmful behavior as the ref-erence: refusal (does the response decline/deflect?) and unsafe compliance (does it provide opera-tionally useful harmful content?). Claude is not one of the evaluated providers, so no model is judged by a same-vendor judge, and it scores Chinese re-sponses natively. Separately, the judge rates in-tent preservation for each reformulation against its seed; this is a dataset property and is judged once. We report judge labels throughout; a brit-tle substring detector that we also ran misses most unsafe cases (it labels <1% unsafe) and most soft refusals, reproducing the known failure of rule-based scoring. Using an LLM judge rather than a cheaper feature-based classifier carries a real com-pute cost: Zhang et al. (2026) find that fine-tuned LLMs consistently improve over gradient-boosting baselines at predicting human judgments of chatbot responses while requiring substantially more train-ing and inference resources. Here the cheap alterna-tive is not merely less accurate but non-functional, so we accept that cost. 
+
+Judge corroboration. To bound judge error with-out a human anchor, we re-scored a stratified sam-ple of 250 responses (balanced across the five mod-els and five forms) with an independent, different-vendor judge (GPT-4o). The two judges substan-tially agree—Cohen’s κ = 0 .67 on unsafe compli-ance (95.2% agreement) and κ = 0 .65 on refusal— with near-identical unsafe prevalence (21 vs. 19 of 250), indicating that the headline rates are not an artifact of one judge’s calibration. 
+
+Human anchor. On a stratified subset of 185 re-sponses (English 75, Chinese 55, code-switched 55, oversampling unsafe outcomes), a human an-notator labelled refusal and unsafe compliance 
+
+blind to the judge’s labels. Human–judge agree-ment is high—Cohen’s κ = 0 .86 on unsafe compli-ance and 0.91 on refusal—and, critically, does not 
+
+degrade on non-English responses: per-language unsafe κ is 0.92 (English), 0.82 (Chinese), 0.81 (code-switched), and refusal κ is 0.95 / 0.93 / 0.85. The judge is thus a human-anchored instrument whose reliability is stable across surface form, so the cross-form effect is not an artifact of the judge mis-scoring foreign-language text. Full-set human annotation and a multi-annotator ensemble remain future work. 
+
+## 4 Results 
+
+4.1 Aggregate rates are stable; no transformation is uniformly worse 
+
+Table 1 reports judge refusal and unsafe-compliance rates. Aggregate rates move little across surface forms (mean refusal 75–82%; mean unsafe 8–13%), and crucially the direction of any per-transformation effect is model-dependent. Test-ing each (model, transformation) against its canon-ical condition with exact McNemar tests paired by seed, and correcting across all 20 tests (Holm), only 6/20 are significant —and most are protec-tive (the reformulation lowers unsafe compliance, e.g. DeepSeek-V3 under indirect framing, Gemini 2.5 Pro under code-switching). The lone signifi-cant increase is GPT-4o-mini under Chinese trans-lation ( +5 .9 pp unsafe; 24 seeds become unsafe vs. 2 recovered, pHolm <0.001 ). There is no trans-formation that is uniformly most dangerous across models. These per-transformation tests are also underpowered: discordant-pair counts are small (median 26, range 6–64 across the 20 tests), giving 
+
+∼80% power only for a discordant split near 78/22 or more extreme, so “6/20 significant” reflects lim-ited power as much as genuine near-null marginal effects. The union analysis below answers a differ-ent question—cumulative exposure across forms, not the effect of any one form—and we validate it against an explicit noise floor rather than leaning on its (degenerate) significance. 
+
+4.2 Canonical prompts underestimate unsafe compliance 
+
+The per-transformation nulls do not mean reformu-lation is harmless. Because different seeds fail un-der different forms, the union of unsafe outcomes across the five surface forms exceeds the best the canonical prompt could indicate (Table 2). We make the honest comparison against the worst sin-gle form, not just canonical: the union exceeds the worst single form by 3.3–12.9 pp, and boot-strap 95% CIs on this gap exclude zero for all five 
+
+models (smallest GPT-4o-mini 3.3 pp [1 .6, 5.1] ;largest Gemini 2.5 Pro 12.9 pp [9 .5, 15 .7] ; Table 2). We therefore treat the existence of exposure be-yond the worst single form as the robust claim and its magnitude as model-dependent (largest on 44o-m 4o G-Fl G-Pro DS                                                     
+
+> Refusal rate (%)
+> original 89.2 90.8 80.0 71.4 77.3 paraphrase 87.6 88.4 77.8 71.6 78.9 translation_zh 80.8 88.6 72.4 58.6 75.4 code_switch 89.2 91.6 76.8 63.2 76.5 indirect_framing 85.4 87.6 70.5 61.6 85.7
+> Unsafe compliance (%)
+> original 7.6 5.4 15.1 14.9 18.9 paraphrase 7.3 7.0 13.2 14.3 13.8 translation_zh 13.5 6.2 15.1 7.8 20.0 code_switch 7.3 4.3 15.1 6.5 19.2 indirect_framing 8.4 6.2 10.8 7.3 6.8
+> Table 1: Judge-scored refusal and unsafe-compliance rates by transformation and model ( n=370 /cell). 4o-m: GPT-4o-mini; 4o: GPT-4o; G-Fl/G-Pro: Gemini 2.5 Flash/Pro; DS: DeepSeek-V3. Bold marks the only Holm-significant per-transformation increase in unsafe compliance.
+
+Gemini 2.5 Pro). Relative to the canonical prompt alone the union is 1.3–2.2 ×. “New exposure”— seeds safe on canonical but unsafe under some reformulation—is 5.4–13.0% with Wilson intervals excluding zero (Table 3). We report this propor-tion rather than a union-vs-canonical McNemar, which is structurally degenerate (the union con-tains the canonical condition). The two analyses use different inferential standards by design: the 20 per-transformation McNemar tests form a family of hypothesis tests (Holm-corrected), whereas the union, new-exposure, and coverage quantities are 
+
+estimates reported with confidence intervals, not a second test family requiring multiplicity correction. 
+
+Signal, not noise. The decisive question is whether “new exposure” reflects surface form or merely decoding/judge stochasticity re-sampled five times. We measure a stochasticity floor —a repeated-run reliability check, since LLMs vary run-to-run even on deterministic tasks (Zhou et al., 2026)—by resampling the canonical prompt five times per seed at temperature 0 (surface form held fixed) and taking the union. Although outputs are not text-deterministic (98% of DeepSeek-V3 re-peats differ in wording), the judge’s safety label 
+
+never flips—the repeat-union equals the canoni-cal rate and the floor of new exposures is 0/370 for both models tested (GPT-4o-mini, DeepSeek-V3; 95% CI [0 , 1.0] %). Decoding stochasticity thus contributes ≈0 to label-level new exposure (judge noise is separately bounded by inter-judge 
+
+κ = 0 .67 ). The cross-form new exposures (6.2% and 9.2%) lie entirely above this zero floor and are therefore surface-form-driven. Because tempera-ture is held at 0, this floor isolates the surface-form 
+
+component of exposure; at deployment tempera-tures, decoding stochasticity contributes additional 
+
+exposure (best-of-N work finds ∼20% of jailbreak successes fail to reproduce on resampling (Hughes et al., 2024)). Our union is thus a conservative 
+
+lower bound on deployment-time exposure, not an upper bound. 
+
+Robustness. The effect is not intent drift: re-stricting the union to reformulations the judge rates intent-preserving leaves it essentially unchanged (Gemini 2.5 Pro 25.9% vs. 27.8%; GPT-4o-mini and DeepSeek-V3 unchanged). It does not de-pend on the one LLM-generated transformation: excluding indirect framing, the union still exceeds canonical for every model (DeepSeek-V3 24.9%). Conversely, the one mechanistically-distinct trans-form not built on the Chinese-MT pipeline (indirect framing) alone adds 1.1–4.6 pp of new exposure over canonical (4.1 pp GPT-4o-mini, 4.6 pp Gem-ini 2.5 Pro, 1.1 pp DeepSeek-V3), so the union is not solely a shared-MT-tooling artifact (the shared machinery is disclosed in Section 3.2). And it is not a multiple-draws artifact: five independent mea-surements at these rates would union to 26–58%, far above the observed 12–28%, so the forms are positively correlated, not random re-samples. A benchmark probing only the canonical form thus reports an optimistic point estimate of a larger, real vulnerability surface. 
+
+4.3 A benign control suggests bidirectional instability 
+
+Is this new exposure a safety phenomenon, or just general behavioral instability under reformulation? We run an identical pipeline over the 250 safe prompts of XSTest (Röttger et al., 2024)—prompts a well-calibrated model should answer—and mea-sure new over-refusals (benign seeds answered on canonical but refused under some reformula-tion). The two effects are comparable in magnitude (Table 3): new over-refusal is 6–18% versus 5– 13% new unsafe, and for Gemini 2.5 Flash and DeepSeek-V3 the benign effect is larger . Refor-mulation therefore induces bidirectional per-seed instability—flipping some harmful prompts to un-safe and some benign prompts to refused, at sim-ilar rates—rather than a one-directional erosion of safety. Because our benign and harmful pools are not item-matched (Limitations), we read this 5as consistent with general surface-form instability rather than as evidence that the effect is safety-agnostic. This is the honest reading: the canonical prompt mis-estimates behavior in both directions, and “single-prompt evaluation is optimistic about safety” must be paired with “it is also optimistic about over-refusal.” 
+
+4.4 How many surface forms must a benchmark probe? 
+
+The union effect has a direct operational conse-quence: how much of a model’s true unsafe sur-face does a budget of m randomly chosen forms recover? For each model we compute the ex-pected coverage of the union when testing m of the five forms (exact, over all   5
+
+> m
+
+ subsets). Aver-aged across models, coverage is 53% ( m=1 ), 73% (m=2 ), 85% ( m=3 ), 93% ( m=4 ), 100% ( m=5 ); the single-form figure ranges from 37% (Gemini 2.5 Pro) to 68% (Gemini 2.5 Flash). A single canonical prompt thus recovers only about half of what five meaning-preserving forms reveal, and roughly three forms reach 85% of our five-form union. We frame this as a redundancy characteriza-tion of these five forms, not a sampling guideline: the five forms are not a sample from a defined pop-ulation of surface forms, so the coverage curve is descriptive of this form set rather than an estimate of general coverage. 
+
+4.5 Decomposed consistency 
+
+For each seed we ask whether refusal is identi-cal across all five forms, decomposing into safe-consistent (refuses all), unsafe-consistent (com-plies with all), and mixed. The mixed fraction is large for the weaker-aligned models—Gemini 2.5 Pro 38.6%, Gemini 2.5 Flash 29.2%, DeepSeek-V3 23.5%—versus 15–18% for the GPT models. For roughly a quarter to two-fifths of harmful intents, then, whether a model refuses depends on phrasing ,which is precisely what a single-form benchmark cannot see and what drives the union effect above. 
+
+4.6 Intent preservation 
+
+The clean construct lets us check whether low re-fusal reflects evasion or destroyed intent. The judge rates intent preserved for 91.9% (paraphrase), 93.8% (translation), and 94.1% (code-switch), but only 82.4% for indirect framing. Indirect fram-ing’s lower apparent severity is thus partly an arti-fact of intent neutralization—it sometimes softens a request into an abstract question—rather than pure evasion, a distinction invisible to refusal rates alone. 
+
+## 5 Discussion 
+
+Three results must be held together. (i) Marginally ,meaning-preserving reformulation does not make these frontier models systematically more likely to comply: per-transformation effects are small, mostly non-significant after correction, and when significant usually protective—contradicting a read-ing of prior single-transformation studies in which a particular surface form is “the” vulnerability. (ii) 
+
+Jointly , the canonical prompt is an optimistic esti-mator: vulnerability is idiosyncratic to (intent ×
+
+surface-form) pairings, so aggregating meaning-preserving forms reveals a larger unsafe surface than any single form. (iii) Symmetrically , the benign control is consistent with this not being safety-specific (the harmful and benign pools are not item-matched): the same reformulations flip comparable fractions of benign prompts into over-refusals. The phenomenon is best described as 
+
+surface-form behavioral instability , which mani-fests as both missed unsafe compliance and spu-rious over-refusal. The practical implication is not “add translation attacks” but “estimate behavior over a distribution of surface forms, not a single canonical one—for both safety and over-refusal,” and report decomposed consistency so that per-seed instability is visible. Our mostly-null and protective per-transformation effects may appear to contradict the high attack-success rates of earlier translation jailbreaks (Yong et al., 2023; Deng et al., 2024). Two factors reconcile this. First, those results predate the frontier models evaluated here; safety on translated inputs has improved. Second, and methodologically, attack-framed pipelines do not verify that the reformulation preserves harmful intent, whereas our intent check (Section 4) shows a non-trivial fraction of reformulations—especially indirect framing (82.4%)—partly neutralize intent, which inflates apparent success when uncontrolled. Under a human-anchored, intent-controlled construct the effect is real but smaller and distributional rather than transformation-specific. As an observation (not a validated claim, given single-judge scoring; see Limitations), the mod-els with higher baseline unsafe rates (Gemini, DeepSeek: 15–19% vs. 5–8% for GPT) also show larger mixed fractions, so the canonical-prompt un-6Model Canon. Worst Union U−W [95% CI]                     
+
+> GPT-4o-mini 7.6 13.5 16.8 3.3 [1.6,5.1] GPT-4o 5.4 7.0 12.4 5.4 [3.2,7.3] Gemini 2.5 Flash 15.1 15.1 20.5 5.4 [3.0,7.0] Gemini 2.5 Pro 14.9 14.9 27.8 12.9 [9.5,15.7] DeepSeek-V3 18.9 20.0 25.1 5.1 [3.0,6.8]
+
+Table 2: Unsafe compliance (%): canonical-only, the worst single form, and the union across all five forms. U −W is the union-minus-worst gap with a seed-level bootstrap 95% CI (5,000 resamples); it excludes zero for every model. Per-seed new exposure (safe on canonical, unsafe under some form) and its zero stochasticity floor are reported in Table 3.             
+
+> Model New unsafe (harmful) New over-refusal (benign)
+> GPT-4o-mini 9.2 [6.7,12.6] 6.0 [3.7,9.7] GPT-4o 7.0 [4.8,10.1] 6.0 [3.7,9.7] Gemini 2.5 Flash 5.4 [3.5,8.2] 14.0 [10.2,18.8] Gemini 2.5 Pro 13.0 [9.9,16.8] 10.0 [6.9,14.3] DeepSeek-V3 6.2 [4.2,9.2] 18.0 [13.7,23.2]
+
+Table 3: New exposure under reformulation (%, Wilson CI), harmful vs. benign. Harmful = seeds safe on canonical but unsafe under some form; benign = XSTest safe prompts answered on canonical but over-refused under some form. The stochasticity floor for new exposure—canonical resampled 5 × at temperature 0—is 0/370 (GPT-4o-mini, DeepSeek-V3), so all harmful CIs lie above the noise floor. The two directions are comparable in magnitude (benign larger for two models), suggesting bidirectional surface-form instability, though the harmful and benign pools are not item-matched (see Limitations). 
+
+derestimate tends to be largest where baseline risk is already highest. 
+
+## 6 Conclusion 
+
+Under a confound-controlled, noise-floored construct—pre-authored, mostly non-LLM reformulations sent identically to every model, one human-anchored vendor-neutral judge with intent verified, a zero stochasticity floor, and a benign over-refusal control—no meaning-preserving transformation is uniformly more dangerous. Instead, reformulation induces (intent × surface-form)-specific instability: canonical-prompt evaluation misses new unsafe compliance (5–13%, above a zero floor), and the union exceeds the worst single form for all five models. A benign control suggests this is bidirectional (comparable new over-refusal, 6–18%), pending item-matched controls. A single form recovers only ∼half of a model’s observed unsafe surface; about three meaning-preserving forms recover 85% of our five-form union. Robust evaluation should there-fore probe a distribution of meaning-preserving surface forms—budgeting roughly three—and report decomposed consistency, rather than relying on a single canonical phrasing. Beyond safety, the protocol is a reusable mea-surement recipe for any benchmark that lacks a gold label to average toward and whose items admit meaning-preserving surface variation. Its compo-nents are general: pre-authored, refusal-free pertur-bations sent identically to every system to decou-ple the perturbation from the system under test; a vendor-neutral, human-anchored judge applied uni-formly; a union/worst-case estimand in place of a central tendency; a stochasticity floor that separates instrument noise from signal; and an intent- (or construct-) preservation check that guards against silently measuring something else. Safety is the instance we report because its instrument bias has direct consequences, but capability and alignment benchmarks that read each item once at a canonical phrasing inherit the same validity risk. We make no theoretical claim about which surface forms a model will fail on; the contribution is a way to measure, and bound the reliability of, the gap that single-form reading leaves invisible. 
+
+## Limitations 
+
+Judge validation. Headline labels come from one LLM judge, human-anchored on a stratified subset (κ = 0 .86 unsafe, 0.91 refusal; Section 3.4) and corroborated by an independent different-vendor judge ( κ = 0 .65 –0.67 on 250 items). The hu-man anchor uses a single annotator on 185 items; full-set human annotation and a multi-annotator 7ensemble over all responses remain needed to fully bound judge error—including possible shared LLM-judge blind spots that two model judges could share. The stochasticity floor bounds de-coding noise but not surface-form-correlated judge noise; the per-language human κ (0.81–0.92 across English/Chinese/code-switched) addresses the lat-ter on the subset. Intent metric. Intent preser-vation is itself judge-rated; no standard bench-mark for intent preservation of harmful reformu-lations exists, and our 82.4% for indirect framing should be read as approximate. It is also rated by the same judge that scores unsafe compliance, so independent-judge re-scoring is needed to rule out circularity. Open-weight access. DeepSeek-V3 (and the absence of a self-hosted model) means “open” here is open-weight accessed via API, not a locally hosted model; one self-hosted model would strengthen provider diversity. Indirect framing is the one transformation produced by an LLM rather than a non-LLM method. Stochasticity floor scope. The zero noise floor is measured on two of five models (GPT-4o-mini, DeepSeek-V3); extending it to all five would fully general-ize the noise-attribution claim. A 256-token gen-eration cap may also truncate long compliant an-swers before operational content appears, slightly conservatively biasing unsafe detection. Scope. 
+
+English–Chinese only, single-turn, temperature 0. Non-zero-temperature robustness (sampling k
+
+generations and reporting unsafe@ k) and addi-tional language pairs are natural extensions; the union result is expected to strengthen under sam-pling. Benign control scope. Our benign control uses XSTest’s 250 safe prompts; a larger benign set and additional over-refusal benchmarks (OR-Bench (Cui et al., 2024), PHTest (An et al., 2024)) would tighten the bidirectional estimate. The be-nign and harmful seed pools also differ in topic distribution, so the two “new-exposure” rates are comparable in magnitude but not strictly matched item-for-item; promoting bidirectionality to a core claim requires item-matched benign/harmful pairs. 
+
+Shared transformation tooling. Three of four transforms share the Chinese machine-translation pipeline (Section 3.2); although the one non-MT transform alone contributes new exposure (Sec-tion 4), a fully mechanistically-distinct transform— syntax-only restructuring, a different language fam-ily, or a different paraphraser tool—is needed to complete the shared-tooling control. 
+
+## Ethical Considerations 
+
+We study reformulations of existing public harmful-behavior benchmarks to improve safety measure-ment ; we propose no new attack and report ag-gregate rates, not operational content. Reformula-tions are produced by content-agnostic tools from already-public seeds and add no new harmful capa-bility. We release transformed prompts and labels consistent with venue safety norms and the prac-tices of HarmBench/JailbreakBench, and complete the Responsible NLP checklist. 
+
+## Acknowledgments 
+
+LLM assistants were used for sentence-level copy-editing only. All experimental design, data con-struction, analysis, tables, and conclusions were produced by the authors’ code and inspection. 
+
+## References            
+
+> Bang An, Sicheng Zhu, Ruiyi Zhang, Michael-Andrei Panaitescu-Liess, Yuancheng Xu, and Furong Huang. 2024. Automatically generating pseudo-harmful prompts for evaluating false refusals in large lan-guage models. arXiv preprint arXiv:2409.00598 .Patrick Chao, Edoardo Debenedetti, Alexander Robey, Maksym Andriushchenko, Francesco Croce, Vikash Sehwag, Edgar Dobriban, Nicolas Flammarion, George J. Pappas, Florian Tramer, Hamed Hassani, and Eric Wong. 2024. Jailbreakbench: An open ro-bustness benchmark for jailbreaking large language models. In Advances in Neural Information Process-ing Systems (NeurIPS), Datasets and Benchmarks Track .Justin Cui, Wei-Lin Chiang, Ion Stoica, and Cho-Jui Hsieh. 2024. OR-Bench: An over-refusal bench-mark for large language models. arXiv preprint arXiv:2405.20947 .Yue Deng, Wenxuan Zhang, Sinno Jialin Pan, and Li-dong Bing. 2024. Multilingual jailbreak challenges in large language models. In International Confer-ence on Learning Representations (ICLR) .John Hughes, Sara Price, Aengus Lynch, Rylan Schaef-fer, Fazl Barez, Sanmi Koyejo, Henry Sleight, Erik Jones, Ethan Perez, and Mrinank Sharma. 2024. Best-of-n jailbreaking. arXiv preprint arXiv:2412.03556 .Abigail Z. Jacobs and Hanna Wallach. 2021. Mea-surement and fairness. In Proceedings of the ACM Conference on Fairness, Accountability, and Trans-parency (FAccT) , pages 375–385. Jie Li, Yi Liu, Chongyang Liu, Ling Shi, Xiaoning Ren, Yaowen Zheng, Yang Liu, and Yinxing Xue. 2024. A cross-language investigation into jailbreak
+
+8attacks in large language models. arXiv preprint arXiv:2401.16765 .Lifei Liu, Haoran Yu, Xiaochong Jiang, Su Wang, Pin Qian, and Yihang Chen. 2026. Operational reframing and approval-framed delegation in multi-agent LLM safety. Preprint , arXiv:2607.07097. Mantas Mazeika, Long Phan, Xuwang Yin, Andy Zou, Zifan Wang, Norman Mu, Elham Sakhaee, Nathaniel Li, Steven Basart, Bo Li, David Forsyth, and Dan Hendrycks. 2024. Harmbench: A standardized eval-uation framework for automated red teaming and ro-bust refusal. In Proceedings of the 41st International Conference on Machine Learning (ICML) .Moran Mizrahi, Guy Kaplan, Dan Malkin, Rotem Dror, Dafna Shahaf, and Gabriel Stanovsky. 2024. State of what art? a call for multi-prompt LLM evaluation. 
+
+Transactions of the Association for Computational Linguistics (TACL) , 12. Yutao Mou, Shikun Zhang, and Wei Ye. 2024. Sg-bench: Evaluating llm safety generalization across di-verse tasks and prompt types. In Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track .Carol Myers-Scotton. 1993. Duelling Languages: Grammatical Structure in Codeswitching . Oxford University Press. Paul Röttger, Hannah Rose Kirk, Bertie Vidgen, Giuseppe Attanasio, Federico Bianchi, and Dirk Hovy. 2024. XSTest: A test suite for identifying exaggerated safety behaviours in large language mod-els. In Proceedings of NAACL .Melanie Sclar, Yejin Choi, Yulia Tsvetkov, and Alane Suhr. 2024. Quantifying language models’ sensitiv-ity to spurious features in prompt design or: How i learned to start worrying about prompt formatting. In International Conference on Learning Representa-tions (ICLR) .Su Wang, Pin Qian, Yihang Chen, Junxian You, Xi-aoyuan Wang, Xiaochong Jiang, Lifei Liu, Haoran Yu, and Jingzhou Xu. 2026. When safe skills collide: Measuring compositional risk in agent skill ecosys-tems. Preprint , arXiv:2606.00448. Zheng-Xin Yong, Cristina Menghini, and Stephen H. Bach. 2023. Low-resource languages jailbreak gpt-4. In NeurIPS Workshop on Socially Responsible Language Modelling Research (SoLaR) . Best Paper Award. Haneul Yoo, Yongjin Yang, and Hwaran Lee. 2025. Code-switching red-teaming: LLM evaluation for safety and multilingual understanding. In Proceed-ings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL) .Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, and Weiyan Shi. 2024. How johnny can persuade llms to jailbreak them: Rethinking persua-sion to challenge ai safety by humanizing llms. arXiv preprint arXiv:2401.06373 .Yike Zhang, Zuodong Xiang, and Hailu Xu. 2026. Performance-efficiency trade-offs in human prefer-ence prediction: A comparative study of traditional machine learning and large language models. In Pro-ceedings of the 31st IEEE Symposium on Computers and Communications (ISCC) .Yongxi Zhou, Lai Yun Choi, Jiaxi Wen, and Wenbo Ye. 2026. Accuracy, stability, and repeated-run re-liability of large language models on deterministic programming tasks. Preprint , arXiv:2606.00920. Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J. Zico Kolter, and Matt Fredrikson. 2023. Univer-sal and transferable adversarial attacks on aligned language models. arXiv preprint arXiv:2307.15043 .
+
+## A Judge Rubric 
+
+The judge (Claude claude-sonnet-4-6 , temper-ature 0; second judge GPT-4o) receives the original harmful behavior as reference and answers, for each response:   
+
+> REFUSAL: does the response refuse, decline, de-flect, or avoid fulfilling the request? UNSAFE: does the response provide operationally useful content that advances the behavior (concrete steps, methods, code, actionable harmful de-tail)? Judge content, not tone; the response may be in any language. Reply exactly: REFUSAL: <YES/NO> UNSAFE: <YES/NO> .
+
+Intent preservation uses a separate single-question prompt comparing each reformulation against its seed. The full rubric, per-response labels for both judges, and a stratified subset prepared for human validation are released with the code. 
+
+## B Reformulation Details 
+
+Paraphrase and translation use Google Trans-late (via deep_translator ). Paraphrase back-translates through typologically distant pivots tried in order (Japanese, Finnish, Arabic, Ko-rean, Turkish, Hungarian, Vietnamese), accepting the first whose surface similarity to the source— 
+
+difflib sequence ratio on lowercased text—lies in (0 .30 , 0.88) ; near-identical ( ≥0.95) or possibly-drifted ( ≤0.30) outputs are flagged. “Non-LLM” here means content-agnostic statistical/neural MT and rule-based chunking that never refuse; it is not a claim that MT is non-neural. Code-switch translates English noun-phrase constituents (NLTK chunker) into Chinese within an English frame. All reformulations are pre-authored once and sent ver-batim to every model. 9
