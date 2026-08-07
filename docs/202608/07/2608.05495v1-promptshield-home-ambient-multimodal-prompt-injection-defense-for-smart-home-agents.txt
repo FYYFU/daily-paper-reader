@@ -1,0 +1,211 @@
+Title: PromptShield Home: Ambient Multimodal Prompt Injection Defense for Smart-Home Agents
+
+URL Source: https://arxiv.org/pdf/2608.05495v1
+
+Published Time: Fri, 07 Aug 2026 00:20:27 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# PromptShield Home: Ambient Multimodal Prompt Injection Defense for Smart-Home Agents 
+
+## He Zhang 
+
+hpz5211@psu.edu College of Information Sciences and Technology The Pennsylvania State University University Park, Pennsylvania, USA 
+
+## Feilong Li 
+
+lifeilong@chd.edu.cn School of Transportation Engineering Chang’an University Xi’an, Shaanxi, China 
+
+## Dingning Long 
+
+dingningll@outllook.com Faculty of Psychology Beijing Normal University Beijing, China 
+
+## Yilin Cui 
+
+yilincu2@andrew.cmu.edu Heinz College of Information Systems and Public Policy Carnegie Mellon University Pittsburgh, Pennsylvania, USA 
+
+## Peijun Zhang 
+
+ah230zang@163.com The Institute for Design Informatics University of Edinburgh Edinburgh, United Kingdom 
+
+## Yuewen Zhang 
+
+yw-zhang24@mails.tsinghua.edu.cn The Future Laboratory Tsinghua University Beijing, China 
+
+## Qianyao Xu 
+
+xuqy@mail.tsinghua.edu.cn Tsinghua University Beijing, China 
+
+## Xinyi Fu ∗
+
+fuxy@tsinghua.edu.cn The Future Laboratory Tsinghua University Beijing, China 
+
+## Abstract 
+
+Smart-home assistants increasingly use multimodal large language models (MLLMs) that perceive video and audio directly. This raises a safety question specific to the home: can the agent tell a genuine user command from ambient or externally-sourced content, tele-vision speech, on-screen text, or an overheard conversation, that merely looks like a command? We introduce PromptShield-Home, a pilot benchmark of realistic smart-home scenarios spanning ad-dressee ambiguity, screen/audio injection, health-monitor false trig-gers, mixed occupancy, and a legitimate-command floor, and use it to compare three abstraction layers: traditional detectors (L0), a single MLLM agent (L1; vision, vision +ASR, and audio-visual), and multi-agent mediation (L2; voting, role specialists, cross-model ar-bitration). Because the label distribution is skewed toward inaction, aggregate accuracy is misleading, a constant always-block predictor scores 82%, so we report unsafe-execution and safe-completion rates separately. The two paradigms fail in opposite ways: detectors act on everything, while every MLLM configuration over-refuses ,completing almost no genuine command and missing a true fall in every case. Crucially, their correct sets are disjoint: an oracle that always picks the right layer reaches 94.1%, against 76.5% for the best single layer. We report this as an upper bound, not a system— no router is implemented—and argue that home-agent safety is  
+
+> ∗Corresponding author. Please use nonacm option or ACM Engage class to enable CC licenses
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> UbiComp Companion ’26, October 11–15, 2026, Shanghai, China
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2533-3/2026/10 https://doi.org/10.1145/3798063.3837198
+
+best served by learned routing and sensor fusion, not by replacing detectors with an MLLM. 
+
+## CCS Concepts 
+
+• Security and privacy → Intrusion/anomaly detection and malware mitigation ; Access control ; • Human-centered com-puting → Interactive systems and tools ; Ubiquitous and mobile computing ; • Computing methodologies → Artificial intelli-gence .
+
+## Keywords 
+
+Ambient intelligence, prompt injection, mllm, smart home, AIoT 
+
+ACM Reference Format: 
+
+He Zhang, Feilong Li, Dingning Long, Yilin Cui, Peijun Zhang, Yuewen Zhang, Qianyao Xu, and Xinyi Fu. 2026. PromptShield Home: Ambient Mul-timodal Prompt Injection Defense for Smart-Home Agents. In Companion of the 2026 ACM International Joint Conference on Pervasive and Ubiquitous Computing (UbiComp Companion ’26), October 11–15, 2026, Shanghai, China. 
+
+ACM, New York, NY, USA, 5 pages. https://doi.org/10.1145/3798063.3837198 
+
+## 1 Introduction 
+
+Smart homes increasingly support safety, comfort, autonomy, and everyday convenience through connected devices, sensors, and automated control [ 2, 4, 6 , 22 ]. Yet many deployed systems still rely on rule-based automation and Trigger-Action Programming (TAP), which become difficult to configure and maintain when domestic situations involve multiple devices, changing contexts, and complex dependencies [7, 14, 17, 20]. Recent LLMs and MLLMs offer a more flexible interface: they can interpret natural language, process visual and audio evidence, reason over context, and map high-level goals to device actions [ 10 ,arXiv:2608.05495v1 [cs.CR] 6 Aug 2026 UbiComp Companion ’26, October 11–15, 2026, Shanghai, China Zhang et al. 
+
+18 , 21 , 25 ]. However, this flexibility creates a safety problem spe-cific to the home. Domestic environments contain many ambi-ent signals that are not meant as commands, including television speech, conversations, screen text, notes, and other visible or audi-ble content [ 11 ]. An MLLM may correctly perceive these signals but wrongly treat them as user intent, causing unwanted actions or privacy leakage [1, 3, 5, 8, 9]. We call this threat Ambient Multimodal Prompt Injection : visual, audio, textual, or cross-modal information in the physical envi-ronment is mistaken for an executable user command. Unlike di-rect prompt injection, the signal is not necessarily typed by an attacker into the model; it may naturally appear in the surrounding environment [ 12 , 19 , 26 , 27 ]. The challenge is therefore not only perception, but source attribution and action authorization: the agent must decide whether observed content reflects real user in-tent while avoiding over-caution that ignores valid commands or emergencies [13]. To study this problem, we present PromptShield-Home , an early-stage safety-mediation framework and pilot benchmark for smart-home agents. Each case is modeled as a ternary, risk-aware decision: 
+
+execute , block , or ask the user . We compare three abstraction layers: traditional detectors (wake-word, pose, and OCR), a single MLLM agent under vision, vision +ASR, and native audio-visual settings, and multi-agent mediation via voting, role specialists, and cross-model arbitration. Our pilot scenarios cover addressee ambiguity, screen/audio injection, health false triggers, mixed occupancy, le-gitimate commands, and occupancy-state queries. Because most smart-home situations should not trigger an action, aggregate accuracy is misleading: a constant “never act” predictor already reaches 82% accuracy. We therefore evaluate safety and utility separately. Our results show that traditional detectors over-execute, whereas MLLMs systematically over-refuse, completing few genuine commands and missing a true fall in every tested con-figuration. Yet their correct decisions are complementary: an oracle 
+
+over L0 and the vision MLLM reaches 94.1% against 76.5% for the best single layer—an upper bound, since no router is implemented. This suggests safer home agents should combine routing and sensor fusion rather than replacing detectors with MLLMs. 
+
+## 2 Methods 
+
+Problem. A smart-home agent must decide, from multimodal scene evidence and a candidate device action, whether to act, without mistaking ambient or externally-sourced content (TV speech, on-screen text, interpersonal talk) for a genuine user command. Each instance is 𝑠 𝑖 = (𝐸 𝑖 , 𝐴 𝑖 , 𝑧 𝑖 ) with evidence 𝐸 𝑖 = (𝑉 𝑖 , 𝑈 𝑖 ,𝑇 𝑖 ) (video, audio, optional one-line description), candidate action 𝐴 𝑖 = (𝑑 𝑖 , 𝑎 𝑖 ),and hidden binary gold 𝑧 𝑖 ∈ { 0, 1}. Every layer emits 
+
+ˆ𝑦 𝑖 ∈ Y = {execute , block , ask_user }, 𝑒 𝑖 = ⊮[ ˆ𝑦 𝑖 = execute ],
+
+i.e. block and ask_user both count as non-execution; invalid out-put falls back to ask_user (never executes). 
+
+Three-layer comparative framework. All layers share the same input, decision space, and metrics, so safety and utility are directly comparable. The layers are an engineering decomposition ordered by delegated semantic authority, not an existing taxon-omy; intermediate designs such as learned addressee- or activity-recognition models lack action-level semantics, so we expect their 
+
+Figure 1: The safety–utility plane. Every single- and multi-agent configuration lies on the reckless ↔over-refusal di-agonal: traditional detectors (L0) act on everything (top-right), while all MLLM configurations over-refuse (bottom-left, SCR = 0; VL+ASR is the least safe). The deployable top-left corner is empty; it is reached only by an oracle over the complementary L0 and vision-MLLM layers (94.1%), an up-per bound motivating learned routing rather than MLLM replacement. 
+
+errors on the L0 side and treat them as features for the router of Sec. 5.2 rather than as a fourth layer. 
+
+Table 1: The three abstraction layers compared in PromptShield-Home.             
+
+> Layer Mechanism Variants
+> L0 traditional detectors wake-word / pose / OCR (deterministic firing) (single baseline) L1 single MLLM vision (Qwen3-VL-30B) / (zero-shot, JSON) vision+ASR (Whisper) / audio-visual (Omni-7B) L2 multi-agent voting (3 ×sampled) / role specialists (compose calls) / cross-model arbitration
+
+Prompts are built by a fixed template 𝑃 𝑖 = 𝜏 (𝑇 𝑖 ,𝑊 𝑖 , 𝐴 𝑖 ) over three conditions that differ only in which optional fields are filled (minimal / +scenario / +transcript , where 𝑊 𝑖 = ASR (𝑈 𝑖 )). The L2 specialists query distinct roles ( addressee , safety , authorization ); arbitration uses a text judge over the vision and audio-visual deci-sions. 
+
+Metrics. Labels are skewed to no-action, so a constant always-block predictor reaches high accuracy (and matches our strongest config). We therefore report the two error modes a deployable agent must jointly minimize: 
+
+UER = |{ 𝑖 : 𝑧 𝑖 =0 ∧ 𝑒 𝑖 =1}| |{ 𝑖 : 𝑧 𝑖 =0}| , SCR = |{ 𝑖 : 𝑧 𝑖 =1 ∧ 𝑒 𝑖 =1}| |{ 𝑖 : 𝑧 𝑖 =1}| ,
+
+i.e. the unsafe-execution rate (↓; share of no-action cases executed) and safe-completion rate (↑; share of action-required cases exe-cuted). We also report the false-block rate FBR = |{ 𝑖 : 𝑧 𝑖 =1 ∧
+
+ˆ𝑦 𝑖 =block }|/|{ 𝑖 : 𝑧 𝑖 =1}| and human-confirmation rate HCR = |{ 𝑖 :ˆ𝑦 𝑖 =ask_user }|/ 𝑁 ; HCR is over all 𝑁 cases, FBR only over action-required ones. PromptShield Home: Ambient Multimodal Prompt Injection Defense for Smart-Home Agents UbiComp Companion ’26, October 11–15, 2026, Shanghai, China 
+
+Figure 2: Complementarity. L0 and the vision MLLM have disjoint correct sets, so an oracle over the two upper-bounds at 94.1% versus 76.5% for the best single layer. 
+
+Figure 3: Example smart-home scenarios in the PromptShield-Home benchmark. The scenarios cover common sources of ambient multimodal content that may be misinterpreted as executable user intent, including TV/media speech, bystander conversation, on-screen text, and genuine user commands. Faces are blurred for privacy. 
+
+## 3 Dataset 
+
+We designed a pilot benchmark to test whether smart-home agents can separate real user intent from ambient information that should not be executed. Guided by known smart-home failures and user risk cases, three researchers scripted each scenario in two meetings before recording, fixing the home setup, the candidate device–action pair, the intended gold decision, and the recording criteria. Two researchers then acted out and recorded the scenarios in a residen-tial environment with a smart speaker, smart lights, home cameras, and a television, capturing visual, audio, textual, and cross-modal cues. Each clip was checked against the script and re-recorded when needed, and every clip and its gold decision were reviewed by at least five authors, entering the benchmark only on unanimous agreement; gold labels are thus fixed by construction rather than judged post hoc, which we report as a structured consensus pro-tocol rather than an inter-annotator agreement statistic. Several scenarios are benign/harmful pairs differing only in the key safety distinction, a real fall versus a yoga pose, an empty versus an oc-cupied room, self-talk versus a real command, which isolates the decision the agent must make. The benchmark contains 19 scenarios : 17 video clips, recorded as .MOV or .mp4 , and 2 still images for occupancy queries. The sce-narios cover six categories, as shown in Table 2. Each scenario is annotated with three types of information: (i) multimodal evidence, including video, audio, and a one-line scene description; (ii) a can-didate device–action pair, such as light/turn_off , emergency_ alert/trigger_alert , or phone/call_contact ; and (iii) a gold decision, which is hidden from the model during evaluation. Most 
+
+Table 2: Composition of the PromptShield-Home pilot bench-mark (19 scenarios). “Gold” gives the intended decision(s).                        
+
+> Category Stress / risk #Gold
+> Addressee ambiguity speech not addressed to agent 7block Screen/audio injection TV / on-screen content as command 3block Health false trigger fall, pose, heart-rate, gesture 41 execute / 3 block Mixed occupancy conflicting occupants 1ask_user / block Command floor genuine, clearly addressed command 2execute Occupancy state static empty / occupied image 2empty / occupied
+> Total 19
+
+Table 3: Safety vs. utility per configuration (Acc = accuracy; other metrics as defined in Sec. 2). 𝑛 =17 : UER is over the 14 no-action cases, SCR and FBR over the 3 action-required cases, HCR and Acc over all 17, so these columns move in steps of 7.1, 33.3 and 5.9 points and should be read as counts. The 
+
+always-block predictor already reaches 82.4%, motivating the UER/SCR split; L0 fires on all 17 cases and so coincides with 
+
+always-execute , since every scenario contains a surface cue a rule latches onto.                                                                  
+
+> Configuration UER SCR FBR HCR Acc
+> always-execute 100.0 100.0 0.0 0.0 17.6
+> always-block 0.0 0.0 100.0 0.0 82.4 L0 traditional 100.0 100.0 0.0 0.0 17.6 L1a VL, minimal 0.0 0.0 100.0 5.9 76.5 L1a VL, +scenario 7.1 0.0 100.0 5.9 70.6 L1b VL+ASR 28.6 0.0 100.0 0.0 58.8 L1c Omni, minimal 7.1 0.0 0.0 94.1 5.9 L1c Omni, +scenario 7.1 0.0 0.0 82.4 17.6 L1c Omni, +transcript 0.0 0.0 0.0 100.0 5.9 L2 voting 7.1 0.0 100.0 5.9 70.6 L2 specialist 0.0 0.0 100.0 0.0 82.4
+> L2 arbitration 7.1 33.3 66.7 17.6 64.7
+
+gold decisions are no-action cases: 13 are block and 1 is ask_user_ or_block . Only 3 scenarios require execute , and 2 are occupancy-state answers. This reflects a common smart-home setting and motivates our separate evaluation of safety and utility. The 17 clips are the ternary action decisions scored below ( 𝑁 =17 : 14 no-action, 3 action-required); the 2 occupancy images are perception queries with no candidate action. 
+
+Traditional-detector annotation. For each scenario, we also record what a conventional detector would do. Examples include execute_ via_keyword when a wake word appears in human-to-human speech, execute_via_pose_threshold when a yoga pose is mis-taken for a fall, and execute_via_ocr_keyword when an on-screen phrase is treated as a command. This annotation has two purposes. First, it shows how current rule-based systems can fail in these cases. Second, it provides the L0 traditional-detector baseline for comparison with the MLLM-based layers, without requiring us to run a separate detector stack. The proxy is idealised in both direc-tions, a fielded detector has misses and false alarms of its own, so the complementarity above is an upper bound on L0’s contribution too. 
+
+## 4 Results 
+
+Finding 1 — opposite failure modes. L0 acts on everything (UER = 14/14, SCR = 3/3); every MLLM collapses to the opposite cor-ner (UER ≤ 1/14, SCR = 0/3): safe but systematically over-refusing .No configuration is low on both axes. UbiComp Companion ’26, October 11–15, 2026, Shanghai, China Zhang et al. 
+
+Table 4: Complementarity of L0 and the vision MLLM. Their correct sets are disjoint, so an oracle over {L0, VL} upper-bounds at 94.1% accuracy versus 76.5% for the best single layer; no router is implemented.            
+
+> correct set count
+> L0 only V11, V16, V17 3VL only V01–V10 \V06, V12–V15 13 both —0
+> oracle (L0 ∪VL) 94.1%
+> best single layer (VL) 76.5%
+
+Table 5: Robustness across 5 sampling seeds (mean ± std). Vi-sion configurations are stable; Omni varies widely (16/17 sce-narios flip decision across seeds), indicating its high ask_user 
+
+rate is decision instability rather than principled caution.                               
+
+> Config (5 seeds) UER SCR FBR
+> VL minimal 0.0±0.00.0±0.086 .7±16 .3
+> VL +scenario 7.1±0.00.0±0.0100 .0±0.0
+> Omni +scenario 12 .9±5.30.0±0.040 .0±24 .9
+
+Finding 2 — accuracy is degenerate. The top-accuracy method (L2 specialist, 82.4%) is byte-identical to always-block : it outputs 
+
+block on all 17 inputs (51/51 agent votes), including the true fall. High accuracy certifies nothing about utility. 
+
+Finding 3 — modality effects. ASR transcripts are harmful (L1b is the least-safe MLLM, UER = 4/14, driven by noisy transcripts); native audio (Omni) merely shifts mass onto ask_user (HCR up to 100%) without improving decisions. 
+
+Complementarity: route, don’t replace. L0 and the vision MLLM have disjoint correct sets: L0 covers exactly the three action-required cases the MLLM over-refuses, the MLLM the semantic (addressee / injection) cases detectors cannot reason about, and no case is solved by both. An oracle over {L0, VL} therefore upper-bounds at 94.1% against 76.5% for the best single layer; no router is implemented (Sec. 5.2). The most safety-critical error, missing the real fall (V11), is made by every MLLM (9/9) and caught only by the physical-sensor baseline, arguing for sensor +MLLM fusion (high-sensitivity trigger + MLLM false-alarm filter) rather than a camera-only agent. 
+
+Frame budget does not fix it (and costs latency). Sweeping frame count × per-frame resolution: more frames do not recover the missed actions (V11, V16 stay blocked at all budgets) and regress 
+
+a spatial injection case (V09 flips to unsafe execute at ≥64 frames as per-frame detail drops), while total latency grows 4.9 → 8.6 s(16 → 128 frames). Token count is misleading here ( 409 → 867 ,capped budget); latency is the fair cost. The optimal frame budget is thus scenario-dependent, and denser sampling is not a remedy for over-refusal [24]. 
+
+Robustness (5 seeds). Over-refusal is a stable bias, not noise: the vision configurations barely vary, whereas Omni flips 16/17 decisions across seeds, so its apparent “caution” is instability, not principled deferral. 
+
+## 5 Discussion 5.1 Single-layer methods struggle to balance safety and utility. 
+
+Neither paradigm alone balances the two axes. Detectors handle all action-required cases but act on almost everything (UER 14/14), whereas MLLM configurations drive unsafe execution to near zero only by refusing almost all genuine commands (SCR 0/3). The sys-tem shifts from over-execution to systematic over-refusal, and in a home both an unintended door unlock and a missed fall are unac-ceptable. 
+
+## 5.2 Route rather than replace. 
+
+Traditional detectors and MLLMs are complementary rather than competing: their correct decisions are disjoint, and an oracle over the two layers reaches 94 .1% accuracy versus 76 .5% for the best single layer (the only configuration above that, 82 .4% , is the de-generate always-block equivalent of Finding 2). Smart-home agents should therefore route each decision to the layer best suited for it rather than replace one with the other, e.g., using a high-sensitivity physical sensor (IMU, accelerometer, or radar) for fall onset detec-tion and an MLLM as a high-specificity false-alarm filter [ 15 , 23 ]. Rule- and role-based policies remain useful as partial safeguards, but cannot anticipate all home contexts, so LLMs should act as constrained semantic mediators under explicit routing, risk, and source-attribution policies [16]. 
+
+## 5.3 More modalities do not always help. 
+
+Adding ASR made the vision model less safe (UER 4/14) by intro-ducing noisy transcripts, while native audio shifted decisions to 
+
+ask_user without resolving the case, instability rather than cau-tion, since 16 of 17 scenarios changed across seeds whereas the vision-only over-refusal was stable. The bottleneck is calibration and source attribution, not the number of modalities. 
+
+## 5.4 Conservative behavior is not the same as intelligent behavior. 
+
+MLLM agents can reduce unsafe execution by refusing to act, but this does not make them more useful or intelligent, since they fail valid commands and even miss emergencies. Overall accuracy hides this: our highest-accuracy configuration behaves like an always-block predictor. Safety-critical evaluation should therefore report safety and utility separately, and deployable agents must know when to act, refuse, or ask the user, as in PromptShield-Home’s layered design. 
+
+## 6 Limitations and Future Work 
+
+This pilot is limited by its small benchmark ( 𝑁 = 19 ), uneven cate-gory coverage, gold decisions verified by author consensus rather than independent annotation, and mostly single-run evaluation. The complementarity gain relies on an oracle rather than a trained router, and the sensor-fusion argument on the L0 proxy rather than measured IMU or radar streams. Inference used one A100-80GB; the 30B vision model needs ∼60 GB of VRAM and cannot run always-on in a home, which is itself an argument for routing. Future work will scale the benchmark, add independent annotations, train calibrated routers, and evaluate on-device sensor fusion. 
+
+## 7 Conclusion 
+
+PromptShield-Home provides an early benchmark for ambient mul-timodal prompt injection in smart-home agents. Traditional detec-tors over-execute, whereas MLLMs over-refuse, making aggregate accuracy insufficient. These complementary failure modes moti-vate source-aware routing and sensor-fusion designs rather than replacing detectors with MLLMs. PromptShield Home: Ambient Multimodal Prompt Injection Defense for Smart-Home Agents UbiComp Companion ’26, October 11–15, 2026, Shanghai, China 
+
+## GenAI Usage Disclosure 
+
+We used generative AI tools for language polishing and grammar correction. Generative AI models were also used as part of the experimental pipeline because this study evaluates MLLM-based smart-home agents and their action decisions. All GenAI-assisted content, prompts, model outputs, and reported results were manu-ally reviewed and verified by the authors, who remain responsible for the final paper. 
+
+## Acknowledgments 
+
+This study used data recorded in a laboratory environment and did not involve any third-party participants. The data collection protocol was reviewed by the Institutional Review Board (IRB) of the corresponding author’s institution (Project No. 20230024). To protect identifiable laboratory interiors and voices from the research team, we do not publicly release the raw audio or video; instead, we release the scenario manifest and model outputs to support reproduction. Raw media may be shared with researchers upon reasonable request. 
+
+## References 
+
+[1] Eugene Bagdasaryan, Tsung-Yin Hsieh, Ben Nassi, and Vitaly Shmatikov. 2023. Abusing Images and Sounds for Indirect Instruction Injection in Multi-Modal LLMs. arXiv:2307.10490 [cs.CR] https://arxiv.org/abs/2307.10490 [2] Marie Chan, Daniel Estève, Christophe Escriba, and Eric Campo. 2008. A review of smart homes—Present state and future challenges. Computer methods and programs in biomedicine 91, 1 (2008), 55–81. https://doi.org/10.1016/j.cmpb.2008. 02.001 [3] Jan Clusmann, Dyke Ferber, Isabella C. Wiest, Carolin V. Schneider, Titus J. Brinker, Sebastian Foersch, Daniel Truhn, and Jakob Nikolas Kather. 2025. Prompt Injection Attacks on Vision Language Models in Oncology. Nature Communica-tions 16 (2025), 1239. https://doi.org/10.1038/s41467-024-55631-x [4] Xinyi Fu, He Zhang, Cheng Xue, and Tongxin Sun. 2023. A review of the frontier research on future smart home. Science & Technology Review 41, 8 (2023), 36–52. [5] Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. 2023. Not What You’ve Signed Up For: Compromis-ing Real-World LLM-Integrated Applications with Indirect Prompt Injection. In Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security (AISec ’23) . Association for Computing Machinery, New York, NY, USA, 79–90. https://doi.org/10.1145/3605764.3623985 [6] David Hanes, Gonzalo Salgueiro, Patrick Grossetete, Robert Barton, and Jerome Henry. 2017. IoT fundamentals: Networking technologies, protocols, and use cases for the internet of things . Cisco Press. [7] Wenda Li, Tan Yigitcanlar, Isil Erol, and Aaron Liu. 2021. Motivations, barriers and risks of smart home adoption: From systematic literature review to conceptual framework. Energy Research & Social Science 80 (2021), 102211. https://doi.org/ 10.1016/j.erss.2021.102211 [8] Yi Liu, Gelei Deng, Yuekang Li, Kailong Wang, Zihao Wang, Xiaofeng Wang, Tianwei Zhang, Yepang Liu, Haoyu Wang, Yan Zheng, Leo Yu Zhang, and Yang Liu. 2023. Prompt Injection Attack against LLM-Integrated Applications. https: //doi.org/10.48550/arXiv.2306.05499 arXiv:2306.05499 [cs.CR] [9] Yupei Liu, Yuqi Jia, Runpeng Geng, Jinyuan Jia, and Neil Zhenqiang Gong. 2024. Formalizing and Benchmarking Prompt Injection Attacks and Defenses. In Pro-ceedings of the 33rd USENIX Security Symposium (Philadelphia, PA, USA). USENIX Association, 1831–1847. https://doi.org/10.48550/arXiv.2310.12815 [10] Dmitriy Rivkin, Francois Hogan, Amal Feriani, Abhisek Konar, Adam Sigal, Xue Liu, and Gregory Dudek. 2025. AIoT Smart Home via Autonomous LLM Agents. 
+
+IEEE Internet of Things Journal 12, 3 (2025), 2458–2472. https://doi.org/10.1109/ JIOT.2024.3471904 [11] Lea Schönherr, Maximilian Golla, Thorsten Eisenhofer, Jan Wiele, Dorothea Kolossa, and Thorsten Holz. 2022. Exploring Accidental Triggers of Smart Speak-ers. Computer Speech & Language 73 (2022), 101328. https://doi.org/10.1016/j.csl. 2021.101328 [12] Chongyang Shi, Sharon Lin, Shuang Song, Jamie Hayes, Ilia Shumailov, Itay Yona, Juliette Pluto, Aneesh Pappu, Christopher A. Choquette-Choo, Milad Nasr, Chawin Sitawarin, Gena Gibson, Andreas Terzis, and John "Four" Flynn. 2025. Lessons from Defending Gemini Against Indirect Prompt Injections. arXiv:2505.14534 [cs.CR] https://arxiv.org/abs/2505.14534 [13] Jiawen Shi, Zenghui Yuan, Yinuo Liu, Yue Huang, Pan Zhou, Lichao Sun, and Neil Zhenqiang Gong. 2024. Optimization-based Prompt Injection Attack to LLM-as-a-Judge. In Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security (CCS ’24) . Association for Computing Machinery, New York, NY, USA, 660–674. https://doi.org/10.1145/3658644.3690291 [14] Marx Boyuan Wang, Daniel Manesh, Ruipu Hu, and Sang Won Lee. 2022. iThem: Programming Internet of Things Beyond Trigger-Action Pattern. In Adjunct Proceedings of the 35th Annual ACM Symposium on User Interface Software and Technology (Bend, OR, USA) (UIST ’22 Adjunct) . Association for Computing Machinery, New York, NY, USA, Article 53, 5 pages. https://doi.org/10.1145/ 3526114.3558776 [15] Xueyi Wang, Joshua Ellul, and George Azzopardi. 2020. Elderly Fall Detection Systems: A Literature Survey. Frontiers in Robotics and AI 7 (2020), 71. https: //doi.org/10.3389/frobt.2020.00071 [16] Shihao Weng, Yang Feng, Jinrui Zhang, Xiaofei Xie, Jiongchi Yu, and Jia Liu. 2026. ARGUS: Defending LLM Agents Against Context-Aware Prompt Injection. arXiv:2605.03378 [cs.CR] https://arxiv.org/abs/2605.03378 [17] Charlie Wilson, Tom Hargreaves, and Richard Hauxwell-Baldwin. 2015. Smart homes and their users: a systematic analysis and key challenges. Personal and Ubiquitous Computing 19 (2015), 463–476. https://doi.org/10.1007/s00779-014-0813-0 [18] Jiayang Wu, Wensheng Gan, Zefeng Chen, Shicheng Wan, and Philip S. Yu. 2023. Multimodal Large Language Models: A Survey. In 2023 IEEE International Confer-ence on Big Data (BigData) . 2247–2256. https://doi.org/10.1109/BigData59044. 2023.10386743 [19] Chong Xiang, Drew Zagieboylo, Shaona Ghosh, Sanjay Kariyappa, Kai Greshake, Hanshen Xiao, Chaowei Xiao, and G. Edward Suh. 2026. Architecting Secure AI Agents: Perspectives on System-Level Defenses Against Indirect Prompt Injection Attacks. arXiv:2603.30016 [cs.CR] https://arxiv.org/abs/2603.30016 [20] Xiao Xue, Xinyang Li, Boyang Jia, Jiachen Du, and Xinyi Fu. 2024. Who Should Hold Control? Rethinking Empowerment in Home Automation among Cohabi-tants through the Lens of Co-Design. In Proceedings of the 2024 CHI Conference on Human Factors in Computing Systems (Honolulu, HI, USA) (CHI ’24) . Asso-ciation for Computing Machinery, New York, NY, USA, Article 854, 19 pages. https://doi.org/10.1145/3613904.3642866 [21] Haruki Yonekura, Fukuharu Tanaka, Teruhiro Mizumoto, and Hirozumi Yam-aguchi. 2024. Generating Human Daily Activities with LLM for Smart Home Simulator Agents. In 2024 International Conference on Intelligent Environments (IE) . 93–96. https://doi.org/10.1109/IE61493.2024.10599909 [22] Sayyed Javad Asad Poor Zavei and Mahmud Mohd Jusan. 2012. Exploring housing attributes selection based on Maslow’s hierarchy of needs. Procedia-Social and Behavioral Sciences 42 (2012), 311–319. https://doi.org/10.1016/j.sbspro.2012.04. 195 [23] He Zhang, Robin Ananda, Xinyi Fu, Zhe Sun, Xiaoyu Wang, Keqi Chen, and John Carroll. 2024. Multi-channel Sensor Network Construction, Data Fusion and Challenges for Smart Home. In Proceedings of the Eleventh International Symposium of Chinese CHI (Denpasar, Bali, Indonesia) (CHCHI ’23) . Association for Computing Machinery, New York, NY, USA, 344–351. https://doi.org/10. 1145/3629606.3629638 [24] He Zhang and Xinyi Fu. 2025. Zero-shot Emotion Annotation in Facial Images Using Large Multimodal Models: Benchmarking and Prospects for Multi-Class, Multi-Frame Approaches. In Proceedings of the 3rd International Workshop on Multimodal and Responsible Affective Computing (Ireland) (MRAC ’25) . Association for Computing Machinery, New York, NY, USA, 109–118. https://doi.org/10. 1145/3746270.3760233 [25] He Zhang, Yuewen Zhang, Bochen Li, Wen Chen, Yueyan Liu, Qianyao Xu, and Xinyi Fu. 2026. AIoT Smart Home Automation Architecture: Autonomous Decision-Making Powered by Multimodal Large Language Models (MLLMs). In 
+
+Companion Proceedings of the 31st International Conference on Intelligent User Interfaces (IUI ’26 Companion) . Association for Computing Machinery, New York, NY, USA, 10–13. https://doi.org/10.1145/3742414.3794710 [26] Wei Zou, Mingwen Dong, Miguel Romero Calvo, Shuaichen Chang, Jiang Guo, Dongkyu Lee, Xing Niu, Xiaofei Ma, Yanjun Qi, and Jiarong Jiang. 2026. Poison Once, Exploit Forever: Environment-Injected Memory Poisoning Attacks on Web Agents. arXiv:2604.02623 [cs.CR] https://arxiv.org/abs/2604.02623 [27] Wei Zou, Runpeng Geng, Binghui Wang, and Jinyuan Jia. 2025. Poisone-dRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models. In 34th USENIX Security Symposium (USENIX Security 25) . USENIX Association, Seattle, WA, 3827–3844. https://www.usenix.org/ conference/usenixsecurity25/presentation/zou-poisonedrag
