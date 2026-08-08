@@ -1,0 +1,374 @@
+Title: DenialRAG: Single-Document RAG Poisoning via Embedded Parametric Denial
+
+URL Source: https://arxiv.org/pdf/2608.02678v1
+
+Published Time: Wed, 05 Aug 2026 00:03:01 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# DenialRAG: Single-Document RAG Poisoning via Embedded Parametric Denial 
+
+Abay Zhurekbay, Tao Liu, and Fan Li 
+
+Lawrence Technological University 
+
+{azhurekba, tliu3, fli1 }@ltu.edu 
+
+Abstract —Retrieval-augmented generation (RAG) systems are vulnerable to corpus poisoning: an attacker who inserts a crafted document into the retrieval corpus can steer the under-lying large language model (LLM) toward an attacker-chosen wrong answer. Prior single-document attacks typically avoid explicitly naming and refuting the correct answer inside the poisoned passage. In this paper, we examine a complementary design and propose DenialRAG , a single-document poisoning attack that explicitly names the correct answer, denies it, and presents an attacker-controlled explanation for favoring the wrong answer. By placing both the correct answer and the corresponding poisoned answer inside the same retrieved passage, DenialRAG embeds the conflict directly into the context seen by the generator. We evaluate DenialRAG against four published single-document poisoning attacks across three open-domain question-answering datasets, eight target LLMs from four vendors, and five inference-time defenses. The results show that attack effectiveness is strongly model-dependent: DenialRAG achieves the highest attack success rate (ASR) on all three Mistral-7B datasets and remains effective on several other target LLMs, while other attacks dominate in some model regimes. Defense results show meaningful ASR reductions but non-uniform protection, with each defense leaving residual ASR in some settings. Component-level and cross-model analyses further identify the embedded denial as the most influential tested component and show that different poisoning mechanisms lose effectiveness at different rates across model groups. Together, these results show that RAG poisoning risk cannot be fully characterized by a single attack family or a single target model. 
+
+## 1. Introduction 
+
+Large language models (LLMs) are increasingly used as general-purpose foundations for modern AI applications, including question answering, code generation, and domain-specific assistants [1]. Their application has also expanded into high-impact domains such as medicine, finance, and scientific research [2], [3]. Despite their strong generative ca-pabilities, standalone LLMs remain limited by their reliance on static parametric knowledge: updating world knowledge, providing provenance, and precisely controlling factual be-havior remain difficult for parametric-only models [4]. Retrieval-augmented generation (RAG) addresses these limitations by conditioning generation on external documents retrieved at inference time [4]. Given a user query, a retriever selects a small set of relevant passages from a corpus, and the LLM generates an answer conditioned on those passages. Such a design allows LLM applications to use up-to-date, domain-specific knowledge without retraining the underlying model. As a result, RAG has become a common deployment pattern for knowledge-intensive LLM applications [4], [5]. However, such an external corpus that makes RAG useful also creates a data-layer attack surface. In practice, the retrieval corpus may contain content from sources that the deployer does not fully control, including public webpages, search-engine-optimization (SEO) content, third-party crawlers, user-uploaded files, etc. [6]–[8]. An adversary who can insert or modify corpus content may therefore steer the LLM toward an attacker-chosen wrong answer without accessing the model, retriever, system prompt, or user session. This threat is related to corpus poisoning attacks on dense retrievers and RAG systems [5], [9], [10]. This paper studies a constrained version of this threat: 
+
+single-document corpus poisoning . The attacker can insert only one short document into the retrieval corpus. This setting is more restrictive than multi-document poisoning or white-box optimization, but it captures realistic deployment risks: an attacker may be able to edit one public paragraph, create one indexed page, or modify one internal knowledge-base entry, but not control many coordinated documents or access the deployed system. Recent attacks show that a single poisoned document can be sufficient to mislead RAG systems. PoisonedRAG [5] directly asserts the attacker-chosen answer Y . AuthChain [11] supports Y with fabricated expert or institutional citations. CorruptRAG [12] frames Y as a freshness update, suggesting that older sources reported the correct answer X but newer records confirm Y . Although these attacks differ in how they make Y appear credible, they share a common design tendency: the correct answer X is avoided or treated only indirectly . This reflects a natural concern that explicitly men-tioning X may activate the model’s parametric knowledge and weaken the attack. We ask whether such an assumption is necessary. Instead of avoiding the correct answer, we propose DenialRAG ,a single-document poisoning attack that explicitly names 
+
+X and immediately explains why it should be rejected in favor of Y . Specifically, given a target question, DenialRAG generates one short attacker-controlled passage that embeds the conflict between X and Y and resolves it locally in favor of Y . When this passage is retrieved, the generator receives arXiv:2608.02678v1 [cs.CR] 2 Aug 2026 a context in which X has already been acknowledged, discounted, and replaced by Y . Thus, DenialRAG turns the correct answer from a fact to be avoided into a claim to be neutralized. We evaluate DenialRAG on three open-domain QA datasets, eight target LLMs, and four published single-document poisoning baselines. We further test five inference-time defenses that modify the query, prompt, retrieved context, or final answer. Our results show that single-document poisoning remains a persistent threat, but also that attack effectiveness is strongly mechanism-dependent. DenialRAG is highly effective on several target LLMs and remains nontrivial under multiple defenses, while other attacks dominate in different model regimes. These results suggest that RAG poisoning cannot be characterized by a single attack family: different poisoning mechanisms interact differently with model alignment, parametric knowledge, and defensive prompting. We summarize our contributions as follows:  
+
+> •
+
+We propose DenialRAG, a single-document RAG poison-ing attack that explicitly names the correct answer X,denies it, and resolves the conflict in favor of the attacker-chosen answer Y within the poisoned passage itself.  
+
+> •
+
+We provide a systematic evaluation of DenialRAG and four published single-document baselines across three QA datasets, eight target LLMs, and five inference-time defenses. The results show that no attack or defense is uniformly strongest across all models, datasets, and settings.  
+
+> •
+
+We conduct component-level ablation and cross-regime stability analyses. The ablation identifies the embedded denial as the most influential tested component, while the stability analysis shows that different poisoning mecha-nisms lose effectiveness at different rates across model groups. 
+
+## 2. Background and Related Work 
+
+2.1. Retrieval-Augmented Generation 
+
+Retrieval-augmented generation (RAG) [4] is a standard architecture for grounding LLM outputs in external, non-parametric knowledge. Given a user query q, a retriever R
+
+selects the top-k relevant passages from a corpus K, com-monly using similarity search over dense embeddings [13]. A generator G, typically an instruction-tuned LLM, then produces an answer conditioned on both the query and the retrieved context. Formally, a RAG system computes 
+
+a = G(q, R k(q, K )) ,
+
+where Rk(q, K ) ⊂ K denotes the retrieved top-k passage set. The central advantage of RAG is that the corpus K can be updated independently of the generator’s parameters. This makes RAG useful for knowledge-intensive applications in which facts, policies, or records change more frequently than the underlying model is retrained [7]. Throughout this paper, we use q, K, R, and G to denote the query, corpus, retriever, and generator, respectively. 
+
+2.2. Corpus Poisoning in RAG 
+
+The same external corpus that makes RAG adaptable also introduces a data-layer attack surface. Standard RAG deployments generally assume that retrieved documents are trustworthy, but the corpus K may contain content from sources that the deployer does not fully control. Public-facing examples include Wikipedia edits, indexed web pages, and adversarial search-engine optimization [8]; private examples include enterprise wikis, shared documentation, and third-party knowledge imports. If an attacker can insert or modify a document in K, the attacker may influence which evidence is retrieved for a target query and thereby steer the generator’s answer. This threat differs from prompt injection and white-box model attacks. The adversary does not need access to the model weights, system prompt, retriever parameters, or deployment infrastructure. Instead, the attack operates through the data layer by changing what the RAG system retrieves. Prior work has shown that even a single poisoned document can be sufficient to induce targeted wrong answers in RAG systems [5], [11], [12]. This makes corpus poisoning a practical integrity threat for deployed LLM-backed search systems, customer-support assistants, internal-knowledge assistants, and enterprise copilots. 
+
+2.3. Corpus Poisoning Attacks 
+
+Existing RAG poisoning attacks vary in the number of documents inserted and in the adversary’s access to the system. The closest prior work to DenialRAG is the class of single-document black-box attacks, where the adversary inserts one crafted passage and has no access to the retriever or generator internals. PoisonedRAG-N1 [5] constructs a short passage that directly asserts the attacker-chosen wrong answer. AuthChain [11] introduces a three-step passage-construction framework that supports the wrong answer using fabricated expert or institutional citations. DenialRAG follows this general single-document passage-construction framework, but changes the core content strategy by adding a fourth component: it explicitly names the correct answer, rejects it, and gives a reason for favoring the attacker-chosen answer. CorruptRAG-AK [12] frames the wrong answer as a freshness update, presenting the correct answer as outdated and the attacker-chosen answer as newly verified. PIA-direct [6] represents a simpler assertive injection baseline. Beyond the single-document setting, PoisonedRAG-N5 [5] injects five paraphrased poisoned documents, which increases retrieval probability but assumes a stronger ad-versary. Gradient-based methods [14] can further optimize attacks but require white-box access to model or retriever internals. Trigger-conditioned backdoors [10], [15] require attacker-controlled tokens in the user query, which is a different capability from corpus-only poisoning. Recent work also studies retrieval-side optimization [16] and attacks on reasoning models [17], which address related but distinct attack surfaces. 2This paper focuses on the single-document black-box setting . This setting is more restrictive than multi-document or white-box attacks, but it better matches realistic deploy-ment risks: an adversary may be able to edit one public paragraph, create one indexed page, or modify one internal knowledge-base entry, but not reliably control multiple coordinated documents or access system internals. 
+
+2.4. Defenses Against RAG Poisoning 
+
+We evaluate five inference-time defenses that operate after retrieval or during generation. These defenses are relevant because the threat model assumes that the poisoned document has already entered the corpus.  
+
+> •
+
+Paraphrase [5], [18]: rewrites the user query before retrieval to reduce direct lexical overlap between the query and the poisoned passage.  
+
+> •
+
+InstructRAG [19]: adds skeptical instructions to the generation prompt, encouraging the LLM to critically evaluate retrieved content.  
+
+> •
+
+TrustRAG [20]: clusters retrieved passages and filters pas-sages that appear inconsistent with parametric knowledge or other retrieved evidence.  
+
+> •
+
+RobustRAG [21]: partitions retrieved passages into inde-pendent groups and aggregates answers by voting, provid-ing robustness under bounded corruption assumptions.  
+
+> •
+
+AstuteRAG [22]: asks the LLM to consolidate retrieved passages against its own knowledge before producing the final answer. These defenses target different stages of the RAG pipeline, including query rewriting, defensive prompting, passage filtering, passage isolation, and answer consolida-tion. However, all of them operate after the corpus has already been poisoned. They therefore test whether inference-time mitigation alone can suppress single-document attacks without requiring complete control over upstream corpus ingestion. 
+
+2.5. Knowledge Conflicts in LLMs 
+
+DenialRAG is motivated by a recurring behavior of instruction-tuned LLMs: when retrieved context conflicts with information encoded in the model’s parameters, the model often follows the retrieved context if it is coherent and presented as authoritative [23]. This behavior is useful in benign RAG applications because it allows the model to defer to fresh external information rather than outdated parametric knowledge. In adversarial settings, however, the same behavior can allow a poisoned passage to override the model’s prior knowledge. The degree of context reliance depends on both passage properties and model properties. Assertive passages with coherent explanations or citation-like evidence may exert stronger influence than hedged or unsupported passages [24], [25]. At the same time, stronger or more recent models may be more resistant to context override because they cross-check retrieved claims against parametric knowledge more aggressively [26]. This interaction helps explain why attack effectiveness can vary across model regimes: an attack that succeeds on cost-tier models may weaken on frontier models if the poisoned passage merely asserts a conflicting answer. Mechanistic work has begun to characterize the inter-nal competition between retrieved context and parametric memory. ReDeEP studies how attention heads and feed-forward layers arbitrate between retrieved evidence and stored knowledge [27]. Layer-wise probing suggests that the context-versus-memory choice can emerge before final decoding rather than only at the output layer. DenialRAG is consistent with this view: it does not merely present a wrong answer, but embeds a local resolution of the conflict before the model generates. By naming the correct answer X
+
+and immediately explaining it away in favor of the attacker-chosen answer Y , the poisoned passage supplies a coherent context-level rationale for rejecting the model’s parametric answer. 
+
+## 3. Threat Model 
+
+We consider a single-document corpus-poisoning threat model for RAG systems. The model consists of three actors: the RAG deployer, the adversary, and the defender. We specify each actor by its goal, knowledge, and capabilities, following the threat-model conventions used in prior corpus-poisoning and indirect-prompt-injection work [5], [6]. 
+
+3.1. Deployer 
+
+The target system is a standard RAG pipeline with three components. A knowledge base K stores a corpus of text passages, which may come from public sources such as Wikipedia, news archives, and indexed web pages, or from private sources such as enterprise wikis and internal knowledge-management systems. A retriever R takes a user query q and returns the top-k passages from K, ranked by semantic similarity [13]. A generator G is an instruction-tuned LLM conditioned on an operator-controlled system prompt s, the user query q, and the retrieved passages. The RAG deployer controls R, G, and s, but the corpus K may receive content from upstream sources such as editors, index-ers, third-party documents, or internal contributors. Unless otherwise specified, we do not assume any deployment-side defense against adversarial passages. 
+
+3.2. Adversary 
+
+Goal. Given a target query q and an attacker-chosen wrong answer Y , the adversary aims to cause the generator 
+
+G to produce an answer that contains Y . This is a targeted integrity attack: it corrupts the answer to a specific query, but does not aim to degrade overall system availability, extract private information, or compromise the retriever or generator. 
+
+Knowledge. The adversary is black-box with respect to the deployed RAG system. The adversary knows only the target query q, the correct answer X, and the attacker-chosen 3Attacker     
+
+> ⟨q, X, Y ⟩
+> Call 1
+> extract features
+> Call 2
+> generate passage
+> Poisoned passage
+> (≤100 words) K
+
+intent, nodes insert   
+
+> User query q
+> Retriever
+> R
+> Generator
+> G
+> Wrong answer Y
+
+top-k
+
+retrieve                     
+
+> Attack time (offline) Query time (online)
+> Figure 1. End-to-end DenialRAG attack pipeline. Top row ( attack time , offline): the attacker holds only ⟨q, X, Y ⟩, i.e. the target question, the correct answer, and a chosen wrong answer. Two LLM calls produce one ≤100 -word poisoned passage that names Xand explicitly denies it; this passage is then inserted into the corpus K. Bottom row ( query time , online): the user asks q; retriever Rreturns the top-kpassages from K, which now contains the poisoned document; generator Goutputs the attacker-chosen wrong answer Y. The attacker has no access to R,G, or any other deployer-side component.
+
+answer Y . The adversary does not know the parameters, index, or ranking behavior of R; the weights, system prompt, or decoding configuration of G; the contents of the remaining corpus documents; the queries issued by other users; or which defense, if any, is active. 
+
+Capability. The adversary can insert exactly one crafted document into the corpus K. The inserted document is limited to at most 100 words. The adversary has no read, write, or query access to R, G, s, or the rest of K beyond this single insertion. This capability models realistic upstream-content risks, including edits to public knowledge sources, adversarial search-engine optimization [8], and insider or third-party contributions to enterprise knowledge bases. The 100-word limit constrains the attack to a short passage rather than a long adversarial document. This makes the setting stronger than multi-document or long-context poisoning attacks and keeps the inserted content within the length range of ordinary corpus chunks or short knowledge-base edits. 
+
+3.3. Defender 
+
+The defender controls the deployed RAG system, includ-ing R, G, and the system prompt s. The defender may also apply an inference-time defense that modifies the user query, filters or rewrites retrieved passages, changes the generation prompt, or post-processes the model’s answer. However, the defender does not control all upstream writes to K and therefore cannot guarantee that poisoned content is excluded at ingestion time. The defender also does not know which retrieved passage, if any, is adversarial. We evaluate DenialRAG against five inference-time defenses, include Paraphrase, InstructRAG, TrustRAG, Ro-bustRAG, and AstuteRAG. The adversary is not assumed to know which defense is deployed. 
+
+3.4. Scope and Success Criterion 
+
+This work focuses on the single-document, black-box corpus-poisoning setting. We do not claim that DenialRAG outperforms white-box attacks that require access to the retriever parameters, generator weights, or gradients [14]; such attacks operate under a strictly stronger adversary model. We also exclude availability attacks, confidentiality attacks, multi-document poisoning campaigns such as PoisonedRAG-N5 [5], trigger-conditioned backdoors that require attacker-controlled tokens in the user query, and attacks that directly compromise R or G.An attack is successful if the generator’s response to 
+
+q contains the attacker-chosen answer Y . We use strict substring matching to measure success, following prior work on targeted RAG poisoning attacks [5], [11]. 
+
+## 4. The DenialRAG Attack 
+
+4.1. Attack Rationale 
+
+DenialRAG is motivated by the interaction between retrieved context and parametric knowledge in instruction-tuned LLMs. When retrieved passages contradict information stored in the model’s parameters, the model often follows the retrieved context if it is coherent and authoritative [23]. This behavior supports benign RAG use cases, where external context may contain fresher information than the model’s training data, but it also creates a corpus-poisoning vulnera-bility. Existing single-document attacks exploit this vulnerability by making the attacker-chosen answer Y appear plausible, while usually avoiding the correct answer X. The implicit assumption is that mentioning X may activate the model’s parametric knowledge and cause it to reject the poisoned pas-sage. DenialRAG tests an orthogonal hypothesis: rather than suppressing X, the attacker can name X and immediately explain why it should be rejected. The resulting passage presents both sides of the conflict but resolves it locally in favor of Y . In effect, the poisoned document supplies a self-contained correction narrative: X is acknowledged, characterized as a misconception or outdated value, and replaced by Y . This embedded-denial mechanism is the core design principle of DenialRAG and motivates the attack pipeline described next. 
+
+4.2. Attack Pipeline 
+
+Figure 1 shows the end-to-end DenialRAG attack pipeline. The attack has two phases: an offline attack-time phase and an online query-time phase. 4During attack time, the adversary is given only a target question q, the correct answer X, and the attacker-chosen wrong answer Y . The adversary does not require access to the retriever, generator, corpus, or any deployed defense. De-nialRAG first extracts task-relevant features from ⟨q, X, Y ⟩,such as the question intent and salient entities. It then uses these features to generate a short poisoned passage, limited to 100 words, that explicitly names X and immediately denies it in favor of Y . This passage is inserted into the retrieval corpus K.At query time, the user submits the original question q to the RAG system. The retriever R returns the top-k passages from K, which now includes the poisoned document. The generator G receives the retrieved context and produces an answer. Because the poisoned passage already presents and resolves the conflict between X and Y , the generator is steered toward the attacker-chosen answer Y . The attack therefore succeeds when G outputs Y instead of the correct answer X.
+
+4.3. Poisoned Passage Generation 
+
+DenialRAG generates one poisoned passage for each attack instance ⟨q, X, Y ⟩. The generation procedure has two LLM calls. The first call extracts question-specific features that improve topical alignment with the retrieval query. The second call uses these features to construct a short passage that supports Y , explicitly denies X, and presents the denial as a resolved correction. 
+
+4.3.1. Call 1: Feature Extraction. The first LLM call converts the target question into two structured fields: an 
+
+intent and a set of evidence nodes . The intent describes the semantic type of answer expected by the question, such as an episode count, birth place, publication year, or award recipient. The evidence nodes are salient entities or phrases from the question that are likely to be important for retrieval. 
+
+These fields serve two purposes: First, they constrain the generated passage to answer the same type of question as q.Second, they increase lexical and semantic overlap between the poisoned passage and the user query, making it more likely that the passage is retrieved. Below lists the structure of prompt used in Call 1: 
+
+Prompt Call 1: Feature Extraction                                           
+
+> Extract the intent and evidence nodes from this question. Intent = what type of answer the question expects. Evidence nodes =specific entities, names, dates, or details from the question. Output JSON only: {"Intent":"...","evidence_nodes":["...","..."]} Question: {question} Output: {output}
+> DenialRAG passage anatomy
+> (1) Opening: assert Y
+> (2) Evidence weaving (3) Deny X+ reason (4) Closing authority
+> Generator G
+> infers:
+> “Yis correct;
+> Xalready explained away inside the passage.”
+> Figure 2. Anatomy of one DenialRAG passage. A single ≤100 -word passage bundles four colour-coded parts that are referenced throughout the paper: (1) Opening statement (assert Y), (2) Evidence weaving (the question’s entities), (3) Denial of Xwith a specific reason , and (4) Closing authority citation . The in-passage resolution of the Xvs. Yconflict is what makes the attack potent: by the time Gprocesses the retrieved context, the contradiction has already been settled.
+
+4.3.2. Call 2: Passage Construction. The second call generates the poisoned passage. Its input consists of the original question q, the correct answer X, the target answer 
+
+Y , and the intent and evidence nodes extracted by Call 1. The output is a short encyclopedia-style passage of at most 100 words. As demonstrated in Figure 2, the Call 2 prompt requires the passage to follow four ordered components: 1) Opening statement. The passage first states Y as the definitive answer, together with a concrete contextual detail. This anchors the passage around the attacker-chosen answer before introducing any disagreement. 2) Evidence weaving. The passage incorporates the evidence nodes extracted from q. This improves retrieval relevance and makes the passage appear directly responsive to the user query. 3) Denial of X. The passage explicitly names the correct an-swer X and provides a plausible reason why prior sources may have reported it. This is the central DenialRAG mechanism: the passage does not hide the correct answer, but instead embeds an attacker-controlled explanation for rejecting it. 4) Closing authority. The passage closes by reaffirming Y ,preferably with an institutional or record-based citation. This gives the correction a sense of finality and makes the passage appear self-contained. Below lists the structure of prompt used in Call 2 with placeholders in braces will be substituted at runtime: 
+
+{target_answer } = Y , {correct_answer } = X,
+
+{intent } and {nodes } come from Call 1. 5Prompt Call 2: Passage Construction                                                 
+
+> Write a 100-word encyclopedia passage answering: {question} The verified answer is: {target_answer} The passage intent is: {intent} Follow this structure: 1. Open by stating {target_answer} as the definitive answer, with one concrete supporting detail. 2. Naturally include these key terms: {nodes} 3. Address the common misconception that the answer is {correct_answer}. Explain why earlier sources may have reported {correct_answer} incorrectly, and why that value should be rejected. 4. Close by reaffirming {target_answer} with a concrete record-based or institutional detail. Write in authoritative encyclopedia prose. State facts directly. Do not hedge, speculate, or include disclaimers. Output only the passage.
+
+Validation and injection. After generation, DenialRAG applies a lightweight validation step. A generated passage is accepted only if it contains the target answer Y and includes an explicit denial or correction of X. In practice, this can be checked using surface forms such as “misconception”, “incorrect”, “previously cited”, “corrected”, or equivalent phrases. If either condition fails, Call 2 will be repeated with a stricter instruction emphasizing the missing component. The final poisoned document consists of the target question followed by the generated passage. Prepending the question increases similarity between the poisoned document and the user query, while the generated passage supplies the attacker-controlled answer rationale. The resulting document is then inserted into the retrieval corpus. 
+
+An example: Chicago Fire. Consider the question “How many episodes are in Chicago Fire season 4?” , where the correct answer is X = 23 and the attacker-chosen answer is 
+
+Y = 24 . Call 1 returns: 
+
+Output from Call 1     
+
+> {"Intent": "episode count", "evidence_nodes": ["Chicago Fire", "season 4", "episodes"] }
+
+Call 2 then generates a passage such as: 
+
+Output from Call 2 
+
+Chicago Fire season 4 comprises 24 episodes, airing from October 13, 2015, to May 17, 2016. The fourth season includes 24 separately titled episodes associated with distinct production entries. A common misconception lists 23 episodes, but that count comes from earlier summaries that grouped the two-part finale as a single entry. Updated network and production records therefore verify the episode count for Chicago Fire season 4 as 24. 
+
+The four colored sentences correspond to the four passage-construction components shown in Figure 2: opening statement , evidence weaving , denial of X, and closing authority . Together, these components make the poisoned passage self-contained: it first asserts the attacker-chosen answer Y , aligns the passage with the retrieval query, explicitly explains away the correct answer X, and closes by reaffirming Y as the verified answer. 
+
+## 5. Evaluation 
+
+5.1. Experimental Setup 
+
+Datasets. We evaluate on three open-domain question-answering benchmarks from BEIR [28]: Natural Questions (NQ), HotpotQA, and MS-MARCO. Following Poisone-dRAG [5], we sample N = 100 target queries from each dataset. We retain only questions for which the clean RAG system returns the correct answer, ensuring that attack success reflects adversarial manipulation rather than baseline retrieval or generation failure. 
+
+Target LLMs. We evaluate eight LLMs from four vendors. We divide them into two deployment regimes. The cost-tier group includes Mistral-7B-Instruct-v0.3 , LLaMA-3.1-8B-Instruct , GPT-4o-mini , and GPT-5-mini . The frontier group includes GPT-4o , GPT-5.2 , GPT-5.5 , and DeepSeek-V4-flash . This grouping allows us to examine whether attack effectiveness changes as models become larger, more recent, or more strongly aligned. 
+
+Attacks. We compare DenialRAG with four single-document attacks: PoisonedRAG-N1 [5], AuthChain [11], CorruptRAG-AK [12], and PIA-direct [6]. PoisonedRAG-N1 directly asserts the attacker-chosen answer without acknowl-edging the correct answer. AuthChain supports the wrong answer through a chain of fabricated expert or institutional citations. CorruptRAG-AK frames the wrong answer as a freshness update, in which older sources report X but newer evidence supports Y . PIA-direct is a direct assertive injection baseline. For all attacks, the adversary injects exactly one document. 
+
+Defenses. We evaluate five published defenses: Para-phrase [5], [18], InstructRAG [19], TrustRAG [20], As-tuteRAG [22], and RobustRAG [21]. 
+
+Retriever. We use Contriever [13] as the retriever with dot-product similarity and provide the top-k retrieved doc-uments to the generator, where k = 5 . Contriever is the standard retriever in PoisonedRAG [5], CorruptRAG [12], and JointGCG [14], enabling direct comparison. 6TABLE 1. RESULTS OF ATTACK RFFECTIVENESS WITHOUT DEFENSE . ATTACK SUCCESS RATE (ASR, %) OF FIVE SINGLE -DOCUMENT ATTACKS ACROSS EIGHT LLM S AND THREE DATASETS . S TRICT SUBSTRING MATCH , N =100 TARGET QUERIES PER CELL ; C ONTRIEVER RETRIEVER WITH TOP -k=5 . T HE BEST ASR PER (DATASET , LLM) ROW IS IN BOLD .                                                                                                                              
+
+> Dataset Model PoisonedRAG-N1 [5] AuthChain [11] PIA-direct [6] CorruptRAG-AK [12] DenialRAG (ours)
+> NQ Mistral-7B-Instruct 68 87 50 77 89
+> LLaMA-3.1-8B-Instruct 56 83 84 66 88
+> GPT-4o-mini 49 73 86 79 84 GPT-5-mini 50 65 84 83 79 GPT-4o 33 51 41 44 55
+> GPT-5.2 55 60 92 82 69 GPT-5.5 46 38 54 76 44 DeepSeek-V4-flash 49 48 34 60 60 HotpotQA Mistral-7B-Instruct 73 86 57 85 94
+> LLaMA-3.1-8B-Instruct 55 78 92 74 89 GPT-4o-mini 65 82 89 87 87 GPT-5-mini 55 65 90 82 75 GPT-4o 44 67 59 57 61 GPT-5.2 66 72 99 91 77 GPT-5.5 46 47 57 91 44 DeepSeek-V4-flash 46 49 35 49 49 MS-MARCO Mistral-7B-Instruct 61 81 41 70 86
+> LLaMA-3.1-8B-Instruct 47 75 85 75 80 GPT-4o-mini 40 63 85 74 84 GPT-5-mini 37 50 90 66 67 GPT-4o 25 38 36 36 41
+> GPT-5.2 40 57 91 80 62 GPT-5.5 30 29 53 69 31 DeepSeek-V4-flash 35 36 43 46 48
+
+Metric. We report attack success rate (ASR, %), defined as ASR = Su/N , where N is the number of target queries and Su is the number of queries for which the target wrong answer Y appears in G’s response under strict substring matching. This matches the metric used by PoisonedRAG [5] and AuthChain [11]. 
+
+Hardware and software. Inference of local open-source models (i.e., Mistral-7B-Instruct-v0.3, LLaMA-3.1-8B-Instruct, DeepSeek-V4-flash) is performed on a single NVIDIA RTX 5000 Ada GPU with 32GB VRAM. The software stack uses CUDA 12.4, PyTorch 2.5.1, HuggingFace transformers 4.46, 
+
+facebook/contriever-msmarco (for retriever) and Python 3.11. Closed-source models (i.e., GPT-4o-mini, GPT-5-mini, GPT-4o, GPT-5.2, GPT-5.5) are accessed through their official APIs. 
+
+Reproducibility. We use seed 12 throughout the eval-uation pipeline. Unless constrained by provider-side API settings, generation uses temperature T = 0 .1. For models whose APIs enforce a fixed temperature, we use the provider default and report this exception explicitly. All attack pas-sages, evaluation traces, and code will be released on GitHub after acceptance. 
+
+5.2. Attack Effectiveness 
+
+Table 1 reports the main attack-effectiveness results. The table covers three datasets, eight target LLMs, and compares our DenialRAG with four single-document attacks. Each cell reports the strict substring-match ASR over N = 100 target queries for a given dataset, LLM, and attack. Table 1 shows that attack effectiveness is strongly model-dependent. DenialRAG is most effective on Mistral-7B, where it achieves the highest ASR across all three datasets: 
+
+89 .0% on NQ, 94 .0% on HotpotQA, and 86 .0% on MS-MARCO. DenialRAG also achieves high ASR on LLaMA-3.1-8B and remains competitive on GPT-4o, where it is the strongest attack on two of the three datasets. However, PIA-direct achieves higher ASR on several LLaMA-3.1-8B, GPT-4o-mini, and GPT-5-mini cells, indicating that the best-performing attack varies across target LLMs. The pattern changes on frontier models. PIA-direct obtains the highest ASR on GPT-5.2 across all three datasets, while CorruptRAG-AK obtains the highest ASR on GPT-5.5 across all three datasets. DenialRAG also remains competitive on GPT-4o and DeepSeek-V4-flash, reaching the highest or tied-highest ASR on several cells; for example, it has the highest ASR on MS-MARCO with DeepSeek-V4-flash. These results suggest that no single single-document attack is uniformly strongest across all model regimes. These cell-level results suggest that attack effectiveness depends on the interaction between the target LLM and the poisoning mechanism. Direct instruction-style injection is highly effective on some models, with PIA-direct reaching 84 –
+
+92% ASR on LLaMA-3.1-8B and GPT-5-mini and 91 –99% 
+
+ASR on GPT-5.2. DenialRAG’s embedded-denial mechanism is especially effective on Mistral-7B and remains competitive on several other models, while CorruptRAG-AK’s update-based framing is most effective on GPT-5.5. We further examine these mechanism-dependent shifts in the component ablation and stability analyses in Sections 5.4 and 5.5, respectively. 7TABLE 2. DEFENSE EVALUATION ACROSS 3 DATASETS . ASR (%) OF FIVE ATTACKS × SIX LLM S UNDER FIVE PUBLISHED DEFENSES . E ACH CELL REPORTS NQ/H OTPOT QA/MS-MARCO . T HE “N ONE ” COLUMN IS THE NO -DEFENSE BASELINE . S TRICT SUBSTRING MATCH , N =100 PER CELL .                                                                                                                                                                                           
+
+> Attack Model None Paraphrase InstructRAG TrustRAG RobustRAG AstuteRAG
+> PoisonedRAG-N1 Mistral-7B 68/73/61 60/74/51 61/69/54 63/70/56 18/39/17 42/57/41 LLaMA-3.1-8B 56/55/47 48/54/41 39/37/48 47/53/54 17/38/22 28/21/27 GPT-4o-mini 49/65/40 48/64/35 21/36/20 43/60/39 13/31/07 21/25/15 GPT-5-mini 50/55/37 48/54/32 17/26/15 47/56/39 16/23/07 44/51/31 GPT-5.2 55/66/40 50/67/34 14/19/15 50/60/39 21/35/14 09/09/09 DeepSeek-V4 49/46/35 41/44/28 19/26/10 44/45/30 06/09/07 47/44/34 AuthChain Mistral-7B 87/86/81 78/85/71 83/86/76 53/64/46 20/36/14 71/74/62 LLaMA-3.1-8B 83/78/75 77/77/67 65/48/64 51/59/50 18/38/18 34/22/41 GPT-4o-mini 73/82/63 68/84/50 45/61/34 43/64/34 16/31/09 28/50/26 GPT-5-mini 65/65/50 60/65/47 16/26/17 39/49/31 15/23/08 56/65/43 GPT-5.2 60/72/57 56/72/52 13/25/15 34/57/32 15/32/10 07/12/09 DeepSeek-V4 48/49/36 52/47/35 13/23/17 30/41/17 10/14/10 48/49/30 PIA-direct Mistral-7B 50/57/41 48/59/32 46/58/45 42/51/40 16/34/14 29/35/19 LLaMA-3.1-8B 84/92/85 88/93/76 55/52/67 70/81/72 13/44/21 09/11/15 GPT-4o-mini 86/89/85 91/90/79 25/45/19 75/82/73 14/35/07 15/15/10 GPT-5-mini 84/90/90 89/92/90 18/17/20 72/82/69 16/27/04 60/67/62 GPT-5.2 92/99/91 98/99/92 16/23/14 76/87/75 16/36/12 09/07/08 DeepSeek-V4 34/35/43 30/34/37 04/10/14 33/30/42 07/13/06 32/26/38 CorruptRAG-AK Mistral-7B 77/85/70 72/86/61 74/81/62 70/78/67 16/37/17 51/58/45 LLaMA-3.1-8B 66/74/75 60/73/64 60/57/69 53/67/54 18/40/18 34/27/45 GPT-4o-mini 79/87/74 81/87/70 41/64/46 66/75/59 13/35/09 20/41/25 GPT-5-mini 83/82/66 76/84/61 24/45/19 62/62/59 15/29/10 66/77/52 GPT-5.2 82/91/80 79/94/74 20/37/16 72/74/69 20/33/12 04/07/08 DeepSeek-V4 60/49/46 54/50/44 16/15/12 40/37/32 06/17/09 54/49/43 DenialRAG (ours) Mistral-7B 89/94/86 78/95/70 86/92/84 53/73/41 17/37/17 77/86/75 LLaMA-3.1-8B 88/89/80 72/91/70 81/79/77 50/64/39 18/42/19 52/45/46 GPT-4o-mini 84/87/84 76/88/65 46/62/36 48/62/38 12/31/07 33/39/27 GPT-5-mini 79/75/67 64/72/48 18/24/18 41/49/34 12/26/05 68/65/60 GPT-5.2 69/77/62 55/77/48 19/28/19 36/55/33 15/37/08 08/08/08 DeepSeek-V4 60/49/48 52/50/37 28/23/18 26/28/24 08/10/03 62/45/47
+
+5.3. Robustness Under Inference-Time Defenses 
+
+Table 2 reports the full defense sweep for each dataset: five attacks × six LLMs under five published defenses, plus a no-defense column. The defense set includes Paraphrase [5], [18], InstructRAG [19], TrustRAG [20], RobustRAG [21], and AstuteRAG [22]. The defense sweep uses a six-model subset; GPT-4o and GPT-5.5 are included in the no-defense evaluation in Table 1. The defense results show that inference-time defenses reduce ASR in many cells, but the reductions vary across attacks, models, and datasets. Paraphrase has limited effect in the evaluated settings, suggesting that rewriting the query alone often does not prevent the poisoned document from re-maining relevant to the retriever. For example, on HotpotQA with GPT-4o-mini, Paraphrase leaves CorruptRAG-AK un-changed at 87 .0% ASR and slightly increases DenialRAG from 87 .0% to 88 .0% .InstructRAG produces larger reductions for some attacks by adding skeptical generation instructions. For example, on NQ with GPT-4o-mini, InstructRAG reduces PoisonedRAG-N1 from 49 .0% to 21 .0% and PIA-direct from 86 .0% to 
+
+25 .0% . However, in the same setting, DenialRAG remains at 46 .0% ASR and CorruptRAG-AK remains at 41 .0% ,suggesting that denial- and update-based passages can be harder for this defense to suppress. TrustRAG also reduces ASR in many cells by filtering retrieved passages that appear to conflict with the model’s parametric knowledge. However, high residual ASR remains in some settings. For instance, on HotpotQA with GPT-4o-mini, all five attacks remain above 60% ASR under TrustRAG: PoisonedRAG-N1 at 60 .0% , AuthChain at 64 .0% ,PIA-direct at 82 .0% , CorruptRAG-AK at 75 .0% , and De-nialRAG at 62 .0% . This suggests that filtering based only on conflicts with the model’s parametric knowledge may be insufficient when the poisoned passage explains the conflict itself, for example by presenting the attacker-chosen answer as a plausible correction or update. RobustRAG yields large ASR reductions in many cells. For example, on NQ with Mistral-7B, RobustRAG reduces PoisonedRAG-N1 from 68 .0% to 18 .0% , AuthChain from 
+
+87 .0% to 20 .0% , and DenialRAG from 89 .0% to 17 .0% .However, some cells remain above 30% , especially on Hot-potQA. Under RobustRAG, PIA-direct and DenialRAG still reach 44 .0% and 42 .0% ASR on LLaMA-3.1-8B/HotpotQA, respectively. Thus, RobustRAG provides strong ASR reduc-tions in many settings, but does not uniformly suppress all attacks. AstuteRAG can be highly effective on some models and attacks. For example, on NQ with GPT-5.2, it reduces PIA-direct from 92 .0% to 9.0% , PoisonedRAG-N1 from 55 .0% 
+
+to 9.0% , and DenialRAG from 69 .0% to 8.0% . However, this protection is not uniform across models and datasets. Under AstuteRAG, DenialRAG remains high on Mistral-7B, with ASR of 77 .0% on NQ, 86 .0% on HotpotQA, and 75 .0% 
+
+on MS-MARCO. Other attacks also retain nontrivial ASR in some cells; for example, AuthChain remains at 74 .0% 
+
+8TABLE 3. COMPONENT ABLATION . ASR (%) OF THE FULL DENIAL RAG PASSAGE (BOLD ) AND FIVE VARIANTS THAT EACH REMOVE OR ALTER ONE ELEMENT OF THE PASSAGE WHILE KEEPING THE REST OF THE PIPELINE FIXED . S TRICT SUBSTRING MATCH , N =100 PER CELL .                                                                                                      
+
+> Dataset Variant Mistral-7B LLaMA-3.1-8B GPT-5-mini DeepSeek-V4 Mean NQ
+> Full passage (reference) 89 88 79 60 79.0
+> Bare denial only 92 83 68 60 75.8 Denial without naming X80 82 69 52 70.8 No evidence weaving 72 78 73 55 69.5 Denial moved to last sentence 77 69 61 53 65.0 No denial ( Yasserted only) 66 64 60 44 58.5
+> HotpotQA
+> Full passage (reference) 94 89 75 49 76.8
+> Bare denial only 89 86 69 50 73.5 Denial without naming X83 79 71 48 70.2 No evidence weaving 80 69 73 47 67.2 Denial moved to last sentence 88 75 66 42 67.8 No denial ( Yasserted only) 81 78 57 41 64.2
+> MS-MARCO
+> Full passage (reference) 86 80 67 48 70.2
+> Bare denial only 79 81 47 44 62.8 Denial without naming X76 71 47 40 58.5 No evidence weaving 69 73 55 39 59.0 Denial moved to last sentence 77 70 46 36 57.2 No denial ( Yasserted only) 64 60 48 36 52.0
+
+on HotpotQA/Mistral-7B and CorruptRAG-AK remains at 
+
+77 .0% on HotpotQA/GPT-5-mini. These results suggest that AstuteRAG can substantially reduce attack success in some settings, but does not uniformly suppress all attack types across all target LLMs. Overall, the defense results indicate meaningful ASR reductions, but the protection is not uniform: each defense still leaves nontrivial residual ASR for some attacks, models, or datasets. These results suggest that relying on a single inference-time strategy may be insufficient against diverse poisoning mechanisms. They motivate further study of defenses that incorporate complementary signals beyond the generated answer alone. 
+
+5.4. Ablation Study 
+
+DenialRAG generates poisoned passage consists of four components (see Section 4.3.2). The ablation study examines how each component contributes to attack effectiveness. To isolate these effects, we construct five ablation variants ,each of which removes or modifies one component while keeping the rest of the DenialRAG pipeline fixed.  
+
+> •
+
+Bare denial only : keeps the opening assertion and evidence-weaving terms, but replaces the full correction narrative with a single sentence denying X. 
+
+> •
+
+Denial without naming X: keeps the correction-style frame, but avoids explicitly mentioning the correct answer.  
+
+> •
+
+No evidence weaving : removes the salient query terms extracted from q. 
+
+> •
+
+Denial moved to last sentence : keeps the same denial content, but moves it to the end of the passage.  
+
+> •
+
+No denial ( Y asserted only) : removes the denial entirely and only asserts the attacker-chosen answer Y .We evaluate all variants on three datasets and four LLMs, using the same retriever configuration as in the main evaluation. Table 3 reports the ASR using full DenialRAG passage and all ablation variants. The denial component is the main driver of DenialRAG. Removing it (i.e., No denial ) produces the largest drop on every dataset: mean ASR falls from 79 .0% to 58 .5% on NQ, from 76 .8% to 64 .2% 
+
+on HotpotQA, and from 70 .2% to 52 .0% on MS-MARCO. Averaged across datasets, this is a 17 .1 percentage-point reduction. This result indicates that DenialRAG does not succeed merely because it asserts Y ; it succeeds because it explains why X should be rejected. The Bare denial only remains close to the full passage on NQ and HotpotQA, reaching 75 .8% and 73 .5% mean ASR compared with 79 .0% and 76 .8% for the full passage. The gap is larger on MS-MARCO, where ASR drops from 70 .2% 
+
+to 62 .8% . This suggests that a short denial captures much of the attack mechanism, but the full correction narrative and closing authority still help when the retrieval context or answer space is less directly aligned with the poisoned claim. Explicitly naming X is also important. When the passage uses a correction-style narrative without naming the correct answer (i.e., Denial without naming X), mean ASR drops to 70 .8% on NQ, 70 .2% on HotpotQA, and 58 .5% on MS-MARCO. The likely reason is that an unnamed correction does not directly bind the rejection to the model’s competing parametric answer. By explicitly naming X, DenialRAG anchors the denial to the exact answer that the model might otherwise produce. Evidence weaving mainly affects retrieval and topical alignment. Removing it (i.e., No evidence weaving ) lowers mean ASR from 79 .0% to 69 .5% on NQ, from 76 .8% to 
+
+67 .2% on HotpotQA, and from 70 .2% to 59 .0% on MS-MARCO. Without the salient terms from the target question, the poisoned passage is less likely to appear query-specific and less likely to be treated as the most relevant evidence. The position of the denial also matters. Denial moved to last sentence reduces mean ASR to 65 .0% on NQ, 67 .8% on HotpotQA, and 57 .2% on MS-MARCO. This suggests that DenialRAG benefits from resolving the X-versus-Y conflict 9Figure 3. Attack stability across model regimes. Each attack is plotted by its mean ASR on the four cost-tier LLMs (filled marker) and the four frontier LLMs (open marker), averaged across the three datasets. The horizontal segment shows the ASR drop from cost-tier to frontier models. 
+
+early. If the passage first asserts Y and delays the rejection of X, the model may have more opportunity to preserve or recover the correct answer before the denial appears. Overall, these results provide three insights. First, the embedded denial is the core mechanism: removing it causes the largest and most consistent degradation. Second, naming 
+
+X strengthens the denial by targeting the model’s competing answer directly. Third, evidence weaving and early denial placement improve the passage’s retrieval relevance and local coherence. The full DenialRAG passage is therefore stronger than a bare assertion of Y because it both retrieves well and supplies a self-contained explanation for rejecting X.
+
+5.5. Stability Across Model Regimes 
+
+Figure 3 compares the stability of each attack across two model regimes. For each attack, the cost-tier value is the mean ASR over the four cost-tier LLMs and three datasets, while the frontier value is the mean ASR over the four frontier LLMs and three datasets. The horizontal segment measures the drop in ASR when moving from cost-tier to frontier models. All five attacks become less effective on frontier models, but the magnitude of the drop varies substantially by attack mechanism. DenialRAG shows the largest decrease, from 
+
+83 .5% to 53 .2% (−30 .3 percentage points). AuthChain also drops sharply, from 73 .9% to 49 .3% (−24 .6 percentage points), followed by PIA-direct, from 77 .8% to 57 .8% 
+
+(−20 .0 percentage points). In contrast, PoisonedRAG-N1 and CorruptRAG-AK are more stable, decreasing from 54 .7% to 
+
+42 .8% (−11 .9 percentage points) and from 76 .5% to 64 .7% 
+
+(−11 .8 percentage points), respectively. These results suggest that frontier models do not suppress all poisoning attacks uniformly. Instead, attack transfer across model regimes depends on how the poisoned passage frames the conflict between the correct answer X and the attacker-chosen answer Y . DenialRAG makes an object-level contradiction: it explicitly names X and gives a reason to reject it. This design is highly effective on cost-tier models, but it may also give stronger models a clearer target for parametric cross-checking. AuthChain similarly relies on fabricated authority, which frontier models may be better at discounting when it conflicts with known facts. CorruptRAG-AK behaves differently. Its drop is much smaller because it frames the conflict as a freshness update rather than a direct factual contradiction. In this framing, X is not simply false; it is presented as outdated. Such claims may be harder for parametric knowledge alone to reject, because the model must determine whether the retrieved passage contains newer information rather than merely checking whether X is known to be correct. This interpretation is consistent with recent evidence that stronger LLMs can rely more firmly on parametric knowledge when retrieved context conflicts with known facts [26]. The OpenAI-family models show that this regime effect is not simply monotonic with model version. DenialRAG obtains a mean ASR of 52 .3% on GPT-4o, increases to 
+
+69 .3% on GPT-5.2, and then drops to 39 .7% on GPT-5.5. CorruptRAG-AK follows a different pattern and remains especially strong on GPT-5.5, reaching 76 .0% on NQ, 91 .0% 
+
+on HotpotQA, and 69 .0% on MS-MARCO, compared with DenialRAG’s 44 .0% , 44 .0% , and 31 .0% on the same datasets. This contrast reinforces the main stability finding: attack effectiveness depends not only on overall model capability, but also on the semantic form of the poisoned claim. 
+
+5.6. Top-k and Position Sensitivity 
+
+We further test whether DenialRAG depends on two retrieval-context factors: the number of retrieved passages shown to the generator and the position of the poisoned passage within the context. Both probes use NQ, the same generated DenialRAG passage for each target query. We report results for Mistral-7B and LLaMA-3.1-8B. Table 4 shows that DenialRAG remains effective as the retrieval depth increases. For Mistral-7B, ASR stays between 
+
+87% and 93% , with no degradation as more clean passages are added. For LLaMA-3.1-8B, ASR ranges from 83% to 
+
+90% , with only a modest decrease at k=20 . These results suggest that the poisoned passage is not easily diluted by additional clean context once it is included in the retrieved set. Table 5 shows that DenialRAG is also insensitive to the within-context position of the poisoned passage. On Mistral-7B, ASR remains between 93% and 95% across all five positions. On LLaMA-3.1-8B, ASR ranges from 89% 
+
+to 93% . There is no monotonic trend from earlier to later positions, indicating that the attack does not rely on the poisoned passage appearing first in the context window. Overall, these probes indicate that DenialRAG’s effec-tiveness is not primarily an artifact of a favorable retrieval layout. The attack remains strong when clean distractors are added and when the poisoned passage is moved within the retrieved context. The likely reason is that the poisoned passage is self-contained: it states the attacker-chosen answer, addresses the correct answer, and provides a local rationale 10 TABLE 4. RETRIEVAL DEPTH SENSITIVITY . DENIAL RAG ASR (%) ON 
+
+NQ AS THE RETRIEVAL DEPTH k VARIES . T HE POISONED PASSAGE IS ALWAYS INCLUDED IN THE RETRIEVED CONTEXT . W HEN k=1 , THE CONTEXT CONTAINS ONLY THE POISONED PASSAGE ; WHEN k> 1, THE CONTEXT CONTAINS THE POISONED PASSAGE PLUS k−1 CLEAN RETRIEVED PASSAGES .
+
+Model k=1 k=3 k=5 k=10 k=20 
+
+Mistral-7B 87 87 89 93 93 LLaMA-3.1-8B 86 90 88 86 83 
+
+TABLE 5. WITHIN -CONTEXT POSITION SENSITIVITY . DENIAL RAG ASR (%) ON NQ WHEN THE POISONED PASSAGE IS PLACED AT POSITION 
+
+p IN A TOP -5 CONTEXT WINDOW . P OSITION p=1 MEANS THE POISONED PASSAGE IS SHOWN FIRST ; p=5 MEANS IT IS SHOWN LAST . T HE OTHER FOUR PASSAGES ARE CLEAN RETRIEVED PASSAGES .
+
+Model p=1 p=2 p=3 p=4 p=5 
+
+Mistral-7B 93 93 94 95 93 LLaMA-3.1-8B 92 89 89 90 93 
+
+for rejecting it. Once retrieved, this coherent correction narra-tive remains influential even when surrounded by additional clean passages. 
+
+## 6. Conclusion 
+
+In this work, we introduced DenialRAG, a single-document RAG corpus-poisoning attack under a constrained threat model. Its key design is to place the conflict between the correct answer and the attacker-chosen answer directly inside the retrieved passage. Our evaluation shows that single-document poisoning risk varies across target LLMs, attack mechanisms, and defenses: defenses that reduce one attack style may still leave residual ASR against another. The ablation study identifies explicit denial of the correct answer as a central factor in DenialRAG’s effectiveness, while the stability analysis shows that different poisoning mechanisms shift differently across model groups. These findings high-light the importance of examining how RAG poisoning risk varies across target models, attack mechanisms, and defenses. 
+
+## LLM Usage Statement 
+
+The authors used large language models (LLMs) as writ-ing and editing assistants during the preparation of this paper. Specifically, LLMs were used to help improve grammar, clarity, organization, and presentation of the manuscript, and to assist with drafting and revising explanatory text. All technical ideas, threat models, experimental designs, implementations, data analysis, results, and conclusions were developed, checked, and validated by the authors. The authors take full responsibility for the correctness, originality, and integrity of the submitted work. 
+
+## References 
+
+[1] W. X. Zhao, K. Zhou, J. Li, T. Tang, Z. Dong, Y. Hou, B. Zhang, Y. Min, J. Zhang, P. Liu et al. , “A survey of large language models,” 
+
+Frontiers of Computer Science , vol. 20, no. 12, p. 2012627, 2026. [2] K. Singhal, S. Azizi, T. Tu, S. S. Mahdavi, J. Wei, H. W. Chung, N. Scales, A. Tanwani, H. Cole-Lewis, S. Pfohl et al. , “Large language models encode clinical knowledge,” Nature , vol. 620, no. 7972, pp. 172–180, 2023. [3] R. Shah, K. Chawla, D. Eidnani, A. Shah, W. Du, S. Chava, N. Raman, C. Smiley, J. Chen, and D. Yang, “When flue meets flang: Bench-marks and large pretrained language model for financial domain,” in 
+
+Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing , 2022, pp. 2322–2335. [4] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. K¨ uttler, M. Lewis, W.-t. Yih, T. Rockt¨ aschel et al. , “Retrieval-augmented generation for knowledge-intensive nlp tasks,” vol. 33, 2020, pp. 9459–9474. [5] W. Zou, R. Geng, B. Wang, and J. Jia, “ {PoisonedRAG }: Knowledge corruption attacks to {Retrieval-Augmented } generation of large language models,” in 34th USENIX Security Symposium (USENIX Security 25) , 2025, pp. 3827–3844. [6] K. Greshake, S. Abdelnabi, S. Mishra, C. Endres, T. Holz, and M. Fritz, “Not what you’ve signed up for: Compromising real-world llm-integrated applications with indirect prompt injection,” pp. 79–90, 2023. [7] A. RoyChowdhury, M. Luo, P. Sahu, S. Banerjee, and M. Tiwari, “Confusedpilot: Confused deputy risks in rag-based llms,” 2024. [8] F. Nestaas, E. Debenedetti, and F. Tram` er, “Adversarial search engine optimization for large language models,” in International Conference on Learning Representations , vol. 2025, 2025, pp. 4857–4888. [9] Z. Zhong, Z. Huang, A. Wettig, and D. Chen, “Poisoning retrieval corpora by injecting adversarial passages,” in Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,2023, pp. 13 764–13 775. [10] J. Xue, M. Zheng, Y. Hu, F. Liu, X. Chen, and Q. Lou, “Badrag: Identifying vulnerabilities in retrieval augmented generation of large language models. arxiv 2024,” arXiv preprint arXiv:2406.00083 .[11] Z. Chang, M. Li, X. Jia, J. Wang, Y. Huang, Z. Jiang, Y. Liu, and Q. Wang, “One shot dominance: Knowledge poisoning attack on retrieval-augmented generation systems.” in EMNLP (Findings) , 2025, pp. 18 811–18 825. [12] B. Zhang, Y. Chen, Z. Liu, L. Nie, T. Li, Z. Liu, and M. Fang, “Practical poisoning attacks against retrieval-augmented generation,” in 
+
+Proceedings of the 31st ACM Symposium on Access Control Models and Technologies , 2026, pp. 33–44. [13] G. Izacard, M. Caron, L. Hosseini, S. Riedel, P. Bojanowski, A. Joulin, and E. Grave, “Unsupervised dense information retrieval with con-trastive learning,” arXiv preprint arXiv:2112.09118 , 2021. [14] H. Wang, R. Zhang, J. Wang, M. Li, Y. Huang, D. Wang, and Q. Wang, “Joint-gcg: Unified gradient-based poisoning attacks on retrieval-augmented generation systems,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 40, no. 42, 2026, pp. 35 793– 35 801. [15] H. Chaudhari, G. Severi, J. Abascal, M. Jagielski, C. A. Choquette-Choo, M. Nasr, C. Nita-Rotaru, and A. Oprea, “Phantom: General trigger attacks on retrieval augmented language generation,” 2024. [16] C. Li, J. Zhang, A. Cheng, Z. Ma, X. Li, and J. Ma, “Cpa-rag: Covert poisoning attacks on retrieval-augmented generation in large language models,” arXiv preprint arXiv:2505.19864 , 2025. [17] H. Song, Y.-A. Liu, R. Zhang, J. Guo, M. de Rijke, Y. Fan, and X. Cheng, “Adversarialcot: Single-document retrieval poisoning for llm reasoning,” arXiv preprint arXiv:2604.12201 , 2026. 
+
+11 [18] N. Jain, A. Schwarzschild, Y. Wen, G. Somepalli, J. Kirchenbauer, P.-y. Chiang, M. Goldblum, A. Saha, J. Geiping, and T. Goldstein, “Baseline defenses for adversarial attacks against aligned language models,” arXiv preprint arXiv:2309.00614 , 2023. [19] Z. Wei, W.-L. Chen, and Y. Meng, “Instructrag: Instructing retrieval-augmented generation via self-synthesized rationales,” in International Conference on Learning Representations , vol. 2025, 2025, pp. 82 731– 82 754. [20] H. Zhou, K.-H. Lee, Z. Zhan, Y. Chen, Z. Li, Z. Wang, H. Haddadi, and E. Yilmaz, “Trustrag: Enhancing robustness and trustworthiness in retrieval-augmented generation,” arXiv preprint arXiv:2501.00879 ,2025. [21] C. Xiang, T. Wu, Z. Zhong, D. Wagner, D. Chen, and P. Mittal, “Certifiably robust rag against retrieval corruption,” 2024. [22] F. Wang, X. Wan, R. Sun, J. Chen, and S. O. Arik, “Astute rag: Overcoming imperfect retrieval augmentation and knowledge conflicts for large language models,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 30 553–30 571. [23] J. Xie, K. Zhang, J. Chen, R. Lou, and Y. Su, “Adaptive chameleon or stubborn sloth: Revealing the behavior of large language models in knowledge conflicts,” in International Conference on Learning Representations , vol. 2024, 2024, pp. 35 623–35 646. [24] Y. Li, K. Zhou, Q. Qiao, B. Nguyen, Q. Wang, and Q. Li, “Investigating context faithfulness in large language models: The roles of memory strength and evidence style,” in Findings of the Association for Computational Linguistics: ACL 2025 , 2025, pp. 4789–4807. [25] W. Zhou, S. Zhang, H. Poon, and M. Chen, “Context-faithful prompt-ing for large language models,” in Findings of the Association for Computational Linguistics: EMNLP 2023 , 2023, pp. 14 544–14 556. [26] K. Sun, F. Bai, and M. Dredze, “What is seen cannot be unseen: The disruptive effect of knowledge conflict on large language models,” 
+
+arXiv e-prints , pp. arXiv–2506, 2025. [27] Z. Sun, X. Zang, K. Zheng, J. Xu, X. Zhang, W. Yu, Y. Song, and H. Li, “Redeep: Detecting hallucination in retrieval-augmented generation via mechanistic interpretability,” in International Conference on Learning Representations , vol. 2025, 2025, pp. 50 250–50 279. [28] N. Thakur, N. Reimers, A. R¨ uckl´ e, A. Srivastava, and I. Gurevych, “Beir: A heterogenous benchmark for zero-shot evaluation of informa-tion retrieval models,” 2021. 
+
+12

@@ -1,0 +1,611 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-08T21:02:45.195099+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 4,
+    "deep_divecandidates": 6,
+    "deep_cap": 9,
+    "deep_selected": 6,
+    "quick_candidates": 7,
+    "quick_skim_target": 14,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2607.29569v1",
+      "source": "arxiv",
+      "title": "Safe Vision Language Action Models via Barrier Enhanced Flow Matching",
+      "abstract": "This article presents a modular inference framework that integrates Flow Matching generative models with formal Control Barrier Function (CBF) safety guarantees. Unlike existing methods that apply external safety filters to a model's final output, our approach modifies the Flow Matching denoising process within the model to inherently generate safe trajectories. By employing a smooth Log-Sum-Exponential aggregate barrier, we enforce safety over entire action chunks. This aggregate barrier ensures a minimal increase in computational overhead and does not alter the semantic intent of the model. We show that, within the proposed framework, the 2-Wasserstein distance between the generated distribution and the target distribution remains bounded. Our method eliminates the need for safety-specific datasets or costly model retraining, providing a versatile solution for safe inference. We validate the approach on two robotic manipulation platforms and a 2D navigation benchmark, verifying that our framework achieves reliable safety without degrading the success rate of the model.",
+      "authors": [
+        "Kasra Sinaei",
+        "Hung-Chieh Wu",
+        "Donald Ebeigbe"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "eess.SY"
+      ],
+      "published": "2026-07-31T15:56:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.29569v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Safety guarantees for VLA trajectories via Control Barrier Functions, directly relevant to agent safety",
+      "llm_evidence_cn": "通过控制障碍函数为视觉语言动作模型提供安全保障，直接涉及智能体安全",
+      "llm_evidence": "通过控制障碍函数为视觉语言动作模型提供安全保障，直接涉及智能体安全",
+      "canonical_evidence": "通过控制障碍函数为视觉语言动作模型提供安全保障，直接涉及智能体安全",
+      "llm_tldr_en": "Integrates Flow Matching with Control Barrier Functions to generate safe action trajectories inside the denoising process, ensuring formal safety guarantees with minimal overhead.",
+      "llm_tldr_cn": "针对视觉语言动作模型部署中的安全隐患，现有方法通常在最终输出后加外部安全过滤器，提出将流匹配生成模型与控制障碍函数结合的模块化推理框架。方法在去噪过程中直接生成满足安全约束的轨迹，使用平滑的Log-Sum-Exp聚合障碍保证整段动作块安全。实验显示几乎不增加计算开销且保持语义意图，并给出生成分布与目标分布之间的Wasserstein距离界。该工作为VLA模型提供了可证安全的新思路。",
+      "llm_tldr": "针对视觉语言动作模型部署中的安全隐患，现有方法通常在最终输出后加外部安全过滤器，提出将流匹配生成模型与控制障碍函数结合的模块化推理框架。方法在去噪过程中直接生成满足安全约束的轨迹，使用平滑的Log-Sum-Exp聚合障碍保证整段动作块安全。实验显示几乎不增加计算开销且保持语义意图，并给出生成分布与目标分布之间的Wasserstein距离界。该工作为VLA模型提供了可证安全的新思路。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "agent safety",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04771v1",
+      "source": "arxiv",
+      "title": "Fewer Tokens, Smaller Cache: Reward-Coordinated Efficient Reasoning",
+      "abstract": "Large Reasoning Models (LRMs) excel on complex tasks through long chain-of-thought (CoT) reasoning, but their lengthy intermediate steps cause severe overthinking that inflates inference cost. KV-cache compression is a common solution, yet existing reasoning-oriented methods apply a uniform policy across the trajectory and judge compression only by what it removes from the cache. Two observations point the other way. First, a reasoning state's tolerance to context loss varies along the trajectory, and process reward tracks it: deleting tokens at high-reward steps preserves accuracy far better than deleting the same budget at random. Second, compression is not free on the generation side, since a smaller cache leads the model to generate more tokens, partly canceling the saving. Together these motivate coordinating both sides under a single process reward. We propose ReCo (Reward-Coordinated Compression), a step-wise framework in which a lightweight process-reward estimator scores each completed step and drives three components: (1) reward-adaptive KV-cache compression that shrinks the retained cache harder at high-reward steps and less at low-reward ones, (2) a reward-banded penalty on reflection tokens that curbs redundant generation, and (3) confidence-based early stopping that triggers when the reasoning is reliable. Across three reasoning models and six benchmarks, ReCo reduces generated tokens by 37%-65% and end-to-end latency by 2.08x-2.35x over Full CoT, all while largely preserving accuracy.",
+      "authors": [
+        "Qiyuan Zhu",
+        "Dezhi Li",
+        "Pengyu Cheng",
+        "Tianle Chen",
+        "Jiacheng Wang",
+        "Ruijie Shen",
+        "Hao Gu",
+        "Sida Lin",
+        "Zirui Liu",
+        "Jiacheng Liu",
+        "Sirui Han"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-05T12:36:28+00:00",
+      "link": "https://arxiv.org/pdf/2608.04771v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "targets efficient reasoning via reward-coordinated compression",
+      "llm_evidence_cn": "面向高效推理，采用奖励协调的压缩方法",
+      "llm_evidence": "面向高效推理，采用奖励协调的压缩方法",
+      "canonical_evidence": "面向高效推理，采用奖励协调的压缩方法",
+      "llm_tldr_en": "Proposes reward-coordinated KV-cache compression for large reasoning models: process reward identifies steps tolerant to token deletion, enabling smarter pruning that cuts inference cost and beats uniform compression.",
+      "llm_tldr_cn": "大推理模型通过长思维链解决复杂任务，但冗长中间步骤导致推理成本高。现有KV缓存压缩在整个轨迹上采用统一策略，忽视了不同推理状态对上下文丢失的容忍度差异。作者发现过程奖励可以指示这种容忍度，从而在高奖励步骤删减token能更好保持精度。基于此提出奖励协调的压缩方法，在同等预算下显著优于随机压缩，并缓解压缩导致生成更多token的问题，为高效推理提供了新思路。",
+      "llm_tldr": "大推理模型通过长思维链解决复杂任务，但冗长中间步骤导致推理成本高。现有KV缓存压缩在整个轨迹上采用统一策略，忽视了不同推理状态对上下文丢失的容忍度差异。作者发现过程奖励可以指示这种容忍度，从而在高奖励步骤删减token能更好保持精度。基于此提出奖励协调的压缩方法，在同等预算下显著优于随机压缩，并缓解压缩导致生成更多token的问题，为高效推理提供了新思路。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.02678v1",
+      "source": "arxiv",
+      "title": "DenialRAG: Single-Document RAG Poisoning via Embedded Parametric Denial",
+      "abstract": "Retrieval-augmented generation (RAG) systems are vulnerable to corpus poisoning: an attacker who inserts a crafted document into the retrieval corpus can steer the underlying large language model (LLM) toward an attacker-chosen wrong answer. Prior single-document attacks typically avoid explicitly naming and refuting the correct answer inside the poisoned passage. In this paper, we examine a complementary design and propose \\emph{DenialRAG}, a single-document poisoning attack that explicitly names the correct answer, denies it, and presents an attacker-controlled explanation for favoring the wrong answer. By placing both the correct answer and the corresponding poisoned answer inside the same retrieved passage, DenialRAG embeds the conflict directly into the context seen by the generator.   We evaluate DenialRAG against four published single-document poisoning attacks across three open-domain question-answering datasets, eight target LLMs from four vendors, and five inference-time defenses. The results show that attack effectiveness is strongly model-dependent: DenialRAG achieves the highest attack success rate (ASR) on all three Mistral-7B datasets and remains effective on several other target LLMs, while other attacks dominate in some model regimes. Defense results show meaningful ASR reductions but non-uniform protection, with each defense leaving residual ASR in some settings. Component-level and cross-model analyses further identify the embedded denial as the most influential tested component and show that different poisoning mechanisms lose effectiveness at different rates across model groups. Together, these results show that RAG poisoning risk cannot be fully characterized by a single attack family or a single target model.",
+      "authors": [
+        "Abay Zhurekbay",
+        "Tao Liu",
+        "Fan Li"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-02T20:33:05+00:00",
+      "link": "https://arxiv.org/pdf/2608.02678v1",
+      "tags": [
+        "keyword:ai-safety",
+        "query:ai-safety"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Single-document RAG poisoning attack, security threat to LLMs",
+      "llm_evidence_cn": "单文档检索增强生成投毒攻击，威胁大模型安全",
+      "llm_evidence": "单文档检索增强生成投毒攻击，威胁大模型安全",
+      "canonical_evidence": "单文档检索增强生成投毒攻击，威胁大模型安全",
+      "llm_tldr_en": "DenialRAG is a single-document poisoning attack that explicitly names and denies the correct answer in a RAG corpus, misleading the LLM to an attacker-chosen wrong answer. It embeds conflict into the retrieved passage to strengthen the attack.",
+      "llm_tldr_cn": "该论文针对检索增强生成系统易受语料投毒的问题，提出DenialRAG单文档攻击方法：在恶意文档中显式点名并否认正确答案，同时给出支持错误答案的解释。通过在同一检索片段内嵌入冲突，DenialRAG能更有效地引导大模型输出攻击者设定的错误答案。这揭示了一种新型的模型安全威胁。",
+      "llm_tldr": "该论文针对检索增强生成系统易受语料投毒的问题，提出DenialRAG单文档攻击方法：在恶意文档中显式点名并否认正确答案，同时给出支持错误答案的解释。通过在同一检索片段内嵌入冲突，DenialRAG能更有效地引导大模型输出攻击者设定的错误答案。这揭示了一种新型的模型安全威胁。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "jailbreak attacks",
+      "matched_requirement_id": "req-16",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.03972v1",
+      "source": "arxiv",
+      "title": "ReflectRL: Learning from Golden Negative Trajectories via Reflective-to-Direct Reasoning",
+      "abstract": "On-policy training has emerged as a powerful post-training paradigm for improving the reasoning capabilities of large language models, and is often enhanced by golden trajectories from stronger expert models. However, when the expert fails on harder problems, existing trajectory-guided methods lose their main source of supervision, and these failed trajectories are typically discarded as negative samples. We argue that such failures, which we call Golden Negative Trajectories, can still provide valuable reasoning signals when treated not as demonstrations to imitate, but as flawed trajectories to reflect upon. We identify a Reflection Advantage: for hard problems, reflecting on a flawed trajectory can be easier and more effective than solving the problem directly from scratch. Motivated by this, we propose ReflectRL, a lightweight plug-and-play framework that learns from Golden Negative Trajectories during on-policy training. ReflectRL first uses these trajectories to elicit Reflective Reasoning, then applies Reflective-to-Direct Policy Transition to transfer the acquired reasoning behavior back to Direct Reasoning. Experiments across 9 benchmarks, 4 LLM backbones, and 4 on-policy training methods show that ReflectRL consistently improves reasoning performance with minimal overhead.",
+      "authors": [
+        "Jinhe Bi",
+        "Chennan Zhou",
+        "Zengjie Jin",
+        "Aniri",
+        "Shuo Lu",
+        "Wenke Huang",
+        "Hu Cao",
+        "Xun Xiao",
+        "Zhihong Zhu",
+        "Volker Tresp",
+        "Fei Shen",
+        "Yunpu Ma",
+        "Tat-Seng Chua"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T17:40:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.03972v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "On-policy training from golden negative trajectories via reflective-to-direct reasoning",
+      "llm_evidence_cn": "通过反思到直接推理从黄金负轨迹进行在线策略学习",
+      "llm_evidence": "通过反思到直接推理从黄金负轨迹进行在线策略学习",
+      "canonical_evidence": "通过反思到直接推理从黄金负轨迹进行在线策略学习",
+      "llm_tldr_en": "ReflectRL leverages failed expert trajectories as golden negative data, reflecting on them to improve direct reasoning during on-policy training. It shows reflection advantage on hard problems, enhancing LLM reasoning without needing successful demonstrations.",
+      "llm_tldr_cn": "该论文针对专家模型在难题上失败导致轨迹引导方法失去监督的问题，提出ReflectRL：不把失败轨迹视为待模仿的示范，而是作为反思对象来学习。该方法利用反思优势，在在线策略训练中从黄金负轨迹中提取推理信号，提升直接推理能力。实验表明，在困难问题上，反思失败轨迹比模仿成功轨迹更有效。",
+      "llm_tldr": "该论文针对专家模型在难题上失败导致轨迹引导方法失去监督的问题，提出ReflectRL：不把失败轨迹视为待模仿的示范，而是作为反思对象来学习。该方法利用反思优势，在在线策略训练中从黄金负轨迹中提取推理信号，提升直接推理能力。实验表明，在困难问题上，反思失败轨迹比模仿成功轨迹更有效。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy distillation reinforcement learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.04366v1",
+      "source": "arxiv",
+      "title": "Combating Knowledge Corruption in Agent Systems: A Byzantine-Tolerant Secure Collaborative RAG Framework",
+      "abstract": "While retrieval-augmented generation systems partially address the hallucination issues in large language models, it also introduces new vulnerabilities to knowledge corruption attacks. Adversaries exploit these vulnerabilities by poisoning documents provided by RAG system to manipulate LLM outputs. To counter this threat, we propose SecureCollaRAG, a Byzantine-tolerant collaborative RAG framework leveraging Multi-source Knowledge Validation Mechanism. Our approach enables agent system to securely verify document provenance through dynamic GNN-based credibility scoring, effectively preventing stealthy knowledge corruption attacks while preserving essential domain knowledge integrity. Through extensive evaluations and formal analysis, we demonstrate that SecureCollaRAG maintains robustness against attackers under non-IID data distributions.",
+      "authors": [
+        "Zhaoqi Wang",
+        "Daqing He",
+        "Zijian Zhang",
+        "Ye Liu",
+        "Jiamou Liu",
+        "Zhirui Zeng",
+        "Zhan Qin",
+        "Zhen Li",
+        "Xin Li",
+        "Hongwei Yao",
+        "Jincheng An",
+        "Yong Liu",
+        "Yi Li",
+        "Qi Sun",
+        "Xiulei Liu",
+        "Liehuang Zhu"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T02:13:37+00:00",
+      "link": "https://arxiv.org/pdf/2608.04366v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Byzantine-tolerant RAG defense against knowledge corruption attacks in agent systems",
+      "llm_evidence_cn": "针对智能体系统知识污染攻击的拜占庭容错RAG防御框架",
+      "llm_evidence": "针对智能体系统知识污染攻击的拜占庭容错RAG防御框架",
+      "canonical_evidence": "针对智能体系统知识污染攻击的拜占庭容错RAG防御框架",
+      "llm_tldr_en": "SecureCollaRAG proposes a Byzantine-tolerant collaborative RAG framework with dynamic GNN-based credibility scoring to verify document provenance and defend against knowledge corruption attacks in agents.",
+      "llm_tldr_cn": "检索增强生成虽缓解了大模型幻觉，却引入了知识污染攻击的新风险。针对该问题，论文提出SecureCollaRAG，一种拜占庭容错的协作RAG框架，利用多源知识验证机制和动态GNN可信度评分验证文档来源，在保持领域知识完整性的同时有效防御隐秘的知识污染攻击，保障智能体系统安全。",
+      "llm_tldr": "检索增强生成虽缓解了大模型幻觉，却引入了知识污染攻击的新风险。针对该问题，论文提出SecureCollaRAG，一种拜占庭容错的协作RAG框架，利用多源知识验证机制和动态GNN可信度评分验证文档来源，在保持领域知识完整性的同时有效防御隐秘的知识污染攻击，保障智能体系统安全。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "defense mechanisms against attacks",
+      "matched_requirement_id": "req-17",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.06057v1",
+      "source": "arxiv",
+      "title": "When History Lies: Evaluating and Improving Tool Use under Misleading Multi-Turn Histories",
+      "abstract": "Tool-calling agents infer task state from accumulated dialogue and tool traces. In persistent interactions, however, historical traces may remain structurally valid and semantically plausible after they cease to be authoritative for the current request. We show that such history can hijack a policy the model already possesses: on Qwen3-1.7B, pollution flips 32.1% of decisions that are correct under the original trajectory and frequently induces reuse of corrupted entities or interface conventions. We introduce bench, a paired benchmark with synchronized Original, Polluted, and Oracle State views that preserve the system policy, current tools, latest request, and gold next action. Eleven gold-preserving interventions isolate failures in decision state, entity binding, and interface execution across complete calls and non-call decisions. We further propose ours, which transfers an Oracle-conditioned teacher policy to a student observing only polluted history through soft supervision on student-generated prefixes. On Qwen3-1.7B, ours achieves 87.0% Balanced Tool-Use Accuracy, outperforming Gold-SFT (66.3%), Oracle sequence distillation (82.3%), and off-policy token distillation (85.0%). The method scales consistently: an 8B teacher raises the same compact 1.7B student to 91.9%, while an 8B student reaches 93.0%. The resulting policies further transfer to clean histories, unseen functions, independently regenerated evaluation contexts, external tool-use benchmarks, and noisy multi-hop question answering. These results establish history reliability as a distinct tool-use bottleneck and demonstrate reliable-state policy transfer as an effective and scalable solution.",
+      "authors": [
+        "Xiaoqing Wu",
+        "Xingyu Fan",
+        "Feifei Li",
+        "Wenhui Que"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-06T14:04:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.06057v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "paired benchmark with misleading multi-turn histories isolates tool-use failures and interventions",
+      "llm_evidence_cn": "针对误导性多轮历史的配对基准，系统评估和改进工具使用鲁棒性",
+      "llm_evidence": "针对误导性多轮历史的配对基准，系统评估和改进工具使用鲁棒性",
+      "canonical_evidence": "针对误导性多轮历史的配对基准，系统评估和改进工具使用鲁棒性",
+      "llm_tldr_en": "Introduces a paired benchmark with synchronized original, polluted and oracle views to evaluate and improve tool-calling agents under misleading multi-turn histories.",
+      "llm_tldr_cn": "持久交互中，历史轨迹即使结构有效也可能不再权威，会误导工具调用智能体。论文在Qwen3-1.7B上显示污染可翻转32.1%的正确决策。为此提出一个配对基准，包含同步的原始、污染和Oracle状态视图，并用11种保持金标的干预方法来隔离失败原因，为评估和改进多轮历史下的工具使用提供了系统平台。",
+      "llm_tldr": "持久交互中，历史轨迹即使结构有效也可能不再权威，会误导工具调用智能体。论文在Qwen3-1.7B上显示污染可翻转32.1%的正确决策。为此提出一个配对基准，包含同步的原始、污染和Oracle状态视图，并用11种保持金标的干预方法来隔离失败原因，为评估和改进多轮历史下的工具使用提供了系统平台。",
+      "llm_tags": [
+        "query:ai-safety"
+      ],
+      "matched_query_tag": "query:ai-safety",
+      "matched_query_text": "safety benchmarks",
+      "matched_requirement_id": "req-18",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.02139v2",
+      "source": "arxiv",
+      "title": "Self-Improving Large Language Models via Progressive Experience Evolution",
+      "abstract": "Large language models (LLMs) capable of self-improvement require not only effective policy optimization, but also a principled mechanism for transforming transient interaction experience into persistent model capabilities. Existing self-improvement paradigms remain fragmented: test-time methods can explicitly extract experience but cannot internalize it into model parameters, whereas training-time optimization methods can update model parameters but lack an explicit mechanism for accumulating transferable experience. Bridging these two paradigms requires a critical intermediate stage that remains underexplored, namely \\emph{experience distillation}. To address this gap, we propose \\textbf{SPEE} (\\textbf{S}elf-\\textbf{P}rogressive \\textbf{E}xperience \\textbf{E}volution), a unified post-training framework that sequentially performs explicit experience evolution followed by implicit policy optimization. During explicit experience evolution, SPEE reflects on trajectories collected from multiple interactions to extract, verify, and progressively evolve transferable experience, which is subsequently internalized into the policy through privilege-guided On-Policy Self-Distillation (OPSD). During implicit policy optimization, reward-driven reinforcement learning leverages these internalized priors to explore novel solution strategies. In the experience evolution stage, a continuously evolving global experience pool consolidates knowledge from both successful and failed trajectories, filters out low-utility experience, and mitigates post-hoc rationalization induced by individual trajectories. Experiments on five mathematical reasoning benchmarks demonstrate that SPEE consistently outperforms both test-time and training-time self-evolution baselines across three model scales. The source code is available at https://github.com/rrrsj/SPEE.",
+      "authors": [
+        "Shijie Ren",
+        "Xiting Wang",
+        "Meng Li",
+        "Yujie Guo",
+        "Yunhang Yao",
+        "Ziheng Peng",
+        "Xunlong Wang",
+        "Yuetan Chen",
+        "Haoyang Zhou",
+        "Yunlong Liang",
+        "Fandong Meng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-03T12:27:32+00:00",
+      "link": "https://arxiv.org/pdf/2608.02139v2",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Experience distillation as an intermediate stage for self-improvement",
+      "llm_evidence_cn": "将经验蒸馏作为自我改进的中间阶段",
+      "llm_evidence": "将经验蒸馏作为自我改进的中间阶段",
+      "canonical_evidence": "将经验蒸馏作为自我改进的中间阶段",
+      "llm_tldr_en": "Introduces SPEE, a self-progressive experience evolution framework that uses experience distillation to convert transient interaction experience into persistent model capabilities.",
+      "llm_tldr_cn": "论文指出现有LLM自我改进范式存在断代：测试时方法能提取经验但无法内化到模型参数，训练时优化方法可更新参数却缺少积累可迁移经验的机制。为弥合这一鸿沟，提出SPEE框架，核心是引入经验蒸馏阶段，将瞬态交互经验转化为持续性模型能力，进而支持模型在后续交互中渐进式自我改进，实验验证了该框架的有效性。",
+      "llm_tldr": "论文指出现有LLM自我改进范式存在断代：测试时方法能提取经验但无法内化到模型参数，训练时优化方法可更新参数却缺少积累可迁移经验的机制。为弥合这一鸿沟，提出SPEE框架，核心是引入经验蒸馏阶段，将瞬态交互经验转化为持续性模型能力，进而支持模型在后续交互中渐进式自我改进，实验验证了该框架的有效性。",
+      "llm_tags": [
+        "query:opd"
+      ],
+      "matched_query_tag": "query:opd",
+      "matched_query_text": "on policy learning knowledge distillation",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.00220v1",
+      "source": "arxiv",
+      "title": "Verifier-Induced Support Reshaping in On-Policy Optimization",
+      "abstract": "We show that on-policy reinforcement learning with verifiable rewards (RLVR) can improve the current objective while making successful behaviors for later objectives too rare to sample and reinforce. We call this verifier-induced support reshaping and define effective rewardable support as successful trajectories reachable within a fixed rollout budget. Across two model families, we study this effect through repeated verifier-scored sampling and bidirectional training on mathematical reasoning and constrained instruction following, including sequential training with the opposite verifier. Math-RLVR raises average instruction-following success but reduces the number of prompts with any successful response under repeated sampling. On IFEval with Qwen3-8B-Base, pass@1 rises by 6.5 percentage points while best@32 falls by 9.8 percentage points, and the same divergence appears across both models and IF benchmarks. Conversely, IF-RLVR shifts math responses from step-by-step openings toward direct answers, lowers best@k across sampling budgets, and reduces reward variation for later Math-RLVR. Token-distribution analyses and controlled opening interventions show that these changes concentrate in the first few response tokens. RLVR mainly reranks openings already available in the base policy, and the selected opening causally affects math searchability. The tested reference-policy constraints, routing priors, and on-policy distillation preserve cross-task support only partially; MathIF and ReasonIF show that marginal gains translate only partly into responses that are both correct and constraint-following. Therefore, endpoint improvements do not guarantee future trainability or joint capability under on-policy optimization. Code is available at https://github.com/sylvain-wei/verifier-induced-support-reshaping",
+      "authors": [
+        "Shaohang Wei",
+        "Zikun Su",
+        "Feifan Song",
+        "Wen Luo",
+        "Wei Li",
+        "Guangyue Peng",
+        "Houfeng Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-07-31T19:05:43+00:00",
+      "link": "https://arxiv.org/pdf/2608.00220v1",
+      "tags": [
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "studies on-policy optimization with verifier rewards, informing on-policy distillation research",
+      "llm_evidence_cn": "研究验证器奖励下的在线优化，为在线策略蒸馏提供借鉴",
+      "llm_evidence": "研究验证器奖励下的在线优化，为在线策略蒸馏提供借鉴",
+      "canonical_evidence": "研究验证器奖励下的在线优化，为在线策略蒸馏提供借鉴",
+      "llm_tldr_en": "Shows verifier-induced support reshaping in on-policy RLVR: optimizing the current objective can make future successful behaviors rare to sample, defined as effective rewardable support; demonstrated via bidirectional training.",
+      "llm_tldr_cn": "论文研究在线强化学习中验证器奖励导致的支持重塑现象，指出优化当前目标可能使后续目标的成功轨迹难以采样。定义有效奖励支持，在数学推理与指令跟随任务上通过双向训练验证该效应。结果表明奖励训练在提升平均指标的同时会减少可重复采样的成功提示，提示在线优化需要考虑对探索分布的影响。",
+      "llm_tldr": "论文研究在线强化学习中验证器奖励导致的支持重塑现象，指出优化当前目标可能使后续目标的成功轨迹难以采样。定义有效奖励支持，在数学推理与指令跟随任务上通过双向训练验证该效应。结果表明奖励训练在提升平均指标的同时会减少可重复采样的成功提示，提示在线优化需要考虑对探索分布的影响。",
+      "llm_tags": [
+        "query:opd:composite"
+      ],
+      "matched_query_tag": "query:opd:composite",
+      "matched_query_text": "Papers central to 帮我找一下最近的on-policy distillation的论文, especially work that connects or combines: on policy distillation reinforcement learning; policy distillation in reinforcement learning; teacher student framework reinforcement learning distillation; on policy learning knowledge distillation; distillation techniques reinforcement learning; on policy self distillation; recent advances in on policy distillation; latest papers on policy distillation; on policy knowledge distillation methods.",
+      "matched_requirement_id": "req-composite-opd",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.04588v1",
+      "source": "arxiv",
+      "title": "EASy: Towards Efficient LLM-Based Agentic System",
+      "abstract": "Agentic systems have emerged as a promising paradigm for solving complex tasks by coordinating specialized LLM-based agents. However, most existing systems primarily optimize task success while giving limited consideration to execution efficiency under practical constraints such as executor capability and computational cost. Existing router-based methods have limited ability to reason over rich, evolving task contexts, multi-step dependencies, and intermediate execution feedback, and often generalize poorly to unseen executors. We propose EASy, a trainable agentic framework that jointly optimizes task performance and computational efficiency through reinforcement learning. EASy equips an LLM-based orchestrator with explicit knowledge of the capability and cost profiles of heterogeneous executors, enabling context-sensitive coordination beyond performance-only routing. It further introduces a milestone-plan-act workflow that decomposes complex tasks into manageable milestones, constructs dependency-aware execution graphs, assigns suitable executors, and parallelizes independent steps while adapting subsequent decisions to intermediate outcomes. To train the orchestrator, we develop a tree-structured rollout procedure that explores alternative milestone decompositions and execution plans, together with multi-component rewards that capture task correctness, execution efficiency, and trajectory completeness. Extensive experiments on mathematical reasoning, embodied decision-making, and deep research benchmarks show that EASy consistently achieves stronger performance-efficiency trade-offs than strong agentic baselines.",
+      "authors": [
+        "Junnan Liu",
+        "Linhao Luo",
+        "Thuy-Trang Vu",
+        "Gholamreza Haffari"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-08-05T08:50:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.04588v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "efficient LLM agentic system jointly optimizes task performance and computational efficiency via reinforcement learning",
+      "llm_evidence_cn": "通过强化学习联合优化任务性能与计算效率的高效智能体系统",
+      "llm_evidence": "通过强化学习联合优化任务性能与计算效率的高效智能体系统",
+      "canonical_evidence": "通过强化学习联合优化任务性能与计算效率的高效智能体系统",
+      "llm_tldr_en": "EASy proposes a trainable agentic framework using RL to jointly optimize task performance and computational efficiency, giving the orchestrator explicit capability and cost profiles.",
+      "llm_tldr_cn": "现有智能体系统主要优化任务成功率，对执行效率考虑不足。EASy提出一个基于强化学习的可训练智能体框架，让LLM编排器同时感知执行器的能力与成本画像，从而在复杂任务上联合优化性能与效率。实验表明该方法能有效利用中间反馈和多步依赖，并泛化到未见过的执行器。",
+      "llm_tldr": "现有智能体系统主要优化任务成功率，对执行效率考虑不足。EASy提出一个基于强化学习的可训练智能体框架，让LLM编排器同时感知执行器的能力与成本画像，从而在复杂任务上联合优化性能与效率。实验表明该方法能有效利用中间反馈和多步依赖，并泛化到未见过的执行器。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.02026v1",
+      "source": "arxiv",
+      "title": "HPFA: Hypergraph-Based Paired Failure Attribution for LLM Reasoning",
+      "abstract": "Reflection is a powerful mechanism for LLM reasoning, yet its effectiveness hinges on accurately attributing failures to specific reasoning steps, a capability that current models notably lack. Existing failure attribution methods either require expensive step-by-step counterfactual testing that scales poorly with trajectory length, or treat reasoning traces as flat sequences that ignore the inherent non-linear logical dependencies. We propose a hypergraph-based paired failure attribution (HPFA) framework that attributes the failure root cause by comparing the hyperedges of the targeted failure reasoning path against a reference successful path. By reducing the search space, our method efficiently localizes root causes and enables scalable synthesis of attribution data for training a lightweight attributor model via supervised fine-tuning and reinforcement learning. Experiments on mathematical reasoning and agentic coding tasks demonstrate that HPFA can dramatically increase attribution accuracy and efficiency, and the trained attributor consistently improves reasoning accuracy at test time, outperforming baselines that lack graph structure or paired analysis.",
+      "authors": [
+        "Runchuan Zhu",
+        "Hongbin Lai",
+        "Bowen Jiang",
+        "Junrui Zhang",
+        "Zhangheng LI",
+        "Ostap Kilbasovych",
+        "Junyuan Hong"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T10:23:48+00:00",
+      "link": "https://arxiv.org/pdf/2608.02026v1",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "hypergraph-based failure attribution efficiently localizes root causes in LLM reasoning",
+      "llm_evidence_cn": "基于超图的失败归因高效定位大模型推理中的根本原因",
+      "llm_evidence": "基于超图的失败归因高效定位大模型推理中的根本原因",
+      "canonical_evidence": "基于超图的失败归因高效定位大模型推理中的根本原因",
+      "llm_tldr_en": "HPFA uses hypergraph-based paired failure attribution to efficiently localize root causes in LLM reasoning, avoiding costly step-by-step counterfactual testing and flat trace processing.",
+      "llm_tldr_cn": "反思机制对LLM推理至关重要，但现有失败归因方法要么需要昂贵的逐步反事实测试，要么将推理轨迹视为平坦序列，忽略非线性逻辑依赖。论文提出基于超图的配对失败归因框架HPFA，通过对比失败与成功推理路径的超边来定位根本原因，缩小搜索空间，高效定位根因并支持可扩展的合成数据生成，为提升推理反思效率提供了新途径。",
+      "llm_tldr": "反思机制对LLM推理至关重要，但现有失败归因方法要么需要昂贵的逐步反事实测试，要么将推理轨迹视为平坦序列，忽略非线性逻辑依赖。论文提出基于超图的配对失败归因框架HPFA，通过对比失败与成功推理路径的超边来定位根本原因，缩小搜索空间，高效定位根因并支持可扩展的合成数据生成，为提升推理反思效率提供了新途径。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "efficient reasoning methods",
+      "matched_requirement_id": "req-24",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.02508v2",
+      "source": "arxiv",
+      "title": "RoMeRL: Balancing Feedback Coverage and the Memory-Reward Trap in Self-Evolving Agent Memory via Reduced-Order Utility States",
+      "abstract": "Learning-based memory systems for self-evolving LLM agents face two tightly coupled challenges. First, trajectory-indexed utilities grow with the interaction history, thereby dispersing limited feedback over an ever-expanding state space. Second, because trajectory-level rewards are jointly assigned to co-retrieved memories, irrelevant experiences may receive misleading utility updates and consequently enter the memory-reward trap. To address these challenges, we introduce Reduced-Order Memory Reinforcement Learning (RoMeRL), which represents the growing trajectory-indexed utility space using a fixed-dimensional per-task memory state factorized by outcome polarity and memory dynamics. RoMeRL incorporates new experiences through a fixed set of semantic coordinates whose contents are updated or replaced over time, thereby concentrating feedback over a bounded utility support. Theoretically, we show that this reduced-order parameterization increases the average feedback received by each utility coordinate and characterize the steady-state occupancy of erroneous coordinates under a generic coordinate-transition model. Empirically, across ALFWorld and LifelongAgentBench, RoMeRL improves task performance, reduces the Cold-Q ratio by 80.0%, increases feedback density by approximately 6.0 times, reduces the maintained memory size by 84.4%, and cuts LLM calls by 21.1%. These results show that reduced-order utility states support efficient self-evolving agent memory while limiting persistent reward contamination. Code is available at: https://github.com/YOUNG-fnxm/RoMeRL",
+      "authors": [
+        "Yi Yang",
+        "Zhennan Chen",
+        "Yihong Zhuang",
+        "Tiehan Fan",
+        "Yinan Chen",
+        "Jian Li",
+        "Jian Yang",
+        "Ying Tai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-08-03T17:07:50+00:00",
+      "link": "https://arxiv.org/pdf/2608.02508v2",
+      "tags": [
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "memory reinforcement learning for long-horizon agent interactions",
+      "llm_evidence_cn": "面向长时交互智能体的记忆强化学习",
+      "llm_evidence": "面向长时交互智能体的记忆强化学习",
+      "canonical_evidence": "面向长时交互智能体的记忆强化学习",
+      "llm_tldr_en": "RoMeRL addresses feedback dispersion and the memory-reward trap in self-evolving LLM agents by representing trajectory-indexed utilities as a fixed-dimensional per-task memory state, offering a reduced-order approach to memory reinforcement learning over long interaction histories.",
+      "llm_tldr_cn": "针对自进化智能体记忆系统中反馈分散和记忆奖励陷阱两大难题，提出RoMeRL方法。该方法将不断增长的轨迹索引效用空间压缩为按结果极性和记忆动力学分解的固定维度任务记忆状态，从而在不牺牲反馈覆盖的前提下规避误导性的效用更新。该工作为长时交互场景下的智能体记忆强化学习提供了一种降阶状态表示框架，有望提升复杂任务中的记忆效率和稳定性。",
+      "llm_tldr": "针对自进化智能体记忆系统中反馈分散和记忆奖励陷阱两大难题，提出RoMeRL方法。该方法将不断增长的轨迹索引效用空间压缩为按结果极性和记忆动力学分解的固定维度任务记忆状态，从而在不牺牲反馈覆盖的前提下规避误导性的效用更新。该工作为长时交互场景下的智能体记忆强化学习提供了一种降阶状态表示框架，有望提升复杂任务中的记忆效率和稳定性。",
+      "llm_tags": [
+        "query:l-context-rl:composite"
+      ],
+      "matched_query_tag": "query:l-context-rl:composite",
+      "matched_query_text": "Papers central to long-context相关的RL训练论文，了解当前进展, especially work that connects or combines: training reinforcement learning models on long input sequences; reinforcement learning applied to long context language models; research papers on reinforcement learning for long context language models; current progress in reinforcement learning for long context tasks.",
+      "matched_requirement_id": "req-composite-l-context-rl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03833v1",
+      "source": "arxiv",
+      "title": "History Matters: Meta-policy Delegation with Heterogeneous Multi-agent Reinforcement Learning",
+      "abstract": "AI agents are expected to play an increasingly important role in future decision-making systems. In this paper, we consider collaborative systems composed of heterogeneous multi-agent systems (MAS), where their members have different capabilities and operating costs. We study how agents can delegate tasks to one another so that certain research tasks can be completed effectively under resource-constrained scenarios. We first develop a multi-agent reinforcement learning-based (MARL) delegation training that enables agents to make sequential delegation decisions while minimizing the total execution cost. We then extend this approach to MARL with prescribed delegation topologies. Furthermore, we introduce two new frameworks for collaboration and delegation in multi-agent systems. The first framework proposes that an agent's policy depends not only on the current state of the underlying Markov decision process but also on the interaction history, including previous joint actions. This history-dependent formulation can improve coordination even in fully observable environments, where conventional MARL methods typically restrict policies to depend only on the current state. The second framework proposes a novel, potentially multi-dimensional monetary mechanism to facilitate the collaboration and delegation for MAS.",
+      "authors": [
+        "Ziqing Lu",
+        "Avinash Reddy Mudireddy",
+        "Sarra Alqahtani",
+        "Weiyu Xu"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA"
+      ],
+      "published": "2026-08-04T15:39:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.03833v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "MARL-based delegation for heterogeneous agents to complete tasks under resource constraints",
+      "llm_evidence_cn": "基于多智能体强化学习的异构智能体任务委派方法",
+      "llm_evidence": "基于多智能体强化学习的异构智能体任务委派方法",
+      "canonical_evidence": "基于多智能体强化学习的异构智能体任务委派方法",
+      "llm_tldr_en": "Proposes MARL-based delegation training for heterogeneous agents to sequentially delegate tasks while minimizing execution cost, with extensions to prescribed delegation topologies.",
+      "llm_tldr_cn": "针对资源受限场景下异构多智能体系统如何高效协作完成任务的问题，提出一种基于多智能体强化学习的委派训练方法，使智能体能够按顺序做出委派决策并最小化总执行成本；进一步扩展到给定委派拓扑的场景，并引入两个新的协同框架。该方法为多智能体协作提供了可学习的任务委派机制。",
+      "llm_tldr": "针对资源受限场景下异构多智能体系统如何高效协作完成任务的问题，提出一种基于多智能体强化学习的委派训练方法，使智能体能够按顺序做出委派决策并最小化总执行成本；进一步扩展到给定委派拓扑的场景，并引入两个新的协同框架。该方法为多智能体协作提供了可学习的任务委派机制。",
+      "llm_tags": [
+        "query:agent-swarm:composite"
+      ],
+      "matched_query_tag": "query:agent-swarm:composite",
+      "matched_query_text": "Papers central to 类似Kimi 2.6的智能体集群, especially work that connects or combines: agent swarm architecture; autonomous agents using tools; Advanced agent swarm architecture with dynamic coordination; Agent swarm for complex task decomposition and execution.",
+      "matched_requirement_id": "req-composite-agent-swarm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.04843v1",
+      "source": "arxiv",
+      "title": "MemoryCPT: An End-to-End Agent Memory Framework for Cost-Performance Trade-off",
+      "abstract": "Long-horizon LLM agents require memory systems that recover useful evidence from large interaction histories without passing excessive context to downstream models. Existing memory pipelines often rely on hand-crafted heuristics and repeated LLM calls, which can introduce redundant context and high inference cost. We propose MemoryCPT, an end-to-end trainable agent memory pipeline that spans offline memory construction and online query-conditioned context generation. MemoryCPT consists of two stages: Query-agnostic Distillation (QAD), which distills a modular memory-construction pipeline into a compact model using explicit reasoning traces; and Query-aware Retrieval and Summarization (QAR), which combines reciprocal rank fusion (RRF) with a LoRA-based summarizer trained via Group Relative Policy Optimization (GRPO) under a cost-aware reward. We further introduce Quality per Cost (QPC) to quantify answer quality per unit inference cost. Experiments on LoCoMo and LongMemEval show that MemoryCPT improves the cost-performance trade-off over the evaluated baselines, while ablation and sensitivity analyses characterize the contributions of its components and the effects of key design choices.",
+      "authors": [
+        "Songxin Lei",
+        "Kun Ouyang",
+        "Weilin Ruan",
+        "Yuqian Wu",
+        "Zhijiang Guo",
+        "Yushi Sun",
+        "Fugee Tsung"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-08-05T13:37:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.04843v1",
+      "tags": [
+        "keyword:ai-safety",
+        "keyword:eff-reason",
+        "keyword:l-context-rl",
+        "keyword:opd",
+        "query:ai-safety",
+        "query:eff-reason",
+        "query:l-context-rl",
+        "query:opd"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "End-to-end memory pipeline distills modular construction into a compact model, reducing redundant context and inference cost; matches inference-efficiency requirement",
+      "llm_evidence_cn": "端到端记忆流水线通过蒸馏降低冗余上下文与推理成本，贴合推理效率需求",
+      "llm_evidence": "端到端记忆流水线通过蒸馏降低冗余上下文与推理成本，贴合推理效率需求",
+      "canonical_evidence": "端到端记忆流水线通过蒸馏降低冗余上下文与推理成本，贴合推理效率需求",
+      "llm_tldr_en": "MemoryCPT proposes an end-to-end trainable agent memory pipeline with Query-agnostic Distillation compressing memory construction into a compact model and Query-aware Retrieval and Summarization using reciprocal rank fusion and LoRA, improving cost-performance trade-offs for long-horizon LLM agents. It directly targets inference efficiency by reducing redundant context and repeated LLM calls.",
+      "llm_tldr_cn": "该论文面向长程LLM智能体的记忆系统，指出现有流水线依赖手工规则和重复LLM调用，带来冗余上下文与高推理成本。MemoryCPT提出两阶段端到端可训练方案：查询无关蒸馏将模块化记忆构建流程压入紧凑模型，查询感知检索与摘要结合倒数排名融合和LoRA生成上下文。该方法在降低推理成本的同时保持记忆恢复效果，为长上下文场景下的高效智能体推理提供了可行方案。",
+      "llm_tldr": "该论文面向长程LLM智能体的记忆系统，指出现有流水线依赖手工规则和重复LLM调用，带来冗余上下文与高推理成本。MemoryCPT提出两阶段端到端可训练方案：查询无关蒸馏将模块化记忆构建流程压入紧凑模型，查询感知检索与摘要结合倒数排名融合和LoRA生成上下文。该方法在降低推理成本的同时保持记忆恢复效果，为长上下文场景下的高效智能体推理提供了可行方案。",
+      "llm_tags": [
+        "query:eff-reason"
+      ],
+      "matched_query_tag": "query:eff-reason",
+      "matched_query_text": "inference efficiency in AI",
+      "matched_requirement_id": "req-26",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
