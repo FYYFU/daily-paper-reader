@@ -8,65 +8,67 @@
 ## 每次日报
 - [日报中心](/daily/README)
 
-- 最新运行日期：2026-08-09
-- 运行时间：2026-08-09 20:41:58 UTC
+- 最新运行日期：2026-08-10
+- 运行时间：2026-08-10 21:14:42 UTC
 - 运行状态：成功
 - 本次总论文数：15
-- 精读区：9
-- 速读区：6
+- 精读区：8
+- 速读区：7
 
 ### 今日简报（AI）
-今日精读9篇、速读6篇，重点聚焦扩散语言模型的高效蒸馏与智能体技能迁移；最值得关注的是两篇满分工作《OPTD》与《SPOT》，分别从自适应压缩与稀疏校准角度提升少步蒸馏效果。建议普通读者优先精读这两篇，理解其蒸馏损失设计与一致性约束的差异。
-- 详情：[/202608/09/README](/202608/09/README)
+今日精读8篇、速读7篇，共追踪15篇AI前沿论文。  
+最值得关注两项9分突破：扩散语言模型的自蒸馏压缩（OPTD）与推理模型自适应监督窗口（DASH），均聚焦高效自蒸馏。  
+若想快速入门，建议优先精读这两篇，速读中手术视觉Token化（Slot2Text）也颇具应用潜力。
+- 详情：[/202608/10/README](/202608/10/README)
 
 ### 精读区论文标签
-1. [OPTD: On-Policy Transition Distillation with Consistency-Guided Adaptive Compression for Few-Step Diffusion Language Models](/202608/09/2608.02942v1-optd-on-policy-transition-distillation-with-consistency-guided-adaptive-compression-for-few-step-diffusion-language-models)  
-   标签：评分：10.0/10、query:opd
-   evidence：用于少步扩散语言模型的在策略过渡蒸馏
-2. [SPOT: Sparse Probing and Outcome Calibration for On-Policy Distillation](/202608/09/2608.04419v1-spot-sparse-probing-and-outcome-calibration-for-on-policy-distillation)  
-   标签：评分：10.0/10、query:opd
-   evidence：研究on-policy distillation的稀疏探测与结果校准方法
-3. [Benign Alone, Harmful Together: Exploiting Experience Composition in Self-Evolving LLM Agents](/202608/09/2608.01759v1-benign-alone-harmful-together-exploiting-experience-composition-in-self-evolving-llm-agents)  
+1. [OPTD: On-Policy Transition Distillation with Consistency-Guided Adaptive Compression for Few-Step Diffusion Language Models](/202608/10/2608.02942v1-optd-on-policy-transition-distillation-with-consistency-guided-adaptive-compression-for-few-step-diffusion-language-models)  
+   标签：评分：9.0/10、query:opd
+   evidence：面向扩散语言模型的在线策略蒸馏
+2. [DASH: Divergence-Adaptive Supervision Horizons for On-Policy Self-Distillation of Reasoning Models](/202608/10/2608.06243v2-dash-divergence-adaptive-supervision-horizons-for-on-policy-self-distillation-of-reasoning-models)  
+   标签：评分：9.0/10、query:opd
+   evidence：在线自蒸馏与自适应监督视野
+3. [Simple-OPD: Demystifying Warm-up for On-policy Distillation](/202608/10/2608.06802v1-simple-opd-demystifying-warm-up-for-on-policy-distillation)  
+   标签：评分：9.0/10、query:opd
+   evidence：同策略蒸馏中的预热教师-学生分析
+4. [HarnessSafe: Evaluating Safety Across Persistent Carriers in Agent Harnesses](/202608/10/2608.06984v1-harnesssafe-evaluating-safety-across-persistent-carriers-in-agent-harnesses)  
    标签：评分：9.0/10、query:ai-safety
-   evidence：针对自进化LLM智能体的安全攻击，与越狱攻击/红队测试要求直接对应
-4. [Look Ahead Before You Distill: Future Trajectory Validation of Teacher Guidance for Agentic On-Policy Distillation](/202608/09/2608.01953v2-look-ahead-before-you-distill-future-trajectory-validation-of-teacher-guidance-for-agentic-on-policy-distillation)  
+   evidence：针对智能体持久载体安全风险的基准评估
+5. [MemOPD: On-Policy Distillation through Memory State Alignment for Long-Horizon Agents](/202608/10/2608.07068v1-memopd-on-policy-distillation-through-memory-state-alignment-for-long-horizon-agents)  
    标签：评分：9.0/10、query:opd
-   evidence：基于未来轨迹桥的智能体on-policy蒸馏
-5. [Privileged, but Biased: How PI-Conditioned Teachers Break Self-Distillation](/202608/09/2608.04794v1-privileged-but-biased-how-pi-conditioned-teachers-break-self-distillation)  
-   标签：评分：9.0/10、query:opd
-   evidence：研究自蒸馏作为强化学习的替代方案，并揭示困难任务上的失效
-6. [When Privileged Guidance Misaligns: State-Matched Routing and Contextualized Self-Distillation for Multi-Turn Agents](/202608/09/2608.05219v1-when-privileged-guidance-misaligns-state-matched-routing-and-contextualized-self-distillation-for-multi-turn-agents)  
-   标签：评分：9.0/10、query:opd
-   evidence：针对多轮智能体的特权在线策略蒸馏问题，提出状态匹配路由和情境化自蒸馏
-7. [Permission Denied: Policy-Graded Evaluation of Coding Agents in Hardened Environments](/202608/09/2608.02670v1-permission-denied-policy-graded-evaluation-of-coding-agents-in-hardened-environments)  
+   evidence：面向长时程智能体的在线策略蒸馏与记忆状态对齐方法
+6. [Exploring and Bridging Knowledge Holes in Unlearned Multimodal Large Language Models](/202608/10/2608.01849v1-exploring-and-bridging-knowledge-holes-in-unlearned-multimodal-large-language-models)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：硬化安全策略下的智能体安全评估
-8. [From Sports to Safety: Benchmarking Proactive Risk Inference in MLLMs](/202608/09/2608.05560v1-from-sports-to-safety-benchmarking-proactive-risk-inference-in-mllms)  
+   evidence：构建基准探测未学习多模态大模型的知识空洞，与安全基准和模型安全评估相关。
+7. [SynChain: Inducing Computer-Use Agent Systems to Construct Their Own Attack Chains](/202608/10/2608.06862v1-synchain-inducing-computer-use-agent-systems-to-construct-their-own-attack-chains)  
    标签：评分：8.0/10、query:ai-safety
-   evidence：提出面向MLLM的主动风险推理安全基准，属于安全基准类需求
-9. [What Current AI Benchmarks Leave Unmeasured: Modality, Search, Citations, and Implications (for Safety Evaluations)](/202608/09/2608.06202v1-what-current-ai-benchmarks-leave-unmeasured-modality-search-citations-and-implications-for-safety-evaluations)  
-   标签：评分：8.0/10、query:ai-safety
-   evidence：审计安全基准的假设，讨论对安全评估的影响
+   evidence：计算机使用智能体的自合成攻击链
+8. [Agent Memory Distillation: Empowering Small LLM Agents with Hierarchical Teacher Memory](/202608/10/2608.07169v1-agent-memory-distillation-empowering-small-llm-agents-with-hierarchical-teacher-memory)  
+   标签：评分：8.0/10、query:opd
+   evidence：面向小型LLM代理的师生记忆蒸馏
 
 ### 速读区论文标签
-1. [Search2Skill: Skill Distillation Beyond Knowledge Boundaries Via Rubric-Based Reinforcement Learning](/202608/09/2608.05245v1-search2skill-skill-distillation-beyond-knowledge-boundaries-via-rubric-based-reinforcement-learning)  
+1. [Slot2Text: Object-Centric Visual Tokenization for Efficient and Spatially Traceable Surgical MLLMs](/202608/10/2608.01473v1-slot2text-object-centric-visual-tokenization-for-efficient-and-spatially-traceable-surgical-mllms)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：物件中心视觉分词提升推理效率
+2. [Contextual Information Policy Optimization for Search Agents](/202608/10/2608.06128v1-contextual-information-policy-optimization-for-search-agents)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：面向搜索智能体的强化学习，使检索后推理基于外部证据
+3. [StateFlow: Sequence Pipeline Parallelism for Long-Context Modeling with Linear Recurrence](/202608/10/2608.06838v1-stateflow-sequence-pipeline-parallelism-for-long-context-modeling-with-linear-recurrence)  
+   标签：评分：7.0/10、query:l-context-rl
+   evidence：长上下文训练并行系统，为长输入序列RL训练提供基础设施支撑
+4. [An AI4AI Framework for Visual Token Pruning](/202608/10/2608.07193v1-an-ai4ai-framework-for-visual-token-pruning)  
+   标签：评分：7.0/10、query:eff-reason
+   evidence：面向视觉token剪枝的AI4AI框架，利用LLM自动设计剪枝算法以降低多模态推理开销
+5. [Trajectory-Relative Hindsight Distillation for Agentic Reinforcement Learning](/202608/10/2608.07371v1-trajectory-relative-hindsight-distillation-for-agentic-reinforcement-learning)  
    标签：评分：7.0/10、query:opd
-   evidence：基于强化学习的技能蒸馏
-2. [Search-Aided Joint Agent-Environment Reinforcement Learning for Robust Lifelong Multi-Agent Path Finding with Rotations](/202608/09/2608.05588v1-search-aided-joint-agent-environment-reinforcement-learning-for-robust-lifelong-multi-agent-path-finding-with-rotations)  
-   标签：评分：7.0/10、query:ai-safety
-   evidence：面向鲁棒终身多智能体路径规划的安全约束强化学习
-3. [SkillTrace: Traversing a Query-Skill Graph for Composable LLM Agents](/202608/09/2608.02356v1-skilltrace-traversing-a-query-skill-graph-for-composable-llm-agents)  
+   evidence：智能体强化学习中的轨迹相对事后蒸馏框架
+6. [History Matters: Meta-policy Delegation with Heterogeneous Multi-agent Reinforcement Learning](/202608/10/2608.03833v1-history-matters-meta-policy-delegation-with-heterogeneous-multi-agent-reinforcement-learning)  
    标签：评分：6.0/10、query:agent-swarm
-   evidence：面向复杂任务执行的LLM智能体技能组合图谱
-4. [SkillTrace: Traversing a Query-Skill Graph for Composable LLM Agents](/202608/09/2608.02356v2-skilltrace-traversing-a-query-skill-graph-for-composable-llm-agents)  
+   evidence：基于MARL的异构智能体任务委派，与智能体集群协同执行相关
+7. [The Optimizer Is the Agent: Reasoning-Driven Search across Prompts, Programs, and ML Workflows](/202608/10/2608.06714v1-the-optimizer-is-the-agent-reasoning-driven-search-across-prompts-programs-and-ml-workflows)  
    标签：评分：6.0/10、query:agent-swarm
-   evidence：面向可组合大语言模型智能体的查询-技能图遍历，支持复杂任务分解
-5. [EvoHarness-RL: Learning Self-Evolving Runtime Harness for Long-Horizon LLM Agents](/202608/09/2608.05446v1-evoharness-rl-learning-self-evolving-runtime-harness-for-long-horizon-llm-agents)  
-   标签：评分：6.0/10、query:agent-swarm
-   evidence：面向长时程智能体的RL运行时框架学习，支持工具调用和复杂任务执行
-6. [EnvACE: Internalizing Environment Dynamics via World Rehearsal for Agentic Reinforcement Learning](/202608/09/2608.06197v1-envace-internalizing-environment-dynamics-via-world-rehearsal-for-agentic-reinforcement-learning)  
-   标签：评分：6.0/10、query:l-context-rl
-   evidence：面向长程工具使用智能体的强化学习训练，采用世界预演替代外部环境交互，与长输入序列RL训练相关
+   evidence：自主使用工具的智能体进行推理驱动的优化
 
 
 <div class="dpr-home-promo-card">

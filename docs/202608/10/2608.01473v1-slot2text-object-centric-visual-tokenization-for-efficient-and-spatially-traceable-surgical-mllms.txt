@@ -1,0 +1,661 @@
+Title: Slot2Text: Object-Centric Visual Tokenization for Efficient and Spatially Traceable Surgical MLLMs
+
+URL Source: https://arxiv.org/pdf/2608.01473v1
+
+Published Time: Tue, 04 Aug 2026 01:34:45 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+## Slot2Text: Object-Centric Visual Tokenization for Efficient and Spatially Traceable Surgical MLLMs 
+
+Guiqiu Liao 1,2 , Matjaž Jogan 1,2 , Daniel A. Hashimoto 1,2,3 
+
+> 1
+
+GRASP Laboratory, University of Pennsylvania 
+
+> 2
+
+PCASO Laboratory, Department of Surgery, University of Pennsylvania 
+
+> 3
+
+Department of Computer and Information Science, University of Pennsylvania Guiqiu.Liao@pennmedicine.upenn.com 
+
+Abstract 
+
+Multimodal large language models (MLLM) for surgical scene understanding typically inject hundreds of dense visual to-kens into a language model, leading to costly inference and limited spatial traceability for generated answers. We present Slot2Text, a dual-mode surgical MLLM that replaces dense representations of visual input with a compact set of regions encoded as slot latents. Instead of relying on contrastive align-ment of the visual encoder with language, Slot2Text groups self-supervised vision features into a few regions–slots that are consumed by the language model as area-labeled visual tokens. Slot2Text-Fast uses the slot prefix to answer surgi-cal questions. Slot2Text-Reason also identifies and locates ar-eas relevant for reasoning, linking language outputs to corre-sponding slot tokens, masks or regions. Experiments on mul-tiple visual question answering and visual grounding bench-marks show that Slot2Text-Fast is competitive with the state-of-the-art baseline at a much lower cost, reducing the average total token consumption by 91.8% and the visual prefix from 1,295 to 47 tokens (a 96.4% reduction). Slot2Text-Reason trades additional tokens and latency for explicit area identi-ties, locations, and traceable spatial evidence. These results establish compact slot latents as an efficient default visual in-terface for surgical MLLMs, with grounded reasoning invoked when greater spatial traceability is required. 
+
+Introduction 
+
+Surgical scene understanding requires identification of sur-gical actions and objects such as instruments, organs and tissue, and their spatial relations. Multimodal large language models (MLLMs) offer a unified interface for these types of problems: classification, visual question answering (VQA), region-based VQA, and localization can all be expressed as image-conditioned language generation (Liu et al. 2023; Wang et al. 2024, 2026). This flexibility is particularly valu-able for surgical scene understanding as the same view often contains several visually similar instruments and anatomical structures. It however also creates a traceability problem as text answers do not refer to the visual regions that supplied the evidence. The visual interface of an MLLM also determines much of its computational cost. Dense and multiscale designs ap-pend hundreds or thousands of visual tokens to the text input sequence (Wang et al. 2026; Lin et al. 2024), increasing pre-fill computation, activation memory, and key–value cache Encoder  
+
+> Patch feature
+> Slot
+> Attention VL
+> Bridge
+
+LLM  
+
+> Original
+> Query
+> Object Reasoning
+> Query
+> Response
+> Slot
+> Token
+
++
+
+> Slots
+> Encoder
+> Patch feature
+> Connector
+
+LLM 
+
+> Patch
+> Token
+> Response
+> Query
+
+Figure 1: Comparison of a conventional dense-token MLLM (top) and Slot2Text (bottom). Instead of projecting visual patch embeddings into the LLM’s input space, Slot2Text groups patch embeddings into a compact slot representa-tion. A vision-language (VL) bridge maps slot region embed-dings to slot tokens that support direct answering or object– grounded reasoning. ^ denotes frozen components. usage. Pooling or pruning of patches can sometimes lower the number of tokens (Li et al. 2025) but it also discards the information needed for spatial grounding. Real-time clinical applications in surgery need to be effi-cient and interpretable. Per-frame token costs are especially prohibitive for surgical video. Representations of surgical scenes should therefore retain task-relevant semantics, use few language-model tokens, and preserve spatial correspon-dence. Yet existing surgical MLLMs remain token-inefficient and provide no explicit correspondence between visual to-kens and locations in the surgical field. We therefore propose object-centric compression as an al-ternative to conventional patch-token representations, aiming to shorten the visual prefix while preserving explicit token-to-region correspondence without relying on contrastive arXiv:2608.01473v1 [cs.CV] 2 Aug 2026 image–text pretraining. Figure 1 illustrates our approach. Slot2Text first groups self-supervised patch features into a number of region-bearing tokens learned through slot atten-tion (Siméoni et al. 2025; Locatello et al. 2020). A vision-language (VL) bridge then projects each slot latent to LLM input, together with a slot ID that provides explicit region identity to the LLM. Slot2Text is able to generate a response directly using this information in the prefix. During training, structured region, bounding-box, and coarse-location super-vision are used to connect language outputs to the corre-sponding slot masks. Slot2Text remains competitive with the dense token based state of the art baseline across three sur-gical datasets while improving several language-generation and region-based QA metrics and retaining explicit spatial associations. Our contributions are threefold. First, we introduce an object-centric visual encoding that transforms dense patch features of surgical scenes into mask-bearing region repre-sentations that reduce MLLM token load by 92% in compari-son to the state-of-the-art surgical MLLMs. Second, we cou-ple this representation with MLLM training using structured grounding supervision based on explicit spatial identities and segmentation masks, supporting both direct answering and region-grounded response generation within the same model family. Third, experiments on multiple real-world surgical benchmarks demonstrate competitive surgical QA performance and characterize the accuracy-compression-grounding tradeoff against the dense SOTA representations. 
+
+Related Work 
+
+We briefly position Slot2Text with respect to related work in surgical MLLMs, efficient visual tokenization, and object-centric representation learning. The Supplementary Material provides a broader discussion. 
+
+Surgical Multimodal Language Models Earlier surgical VQA systems used task-specific visual and language fusion, whereas recent models formulate recognition, question an-swering, and localization as instruction following. Surgical-LVLM introduces grounded surgical VQA, and EndoChat unifies multiple surgical dialogue paradigms using multi-scale visual-token interaction and visual contrast-based rea-soning (Bai et al. 2023; Wang et al. 2024, 2026). These methods establish strong baselines for surgical scene under-standing. Slot2Text addresses a complementary question: can the dense visual interface used in these models be replaced by a region-based prefix that consumes an order of magni-tude fewer tokens while retaining an explicit trace from a response to the underlying spatial evidence. 
+
+Efficient Visual Tokenization General-domain MLLMs reduce visual sequence length through learned projectors, token selection and merging, or spatial pooling. Honeybee learns a locality-enhanced projector with a controllable to-ken count; LLaVA-PruMerge adaptively retains and merges informative patches; and DeCo uses parameter-free two-dimensional pooling to separate token compression from semantic abstraction (Cha et al. 2024; Shang et al. 2025; Yao et al. 2024). More recent approaches learn token selec-tion or progressively remove redundant tokens inside the MLLM (Song et al. 2026; Chen et al. 2026). These ap-proaches primarily optimize the accuracy–cost tradeoff. In contrast, Slot2Text performs structured compression before feeding the representation to the LLM and retains the slot assignment mask corresponding to every region token. 
+
+Object-Centric Representations and Grounding Slot Attention represents a scene with a set of exchangeable la-tent entities, and DINOSAUR extends this idea to real-world images by reconstructing self-supervised foundation features (Locatello et al. 2020; Seitzer et al. 2023). Slot-VLM aggre-gates visual features into complementary object and event slots for video–language reasoning, while Slot-MLLM learns a discrete object-centric visual tokenizer that supports both multimodal understanding and generation (Xu et al. 2024; Chi et al. 2025). In contrast, Slot2Text uses continuous vi-sual feature derived slots solely as a compact visual prefix for surgical MLLMs. Each slot is enriched with dense pooled appearance and geometry and linked back to its source region through mask-based area 1 IDs and bounding boxes, jointly enabling visual-token compression and spatial traceability. 
+
+Method 
+
+Problem Setting and Surgical Instruction Data 
+
+Given a surgical image I, a question q, and an answer se-quence y, a MLLM generates p(y | I, q ) by appending image-derived embeddings into the LLM context. Our goal is to replace a dense visual prefix with a compact set of region representations V = {vi}Ki=1 while retaining both semantic information and a recoverable spatial support for every vi.
+
+Object-Centric Visual Tokenizer 
+
+A H × W image is mapped to a h × w grid of patch embed-dings using a frozen DINOv3 ViT encoder (Siméoni et al. 2025), 
+
+X = EViT (I) ∈ RN ×dx , N = h × w. (1) A feature adapter then maps X to a dslot dimensional Slot Attention space. Starting from nine initialized queries, three iterative attention updates produce slot latents S = {si}Ki=1 
+
+and soft assignment masks A ∈ RK×h×w. For each patch 
+
+j, the assignments compete across slots and associate that patch with a small number of slot latents. As illustrated in Figure 2A, the slot module is pretrained without supervision by minimizing feature reconstruction objective. A trainable decoder predicts a patch-feature re-construction from each slot, and the soft masks combine the component predictions: 
+
+bxj =
+
+> K
+
+X
+
+> i=1
+
+Aij D(si)j , Lslot = 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+∥bxj − xj ∥22. (2) This encourages the slots to discover meaningful regions of the dense feature map. After the pretraining step we freeze the weights of both the feature-adapter and the slot atten-tion module. More details on slot attention can be found in Supplementary Material. 
+
+> 1Throughout this work, ‘area’ and ‘region’ are used interchange-ably. ‘Area-ID’ consumes fewer tokens than ‘Region-ID’ and was thus used in the mask encoding. * Note that <slot token -id> is just an indicator of the location of slot latent which can not be described directly in text.
+> Encode to
+> Slots
+
+Slot Token 
+
+Decoder area-1 area-1 area-1 area-1 area-5 area-1 area-1 area-1 
+
+> area-1 area-1 area-1 area-4 area-5 area-5 area-5 area-1
+> area-1 area-1 area-3 area-4 area-4 area-2 area-2 area-5
+> area-2 area-3 area-3 area-6 area-4 area-2 area-2 area-2 area-1 area-3 area-6 area-6 area-7 area-2 area-2 area-2 area-3 area-3 area-6 area-6 area-6 area-8 area-8 area-8 area-3 area-9 area-6 area-6 area-6 area-9 area-8 area-8
+> area-9 area-9 area-6 area-6 area-6 area-9 area-9 area-9
+
+Query : provide bounding boxes for all areas 
+
+Response : 1:[0.0 0.0 1.0 0.4]; 2:[0.0 0.2 0.2 1.0]; 3:[0.0 0.3 0.4 0.9]; 4:[0.2 0.1 0.6 1.0]; 5:[0.4 0.0 
+
+1.0 0.4]; 6:[0.5 0.1 1.0 0.6]; 7:[0.5 0.5 0.9 0.9]; 8:[0.6 0.6 1.0 0.9]; 9:[0.6 0.7 1.0 1.0] 
+
+Query : Share a comprehensive rundown of the 
+
+presented image 
+
+Response : The image depicts a robot-assisted minimally invasive surgery being performed in abdomen. In the image, there are three main objects: needle driver[0.0 0.3 0.4 0.9], cadiere forceps [0.4 0.0 1.0 0.4], and needle driver [0.6 0.6 1.0 0.9]; The cadiere forceps is located on the top-right of the image.  
+
+> Response : Here are the area masks:
+> Query : Provide the masks of all areas (uncompressed). Query : Provide the masks of all areas (compressed).
+> Response : Here are the compressed area masks:
+
+Query : what are the IDs of these areas: <slot token -9> <slot token2> <slot token -3> <slot token -1> 
+
+<slot token -5> <slot token -8> <slot token -4>? 
+
+Response : area-9 area-2 area-3 area-1 area-5 area-8 area-4 
+
+LLM 
+
+Query 
+
+Response  Semantic Descriptor 
+
+𝓛 𝑡𝑒𝑥𝑡 
+
+Query : which areas are the target object cadiere forceps, and where is it located? 
+
+Response : area-5; [0.4 0.0 1.0 0.4] 
+
+Encoder  Decoder 
+
+Slots 
+
+Slot Attention masks 
+
++
+
+Patch feature 
+
+𝑅𝑒𝑐𝑜𝑛𝑠𝑡𝑟𝑢𝑐𝑡𝑖𝑜𝑛 𝑙𝑜𝑠𝑠 
+
+Slot 
+
+Attention 
+
+Reconstructed feature 
+
+A. Slot attention pretraining 
+
+B. MLLM 
+
+training Figure 2: Overview of the training framework. (A) Unsupervised Slot Attention pretraining. Frozen visual features are grouped into slots and decoded through soft assignment masks to reconstruct the original patch-feature map, learning region-oriented slot latents without manual segmentation labels. (B) MLLM training with structured grounding supervision. Area-labeled slot tokens provide a compact visual prefix, while mask, area-ID, bounding-box, and location targets connect the region representations to spatial evidence and semantic responses. 
+
+Geometry-Augmented Region Tokens 
+
+The latent si alone is a compressed summary. To retain more of the original DINOv3 appearance, Slot2Text softly pools the dense patch embeddings using the corresponding mask: 
+
+pi =
+
+PNj=1 Aij xj
+
+PNj=1 Aij + ϵ . (3) We additionally compute the mask mass mi = P 
+
+> j
+
+Aij and a normalized centroid (cxi , c yi ) to sort the slots which speeds up the training. The ordered-slot fusion module combines the slot state, pooled appearance, and geometry: 
+
+zi = Fθ ([ si; pi; cxi ; cyi ; mi]) , vi = Pϕ(zi), (4) where Fθ returns K fused slot region embeddings, and the VL bridge Pϕ maps it to the LLM space as a slot token vi.The original dense patch sequence is never passed to the LLM. These region representations are then interleaved with or-dinary tokenizer embeddings: 
+
+[e(area-1: ), v 1, e (area-2: ), v 2, . . . , e (area-K: ), v K ],
+
+and image start and end embeddings are added. In our implementation the representation contains K learned region vectors. Tokenizing the K text labels produces an actual approximate visual prefix length of K ×5 LLM tokens. These labels create a discrete linguistic cue for referring back to the corresponding continuous region and mask. 
+
+Direct Answering and Area-Grounded Reasoning 
+
+Slot2Text can be trained for several response modes. Slot2Text-Fast conditions standard surgical QA directly on the labeled region prefix and question. This mode treats the compact region set as a replacement for the dense visual tokens in standard MLLMs and does not create any inter-mediate textual masks for reasoning, nor does it generate a rationale. A more accurate and explainable mode Slot2Text-Reason (Slot2Text-R) adds structured grounding supervision for segmentation-style QA sessions as summarized in Figure 2B. Let T denote the binary target-object mask and Ah 
+
+> i
+
+the hard assignment mask for area i. The target area is selected by 
+
+i⋆ = arg max  
+
+> i
+
+IoU  Ah 
+
+> i
+
+, T  . (5) The target area also yields a normalized bounding box 
+
+b(T ) = [ x0, y 0, x 1, y 1] coordinates and a coarse quadrant determined by its center. The box coordinates can be directly expressed in text, while the slot mask area is converted to uncompressed or compressed text through a semantic de-scriptor inspired by (Lan et al. 2025). The training pipeline appends multiple auxiliary turns to the original QA requested by the user: slot mask QA (com-pressed or uncompressed), area ID QA, and area box coordi-nates QA. These targets teach the LLM to translate between object descriptions, region identifiers, and explicit coordi-nates while keeping the spatial evidence tied to the slot tokens and masks. 
+
+Multi-Stage Visual Instruction Tuning 
+
+After the Slot Attention module is trained, a multi-stage vi-sual instruction-tuning strategy progressively aligns and fine-tunes the VL bridge and the large language model (LLM). 
+
+VL Bridge Alignment In this stage we train only the ordered-slot fusion module, slot projector, visual projection layer, and learnable image-boundary embeddings. This stage aligns the frozen region-level visual representations with the existing LLM embedding space while preserving the pre-trained visual and linguistic representations. 
+
+Mixed Reasoning Instruction Tuning In this stage, the vi-sion encoder and Slot Attention module remain frozen, while the VL bridge and the LLM decoder (based on Llama 3.2 1B) are optimized using the standard autoregressive language-modeling objective Ltxt . Specifically, we perform supervised fine-tuning (SFT) on a mixture of visual question-answering data and augmented multi-turn question-answering sessions containing explicit slot-based reasoning traces. The reported models adapt the language decoder using Low-Rank Adap-tation (LoRA) (Hu et al. 2021). This enables the model to reason over object-centric slot representations while retain-ing its general visual instruction-following ability. 
+
+Progressive Reasoning Acceleration In the final stage, we progressively specialize the model toward more efficient slot-based reasoning by fine-tuning with increasingly compact and constrained reasoning formats. First, we fine-tune the reasoning model using compressed slot masks and region identifiers. This reduces the number of visual and reasoning tokens required during inference, re-sulting in the Slot2Text-Reason-Compress ( Slot2Text-R-C )model. Next, we replace the compressed masks with com-pact slot-localization coordinates, further reducing the visual prefix and reasoning overhead to train Slot2Text-Reason-Localization ( Slot2Text-R-L ). Finally, we fine-tune the accelerated reasoning model on the original instruction question-answering data without ex-plicit reasoning traces. This procedure specializes the LLM for direct answer generation and results in our most efficient model, Slot2Text-Fast . Details on training setup can be found in the Supplementary Material .
+
+Results 
+
+Datasets and Experimental Protocol 
+
+Self-Supervised Slot Attention Pretraining Data For self-supervised Slot Attention pretraining, we use an image-only corpus of more than 900K frames from four surgi-cal video datasets: MICCAI 2022 SurgToolLoc (Zia et al. 2023), Cholec80(Twinanda et al. 2016), EndoVis 2017 (Al-lan et al. 2019), and Thoracic Robotic Surgery (Liao et al. 2025a). This corpus primes the slot tokenizer on diverse la-paroscopic, robotic abdominal, and thoracic surgical scenes. Dataset details are provided in the Supplementary Material. 
+
+Surgical Instruction-Tuning Data Surgical visual in-struction tuning is based on the Surg-396K dataset intro-duced with EndoChat (Wang et al. 2026) with the origi-nal training/test split. It contains approximately 41.4K endo-scopic images and 396K image–instruction pairs collected or generated from three constituent datasets: Cholec80-VQA, EndoVis-VQLA, and CoPESD. Cholec80-VQA contributes 21,591 frames sampled from laparoscopic cholecystectomy videos, together with visual QA pairs. EndoVis-VQLA con-tributes 2,104 frames from the EndoVis 2017 and 2018 robotic-surgery datasets, with QAs and object-level bound-ing boxes. CoPESD contributes 17,679 images extracted from endoscopic submucosal dissection videos, with annota-tions describing surgical instruments, target tissues, motions, motion directions, and their corresponding spatial regions. Slot area based reasoning traces QA for this dataset are gen-erated on-the-fly during training. 
+
+Implementation and Training Setup We use a DINOv3 ViT-B/16 encoder at 224 × 224 resolution and pretrain a Slot Attention module with 9 slots using three iterative updates for 10 epochs. Stage 1 aligns the VL bridge for eight epochs while freezing the vision encoder, Slot Attention, and LLM weights. Stage 2 performs four epochs of instruction tuning, optimizing the bridge and rank-128 LoRA parameters of the Llama 3.2 1B language backbone while keeping DINOv3 and Slot Attention frozen. Both stages use an effective batch size of eight. Stage 1 uses a cosine learning rate from 2 × 10 −5
+
+to 1 × 10 −5, whereas Stage 2 uses a constant learning rate of 
+
+2 × 10 −6. Further implementation and hardware details are provided in the Supplementary Material. 
+
+Evaluation Protocol and Baselines We evaluate short-answer recognition using accuracy and F-score, spatial grounding using AP@50 and mIoU, and Visual QA and Region-Based QA using language metrics BLEU, CIDEr, METEOR, ROUGE-1, and ROUGE-L. Predicted coordi-nates are parsed as bounding boxes and mapped to the orig-inal image space before grounding evaluation. General-purpose MLLMs are evaluated zero-shot, while specialized surgical models serve as domain-specific base-lines. Token efficient baselines are trained and evaluated us-ing the same data, preprocessing, language backbone, and evaluation protocol as our variants. 
+
+Comparison to State-of-the-Art Methods 
+
+Token-Efficient Visual Grounding Table 1 compares Slot2Text with three matched token-compression baselines for short-answer recognition and spatial grounding. The Slot-MLLM-style baseline (Chi et al. 2025) uses a Slot Q-Former to construct object-centric visual tokens, but does not expose the corresponding slot-assignment masks as textual reason-ing traces. TokenPacker (Li et al. 2025) uses a coarse-to-fine visual projector to condense dense image features into a shorter token sequence. We additionally implement a mask-pooling baseline that uses masks from the same pretrained Table 1: Comparison experiments with visual-token compression methods in Single Phrase QA and Grounding QA. The macro average is computed across the three datasets, and the best result in each metric column is shown in bold. 
+
+Model EndoVis-18 EndoVis-17 CoPESD Average F-score AP@50 mIoU F-score AP@50 mIoU F-score AP@50 mIoU F-score AP@50 mIoU Slot-MLLM (Chi et al. 2025) 33.60 85.26 73.53 34.80 73.73 66.60 38.87 98.82 83.94 35.76 85.94 74.69 TokenPacker (Li et al. 2025) 37.07 90.30 75.68 39.15 76.27 67.42 39.86 99.22 87.70 38.69 88.60 76.93 Slot Packer-Mask Pool Only 40.63 88.87 79.14 33.50 78.39 72.25 33.44 99.75 87.17 35.86 89.00 79.52 Slot2Text-R 40.24 89.93 80.17 36.59 85.17 77.42 40.36 99.72 89.66 39.06 91.61 82.42 
+
+Slot2Text-R-C 41.89 87.69 77.96 32.91 74.58 72.28 40.78 99.13 87.84 38.53 87.13 79.36 Slot2Text-R-L 41.44 89.12 80.24 37.31 79.66 74.67 41.36 99.66 89.38 40.04 89.48 81.43 Slot2Text-Fast 38.81 89.43 79.98 36.92 80.51 74.75 42.30 99.84 89.91 39.34 89.93 81.55 
+
+Table 2: Comparison experiments with zero-shot and domain-specific MLLMs in Region-Based QA, Visual QA, and inference efficiency. Published baseline values follow EndoChat (Wang et al. 2026). LM Tokens denotes the average total token usage per sample, while Samples/s denotes end-to-end throughput. The best result within each dataset and metric is shown in bold.                                                                                                                                                                                                      
+
+> Dataset Model Region-Based QA Visual QA Efficiency BLEU-4 CIDEr METEOR ROUGE-1 ROUGE-L BLEU-4 CIDEr METEOR ROUGE-1 ROUGE-L LM Tokens ↓Samples/s ↑
+> CoPESD BiomedGPT (Zhang et al. 2023) 1.69 0.02 7.17 25.38 22.46 1.62 0.01 5.88 19.23 16.25 ––LLAVA-Med (Li et al. 2023) 6.68 0.15 17.42 50.70 44.04 4.56 0.21 14.08 42.78 35.37 ––SPHINX (Lin et al. 2024) 6.19 0.02 2.53 5.58 5.01 7.03 0.26 14.98 42.30 34.75 1372.60 2.19 EndoChat (Wang et al. 2026) 49.79 3.44 38.04 71.98 65.44 46.94 3.21 39.61 73.56 66.79 1359.15 3.59 Slot2Text-R 51.81 3.44 39.45 72.25 66.77 45.90 3.04 36.40 68.34 62.56 1160.20 4.18 Slot2Text-R-C 52.07 3.47 39.73 72.42 66.52 45.39 2.93 36.78 67.52 61.56 552.30 4.32 Slot2Text-R-L 50.99 3.39 39.07 72.29 66.70 46.72 3.13 37.02 68.69 62.80 307.70 4.30 Slot2Text-Fast 50.16 3.36 38.45 71.96 66.56 46.51 3.11 36.86 68.69 62.99 111.10 4.62
+> EndoVis BiomedGPT (Zhang et al. 2023) 2.89 0.15 9.67 27.08 25.84 7.70 0.69 14.12 38.89 29.37 ––LLAVA-Med (Li et al. 2023) 6.87 0.26 17.31 39.65 36.51 13.23 1.00 18.79 49.32 36.26 ––SPHINX (Lin et al. 2024) 2.96 0.10 6.17 11.27 9.57 14.62 1.00 16.14 37.17 33.73 ––EndoChat (Wang et al. 2026) 38.89 3.49 31.15 65.18 62.56 36.98 3.75 31.76 66.63 63.14 ––Slot2Text-R 38.95 3.73 31.84 64.84 62.16 37.73 3.70 30.92 68.03 65.34 ––Slot2Text-R-C 41.44 3.78 32.09 64.62 61.92 38.85 3.60 31.28 67.51 65.47 ––Slot2Text-R-L 40.98 3.73 32.56 65.54 63.27 37.94 3.57 31.77 67.98 65.18 ––Slot2Text-Fast 39.62 3.70 31.41 63.61 62.53 37.80 3.52 31.54 68.35 65.64 ––
+
+Table 3: Comparison with domain-specific models on Cholec80-VQA (Seenivasan et al. 2022). Published baseline values follow the comparison reported by EndoChat (Wang et al. 2026). Accuracy and F-score evaluate Single Phrase QA, while BLEU-4 and METEOR evaluate Visual QA. The best result in each metric column is shown in bold.                                       
+
+> Model Single Phrase QA Visual QA Acc F-score BLEU-4 METEOR MedFuse (Sharma, Purushotham, and Reddy 2021) 86.10 30.90 33.30 22.20 VisualBert (Li et al. 2019) 89.70 63.30 95.60 71.90 VisualBert ResMLP (Seenivasan et al. 2022) 89.80 63.40 95.20 71.10 Surgical-LVLM (Wang et al. 2024) 87.53 60.10 95.13 70.88 EndoChat (Wang et al. 2026) 92.05 61.64 96.81 72.16 Slot2Text-R 90.32 66.10 97.33 72.34 Slot2Text-R-C 90.62 68.88 97.58 72.92 Slot2Text-R-L 90.24 66.09 97.69 73.27
+> Slot2Text-Fast 90.91 68.85 97.62 73.10
+
+Slot Attention module as Slot2Text to pool DINOv3 features into the same number of visual tokens and maps them through an MLP-based VL bridge, without slot latents or area-mask reasoning supervision (Slot Packer-Mask Pool Only). Overall, our Slot2Text family provides the strongest macro-average performance: Slot2Text-R-L achieves the highest F-score of 40 .04 , while Slot2Text-Reason obtains the highest AP@50 and mIoU of 91 .61 and 82 .42 , respec-tively. Relative to the strongest competing result for each average metric, these scores improve F-score by 1.35 points over TokenPacker and improve AP@50 and mIoU by 2.61 
+
+and 2.90 points over the mask-pooling baseline. Moreover, both Slot2Text-Reason and Slot2Text-Fast outperform the Slot-MLLM-style and TokenPacker baselines on all three macro-average metrics, demonstrating stronger recognition and grounding performance across the three datasets. 
+
+Visual Question Answering and Efficiency We evaluate the visual question answering performance of Slot2Text on visual QA, region-based QA, and single-phrase QA bench-marks and quantify its computational efficiency. Table 2 shows that the compact representation is particularly effective when questions are conditioned on localized visual evidence. Averaged across EndoVis-18 and EndoVis-17, Slot2Text-R-C achieves the best region-based BLEU-4 and CIDEr scores, exceeding specialized surgical model EndoChat (Wang et al. 2026) by 2.55 and 0.29 points, respectively. Slot2Text-R-L obtains the best region-based METEOR, ROUGE-1, and ROUGE-L scores, whereas Slot2Text-Fast achieves the best visual-QA ROUGE-1 and ROUGE-L scores. Split-specific results are provided in Supplementary Table 9. On CoPESD, Slot2Text-R-C outperforms EndoChat on all 2.5 
+
+> 3.0
+> 3.5 4.0
+> 4.5
+> 5.0
+> 1.0 2.0 3.0 4.0 5.0 6.0 7.0
+> 0200 400 600 800 1000 1200 1400
+> Speed (Samples/s)
+> Memory (GB)
+> Tokens
+
+Figure 3: Computational efficiency of Slot2Text variants compared with the dense EndoChat baseline. We report infer-ence speed, peak GPU memory, and the total token number. Higher speed, lower memory and token counts are preferred. five region-based QA metrics, including improvements of 
+
+2.28 points in BLEU-4 and 1.69 points in METEOR. How-ever, the compact variants remain below EndoChat on un-restricted visual QA. This contrast indicates that Slot2Text’s explicit area identities are most beneficial when the visual localization output is required. Table 3 presents the Cholec80-VQA comparison over other specialized vision MLLMs. All Slot2Text variants im-prove upon the strongest baseline EndoChat in single-phrase F-score and both Visual QA metrics, although single-phrase accuracy decreases slightly. In particular, Slot2Text-Fast in-creases F-score from 61 .64 to 68 .85 while reducing accuracy by 1.14 points. Slot2Text-R-L improves BLEU-4 from 96 .81 
+
+to 97 .69 and METEOR from 72 .16 to 73 .27 .Figure 3 shows that this performance is obtained with substantially lower computational cost. Compared with EndoChat, Slot2Text-Fast reduces the mean number of language-model tokens by an order of magnitude, from 
+
+1,359 .15 to 111 .10 per sample, increases throughput from 
+
+3.59 to 4.62 samples/s, and reduces peak inference GPU memory from 6.55 to 2.66 GiB. Reasoning variants require more tokens than Slot2Text-Fast to generate explicit area and location information, but all remain faster and use sub-stantially less GPU memory than the EndoChat baseline. Together, the VQA and efficiency results demonstrate a con-trollable tradeoff between direct, token-efficient answering and more detailed area-grounded generation. 
+
+Ablation Studies 
+
+Effect of Slot Token Budget Figure 4 quantifies the accu-racy/Token efficiency tradeoff as the slot budget of Slot2Text-Reason increases from K = 5 to K = 13 . Increasing K from 5 to 9 (our default setting) improves the Acc and mIoU on both the EndoVis and CoPESD. Increasing the slot num-ber to thirteen produces only marginal performance changes (Endovis mIoU: 78.8 vs 78.2, CoPESD mIoU: 89.7 vs 90.0), while expanding the visual prefix tokens from 47 to 71. Ad-ditional data-specific results are reported in Supplementary Tables 7 and 8. Figure 5 demonstrates the detail of Slot2Text MLLM out-put on the same surgical image using K = 5 and K = 13 .mIoU (%)              
+
+> Acc (%)
+> Visual Token
+> 87.2 89.7 90.0 72.1 78.8
+> 78.2
+> 50.0 55.0 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 5913 CoPESD Endovis
+> 74.7 75.3 75.3 56.4 60.2 60.0 40.0 45.0 50.0 55.0 60.0 65.0 70.0
+> 75.0
+> 80.0 5913 CoPESD Endovis
+> 27
+> 47 71 10
+> 20
+> 30 40 50 60 70 80 5913 Visual Token 87.2
+> 89.7 90.0 72.1 78.8 78.2
+> 50.0 55.0
+> 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 5913 CoPESD Endovis
+> KKK
+
+Figure 4: Effect of the slot budget K on accuracy, mIoU, and visual-prefix token. EndoVis and CoPESD results are reported separately. In both settings, the slot masks converted from MLLM text output define an explicit area vocabulary, and intermediate responses associate the ultrasound probe, bipolar forceps, and Prograsp forceps with area IDs and normalized bound-ing boxes. These grounded responses provide spatial context for the final scene description. The five-slot model produces a coarser partition, whereas the thirteen-slot model separates instruments, tissue, and background more finely. Because area IDs are assigned independently for each decomposition, their numerical values are local to a particular slot budget and should not be compared directly across settings. 
+
+Effect of Grounding Supervision Table 4 isolates the con-tributions of slot latents, early reasoning, and the form of the uncompressed representation. In the Fast panel, the full con-figuration leads seven of the nine dataset-specific metrics and all three macro averages, reaching an average F-score, AP@50, and mIoU of 39 .34 , 89 .93 , and 81 .55 , respectively. The mask-pool-only baseline that does not use slot token and reasoning traces remains competitive on EndoVis-18 but produces the lowest average F-score ( 35 .86 ). Adding slot latents without early reasoning raises the average F-score and mIoU to 38 .03 and 80 .26 and gives the best EndoVis-18 AP@50 ( 90 .24 ), but remains weaker than the full model on EndoVis-17 and CoPESD. Using only compressed slot mask text yields improved average F-score and mIoU over mask-pool-only, yet it reduces the average AP@50. In the localization-reasoning panel, the full Slot2Text-R-L model achieves better EndoVis-18 results, F-score on all three datasets, and higher macro averages ( 40 .04 F-score, 
+
+89 .48 AP@50, and 81 .43 mIoU) in comparison to the com-pressed localization-reasoning counterpart. This indicates that involving uncompressed reasoning in early stage of train-ing can benefit the specialized accelerated models on local-ization and grounding performance. 
+
+Effect of VL-Bridge Fine-Tuning Table 5 shows that con-tinued VL-bridge tuning during Stage 2 improves the Surg-396K average F-score, AP@50, and mIoU by 4.92 , 3.27 ,and 6.05 points, respectively, while also improving all re-ported Cholec80-VQA metrics. These gains demonstrate that Stage 1 alignment alone is insufficient for downstream recog-nition and grounding. Overall, the ablation study shows reasoning-based variants provide stronger region-grounding capabilities and depend Query : which area is this object ultrasound probe? and where is it located?  
+
+> Response : area-1; [0.01, 0.38, 1.0, 0.62]
+> Query : which area is this object bipolar forceps, and where is it located?
+> Response : area-3; [0.01, 0.03, 0.67, 0.31]
+> Query : which area is this object prograsp forceps? and where is it located?
+> Response : area-4; [0.63, 0.01, 1.0, 0.28]
+> Query : Write an exhaustive depiction of the given image.
+> Response : The image depicts a close up view of a surgical procedure, and there are several surgical instruments in use. To the left and towards the top
+> of the image, there is a bipolar forceps [0.01, 0.03, 0.67, 0.31] in a state of
+> rest, not currently engaged in any activity. On the right side, positioned towards the top, there is a prograsp forceps [0.63, 0.01, 1.0, 0.28] that is actively manipulating tissue, likely providing traction or stabilization to the surgical site. Additionally, in the right top corner, there is an ultrasound probe [0.01, 0.38, 1.0, 0.62] that is being used for ultrasound sense.
+> Query : which area is this object ultrasound probe? and where is it located?
+> Response : area-9; [0.01, 0.37, 0.9, 0.62]
+> Query : which area is this object bipolar forceps, and where is it located?
+> Response : area-12; [0.01, 0.01, 0.6, 0.3]
+> Query : which area is this object prograsp forceps? and where is it located?
+> Response : area-6; [0.6, 0.1, 0.99, 0.34]
+> Query : Write an exhaustive depiction of the given image.
+> Response : The image depicts a surgical procedure. You can see the natural pinkish tissue which is the human body. There are several surgical
+> instruments in view. In the top left area of the image, you have the bipolar
+> forceps [0.01, 0.01, 0.6, 0.3], which are currently idle, not actively being used for tissue manipulation or coagulation at this moment. On the right top side, the prograsp forceps [0.6, 0.1, 0.99, 0.34] are visible, and these are also in an idle state, not engaging with any tissue at the time the image was taken. Additionally, ultrasound probe [0.01, 0.37, 0.9, 0.62] is present.
+> 5 slot 13 slot
+
+Figure 5: Qualitative extended-context reasoning with different slot budgets K. The same surgical frame is decomposed using 
+
+K = 5 (left) and K = 13 (right). Each setting shows the area-mask converted from MLLM output text, mask overlay, intermediate area-ID and bounding-box responses, and the resulting detailed description. Table 4: Ablation of slot latents, early reasoning training stage (ER), and the uncompressed early reasoning (UE). F-score evaluates Single Phrase QA, while AP@50 and mIoU evaluate Grounding QA. The best result in each metric column within each panel is shown in bold. 
+
+Configuration Components EndoVis-18 EndoVis-17 CoPESD Average 
+
+Slot ER UE F-score AP@50 mIoU F-score AP@50 mIoU F-score AP@50 mIoU F-score AP@50 mIoU 
+
+Fast and early-reasoning configurations 
+
+Mask-pool-only baseline × × × 40.63 88.87 79.14 33.50 78.39 72.25 33.44 99.75 87.17 35.86 89.00 79.52 No early reasoning ✓ × × 41.12 90.24 79.81 32.43 77.12 72.47 40.54 99.68 88.49 38.03 89.01 80.26 Compressed early representation ✓ ✓ × 43.25 88.00 77.74 33.48 76.69 73.14 39.34 99.45 88.49 38.69 88.05 79.79 Slot2Text-Fast (full) ✓ ✓ ✓ 38.81 89.43 79.98 36.92 80.51 74.75 42.30 99.84 89.91 39.34 89.93 81.55 
+
+Localization-reasoning configurations 
+
+Compressed localization reasoning ✓ ✓ × 39.77 83.83 76.57 35.97 80.51 76.73 29.82 99.95 89.81 35.19 88.10 81.04 Slot2Text-R-L (full) ✓ ✓ ✓ 41.44 89.12 80.24 37.31 79.66 74.67 41.36 99.66 89.38 40.04 89.48 81.43 
+
+Table 5: Effect of Stage 2 VL-bridge tuning. Grounding Avg. reports unweighted averages over EndoVis-18, EndoVis-17, and CoPESD; SPQA and VQA denote Single Phrase QA and Visual QA. The best results are shown in bold. 
+
+Setting Grounding Avg. Cholec80 SPQA Cholec80 VQA F-score AP@50 mIoU Acc F-score BLEU-4 METEOR Slot2Text-R 39.06 91.61 82.42 90.32 66.10 97.33 72.34 
+
+Without Stage-2 VL tuning 34.14 88.34 76.37 83.92 49.71 96.01 69.87 
+
+critically on continued VL-bridge fine-tuning. When spe-cializing the model for fast inference, these capabilities are best preserved by incorporating reasoning QA during early-stage training, with uncompressed reasoning text providing more performance gain than its compressed counterpart. 
+
+Conclusion 
+
+We introduced Slot2Text, an object-centric MLLM that re-places dense visual patches with region-bearing slot tokens. The fast mode of Slot2Text answers directly using slot prefix as input, while the reasoning variants link answers to explicit area identities, masks, and locations. Across multiple sur-gical grounding VQA benchmarks, Slot2Text remains com-petitive with the SOTA baseline while reducing the average token consumption by an order of magnitude. Explicit area supervision particularly benefits region-conditioned genera-tion. Our method establishes region slots as an efficient and spatially traceable vision-language interface. Current limitations include using a fixed slot budget for each inference, a predefined choice between fast and grounded reasoning. These setting could be trained to be flex-ible through adaptive slot allocation or mixture-of-experts routing approaches. We only use a frozen slot module dur-ing instruction tuning, which may restrict task adaptation and lengthen alignment, and in the future we can experiment with trainable slot attention module. Another future work should explore different way of pre-training the vision-language bridge, as currently the CLIP encoder (Radford et al. 2021) is replaced with slot attention and potentially contrastive per-taining objective can be incorporated. Our method could also be extended to other real-world non-surgical datasets that are suitable for unsupervised object discovery. 
+
+Acknowledgments 
+
+This work was supported by the Linda Pechenik Mon-tague Investigator Award, the American Surgical Association Foundation Fellowship, and Penn AI fellowship. 
+
+References 
+
+Allan, M.; Shvets, A.; Kurmann, T.; Zhang, Z.; Duggal, R.; Su, Y.-H.; Rieke, N.; Laina, I.; Kalavakonda, N.; Bodenstedt, S.; Herrera, L.; Li, W.; Iglovikov, V.; Luo, H.; Yang, J.; Stoyanov, D.; Maier-Hein, L.; Speidel, S.; and Azizian, M. 2019. 2017 Robotic Instrument Segmentation Challenge. ArXiv preprint arXiv:1902.06426. Bai, L.; Islam, M.; Seenivasan, L.; and Ren, H. 2023. Surgical-VQLA:Transformer with Gated Vision-Language Embedding for Visual Question Localized-Answering in Robotic Surgery. In 2023 IEEE International Conference on Robotics and Automation (ICRA) , 6859–6865. IEEE. Cha, J.; Kang, W.; Mun, J.; and Roh, B. 2024. Honeybee: Locality-Enhanced Projector for Multimodal LLM. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 13817–13827. Chen, J.; Liu, X.; Wen, Z.; Wang, Y.; Huang, S.; and Chen, H. 2026. Variation-Aware Vision Token Dropping for Faster Large Vision-Language Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 3489–3499. Chen, K.; Zhang, Z.; Zeng, W.; Zhang, R.; Zhu, F.; and Zhao, R. 2023. Shikra: Unleashing Multimodal LLM’s Referential Dialogue Magic. arXiv preprint arXiv:2306.15195 .Chi, D.; Kim, H.; Oh, Y.; Kim, Y.; Lee, D.; Jo, D.; Kim, J.; Baek, J.; Ahn, S.; and Kim, S. 2025. Slot-MLLM: Object-Centric Visual Tokenization for Multimodal LLM. arXiv preprint arXiv:2505.17726 .Didolkar, A.; Zadaianchuk, A.; Goyal, A.; Mozer, M.; Bengio, Y.; Martius, G.; and Seitzer, M. 2024. Zero-shot object-centric representation learning. arXiv preprint arXiv:2408.09162 .Didolkar, A. R.; Zadaianchuk, A.; Goyal, A.; Mozer, M. C.; Bengio, Y.; Martius, G.; and Seitzer, M. 2025. On the transfer of object-centric representation learning. In The Thirteenth International Conference on Learning Representations .Hu, E.; Shen, Y.; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.; Wang, L.; and Chen, W. 2021. Lora: Low-rank adaptation of large language models. ArXiv preprint arXiv:2106.09685. Jia, B.; Liu, Y.; and Huang, S. 2023. Improving Object-Centric Learning with Query Optimization. In The Eleventh International Conference on Learning Representations .Lai, X.; Tian, Z.; Chen, Y.; Li, Y.; Yuan, Y.; Liu, S.; and Jia, J. 2024. LISA: Reasoning Segmentation via Large Language Model. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 9579–9589. Lan, M.; Chen, C.; Zhou, Y.; Xu, J.; Ke, Y.; Wang, X.; Feng, L.; and Zhang, W. 2025. Text4Seg: Reimagining Im-age Segmentation as Text Generation. In The Thirteenth International Conference on Learning Representations .Li, C.; Wong, C.; Zhang, S.; Usuyama, N.; Liu, H.; Yang, J.; Naumann, T.; Poon, H.; and Gao, J. 2023. LLaVA-Med: Training a Large Language-and-Vision Assistant for Biomedicine in One Day. In Advances in Neural Informa-tion Processing Systems 36 , 28541–28564. Neural Informa-tion Processing Systems Foundation, Inc. (NeurIPS). Li, L. H.; Yatskar, M.; Yin, D.; Hsieh, C.-J.; and Chang, K.-W. 2019. VisualBERT: A Simple and Performant Baseline for Vision and Language. ArXiv preprint arXiv:1908.03557. Li, W.; Yuan, Y.; Liu, J.; Tang, D.; Wang, S.; Qin, J.; Zhu, J.; and Zhang, L. 2025. TokenPacker: Efficient Visual Projector for Multimodal LLM. International Journal of Computer Vision , 133(10): 6794–6812. Liao, G.; Jogan, M.; Hussing, M.; Nakahashi, K.; Yasufuku, K.; Madani, A.; Eaton, E.; and Hashimoto, D. A. 2025a. Slot-BERT: Self-supervised Object Discovery in Surgical Video. 
+
+arXiv preprint arXiv:2501.12477 .Liao, G.; Jogan, M.; Hussing, M.; Zhang, E.; Eaton, E.; and Hashimoto, D. A. 2025b. Future slot prediction for unsu-pervised object discovery in surgical video. In International Conference on Medical Image Computing and Computer-Assisted Intervention , 219–229. Springer. Lin, Z.; Liu, D.; Zhang, R.; Gao, P.; Qiu, L.; Xiao, H.; Qiu, H.; Shao, W.; Chen, K.; Han, J.; Huang, S.; Zhang, Y.; He, X.; Qiao, Y.; and Li, H. 2024. SPHINX: A Mixer of Weights, Visual Embeddings and Image Scales for Multi-modal Large Language Models. In Computer Vision – ECCV 2024 , vol-ume 15120 of Lecture Notes in Computer Science , 36–55. Springer Nature Switzerland. Liu, H.; Li, C.; Wu, Q.; and Lee, Y. J. 2023. Visual Instruc-tion Tuning. In Advances in Neural Information Processing Systems , volume 36, 34892–34916. Locatello, F.; Weissenborn, D.; Unterthiner, T.; Mahendran, A.; Heigold, G.; Uszkoreit, J.; Dosovitskiy, A.; and Kipf, T. 2020. Object-Centric Learning with Slot Attention. In 
+
+Advances in Neural Information Processing Systems 33: An-nual Conference on Neural Information Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual .Löwe, S.; Lippe, P.; Locatello, F.; and Welling, M. 2023. Rotating features for object discovery. Advances in Neural Information Processing Systems , 36: 59606–59635. Ma, C.; Jiang, Y.; Wu, J.; Yuan, Z.; and Qi, X. 2024. Groma: Localized Visual Tokenization for Grounding Multimodal Large Language Models. In Computer Vision – ECCV 2024 ,volume 15064 of Lecture Notes in Computer Science , 417– 435. Peng, Z.; Wang, W.; Dong, L.; Hao, Y.; Huang, S.; Ma, S.; and Wei, F. 2023. Kosmos-2: Grounding Multimodal Large Language Models to the World. arXiv preprint arXiv:2306.14824 .Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; Krueger, G.; and Sutskever, I. 2021. Learning Transferable Visual Models From Natural Language Supervision. In Pro-ceedings of the 38th International Conference on Machine Learning, ICML 2021, 18-24 July 2021, Virtual Event , vol-ume 139 of Proceedings of Machine Learning Research ,8748–8763. Seenivasan, L.; Islam, M.; Krishna, A. K.; and Ren, H. 2022. Surgical-VQA: Visual Question Answering in Surgi-cal Scenes Using Transformer. In Lecture Notes in Computer Science , 33–43. Springer Nature Switzerland. Seitzer, M.; Horn, M.; Zadaianchuk, A.; Zietlow, D.; Xiao, T.; Simon-Gabriel, C.; He, T.; Zhang, Z.; Schölkopf, B.; Brox, T.; and Locatello, F. 2023. Bridging the Gap to Real-World Object-Centric Learning. In The Eleventh Interna-tional Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 .Shang, Y.; Cai, M.; Xu, B.; Lee, Y. J.; and Yan, Y. 2025. LLaVA-PruMerge: Adaptive Token Reduction for Ef-ficient Large Multimodal Models. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,22857–22867. Sharma, D.; Purushotham, S.; and Reddy, C. K. 2021. MedFuseNet: An attention-based multimodal deep learning model for visual question answering in the medical domain. 
+
+Scientific Reports , 11(1). Siméoni, O.; Vo, H. V.; Seitzer, M.; Baldassarre, F.; Oquab, M.; Jose, C.; Khalidov, V.; Szafraniec, M.; Yi, S.; Ra-mamonjisoa, M.; et al. 2025. DINOv3. arXiv preprint arXiv:2508.10104 .Singh, G.; Deng, F.; and Ahn, S. 2022. SlotFormer: Un-supervised Dynamic Scene Decomposition. In Advances in Neural Information Processing Systems (NeurIPS) .Song, J.; Zhou, F.; Qu, J.; Li, W. J.; Wu, T.; Xue, G.; Zhao, Z.; Wei, D.; Lu, Y.; and Na, B. 2026. EvoComp: Learning Visual Token Compression for Multimodal Large Language Models via Semantic-Guided Evolutionary Labeling. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 3532–3542. Twinanda, A. P.; Shehata, S.; Mutter, D.; Marescaux, J.; De Mathelin, M.; and Padoy, N. 2016. Endonet: a deep architecture for recognition tasks on laparoscopic videos. 
+
+IEEE transactions on medical imaging , 36(1): 86–97. Wang, G.; Bai, L.; Nah, W. J.; Wang, J.; Zhang, Z.; Chen, Z.; Wu, J.; Islam, M.; Liu, H.; and Ren, H. 2024. Surgical-LVLM: Learning to Adapt Large Vision-Language Model for Grounded Visual Question Answering in Robotic Surgery. ArXiv preprint arXiv:2405.10948. Wang, G.; Bai, L.; Wang, J.; Yuan, K.; Li, Z.; Jiang, T.; He, X.; Wu, J.; Chen, Z.; Lei, Z.; Liu, H.; Wang, J.; Zhang, F.; Padoy, N.; Navab, N.; and Ren, H. 2026. En-doChat: Grounded Multimodal Large Language Model for Endoscopic Surgery. Medical Image Analysis , 107(Part A): 103789. Xu, J.; Lan, C.; Xie, W.; Chen, X.; and Lu, Y. 2024. Slot-VLM: Object-Event Slots for Video-Language Modeling. In 
+
+The Thirty-eighth Annual Conference on Neural Information Processing Systems .Yao, L.; Li, L.; Ren, S.; Wang, L.; Liu, Y.; Sun, X.; and Hou, L. 2024. DeCo: Decoupling Token Compression from Se-mantic Abstraction in Multimodal Large Language Models. 
+
+arXiv preprint arXiv:2405.20985 .You, H.; Zhang, H.; Gan, Z.; Du, X.; Zhang, B.; Wang, Z.; Cao, L.; Chang, S.-F.; and Yang, Y. 2024. Ferret: Refer and Ground Anything Anywhere at Any Granularity. In The Twelfth International Conference on Learning Representa-tions .Zadaianchuk, A.; Seitzer, M.; and Martius, G. 2023. Object-Centric Learning for Real-World Videos by Predicting Tem-poral Feature Similarities. In Advances in Neural Informa-tion Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .Zhang, K.; Zhou, R.; Adhikarla, E.; Yan, Z.; Liu, Y.; Yu, J.; Liu, Z.; Chen, X.; Davison, B. D.; Ren, H.; Huang, J.; Chen, C.; Zhou, Y.; Fu, S.; Liu, W.; Liu, T.; Li, X.; Chen, Y.; He, L.; Zou, J.; Li, Q.; Liu, H.; and Sun, L. 2023. BiomedGPT: A Generalist Vision-Language Foundation Model for Diverse Biomedical Tasks. ArXiv preprint arXiv:2305.17100. Zia, A.; Bhattacharyya, K.; Liu, X.; Berniker, M.; Wang, Z.; Nespolo, R.; Kondo, S.; Kasai, S.; Hirasawa, K.; Liu, B.; et al. 2023. Surgical tool classification and localization: results and methods from the MICCAI 2022 SurgToolLoc challenge. ArXiv preprint , abs/2305.07152. Slot2Text: Object-Centric Visual Tokenization for Efficient and Spatially Traceable Surgical MLLMs — Supplementary Material Extended Related Work 
+
+The main paper gives an abridged description of work re-lated to Slot2Text. Here we expand the discussion including related work in surgical MLLMs, visual-token compression, object-centric representation learning, visual pretraining and alignment, and spatially grounded language generation. 
+
+Surgical MLLMs and Grounded Surgical VQA 
+
+Surgical visual question answering initially relied on special-ized architectures that fused an image representation with a restricted question vocabulary. Latest surgical VQA datasets established benchmarks for surgical recognition and question answering in laparoscopic and robotic surgery(Seenivasan et al. 2022; Bai et al. 2023). Models developed for these benchmarks typically addressed specific task formulations, often using task-specific output heads or training procedures for different output types. Instruction-tuned MLLMs provide a more unified alterna-tive. Surgical-LVLM adapts a large vision-language model for grounded robotic-surgery VQA and represents localiza-tion through language outputs (Wang et al. 2024). EndoChat broadens this formulation to multiple dialogue paradigms and surgical tasks, supported by the Surg-396K instruc-tion corpus, multiscale visual-token interaction, and visual contrast-based reasoning (Wang et al. 2026). These mod-els establish the primary task-performance baselines for our study. With Slot2Text we propose a substantially novel visual in-terface shared by those tasks. Our central question is whether a dense surgical MLLM representation can be replaced by a compact set of region-oriented tokens without removing the spatial evidence needed for grounding. This shifts part of the evaluation from task accuracy alone to the joint trade-off among accuracy, input-token count, memory, throughput, and spatial traceability. 
+
+Efficient Visual-Token Compression 
+
+The cost of MLLMs depends not only on parameter count but also on the number of visual embeddings –tokens– pro-cessed by the LLM. Existing reduction methods differ in where and how compression is performed. Projector-based methods compress visual features before LLM entry. Honey-bee uses a locality-enhanced projector whose output length can be adjusted while preserving local context (Cha et al. 2024). DeCo argues that a learned semantic bottleneck can prematurely abstract visual information and instead applies parameter-free two-dimensional adaptive pooling, leaving semantic abstraction to the LLM (Yao et al. 2024). Selection and merging methods retain a subset of tokens or combine redundant patches. LLaVA-PruMerge exploits sparsity in the visual encoder’s class-token attention, retains important patches, and merges related discarded features into them (Shang et al. 2025). Recent learned approaches such as EvoComp supervise a compressor to retain informative, semantically diverse tokens, while V2Drop progressively re-moves low-variation visual tokens inside the language model (Song et al. 2026; Chen et al. 2026). These approaches span static and input-adaptive compression as well as pre-LLM and intra-LLM reduction. Slot2Text belongs to the pre-LLM compression family, but its objective differs from selecting an arbitrary economical subset of patches. It uses a fixed, small collection of regions whose soft assignments cover the patch grid. The same as-signments support appearance pooling, geometry extraction, and visualization. Consequently, a retained token is accom-panied by a mask and bounding box rather than only an importance score. This structured correspondence is partic-ularly useful when efficiency and spatial inspection must coexist. 
+
+Object-Centric Representation Learning 
+
+Object-centric learning seeks to factor a scene into a set of entity-level representations. Slot Attention introduced an iter-ative competitive-attention mechanism that maps unordered inputs into exchangeable latent slots (Locatello et al. 2020). Subsequent work improved slot dynamics, initialization, and scaling (Singh, Deng, and Ahn 2022; Jia, Liu, and Huang 2023). Applying slot models to complex natural imagery remained difficult until approaches such as DINOSAUR re-placed pixel reconstruction with reconstruction of semanti-cally rich self-supervised features (Seitzer et al. 2023). Re-lated work has improved real-world object discovery using feature augmentation, temporal information, or task-specific adaptation (Löwe et al. 2023; Zadaianchuk, Seitzer, and Mar-tius 2023; Didolkar et al. 2025). Surgical slot-learning studies further indicate that object-centric structure can be recovered from endoscopic video without manual mask supervision (Liao et al. 2025a,b). Object-centric representations have also been connected to language. Slot-VLM uses object and event slots to summarize video for language modeling (Xu et al. 2024). Slot-MLLM develops an object-centric visual tokenizer that combines a Q-Former, diffusion decoding, residual vector quantization, and discrete slot tokens for multimodal understanding and generation (Chi et al. 2025). These studies establish that slot-based representations can support vision-language reasoning beyond synthetic object-discovery benchmarks. Slot2Text differs in both purpose and interface. It does not learn a discrete vocabulary for reconstructing or gener-ating images. Instead, it uses continuous slots as an input bottleneck for a surgical MLLM. Each slot is fused with mask-weighted DINOv3 features, mask centroid, and mass before projection into the LLM. The corresponding soft mask remains available after compression and is assigned a textual area label. The resulting design uses object-centric structure to connect three quantities that are usually treated separately: visual-token count, surgical task performance, and traceable spatial evidence. 
+
+Self-Supervised and Language-Aligned Visual Encoders 
+
+Many MLLMs use CLIP-style encoders because contrastive pretraining on image–text pairs places visual and linguistic concepts in compatible representation spaces (Radford et al. 2021). This compatibility simplifies connection to an LLM, but the learned alignment reflects broad web data and does not by itself solve the cost of dense visual token sequences. Specialized surgical concepts may also remain underrepre-sented in the pretraining corpus. DINO-family models instead learn visual representations through self-supervision. DINOv3 scales this approach while preserving high-quality dense features suitable for spatial tasks (Siméoni et al. 2025). Such features have no inher-ent requirement to align with the vocabulary or embed-ding geometry of the downstream surgical LLM. Similar to Groma (Ma et al. 2024), Slot2Text builds on pretrained DINO features. However, Slot2Text additionally pretrains visual Slot Attention through self-supervision before any visual–language alignment. It therefore avoids reliance on contrastive image–text pre-alignment in the visual encoder and learns the visual–language mapping through a down-stream bridge and surgical instruction tuning. This distinction motivates the two-stage learning sched-ule. Bridge-only alignment first teaches the frozen LLM how to interpret the continuous region features. Full instruction tuning then adapts the LLM and bridge jointly while leaving DINOv3 and Slot Attention frozen. A controlled compari-son among dense DINOv3 patches, token-matched DINOv3 pooling, and DINOv3 slots is consequently important for separating the benefit of self-supervised features from the benefit of object-centric compression. 
+
+Spatially Grounded and Interpretable MLLMs 
+
+Several general-domain MLLMs extend text generation with explicit spatial outputs. Kosmos-2 represents grounded phrases with location tokens, Shikra emits and consumes co-ordinates in ordinary language, and Ferret combines discrete coordinates with sampled continuous region features (Peng et al. 2023; Chen et al. 2023; You et al. 2024). LISA in-troduces a segmentation token whose embedding conditions a mask decoder, enabling language-guided reasoning seg-mentation (Lai et al. 2024). Surgical-LVLM and EndoChat adapt similar grounding capabilities to robotic and endo-scopic scenes (Wang et al. 2024, 2026). These methods demonstrate that language models can gen-erate boxes or masks, but the grounding output is often added on top of a dense input representation. Slot2Text instead de-rives its compact input tokens and spatial evidence from the same slot decomposition. The LLM can name an area-i,while the system recovers the associated mask, centroid, and box without searching over the original patch sequence. We use the term traceability for this representational correspon-dence; it should not be however interpreted as a guarantee that an area is causally responsible for a generated answer. Establishing causal faithfulness would require interventions such as slot deletion, permutation, or counterfactual mask replacement. 
+
+Additional Slot Attention Details 
+
+Slot Attention (Locatello et al. 2020) is an architecture for learning object-centric representations. It maps a set of N
+
+input feature vectors (e.g., image pixels or CNN features) to K slot vectors, each aiming to represent an object in the scene. The K slots are initialized (e.g., randomly) and itera-tively updated by an attention mechanism that binds slots to parts of the input. At each iteration t = 1 , . . . , T , queries are projected from the slots and keys and values from the inputs. For i = 1 , . . . , N and k = 1 , . . . , K , the soft assignment 
+
+Aik and the normalized aggregation weight Wik are 
+
+Aik =exp 
+
+ (xiW K )( sk W Q)⊤
+
+> √d
+
+PKk′=1 exp 
+
+ (xiW K )( sk′ W Q)⊤
+
+> √d
+
+ ,Wik = Aik 
+
+PNi′=1 Ai′k + ϵ .
+
+(6) Here, Aik is normalized across slots for each input, while 
+
+Wik is subsequently normalized across inputs for each slot; 
+
+ϵ is a small constant for numerical stability. Each slot is then updated from the resulting weighted input aggregation: 
+
+sk ← GRU 
+
+ NX
+
+> i=1
+
+Wik (xiW V ), s k
+
+
+
+, (7) where W V is a learned value projection and GRU is a gated recurrent unit whose hidden state is the current slot. This process is repeated T times and includes an MLP-based re-finement at each iteration (Locatello et al. 2020). The result-ing slots {sk}Kk=1 are exchangeable: permuting their initial-ization correspondingly permutes the outputs, making the mapping permutation-equivariant with respect to slot order. Ideally, each slot specializes to one object or background component. In unsupervised object discovery, Slot Attention is typi-cally trained by reconstructing the original image from the slots. A decoder (e.g., a CNN, spatial broadcast decoder, or transformer decoder) uses the slots to output K com-ponent reconstructions and masks, which are combined to match the input image. The model thus learns to partition the scene into objects. However, such purely unsupervised training can struggle on complex real-world images. Recent approaches to real-world slot learning therefore commonly build on foundation-model features and reconstruct feature maps rather than pixels (Seitzer et al. 2023; Löwe et al. 2023; Zadaianchuk, Seitzer, and Martius 2023; Didolkar et al. 2024). 
+
+Additional Details on Datasets and Experimental Protocol 
+
+Self-Supervised Slot Attention Pretraining Data For self-supervised Slot Attention pretraining, we construct an image-only corpus from the four surgical video datasets de-scribed by Liao et al. (Liao et al. 2025a): the MICCAI 2022 SurgToolLoc dataset, Cholec80, EndoVis 2017, and a Tho-racic Robotic Surgery dataset. The MICCAI SurgToolLoc dataset contains 24,642 30-frame clips after temporal down-sampling, including 24,542 training clips, and covers 13 sur-gical instrument categories. The Cholec80 subset contains 5,296 training clips, with 30 frames per clip, sampled at 1 FPS from laparoscopic cholecystectomy videos. EndoVis 2017 provides 2,400 frames organized into 480 five-frame clips of robot-assisted abdominal surgery. The thoracic dataset con-tains 264 30-frame clips collected from 40 robot-assisted right upper lobectomy procedures. Together, these datasets provide more than 900K surgical images spanning laparo-scopic abdominal surgery, robot-assisted abdominal surgery, cholecystectomy, and robot-assisted thoracic surgery. These four datasets were selected to expose the slot tokenizer to var-ied surgical appearances and operative settings before lan-guage supervision. 
+
+Surgical Instruction-Tuning Data For surgical visual in-struction tuning, we build on the Surg-396K dataset in-troduced with EndoChat (Wang et al. 2026) and follow the same official training/test split to reduce confounding differences caused by training or evaluation data. Surg-396K contains approximately 41.4K endoscopic images and 396K image–instruction pairs collected or generated from three constituent datasets: Cholec80-VQA, EndoVis-VQLA, and CoPESD. Cholec80-VQA contributes 21,591 frames sampled from 40 laparoscopic cholecystectomy videos, to-gether with classification-style and sentence-level question– answer pairs. EndoVis-VQLA contributes 2,104 frames from the EndoVis 2017 and 2018 robotic-surgery datasets, with question–answer annotations and object-level bounding boxes. CoPESD contributes 17,679 images extracted from more than 35 hours of endoscopic submucosal dissection videos, with annotations describing surgical instruments, tar-get tissues, motions, motion directions, and their correspond-ing spatial regions. These datasets provide complementary tests of the proposed compact visual interface. 
+
+Evaluation Protocol and Baselines We evaluate three complementary capabilities: short-answer recognition, spa-tial grounding, and free-form language generation. For short-answer recognition, we report single-phrase accuracy and F-score. Accuracy measures exact response correctness, whereas the F-score provides a complementary token- or class-level measure that is less sensitive to imbalanced an-swer distributions. For spatial grounding, we report average precision at an intersection-over-union threshold of 0.5 (AP@50) and mean intersection over union (mIoU). Before evaluation, predicted coordinate sequences are parsed into bounding boxes and mapped to the original image coordinate system. A predic-tion is treated as valid only when it contains a complete and correctly ordered coordinate tuple. AP@50 summa-rizes precision–recall performance when a predicted box is matched to a reference box at an IoU of at least 0.5, while mIoU measures the average spatial overlap between predicted and reference regions. For free-form generation, Visual QA and Region-Based QA are evaluated using BLEU, CIDEr, METEOR, ROUGE-1, and ROUGE-L. These metrics collectively assess lexical precision, consensus with reference answers, semantic word matching, and sequence-level overlap. Detailed scene de-scriptions are additionally evaluated using the GPT-based scoring protocol adopted by EndoChat when direct compar-ison with its reported results is required. Unless stated oth-erwise, metric values are reported on a 0–100 scale, while CIDEr is retained on its original scale. The general-purpose MLLMs included in the comparison tables are evaluated in the zero-shot setting, without surgical-domain fine-tuning. Specialized surgical models and En-doChat are included as domain-specific reference points. Slot-MLLM- and TokenPacker-style projectors are imple-mented as architectural baselines and are trained and evalu-ated with the same training data, image preprocessing, lan-guage backbone, and multi-dataset evaluation protocol as our variants (Chi et al. 2025; Li et al. 2025). We use EndoChat as the primary dense-visual-token reference, the projector base-lines to compare alternative visual-token compression archi-tectures, and zero-shot general-purpose MLLMs to contex-tualize the performance gap between generic and surgically specialized models. 
+
+Implementation and Training Details 
+
+We use the LVD-1689M-pretrained DINOv3 ViT-B/16 en-coder at 224 × 224 input resolution, producing a 16 × 16 
+
+grid of 768-dimensional patch features. Slot Attention is pretrained for 10 epochs and uses K = 9 slots of dimen-sion 256 with three iterative updates for all comparisons against SOTA models. Each slot is concatenated with its 768-dimensional mask-pooled DINOv3 feature, two normalized centroid coordinates, and mask mass; the resulting 1,027-dimensional vector is fused by a two-layer MLP with hidden width 4,096 and output width 256. A three-layer MLP then maps 256 → 4,096 → 4,096 → 1,536 , followed by the visual projection and layer normalization that map each slot into the 2,048-dimensional language space. The language backbone is the Llama 3.2 1B parameter model. It has 22 transformer layers, 32 query heads, four key–value heads, a vocabulary of 32,000, and approximately 1.10B language parameters. Downstream training uses two GPUs and AdamW with 
+
+β = (0 .9, 0.95) , zero weight decay, and gradient clipping at 8. Stage 1 runs for eight epochs with a per-GPU batch size of four (effective batch size eight), a cosine learning-rate schedule decaying from 2 × 10 −5 to 1 × 10 −5 with a 0.01-epoch warm-up, and one or two randomly selected slot inputs dropped from every training sample. DINOv3, Slot Attention, and the language decoder are frozen in this stage; only the ordered-slot fuser, slot projector, visual projection, DINO width adapter, and image-boundary embeddings are optimized. Stage 2 runs for four epochs with a per-GPU batch size of four (effective batch size eight) and a constant learning rate of 2 × 10 −6. DINOv3 and Slot Attention remain frozen, while the language decoder is adapted using rank-128 LoRA and the same VL-bridge components are optimized. Training is performed on NVIDIA RTX 6000 Ada and H100 GPUs, while all benchmark evaluations are conducted on a single NVIDIA RTX 6000 Ada GPU. 
+
+Additional Results 
+
+Full Specialized-Model Comparison Table 6 expands the compact Cholec80-VQA comparison in the main paper by retaining all reported Single Phrase QA and Visual QA met-rics, including BLEU-3 and CIDEr. These additional metrics Table 6: Full comparison with specialized models on Cholec80-VQA (Seenivasan et al. 2022). Published baseline values follow the comparison reported by EndoChat (Wang et al. 2026). Accuracy and F-score evaluate Single Phrase QA, while BLEU-3, BLEU-4, CIDEr, and METEOR evaluate Visual QA. The best result in each metric column is shown in bold. 
+
+Model Single Phrase QA Visual QA Acc F-score BLEU-3 BLEU-4 CIDEr METEOR MedFuse (Sharma, Purushotham, and Reddy 2021) 86.10 30.90 37.80 33.30 1.2501 22.20 VisualBert (Li et al. 2019) 89.70 63.30 96.30 95.60 8.8020 71.90 VisualBert ResMLP (Seenivasan et al. 2022) 89.80 63.40 96.00 95.20 8.7592 71.10 Surgical-LVLM (Wang et al. 2024) 87.53 60.10 96.00 95.13 8.7755 70.88 EndoChat (Wang et al. 2026) 92.05 61.64 97.28 96.81 9.6702 72.16 Slot2Text-Reason 90.32 66.10 97.79 97.33 9.6739 72.34 Slot2Text-Reason-Compress 90.62 68.88 98.01 97.58 9.7075 72.92 Slot2Text-Reason-Loc 90.24 66.09 98.08 97.69 9.7205 73.27 
+
+Slot2Text-Fast 90.91 68.85 98.02 97.62 9.7206 73.10 
+
+Table 7: Effect of the slot budget K on Slot2Text-Reason across the three Surg-396K subsets. Visual Tokens is the recorded number of visual-prefix tokens per sample. Average is the unweighted mean across EndoVis-18, EndoVis-17, and CoPESD. Higher is better for all task metrics, while fewer visual tokens are preferred. The best result in each column is shown in bold.                                                
+
+> Model Visual Tokens ↓
+> EndoVis-18 EndoVis-17 CoPESD Average Acc F-score AP@50 mIoU Acc F-score AP@50 mIoU Acc F-score AP@50 mIoU Acc F-score AP@50 mIoU Slot2Text-Reason ( K= 5 )27 67.14 34.29 86.13 75.80 45.76 35.48 73.73 68.34 74.65 39.44 99.66 87.24 62.52 36.40 86.51 77.13 Slot2Text-Reason ( K= 9 )47 70.82 40.24 89.93 80.17 49.58 36.59 85.17 77.42 75.29 40.36 99.72 89.66 65.23 39.06 91.60 82.42
+> Slot2Text-Reason ( K= 13 )71 71.69 39.52 89.30 80.88 48.31 35.50 80.51 75.54 75.30 40.57 99.73 90.00 65.10 38.53 89.85 82.14
+
+demonstrate that our method outperforms other specialized surgical MLLM models on the Cholec80-VQA tasks. 
+
+Effect of Slot Number Table 7 evaluates the uncompressed Slot2Text-Reason model with K ∈ { 5, 9, 13 } slots on the three Surg-396K subsets. In addition to the task metrics re-ported for each subset, it includes the corresponding visual-prefix length and unweighted macro-averages over EndoVis-18, EndoVis-17, and CoPESD. Table 8 complements this comparison with the complete Cholec80-VQA metrics. The 
+
+K = 13 model achieves the best accuracy and all six Visual QA scores, while K = 9 gives the highest Single Phrase QA F-score and K = 5 retains the shortest visual prefix. Together, Tables 7 and 8 confirm that the performance im-provement from K = 9 to K = 13 is substantially smaller than that from K = 5 to K = 9 , indicating diminishing returns as the number of slots increases. 
+
+Split-Specific Surg-396K QA Results Table 9 preserves the full split-specific comparison underlying the EndoVis av-erages reported in the main paper. EndoVis-18 and EndoVis-17 are shown separately alongside the unchanged CoPESD results and the available inference-efficiency measurements. These addtional results confirm that our method is competi-tive to the state of the art surgical MLLM in region grounding performance across different datasets. 
+
+Effect of Stage 1 VL-Bridge Alignment Table 10 evalu-ates Stage 1 VL-bridge alignment for Slot2Text-R-L. Remov-ing alignment lowers the Grounding Avg. F-score, AP@50, and mIoU by 12 .98 , 0.36 , and 1.01 points. On Cholec80, the corresponding drops are 3.39 /11 .30 points for SPQA accuracy/F-score and 1.50 /2.98 points for VQA BLEU-4/METEOR. Alignment is therefore most important for recognition and language generation. 
+
+Inference Efficiency Across Visual Interfaces Table 11 compares the inference efficiency of TokenPacker, the Slot-MLLM-style Slot Q-Former, and the five- and nine-slot Slot2Text-Fast variants under the same benchmark proto-col. Slot2Text-Fast with K = 5 achieves the lowest latency, highest throughput, and lowest peak allocated GPU mem-ory. Relative to its K = 9 counterpart, it reduces latency by 30.1% and increases throughput by 43.0%. TokenPacker uses the fewest total LM tokens but remains slower than the five-slot Slot2Text-Fast model, indicating that end-to-end la-tency depends on the visual-interface computation as well as sequence length. At the matched K = 9 setting, Slot2Text-Fast is slightly faster and uses slightly less peak GPU memory than the Slot Q-Former baseline. 
+
+Importance of Uncompressed Semantic-Descriptor Learning Figure 6 qualitatively isolates the effect of first learning an uncompressed semantic descriptor for reason-ing before learning its compressed form. Both variants re-ceive the same image and compressed area-mask query, and their generated run-length descriptors are reverse-decoded into color-coded region maps. Learning the uncompressed representation first yields larger, more spatially coherent re-gions and a cleaner decomposition of the surgical scene. Table 8: Effect of the slot budget K for Slot2Text-Reason on Cholec80-VQA (Seenivasan et al. 2022). Visual Tokens is the recorded number of visual-prefix tokens per sample. Accuracy and F-score evaluate Single Phrase QA, while BLEU-3, BLEU-4, CIDEr, METEOR, ROUGE-1, and ROUGE-L evaluate Visual QA. Higher is better for all task metrics, while fewer visual tokens are preferred. The best result in each column is shown in bold.                                        
+
+> Model Visual Tokens ↓
+> Single Phrase QA Visual QA Acc F-score BLEU-3 BLEU-4 CIDEr METEOR ROUGE-1 ROUGE-L Slot2Text-Reason ( K= 5 )27 89.36 65.65 97.46 96.98 9.6500 71.58 98.84 98.84 Slot2Text-Reason ( K= 9 )47 90.32 66.10 97.79 97.33 9.6739 72.34 98.86 98.86 Slot2Text-Reason ( K= 13 )71 91.16 65.58 98.06 97.68 9.7224 73.34 99.07 99.07
+
+Table 9: Split-specific comparison of general-purpose and specialized MLLMs in Region-Based QA, Visual QA, and inference efficiency on the Surg-396K dataset. General-purpose baselines are evaluated zero-shot, and published baseline values follow EndoChat (Wang et al. 2026). LM Tokens denotes the mean number of language-model tokens per sample, while Samples/s denotes mean end-to-end throughput. The best result within each dataset and metric is shown in bold.                                                                                                                                                                                                                                                                                                                
+
+> Dataset Model Region-Based QA Visual QA Efficiency BLEU-4 CIDEr METEOR ROUGE-1 ROUGE-L BLEU-4 CIDEr METEOR ROUGE-1 ROUGE-L LM Tokens ↓Samples/s ↑
+> CoPESD BiomedGPT (Zhang et al. 2023) 1.69 0.02 7.17 25.38 22.46 1.62 0.01 5.88 19.23 16.25 ––LLAVA-Med (Li et al. 2023) 6.68 0.15 17.42 50.70 44.04 4.56 0.21 14.08 42.78 35.37 ––SPHINX (Lin et al. 2024) 6.19 0.02 2.53 5.58 5.01 7.03 0.26 14.98 42.30 34.75 1372.60 2.19 EndoChat (Wang et al. 2026) 49.79 3.44 38.04 71.98 65.44 46.94 3.21 39.61 73.56 66.79 1359.15 3.59 Slot2Text-Reason 51.81 3.44 39.45 72.25 66.77 45.90 3.04 36.40 68.34 62.56 1160.20 4.18 Slot2Text-Reason-Compress 52.07 3.47 39.73 72.42 66.52 45.39 2.93 36.78 67.52 61.56 552.30 4.32 Slot2Text-Reason-Loc 50.99 3.39 39.07 72.29 66.70 46.72 3.13 37.02 68.69 62.80 307.70 4.30 Slot2Text-Fast 50.16 3.36 38.45 71.96 66.56 46.51 3.11 36.86 68.69 62.99 111.10 4.62
+> EndoVis-18 BiomedGPT (Zhang et al. 2023) 2.20 0.11 13.35 28.41 27.66 6.59 0.73 13.07 37.17 26.39 ––LLAVA-Med (Li et al. 2023) 4.70 0.16 17.35 37.23 35.84 13.54 1.12 20.44 54.92 36.16 ––SPHINX (Lin et al. 2024) 2.57 0.10 5.38 6.41 5.83 15.11 0.79 15.53 32.18 30.14 ––EndoChat (Wang et al. 2026) 59.65 5.57 41.05 82.01 81.21 52.20 5.99 40.11 81.20 79.62 ––Slot2Text-Reason 60.46 6.28 42.05 83.14 82.46 51.23 5.83 39.15 82.10 80.60 ––Slot2Text-Reason-Compress 61.39 6.39 42.50 83.99 83.35 51.88 5.74 39.58 81.78 80.45 ––Slot2Text-Reason-Loc 61.68 6.47 42.86 84.13 83.50 50.33 5.63 38.96 81.07 79.66 ––Slot2Text-Fast 61.26 6.43 42.48 83.93 83.31 50.35 5.59 39.07 81.60 80.13 ––EndoVis-17 BiomedGPT (Zhang et al. 2023) 3.57 0.19 5.99 25.74 24.02 8.81 0.64 15.16 40.61 32.34 ––LLAVA-Med (Li et al. 2023) 9.03 0.36 17.27 42.07 37.18 12.92 0.88 17.13 43.71 36.36 ––SPHINX (Lin et al. 2024) 3.34 0.09 6.96 16.12 13.31 14.12 1.21 16.74 42.15 37.32 ––EndoChat (Wang et al. 2026) 18.12 1.41 21.25 48.34 43.91 21.75 1.51 23.41 52.05 46.65 ––Slot2Text-Reason 17.44 1.18 21.63 46.54 41.85 24.22 1.57 22.69 53.96 50.08 ––Slot2Text-Reason-Compress 21.48 1.17 21.67 45.25 40.49 25.82 1.45 22.98 53.23 50.49 ––Slot2Text-Reason-Loc 20.27 0.99 22.25 46.95 43.03 25.54 1.50 24.58 54.89 50.70 ––Slot2Text-Fast 17.98 0.97 20.33 43.28 41.75 25.25 1.44 24.00 55.10 51.14 ––
+
+In contrast, directly learning the compressed descriptor pro-duces more fragmented assignments. This comparison sup-ports the progressive curriculum learning for acceleration used by Slot2Text, in which explicit dense spatial seman-tics are learned before the response format is compressed for efficient reasoning. 
+
+Qualitative Localization Comparison Figure 7 compares localization outputs for bipolar forceps and monopolar curved scissors on EndoVis and for a mucosa flap, forceps, and knife on CoPESD. TokenPacker predicts a bounding box directly, whereas the slot-based models also expose a region decomposition of the surgical scene. Although TokenPacker reduces the input-token count through learned downsam-pling, it is less reliable in these examples when the target occupies only a small portion of the image. Slot-MLLM also uses slot tokens but does not expose mask-based reasoning traces; in these examples, it sometimes localizes an incorrect object. Its Slot Q-Former also assigns instruments and sur-rounding tissue to the same slot in several cases. Across these examples, Slot2Text associates each predicted box with an explicit object-centric region, preserving a visible correspon-dence between the localized target and the compact visual representation. 
+
+Qualitative Comparison with Specialized State of the Art 
+
+Figure 8 qualitatively compares EndoChat and Slot2Text side by side on two surgical examples. As shown in the two examples, Slot2Text provides more accurate and spatially grounded surgical-scene understanding than EndoChat. In the first sample, EndoChat correctly identifies the approxi-mate locations of the monopolar curved scissors and bipolar forceps but incorrectly reports three instruments. In contrast, Slot2Text correctly recognizes two instruments and asso-ciates each instrument with a distinct object-centric area and normalized bounding box. In the second sample, EndoChat Response: <seg>area-1 *16 area-1 *16 area-1 *16 
+
+> area-1 *1| area-2 *11| area-4 *2| area-3 *1| area-5 *1
+> area-2 *9| area-4 *5| area-5 *2 area-2 *5| area-3 *3| area-4 *5| area-5 *3 area-2 *3| area-3 *4| area-4 *6| area-5 *3 area-2 *2| area-3 *5| area-4 *5| area-5 *2| area-8 *2 area-2 *2| area-3 *4| area-4 *5| area-7 *1| area-8 *4 area-6 *1| area-3 *4| area-4 *5| area-7 *3| area-5 *3 area-6 *6| area-4 *1| area-7 *7| area-5 *2
+> area-6 *6| area-7 *9| area-5 *1
+> area-9 *1| area-3 *3| area-7 *12 area-9 *10| area-7 *2| area-9 *4 area-9 *16 area-9 *16 </seg>
+
+Response: <seg>area-1 *16 area-1 *16 area-1 *16 area-1 *1| area-2 *15| area-3 *4| area-1 *1| area-1 *1 
+
+> area-2 *1| area-4 *5| area-3 *2
+> area-2 *9| area-3 *1| area-4 *5| area-5 *3 area-2 *4| area-3 *5| area-4 *6| area-5 *3 area-2 *2| area-3 *5| area-4 *6| area-5 *4| area-6 *2 area-2 *1| area-3 *5| area-4 *5| area-8 *1| area-8 *4 area-2 *1| area-3 *4| area-4 *4| area-7 *2| area-8 *1 area-6 *1| area-4 *3| area-7 *7| area-5 *2 area-6 *7| area-7 *8| area-5 *1 area-6 *1| area-6 *1| area-6 *11
+> area-9 *16| area-7 *1| area-9 *4
+> area-9 *16 area-9 *16 </seg>
+
+Query: please provide 
+
+area masks of all areas 
+
+(compressed) 
+
+Learn from uncompressed first W/O Learning from uncompressed Input image Reverse descriptor Reverse descriptor Figure 6: Qualitative effect of uncompressed-first semantic-descriptor learning. For the same image and query, the reverse-decoded region map is more coherent and less fragmented with uncompressed-first learning (center) than without it (right). Table 10: Effect of Stage 1 VL-bridge alignment for Slot2Text-R-L. Grounding Avg. reports unweighted averages over EndoVis-18, EndoVis-17, and CoPESD; SPQA and VQA denote Single Phrase QA and Visual QA. The best results are shown in bold. 
+
+Setting Grounding Avg. Cholec80 SPQA Cholec80 VQA F-score AP@50 mIoU Acc F-score BLEU-4 METEOR Slot2Text-R-L 40.04 89.48 81.43 90.24 66.09 97.69 73.27 
+
+Slot2Text-R-L No alignment 27.06 89.12 80.42 86.85 54.79 96.19 70.29 
+
+Table 11: Inference-efficiency comparison across visual interfaces. Results are means over five independent runs, each containing 20 VQA samples. Total LM Tokens is the average total number of input (text plus visual) and generated tokens per sample. Lower is better for latency, memory, and token count, while higher is better for throughput. The best result in each column is shown in bold. 
+
+Method Latency (ms/sample) ↓
+
+Samples/s 
+
+↑
+
+Peak GPU (GiB) ↓
+
+Total LM Tokens per sample ↓
+
+TokenPacker (Li et al. 2025) 215 .11 ± 3.48 4.65 ± 0.08 2.48 70.15 
+
+Slot-MLLM (Slot Q-Former, K = 9 ) (Chi et al. 2025) 222 .95 ± 3.39 4.49 ± 0.07 2.68 111.15 Slot2Text-Fast ( K = 5 ) 151.19 ± 2.81 6.62 ± 0.12 2.46 91.20 Slot2Text-Fast ( K = 9 ) 216 .28 ± 4.71 4.62 ± 0.10 2.66 111.10 
+
+places the ultrasound probe, bipolar forceps, and ProGrasp forceps in the same coarse right-top region and describes only the bipolar forceps in its detailed response. Slot2Text instead separates the three instruments into different areas, provides explicit coordinates for each, and includes all of them in the scene description. These examples demonstrate that the proposed method produces more complete object identification, finer spatial discrimination, and interpretable area masks, while reducing the counting and localization errors observed in EndoChat. GT 
+
+> Where is bipolar
+> forceps located?
+
+Input image TokenPacker Slot-MLLM Slot2Text 
+
+> Where is
+> monopolar curved
+> scissors located?
+> Where in the picture can I see the Forceps?
+> What is the position of the
+> mucosa flap in the
+> photo?
+> CoPESD
+> Where can the
+> Knife be found in this picture?
+> Endovis
+
+Query 
+
+> Where is bipolar forceps located? Where is prograsp forceps located? Where is monopolar curved scissors located?
+
+Figure 7: Qualitative localization over one CoPESD scene (three queries) and two EndoVis scenes (five queries). Columns show the query, input, ground truth (GT), and outputs from TokenPacker, Slot-MLLM, and Slot2Text; green boxes indicate target or predicted regions, and slot-based outputs include region decompositions. The bounding-box instruction is omitted. Because slot sorting is disabled, Slot2Text area indices may permute across forward passes. Query : which area is this object monopolar curved scissors, and where is it located? 
+
+Response : area-1; [0.56, 0.31, 0.99, 0.75] 
+
+Query : How many surgical instruments can you see? 
+
+Response :There are two surgical instruments visible in the image. 
+
+Query : which area is this object bipolar forceps? and where is it located? 
+
+Response : area-3; [0.01, 0.1, 0.54, 0.31] 
+
+<seg>area-3| area-3| area-3| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5\n area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5\n area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-1| area-4| area-4| area-5| area-5| area-5| area-5| area-5\n area-3| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-5| area-5\n area-5| area-4| area-4| area-4| area-4| area-1| area-1| area-4| area-4| area-1| area-1| area-4| area-4| area-4| area-4| area-5\n area-5| area-5| area-4| area-4| area-4| area-4| area-4| area-4| area-1| area-1| area-1| area-1| area-1| area-4| area-4| area-5\n area-5| area-5| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-1| area-1| area-1| area-4| area-5\n area-5| area-5| area-5| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-1| area-1| area-1| area-1\n area-5| area-5| area-5| area-2| area-2| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-1| area-1| area-1\n area-5| area-2| area-2| area-2| area-2| area-2| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-4| area-1| area-1\n area-4| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-4| area-4| area-4| area-4| area-4| area-4| area-1\n area-4| area-4| area-4| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-4| area-4| area-4| area-4\n area-4| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-4| area-4| area-4| area-4\n area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n</seg> 
+
+Query : please provide area masks of all areas. 
+
+Response :
+
+Input image Query : please provide area masks of all areas. 
+
+Response :
+
+Endochat Slot2Text 
+
+Query : which area is this object bipolar forceps? and where is it located? 
+
+Response : the area is left-top, and the bipolar forceps are located in the left top region 
+
+Query : which area is this object monopolar curved scissors, and where is it 
+
+located? 
+
+Response : the area is right-top, and the curved scissors are located in the right top region 
+
+Query : How many surgical instruments can you see? 
+
+Response : I can see three surgical instruments in the image. 
+
+Query : which area is this object ultrasound probe? and where is it located? 
+
+Response : area-1; [0.01, 0.38, 1.0, 0.62] 
+
+Query : which area is this object bipolar forceps, and where is it located? 
+
+Response : area-3; [0.01, 0.03, 0.67, 0.31] 
+
+Query : which area is this object prograsp forceps? and where is it located? 
+
+Response : area-4; [0.63, 0.01, 1.0, 0.28] 
+
+Query : Write an exhaustive depiction of the given image. 
+
+Response : The image depicts a close up view of a surgical procedure, and there are several surgical instruments in use. To the left and towards the top of the image, there is a bipolar forceps [0.01, 0.03, 0.67, 0.31] in a state of rest, not currently engaged in any activity. On the right side, positioned towards the top, there is a prograsp forceps [0.63, 0.01, 1.0, 0.28] that is actively manipulating tissue, likely providing traction or stabilization to the surgical site. Additionally, in the right top corner, there is an ultrasound probe [0.01, 0.38, 1.0, 0.62] that is being used for ultrasound sense. 
+
+<seg>area-3| area-3| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-4\n area-3| area-3| area-3| area-3| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-5| area-4| area-4| area-4\n area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-5| area-4| area-4| area-4| area-4| area-4| area-4| area-4\n area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-3| area-4| area-4| area-4| area-4| area-4| area-4\n area-5| area-5| area-5| area-5| area-5| area-3| area-3| area-3| area-3| area-3| area-3| area-4| area-4| area-5| area-5| area-2\n area-5| area-5| area-5| area-5| area-1| area-5| area-5| area-1| area-3| area-3| area-1| area-3| area-2| area-2| area-2| area-2\n area-5| area-5| area-5| area-1| area-1| area-1| area-1| area-1| area-1| area-2| area-1| area-1| area-5| area-5| area-2| area-5\n area-5| area-5| area-5| area-1| area-2| area-2| area-2| area-2| area-2| area-1| area-1| area-1| area-1| area-1| area-1| area-1\n area-5| area-5| area-5| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-1| area-1| area-1\n area-5| area-5| area-5| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-5| area-5| area-5| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-5| area-5| area-5| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-5| area-5| area-5| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-2| area-2| area-2| area-5| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2| area-2\n</seg> 
+
+Query : please provide area masks of all areas. 
+
+Response :
+
+Query : Where is ultrasound probe located? 
+
+Response : ultrasound probe is located in the right top region of the image. 
+
+Query : Where is bipolar forceps located? 
+
+Response : bipolar forceps is located in the right top region of the image. 
+
+Query : Where is prograsp forceps located? 
+
+Response : prograsp forceps is located in the right top region of the image. 
+
+Query : Write an exhaustive depiction of the given image. 
+
+Response : The image depicts a surgical procedure. In the scene, we can observe a surgical instrument, specifically a pair of bipolar forceps [0.6, 0.01, 0.99, 0.21], which are currently in an idle state. These forceps are located in the right top region of the image and are not actively engaged in any action at the moment. The overall setting suggests a minimally invasive surgical environment, possibly using robotic assistance given the appearance of robotic arms in the image. 
+
+Input image 
+
+Query : please provide area masks of all areas. 
+
+Response :
+
+Endochat Slot2Text Figure 8: Qualitative comparison with EndoChat over two extended-context sessions. In the first example, EndoChat counts three instruments although only two are visible, whereas Slot2Text returns the correct count. In the second, EndoChat places the bipolar forceps in the upper-right region, whereas Slot2Text assigns it to the finer-grained area-3 . Slot2Text also exposes the masks and normalized boxes associated with its area IDs.
