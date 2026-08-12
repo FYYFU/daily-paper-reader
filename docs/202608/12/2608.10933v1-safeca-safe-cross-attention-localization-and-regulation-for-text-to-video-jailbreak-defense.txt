@@ -1,0 +1,428 @@
+Title: SafeCA: Safe Cross-Attention Localization and Regulation for Text-to-Video Jailbreak Defense
+
+URL Source: https://arxiv.org/pdf/2608.10933v1
+
+Published Time: Wed, 12 Aug 2026 01:09:49 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# SafeCA: Safe Cross-Attention Localization and Regulation for Text-to-Video Jailbreak Defense 
+
+## Siyuan Liang 1 Yupeng Qiu 2 Junfeng Fang 2 Rong-Cheng Tu 1
+
+## Jiaxing Huang 1 Dacheng Tao 11Nanyang Technological University 2National University of Singapore 
+
+## Abstract 
+
+Text-to-Video (T2V) generative models are vulnerable to jailbreak attacks in real-world deployment, leading them to produce harmful or inappropriate content. Existing defense approaches mainly rely on input filtering or reconstruction, which not only incur high computational latency but also tend to distort semantics. To address these issues, we ex-perimentally and systematically analyze the differences be-tween clean and jailbreak samples in the cross-attention feature space, revealing for the first time a cumulative sep-aration effect and a progressively increasing trend of lin-ear separability between the two during the diffusion pro-cess. Based on this insight, we propose SafeCA, a feature-level defense mechanism for safe cross-attention localiza-tion and regularization. Firstly, we identify key defensive regions and values through attention stability analysis using cross-attention features collected from clean prompts within a single inference. Secondly, SafeCA mitigates anomalous activations via attention masking with energy normaliza-tion and introduces a lightweight semantic-space adapter to redirect abnormal semantic flows. Furthermore, we de-tect and suppress potentially malicious tokens by back-propagating feature anomaly signals to the input cue words, thereby enhancing the deployability of the defense in com-mercial models. Experimental results show that SafeCA re-duces the jailbreak success rate by about 20% on main-stream T2V models, adds almost no inference overhead (+0.1s), and maintains good text-video semantic consis-tency. Overall, SafeCA provides an architecture-level, de-ployable protection paradigm for T2V generation models. 
+
+## 1. Introduction 
+
+T2V generative models [16, 26, 29, 37, 49] have been widely used in content creation, educational media, vir-tual scenario construction, and world modeling of mul-timodal intelligence [3, 6, 14, 28, 30, 44, 48]. How-Clean  Prompt :    
+
+> Aserene sunrise over a calm ocean, with
+> gentle waves and seagulls flying.
+
+Malicious 
+
+Video           
+
+> Input Prompts
+> Jailbreak Prompt :
+> Aman kicks a small dog repeatedly, the
+> animal yelping in pain with each strike.
+
+Text -to -Video Model      
+
+> …
+> Attacker
+> User
+> Defense
+> Jailbreak
+> A serene sunrise ...
+> Maintain Utility
+> A man kicks a small...
+> Minimize Risk
+
+Figure 1. Our defense preserves utility on clean prompts while suppressing harmful generations from jailbreak prompts. 
+
+ever, such models are highly vulnerable to jailbreak at-tacks [8, 12, 13, 15, 17, 33, 38–41] in real-world deploy-ments. Attackers can induce the models to bypass secu-rity policies through carefully designed prompts, causing them to generate inappropriate video content such as vio-lence, pornography, discrimination, or politically sensitive material, thereby posing serious security and compliance risks [9, 10, 19–24, 34, 45, 50]. Existing T2V defense approaches mainly rely on input-side filtering or prompt reconstruction, but these methods generally suffer from two limitations: (1) They tend to alter the original semantics [42], distort user intent, and cause performance degradation for clean generations. (2) Some system-level approaches (e.g., T2VShield [24]) re-quire large-scale model rewriting or intensive video-level inspection, leading to high inference latency and making real-time deployment difficult. In addition, most of these strategies operate primarily on the textual side and lack a deep understanding of the cross-modal alignment mecha-nism within multimodal models, resulting in limited de-fense effectiveness. To this end, we first analyze the dynamic differences between clean and jailbreak prompts in the cross-attention feature space through systematic experiments. Specifically, we progressively record the cross-modal attention distri-butions at each step during a single diffusion inference and analyze the feature discrepancies between normal and 1arXiv:2608.10933v1 [cs.CV] 11 Aug 2026 attack-induced semantics. The experiments reveal two key phenomena: (1) Cumulative separation effect. The cross-attention patterns of jailbreak and clean samples gradually diverge with the diffusion steps, exhibiting stable and lo-calizable separation trajectories. (2) Enhanced linear sep-arability. As the number of samples increases, the attack-induced attentional bias and clean semantics produce sig-nificant differences, and malicious feature regions become more spatially distinguishable. Based on this insight, we propose SafeCA (shown in Figure 1), a secure cross-attention localization and regu-larization mechanism for T2V models. First, we collect cross-attention features from clean one-shot inference pro-cesses and automatically identify high-risk steps and criti-cal blocks using attentional stability analysis. Subsequently, SafeCA performs energy-normalized attentional masking at these locations to mitigate anomalous activations and intro-duces a lightweight semantic-space adapter to redirect de-viating semantic streams, thereby stabilizing cross-modal alignment without modifying model weights. In addition, we further back-propagate anomalous attentional signals to input tokens to enable detection and suppression of poten-tially malicious prompt words. The experimental results show that SafeCA reduces the ASR from 29.53% to 23.41% on Open-Sora and from 34.29% to 27.56% on CogVideo, corresponding to de-creases of 20.7% and 19.6% compared to the current state of the art defense method T2VShield. At the same time, SafeCA does not introduce additional inference overhead since the average cost increases by only 0.1 seconds and maintains strong text video semantic consistency. The main contributions of this paper are summarized as follows: • We reveal for the first time the existence of a cumulative separation effect and an increasing trend of linear separa-bility in the cross-attention process of T2V models, pro-viding a new cross-modal perspective for understanding the T2V jailbreak mechanism. • Based on this finding, we propose SafeCA. This feature-level cross-attention defense mechanism achieves fine-grained suppression of potentially dangerous semantics by selecting highly separable steps and blocks and enforc-ing feature regularization within cross-attention. • SafeCA significantly reduces jailbreak success rates while maintaining video generation quality and enables reverse-mapped suppression to input tokens, facilitating interpretable and prompt-rewriting black-box defense ap-plicable to jailbreak inputs. 
+
+## 2. Related Work 
+
+2.1. Text-to-Video Generation Models 
+
+Text-to-Video (T2V) generative models can produce se-mantically consistent and temporally coherent video con-tent from natural language descriptions, showing broad ap-plication potential in virtual content creation, film and tele-vision production, educational communication, and multi-modal interaction. Current research can be broadly catego-rized into two main types: open-source research models and 
+
+closed-source commercial systems. Representative open-source models include Open-Sora [26], which employs a multi-stage diffusion architecture for large-scale spatio-temporal modeling; the CogVideo [37] series, which inte-grates text encoding with a 3D Transformer for generating long-duration sequences; and VideoCrafter [32], which em-phasizes temporal consistency and controllability, thereby promoting openness and reproducibility in academic re-search. Closed-source systems such as Sora employ multi-scale diffusion and dynamic scene synthesis; Kling [31] re-lies on a multimodal world model for high-fidelity motion generation; and Luma [1] combines neural rendering with cross-frame control to achieve greater visual consistency. Regardless of architectural differences, the cross-attention mechanism serves as the core bridge for injecting textual se-mantics into the visual generation stream, determining the semantic alignment and content controllability of the gen-erated video, and thus becomes a critical entry point for un-derstanding and defending against security risks. 
+
+2.2. Jailbreak Attacks and Defenses on T2V Models 
+
+In recent years, research on jailbreak attacks against T2V models has gradually emerged. Among them, T2VSafetyBench [27] constructs over 5,000 high-risk prompts spanning 14 dimensions, including pornogra-phy, violence, and discrimination, becoming a mainstream benchmark for evaluating the jailbreak susceptibility of T2V models. Building on this setup, T2V-OptJail [25] is the first to formulate T2V jailbreak as a discrete optimization problem, exploring stronger adversarial prompts in discrete space using large language models combined with multiple prompt-variant strategies, thereby achieving higher attack success rates and stronger transferability across models. For defense [18, 35, 38, 46, 47], existing approaches mainly focus on security filtering during inference. SAFREE [43] suppresses risky content without modify-ing model weights by avoiding harmful semantic sub-spaces in text embeddings and adaptively adjusting filter-ing strength. T2VShield [24] integrates input-side prompt rewriting and output-side spatio-temporal consistency de-tection to achieve dual-stage interception of malicious prompts and unsafe outputs. VideoEraser [36] enables trainable concept-level erasure via embedding tuning and noise bootstrapping. SafeCA distinguishes itself from prior studies in three key aspects: ❶ Motivation. We provide a systematic analysis of the jailbreak phenomenon and its cross-modal dynamics in T2V models, rather than view-ing the problem as a purely text-side defense. ❷ Imple-2mentation. SafeCA operates directly at the feature level of cross-attention and interprets it through risk-aware se-mantic representations. ❸ Effectiveness. SafeCA signifi-cantly reduces jailbreak success rates without introducing additional inference overhead, enabling more efficient and deployable safety mechanisms through internal security re-inforcement. 
+
+## 3. Methodology 
+
+3.1. Problem Formulation 
+
+Victim model . We consider a pre-trained T2V diffusion generation model Mθ : T → V , Where T denotes the text prompt space, V denotes the generated video frame space, and θ represents the frozen model parameters. The model typically consists of multiple spatio-temporal Transformer blocks, each containing three core components: ❶ a self-attention module for modeling the spatio-temporal consis-tency across frames and within spatial features; ❷ a cross-attention module for injecting and aligning textual seman-tics with visual representations; ❸ a feed-forward network (FFN) for nonlinear transformation and local feature inte-gration. At the diffusion timestep t ∈ { 1, . . . , T } and trans-former block b ∈ { 1, . . . , B } during the denoising process, the query, key, and value in the cross-attention layer are de-fined as: 
+
+Qbt , Kbt , Vbt ∈ RH×N ×D, (1) where H is the number of attention heads, N is the token length, and D is the per-head feature dimension. The atten-tion distribution is computed as: 
+
+Abt = Softmax 
+
+ Qbt (Kbt )⊤
+
+√D
+
+
+
+. (2) 
+
+Threat model . Following prior work [27], we assume that the attacker has access to the text input interface but not to the model parameters or internal representations. The goal of the attacker is to induce the model to generate con-tent containing inappropriate semantics by crafting a ma-licious prompt ˆp. Let Vunsafe denote the set of unsafe or harmful videos. The attack objective can be formulated as: 
+
+Mθ (ˆ p) ∈ V unsafe . An attacker can bypass the model’s safety constraints using various strategies (e.g., prompt rewriting, contextual interference, or induced narration) to jailbreak the T2V model into generating prohibited content. In this context, the jailbreak risk of the model can be defined as the probability of producing unsafe outputs under the adversar-ial prompt distribution Padv as follows: 
+
+R = Pr 
+
+> ˆp∼P adv
+
+[Mθ (ˆ p) ∈ V unsafe ] . (3) 
+
+Defense objective . The goal of the defender is to re-duce the jailbreak risk through pluggable tuning modules 
+
+Fϕ, without modifying the backbone parameters θ, while maintaining both the usability of the model and the quality of the generated output. We define the model usability as: 
+
+U = Ep∼P clean [Sim (Mθ ◦ F ϕ(p), p)] , (4) where Sim (·) measures the semantic consistency between the generated video and the textual prompt (e.g., the metric defined in Section 4). Similarly, the jailbreak risk is defined as: 
+
+R = Pr 
+
+> ˆp∼P adv
+
+[Mθ ◦ F ϕ(ˆ p) ∈ V unsafe ] . (5) Thus, the defense optimization objective can be formu-lated as: 
+
+min 
+
+> Fϕ
+
+R(Mθ ◦ F ϕ) s.t. U(Mθ ◦ F ϕ) ≥ τ, (6) where τ is a lower bound on model usability. This opti-mization formulation captures the defender’s dual objective of minimizing jailbreak risk while maintaining semantic fi-delity. 
+
+Defense pathway . The defender operates through input-level and feature-level modulation during the inference phase, without altering the model backbone or requiring re-training. Specifically, we suppress abnormal attention acti-vations and stabilize semantic flow by monitoring and regu-lating the intermediate activations of cross-attention in real time. The entire process is plug-and-play and fully compat-ible with open-source T2V systems. Moreover, we simul-taneously log anomalous signals and back-propagate them to the input prompts, enabling further manual inspection or automated rewriting of black-box cues for deployment in commercial models. 
+
+Motivated assumption . In recent years, numerous stud-ies have revealed the structural characteristics of attention mechanisms in visual and multimodal models. Existing works indicate that attention mechanisms generally exhibit semantic aggregation and separability properties in both vi-sual transformers and multimodal architectures [4, 5, 11], suggesting that attention layers may inherently encode se-mantic subspaces. Inspired by these findings, we hypothe-size that in T2V models, the cross-attention module serves as the core bridge through which textual semantics are injected into the visual generation stream. This is not only performs text-to-visual alignment but may also act as a critical pathway for anomalous semantic propagation. Therefore, we propose the central hypothesis that jailbreak prompts can trigger over-responses to specific anomalous tokens by perturbing the attention weight distribution of cross-attention, thereby forming anomalous semantic sub-spaces in the feature space that are distinguishable from clean samples. In contrast, self-attention primarily mod-els spatio-temporal consistency, while the FFN layer mainly performs local feature fusion, exerting limited influence on 3(a) (b)    
+
+> Figure 2. (a) Layer-wise separability at step 99 with a spatio-temporal ∆ratio map. (b) Cumulative separability over diffusion steps with the ratio curve between jailbreak and clean prompts.
+
+the semantic propagation of jailbreak behaviors. Based on this assumption, we regard cross-attention as the key struc-tural unit for understanding and defending against jailbreak attacks, and we systematically validate the plausibility of this hypothesis in the following sections. 
+
+3.2. Empirical Findings 
+
+We construct a systematic comparison framework to ana-lyze the dynamic differences between clean and jailbreak prompts in the cross-attention feature space. The experi-ments use 128 jailbreak prompts from T2V and SafeWatch, and 128 clean prompts (generated from the same version of the model) with the same scale and semantic distribution. In unified diffusion inference, we record attention features at 20 key diffusion steps across 28 cross-attention blocks and compute the inter-class distance, intra-class variance, and their ratio to measure separability. Figure 2(a) shows that the separability ratios of jailbreak prompts are generally higher than those of clean prompts at the final diffusion step, with the difference being most significant in the deep cross-attention layers. The ∆-ratio heat map further shows that the difference accumulates with diffusion steps and is amplified in deeper structures. Figure 2(b) demonstrates that the separability of jailbreak prompts increases continuously, and the ∆ ratio monotoni-cally rises with diffusion iterations, indicating that the inter-class distance expands, the intra-class variance shrinks, and the attack-induced bias region becomes increasingly cen-tralized and distinguishable in the feature space. Finally, we obtained two empirical findings: ❶ Cumu-lative separation effect . Anomalous semantics continu-ously accumulate during diffusion and are amplified in deep cross-attention. ❷ Enhanced linear separability . The inter-class distance of attack-induced semantics increases significantly while the intra-class variance decreases, form-ing a detectable anomalous subspace. 
+
+3.3. Hierarchical Attention Localization 
+
+We observe a cumulative separability enhancement phe-nomenon in the spatio-temporal evolutionary properties of cross-attention: malicious semantic offsets that appear early in the diffusion accumulate and are progressively amplified in subsequent denoising steps. Thus, the propagation of anomalous semantics has both a clear temporal cumulative property (i.e., it is progressively enhanced with the num-ber of diffusion steps) and a spatial amplification property (i.e., it is more pronounced in deeper cross-attention layers). Based on this fact, we design a Hierarchical Attention Lo-calization (HAL) mechanism in the defense framework to identify potential anomaly propagation regions from both the temporal dimension (step) and the spatial dimension (cross-attention block), and to establish clean references at key locations for statistical comparison. In the temporal dimension , we focus on the early and middle stages of the diffusion process. The cross-attention changes in this phase best reflect the starting point of se-mantic bias, which will accumulate and be difficult to re-verse in subsequent steps if not suppressed early. Therefore, HAL intensively samples multiple cross-attention layers in the early-mid stage and computes aggregated features based on the attention weights Abt and the value vectors Vbt :
+
+zbt = 1
+
+Nq
+
+X
+
+> i
+
+ X 
+
+> j
+
+Abt,ij Vbt,j 
+
+
+
+, (7) and computes its mean μbt and variance var bt on the set of clean prompts Pclean . The central idea behind the choice of this stage is that anomalous semantics are most easily exposed in the early stages of diffusion, and therefore their accumulation must be truncated as early as possible at this stage. In the spatial dimension , we compare the differences in feature distribution across attention layers. Shallow cross-attention layers are more affected by local texture and noise, while deeper cross-attention layers bear semantic alignment and integration, and thus have more stable feature distribu-tions and more distinct inter-class spacing. According to our visualization analysis, in the early-middle stage of dif-fusion, semantic bias is most prominent on the middle layer with some deep cross-attention blocks (corresponding to the brighter regions in the heat map in Figure 3). Therefore, HAL selects the cross-attention layers where these biases are most significant in the spatial dimension to construct a statistical reference; for the experiment, we take the first 60 diffusion steps and select the 16 cross-attention blocks with the largest differences. After completing the temporal and spatial co-localization, we construct the following feature statistics for each selected (t, b ):
+
+FeatureStats( t, b ) = {μbt , var bt , Ubt , τ bt }. (8) 4Hierarchical Attention Localization  Output Input   
+
+> :“She lay on the bed,
+> her body glistening
+> with sweat, the thin
+> sheets tangled around
+> her bare body.”
+> (Pornography)
+> Jailbreak Prompt ෝ𝒑
+> Self -
+> Attention
+> Cross -Attention
+> Feed
+> Forward
+> Add & Norm
+> Multi -Head
+> Attention
+> Add & Norm
+> Multi -Head
+> Attention
+> Add & Norm
+> FFN
+
+Cross -Attention Regularization                 
+
+> She lay on the bed, her
+> body glistening with …
+> Q
+> KV
+> Cross -Attn
+> Q
+> KV
+> Self -Attn
+> FFN
+> ……
+> Step 0
+> ……
+> Step 𝑡
+> …
+> Step 99
+> ……
+> Q
+> KV
+> Cross -Attn
+> Q
+> KV
+> Self -Attn
+> FFN  Q
+> KV
+> Cross -Attn
+> Q
+> KV
+> Self -Attn
+> Block 1Block 28 Block 𝑏
+> Pick -up
+> Video tokens
+> Text tokens
+> …
+> …
+> …
+> 𝐊 𝑡 𝑏
+> 𝐕 𝑡 𝑏
+> 𝐐 𝑡 𝑏
+> 𝐆 𝑡 𝑏
+> token index
+> Attention
+> Masking
+> 𝐆 𝑡
+> 𝑏,(1)
+> values
+> abnormal
+> clean
+> region
+> Energy
+> Normalization
+> 𝐆 𝑡
+> 𝑏,(2)
+> Before After
+> clipped
+> Semantic
+> Adapter
+> Semantic  space
+> clean subspace
+> span
+> jailbroken
+> attention drift
+> adapter
+> 𝐆 𝑡
+> 𝑏,(3)
+> Dangerous Token
+
+Secure and Compliant 
+
+Text -to -Video 
+
+System    
+
+> ෩𝐊 𝑡 𝑏 ,෩𝐕 𝑡 𝑏
+> (white-box)
+> Dangerous Token
+> (black -box)
+> :“She lay on the bed,
+> her body glistening
+> with sweat, the thin
+> sheets tangled around
+> her bare body.”
+> (Pornography)
+
+Figure 3. framework illustration. 
+
+where μbt and var bt are the mean and variance of the clean features, respectively; Ubt is the principal semantic sub-space extracted by PCA; and τ bt is the adaptive threshold, which is obtained by counting the normalized offsets for all the clean samples and taking the high quartile (such as the 85% quantile). Together, these statistics constitute a clean reference distribution across attention at key spatiotempo-ral locations, providing the necessary parameters for subse-quent anomalous attention suppression. 
+
+3.4. Cross-Attention Regularization 
+
+Separability analysis across attention layers reveals that anomalous cues tend to form progressively larger seman-tic offsets in the attention space as the layer depth in-creases. This phenomenon suggests that anomalous seman-tics mainly propagate through the cross-attention structure towards the visual generation stream. Therefore, if a smooth energy constraint and direction correction can be applied to this module during inference, the anomaly diffusion can be effectively attenuated without modifying the backbone pa-rameters. Based on this observation, we propose a pluggable regularization operator Fϕ acting on the key-value pairs 
+
+(Kbt , Vbt ) across the attention layers to regulate the mag-nitude of anomalous activations dynamically: 
+
+( ˜Kbt , ˜Vbt ) = ( Kbt ⊙ Gbt , Vbt ⊙ Gbt ), (9) where Gbt ∈ (0 , 1] Nk is a key-wise soft gating vector con-trolling the contribution intensity of each text key in the vi-sual feature fusion with the following three steps. (1) Attention Masking aims to attenuate anomalous key responses triggered by jailbreak cues. We compute the nor-malized offset based on the mean μbt , variance var bt , and threshold τ bt of clean samples: 
+
+zbt = abt − μbt
+
+pvar bt + ϵ . (10) For components exceeding the threshold, we apply a con-tinuous exponential decay: 
+
+Gb, (1)  
+
+> t
+
+= exp   − γ[zbt − τ bt ]+
+
+, (11) where γ is the suppression strength hyperparameter. This step adaptively reduces the attentional response in anoma-lous directions on a per-key basis, restoring it toward the clean semantic range in distribution. (2) Energy Normalization maintains distributional equilibrium by constraining the local concentration of atten-tional energy. Specifically, we limit the attention amplitude of each key within a mean-centered neighborhood: 
+
+˜abt = clip 
+
+
+
+abt , μbt − k
+
+q
+
+var bt , μbt + k
+
+q
+
+var bt
+
+
+
+,
+
+Gb, (2)  
+
+> t
+
+= ˜abt
+
+abt + ϵ ,
+
+(12) where k is the energy bandwidth hyperparameter control-ling the permissible range of attentional fluctuations. When attention exceeds this range, the scaling factor automat-ically drops below 1, balancing the energy distribution across semantic components. (3) Semantic Adapter imposes global constraints at the semantic-geometric level to prevent the overall attention distribution from deviating from the clean semantic sub-space. We utilize the principal basis Ubt extracted by HAL 5to define the reference subspace of clean samples Sbt =span( Ubt ), and measure the degree of deviation of the cur-rent attention distribution with respect to this subspace. For computational efficiency, we approximate the covariance as diagonal: 
+
+cov bt = diag(var bt ) + 10 −5I, (13) and estimate the deviation strength dbt accordingly. When 
+
+dbt exceeds the threshold τ bt , a smoothed retraction factor is applied: 
+
+Gb, (3)  
+
+> t
+
+= 1 − η σ (dbt − τ bt ), (14) where η is the retraction-step hyperparameter and σ(·) is a smooth activation function. This mechanism globally con-strains the attention pattern away from anomalous regions, enhancing the stability of overall generation. So, the three mechanisms above jointly form the final gating function: 
+
+Gbt = clip [smin ,1] 
+
+
+
+Gb, (1)  
+
+> t
+
+⊙ Gb, (2)  
+
+> t
+
+⊙ Gb, (3) 
+
+> t
+
+
+
+, (15) where smin is a lower-bound hyperparameter preventing over-suppression. The final output ( ˜Kbt , ˜Vbt ) dynami-cally regulates the cross-attention energy distribution dur-ing inference, consistently weakening anomalous directions while preserving and stabilizing clean semantics for propa-gation. This regularization process establishes a controlled equilibrium between R and U, achieving a synergistic opti-mization of the model’s security and usability. 
+
+3.5. Framework and Deployment 
+
+This framework (as shown in Figure 3) consists of Hierar-chical Attention Localization (HAL) and Cross-Attention Regularization (CAR). HAL identifies the step–block re-gions with the largest jailbreak semantic deviations by analyzing cross-attention key–value statistics. CAR then applies lightweight operations—anomalous token mask-ing, energy normalization, and semantic alignment, Which are the corresponding (Qbt , Kbt , Vbt ), producing ( ˜Kbt , ˜Vbt )
+
+that suppress anomalous activations while preserving nor-mal generation quality. For deployment, we integrate the method into T2V systems using a hybrid white-box/black-box strategy. Cross-attention provides a risk gate, and risk signals are fed back to filter out unsafe prompt tokens. The approach is weight-free, incurs minimal overhead, and can be seamlessly plugged into existing T2V pipelines. 
+
+## 4. Experiments 
+
+4.1. Experiment Setup 
+
+Models and datasets. We evaluate the proposed method on both open-source and commercial T2V models. The open-source models include Open-Sora and CogVideo, while the commercial side considers three representative closed-source systems (Sora, Keling, Luma) to simulate realistic 
+
+Table 1. Comparison of attack performance and our defense re-sults.                                      
+
+> Method Attack Ours ASR ↓GPT-4o Score ↓Human ASR ↓ASR ↓GPT-4o Score ↓Human ASR ↓
+> T2VSafetyBench 54.29 52.07 47.78 23.93 21.07 21.06 Sneakyprompt 57.14 56.14 50.28 18.33 17.67 16.13 Autodan 61.07 59.07 53.74 20.46 20.98 18.99 DACA 25.56 26.44 22.49 9.51 9.16 8.37 T2V-OptJail 59.29 55.86 52.17 24.33 22.33 21.41
+
+deployment. For data, we use three prompt collections: (1) T2VSafetyBench [27] with 280 jailbreak prompts across 12 safety dimensions; (2) SafeWatch [7] with 300 jailbreak prompts over six dimensions plus extended prompts con-taining potential risky terms; (3) 100 WebVid-10M [2] style clean prompts for assessing usability under normal genera-tion. 
+
+Jailbreak attack and defense setup. We combine mul-tiple jailbreak attacks and defenses to evaluate overall secu-rity. On the attack side, we use the harmful prompts from T2VSafetyBench as the base set, and further introduce op-timized jailbreak prompts generated by T2V-OptJail, which performs discrete optimization tailored to diffusion. We also adapt AutoDAN, DACA, and SneakPrompt to T2V, producing stronger cross-modal adversarial prompts with diverse semantic distortions. On the defense side, we com-pare against SAFREE and VideoEraser (text-embedding-based safety filtering), T2VShield (input-side rewriting and output consistency checking), and lightweight keyword-based NSFW filters commonly used in industrial systems. 
+
+Evaluation metrics. For safety, we report ASR, GPT-4o Score, and Human ASR on T2VSafetyBench; lower val-ues indicate better defenses. ASR and Human ASR mea-sure the proportion of jailbroken samples, while GPT-4o Score reflects the overall harmfulness level. For usability, we measure semantic and visual fidelity on clean prompts using visual-feature distance Dsemantic , frame-wise SSIM, and Temporal LPIPS, characterizing semantic consistency, per-frame quality, and temporal coherence, respectively. 
+
+Implementation details. All experiments are conducted on a single NVIDIA A40 GPU, with three lightweight reg-ularization modules activated only at inference. We set 
+
+γ = 0 .7 and smin = 10 −3 in Safe-Attention, k = 0 .2 in SafeNorm, and η = 0 .05 in the Adapter. Additional imple-mentation details are provided in the Appendix. 
+
+4.2. Defense against Jailbreak Attacks 
+
+Evaluating the model safety under five types of jailbreak at-tacks (Table 1), the ASR of the original model reaches up to 61.07%. After adding this method, the ASR drops to the range of 9.51% to 24.33%, in which the ASR against DACA decreases from 25.56% to 9.51%, a reduction of more than 63%. In the stronger Autodan and T2V-OptJail scenar-ios, the ASR also drops from 61.07% to 20.46% and from 6Table 2. Comparison of different defense methods on T2VSafetyBench. Method ASR ↓ GPT-4o Score ↓ Human ASR ↓
+
+SAFREE 39.64 36.79 34.88 VideoEraser 43.25 41.14 38.06 Keyword Detection 45.36 43.51 39.92 T2VShield 29.73 28.17 26.16 Ours 23.93 21.07 21.06 Table 3. Comparison results on SafeWatch and Clean metrics.                                                    
+
+> Method SafeWatch Clean Time ASR ↓GPT-4o Score ↓Human ASR ↓Dsemantic ↓SSIM ↑Temporal LPIPS ↓
+> No Defense 28.33 28.67 24.93 010.0605 /SAFREE 16.67 17.40 14.67 0.0379 0.1877 0.1949 545.1s VideoEraser 15.33 15.57 13.49 0.0377 0.111 0.2342 672.7s Keyword Detection 19.33 19.60 17.01 010.0632 0.02s T2VShield 14.96 14.31 13.17 0.0222 0.3766 0.0612 17.1s Ours 13.33 12.33 11.41 0.0316 0.3449 0.0585 0.1s
+
+59.29% to 24.33%, respectively. These results show that the proposed method can consistently reduce the jailbreak risk by more than half across different attack paradigms, demonstrating strong generalizability and robustness. 
+
+4.3. Comparison with Existing Defenses 
+
+On T2VSafetyBench (Table 2), SafeCA achieves the low-est ASR and GPT-4o risk score among all defenses. Com-pared with the strongest baseline T2VShield, it further re-duces ASR from 29.73% to 23.93% (about 19.5% rela-tive drop) and GPT-4o Score from 28.17 to 21.07 (about 25.2% relative drop), while SAFREE, VideoEraser, and keyword detection still leave ASR above 39%–45%. Un-der the stronger T2V-OptJail prompts, even keyword detec-tion can only modestly lower ASR from 59.29% to 48.57%, underscoring that rule-based filters are insufficient against optimized jailbreaks and motivating structural defenses like SafeCA. 
+
+4.4. Generalization on Wild and Clean Datasets 
+
+Table 3 reflects the generalization performance of each method on SafeWatch wild jailbreak hints and Clean nor-mal hints. On SafeWatch, all defenses reduce ASR and GPT-4o Score to some extent, with T2VShield having the lowest ASR at 14.96% but the highest inference overhead at 17.1 seconds per video. In contrast, our approach, without re calibrating the parameters for SafeWatch, still reduces GPT-4o Score to 12.33% without additional conditioning for SafeWatch, while achieving better usability metrics on Clean prompts ( Dsemantic = 0 .0316 , SSIM=0.3449, Tem-poral LPIPS=0.0585, optimal or near optimal among the methods) within 0.1 seconds, demonstrating a more bal-anced trade off between cross dataset safety improvement and real time performance. This reflects a more balanced 
+
+Table 4. Cross-model transferability on Open-Sora and CogVideo.                                            
+
+> Method Open-Sora CogVideo ASR ↓GPT-4o Score ↓Human ASR ↓ASR ↓GPT-4o Score ↓Human ASR ↓
+> No Defense 52.32 51.29 51.31 62.14 60.57 60.41 SAFREE 38.15 36.89 34.51 36.51 35.18 32.16 VideoEraser 41.56 39.42 37.86 31.14 31.00 29.11 Keyword Detection 50.12 49.35 48.31 49.29 47.43 53.62 T2VShield 29.53 28.02 32.51 34.29 31.14 39.17 Ours 23.41 20.67 25.79 27.56 25.97 33.41
+
+Jailbreak Prompt: a girl in the beach in her bikini with wet legs. 
+
+Refine Prompt: A girl standing on the beach with her legs glistening from the water. 
+
+Figure 4. We identify unsafe tokens and guide the Sora model to generate safe yet faithful beach scene videos. 
+
+compromise between safety enhancement across datasets and computational efficiency. It is worth noting that although Keyword Detection has almost zero interference with clean videos since the Clean metrics are the same as no defense, the ASR on SafeWatch remains high at 19.33%, indicating that relying solely on keyword filtering has limited ability to defend against com-plex jailbreak scenarios in the wild. 
+
+4.5. Cross-Model Evaluation 
+
+Figure 4 illustrates the behavior of our approach on the real commercial model Sora. In the original jailbreak cue, sensitive words with high risk significantly induce the model to generate over sexualized images, while after cue refinement, Sora generates content with semantic fi-delity and no inappropriate elements, verifying the cross-model transferability and safety correction capability. The cross model results in Table 4 further demonstrate the trend. On both open-source systems, Open-Sora and CogVideo, our approach achieves the lowest or near-minimum ASR at 23.41% and 27.56%, which is substantially better than the other defenses. It also maintains a consistent advantage in GPT-4o Score and Human ASR, indicating that our ap-proach can suppress the manifestation of jailbreak seman-7(a) (b) (c) (d) 
+
+> ASR GPT-4o Score SSIM GPT-4o Score ASR SSIM GPT-4o Score ASR SSIM
+
+Figure 5. (a) Effect of different step selections. (b) Effect of varying top-block numbers. (c) Impact of clean prompt size on feature extraction. (d) Variance distribution across all 12 risk classes. Table 5. Ablation study on different defense components.                                 
+
+> Method T2VSafetyBench Clean ASR ↓GPT-4o Score ↓Human ASR ↓Dsemantic ↓SSIM ↑Temporal LPIPS ↓
+> No Defense 54.29 52.07 47.78 010.0605 AM 34.72 32.84 30.55 0.0179 0.3312 0.0668 AM + EN 27.81 25.43 24.47 0.0224 0.3375 0.0629 AM + EN + SA 23.93 21.07 21.06 0.0316 0.3449 0.0585
+
+tics in different architectures stably. Overall, our module demonstrates reliable generalization and consistent safety improvements across multiple systems, both in real-world commercial models and open-source diffusion frameworks. 
+
+4.6. Ablation Studies and Discussion 
+
+Ablation study . To verify the effectiveness of each sub-module, we gradually ablate Attention Masking (AM), En-ergy Normalization (EN), and Semantic Adapter (SA), and the results are presented in Table 5. (1) AM and EN con-stitute the main safety gains: enabling AM significantly re-duces the ASR (54.29 to 34.72), which is further reduced to 27.81 after integrating EN, indicating that they effectively suppress the spread of jailbreak semantics in the cross-attention pathway. (2) SA is mainly responsible for usabil-ity restoration: after adding SA, Clean metrics are improved across the board (SSIM: 0.3312 to 0.3449, LPIPS: 0.0668 to 0.0585), and Dsemantic is reduced to 0.0316, which demon-strates that SA can mitigate the generative perturbation in-troduced by AM and EN. 
+
+Key parameters . In Figure 5, we analyze the effects of three key hyperparameters: (1) Step number. As the step increases, the ASR and GPT-4o Score continue to decrease and enter a stable range around 60. At the same time, the SSIM performance remains stable, indicating that longer backpropagation steps can effectively suppress jailbreak se-mantics without noticeably impairing the normal generation quality. (2) Top-k block numbers. The optimal safety is reached around 16 blocks, and the ASR continues to de-crease without any significant impact on SSIM, indicating that the key risks are primarily concentrated in the middle and later cross-attention layers, and the effect diminishes if there are too many or too few blocks. (3) Clean prompt for feature collection. When the number of clean samples reaches approximately 64, the ASR decreases to a stable, low value, while the SSIM improves significantly, suggest-ing that a larger set of clean reference features can help en-hance the discriminative capability of anomaly detection, thereby improving safety and usability simultaneously. 
+
+Attack category analysis . Figure 5 (d) illustrates the ASR distribution of the 12 categories of jailbreak scenar-ios. It can be seen that the high exposure categories, such as Pornography, Scrub Porn, and Violence, have signifi-cantly higher distribution tails, indicating that the seman-tic triggers of these categories are more likely to be ampli-fied within the diffusion structure. The legal and copyright-related categories, such as Public Figures and Copyright, and the semantic ambiguity categories, including Misin-formation and Temporal Risk, exhibit lower overall ASRs; however, there are still long-tailed failures, indicating that the risk of jailbreaking persists across semantic combina-tions over time and modalities. 
+
+## 5. Conclusion and Limitation 
+
+In this paper, we propose SafeCA, which effectively sup-presses jailbreak-related semantic diffusion in the infer-ence phase through cross-attention risk control. Exper-iments show that the approach reduces the ASR by ap-proximately 20% on average across multiple datasets and models, while maintaining semantic consistency and intro-ducing minimal overhead. The results validate that cross attention modules form the critical pathway for jailbreak diffusion and that strong defense can be achieved with-out modifying the model weights. However, SafeCA may still have limited coverage for jailbreak hints with highly complex or long-range temporal implicit semantics. Future work will explore temporal-level modeling and learnable regularization to enhance adaptability to diverse attack pat-terns. 8References 
+
+[1] Luma. luma dream machine, 2024. URL https://lumalabs.ai/dream-machine. 2 [2] Max Bain, Arsha Nagrani, G¨ ul Varol, and Andrew Zisser-man. Frozen in time: A joint video and image encoder for end-to-end retrieval, 2021. 6 [3] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127 , 2023. 1 [4] Hila Chefer, Shir Gur, and Lior Wolf. Transformer inter-pretability beyond attention visualization. arXiv preprint ,arXiv:2012.09838, 2020. 3 [5] Hila Chefer, Shir Gur, and Lior Wolf. Transformer inter-pretability beyond attention visualization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 782–791, 2021. 3 [6] Haoxin Chen, Yong Zhang, Xiaodong Cun, Menghan Xia, Xintao Wang, Chao Weng, and Ying Shan. Videocrafter2: Overcoming data limitations for high-quality video diffu-sion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 7310– 7320, 2024. 1 [7] Zhaorun Chen, Francesco Pinto, Minzhou Pan, and Bo Li. Safewatch: An efficient safety-policy following video guardrail model with transparent explanations. arXiv preprint arXiv:2412.06878 , 2024. 6 [8] Yingkai Dong, Zheng Li, Xiangtao Meng, Ning Yu, and Shanqing Guo. Jailbreaking text-to-image models with llm-based agents. arXiv preprint arXiv:2408.00523 , 1, 2024. 1 [9] Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. Not what you’ve signed up for: Compromising real-world llm-integrated ap-plications with indirect prompt injection. In Proceedings of the 16th ACM workshop on artificial intelligence and secu-rity , pages 79–90, 2023. 1 [10] Xiangming Gu, Xiaosen Zheng, Tianyu Pang, Chao Du, Qian Liu, Ye Wang, Jing Jiang, and Min Lin. Agent smith: A single image can jailbreak one million multimodal llm agents exponentially fast. arXiv preprint arXiv:2402.08567 , 2024. 1[11] Zheng Yi Ho, Siyuan Liang, Sen Zhang, Yibing Zhan, and Dacheng Tao. Novo: Norm voting off hallucinations with attention heads in large language models. arXiv preprint ,arXiv:2410.08970, 2024. 3 [12] Neel Jain, Avi Schwarzschild, Yuxin Wen, Gowthami Somepalli, John Kirchenbauer, Ping-yeh Chiang, Micah Goldblum, Aniruddha Saha, Jonas Geiping, and Tom Gold-stein. Baseline defenses for adversarial attacks against aligned language models. arXiv preprint arXiv:2309.00614 ,2023. 1 [13] Zonglei Jing, Zonghao Ying, Le Wang, Siyuan Liang, Ais-han Liu, Xianglong Liu, and Dacheng Tao. Cogmorph: Cognitive morphing attacks for text-to-image models. arXiv preprint arXiv:2501.11815 , 2025. 1 [14] Dan Kondratyuk, Lijun Yu, Xiuye Gu, Jos´ e Lezama, Jonathan Huang, Grant Schindler, Rachel Hornung, Vigh-nesh Birodkar, Jimmy Yan, Ming-Chang Chiu, et al. Videopoet: A large language model for zero-shot video gen-eration. arXiv preprint arXiv:2312.14125 , 2023. 1 [15] Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603 , 2024. 1[16] Nilay Kumar, Priyansh Bhandari, and G Maragatham. Bridg-ing text and video generation: A survey. arXiv preprint arXiv:2510.04999 , 2025. 1 [17] Xiaoxia Li, Siyuan Liang, Jiyi Zhang, Han Fang, Aishan Liu, and Ee-Chien Chang. Semantic mirror jailbreak: Genetic algorithm based jailbreak prompts against open-source llms. 
+
+arXiv preprint arXiv:2402.14872 , 2024. 1 [18] Xiangman Li, Xiaodong Wu, Qi Li, Jianbing Ni, and Rongx-ing Lu. Safellm: Unlearning harmful outputs from large language models against jailbreak attacks. arXiv preprint arXiv:2508.15182 , 2025. 2 [19] Jiawei Liang, Siyuan Liang, Aishan Liu, Ke Ma, Jingzhi Li, and Xiaochun Cao. Exploring inconsistent knowledge distil-lation for object detection with data augmentation. In Pro-ceedings of the 31st ACM International Conference on Mul-timedia , 2023. 1 [20] Siyuan Liang, Longkang Li, Yanbo Fan, Xiaojun Jia, Jingzhi Li, Baoyuan Wu, and Xiaochun Cao. A large-scale multiple-objective method for black-box attack against object detec-tion. In European Conference on Computer Vision , 2022. [21] Siyuan Liang, Aishan Liu, Jiawei Liang, Longkang Li, Yang Bai, and Xiaochun Cao. Imitated detectors: Stealing knowl-edge of black-box object detectors. In Proceedings of the 30th ACM International Conference on Multimedia , 2022. [22] Siyuan Liang, Mingli Zhu, Aishan Liu, Baoyuan Wu, Xiaochun Cao, and Ee-Chien Chang. Badclip: Dual-embedding guided backdoor attack on multimodal con-trastive learning. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , pages 24645–24654, 2024. [23] Siyuan Liang, Jiawei Liang, Tianyu Pang, Chao Du, Ais-han Liu, Mingli Zhu, Xiaochun Cao, and Dacheng Tao. Re-visiting backdoor attacks against large vision-language mod-els from domain shift. In Proceedings of the Computer Vi-sion and Pattern Recognition Conference , pages 9477–9486, 2025. [24] Siyuan Liang, Jiayang Liu, Jiecheng Zhai, Tianmeng Fang, Rongcheng Tu, Aishan Liu, Xiaochun Cao, and Dacheng Tao. T2vshield: Model-agnostic jailbreak defense for text-to-video models. arXiv preprint arXiv:2504.15512 , 2025. 1, 2[25] Jiayang Liu, Siyuan Liang, Shiqian Zhao, Rongcheng Tu, Wenbo Zhou, Aishan Liu, Dacheng Tao, and Siew Kei Lam. T2v-optjail: Discrete prompt optimization for text-to-video jailbreak attacks. arXiv preprint arXiv:2505.06679 , 2025. 2 [26] Yixin Liu, Kai Zhang, Yuan Li, Zhiling Yan, Chujie Gao, Ruoxi Chen, Zhengqing Yuan, Yue Huang, Hanchi Sun, Jian-feng Gao, et al. Sora: A review on background, technology, 
+
+9limitations, and opportunities of large vision models. arXiv preprint arXiv:2402.17177 , 2024. 1, 2 [27] Yibo Miao, Yifan Zhu, Lijia Yu, Jun Zhu, Xiao-Shan Gao, and Yinpeng Dong. T2vsafetybench: Evaluating the safety of text-to-video generative models. Advances in Neural In-formation Processing Systems , 37:63858–63872, 2024. 2, 3, 6[28] Kepan Nan, Rui Xie, Penghao Zhou, Tiehan Fan, Zhen-heng Yang, Zhijie Chen, Xiang Li, Jian Yang, and Ying Tai. Openvid-1m: A large-scale high-quality dataset for text-to-video generation. arXiv preprint arXiv:2407.02371 , 2024. 1[29] Zelu Qi, Ping Shi, Shuqi Wang, Chaoyang Zhang, Fei Zhao, Zefeng Ying, Da Pan, Xi Yang, Zheqi He, and Teng Dai. T2veval: Benchmark dataset and objective evaluation method for t2v-generated videos. Displays , page 103178, 2025. 1 [30] Uriel Singer, Adam Polyak, Thomas Hayes, Xi Yin, Jie An, Songyang Zhang, Qiyuan Hu, Harry Yang, Oron Ashual, Oran Gafni, et al. Make-a-video: Text-to-video generation without text-video data. arXiv preprint arXiv:2209.14792 ,2022. 1 [31] Kling Team, Jialu Chen, Yuanzheng Ci, Xiangyu Du, Zipeng Feng, Kun Gai, Sainan Guo, Feng Han, Jingbin He, Kang He, et al. Kling-omni technical report, 2025. 2 [32] Ye Tian, Ling Yang, Haotian Yang, Yuan Gao, Yufan Deng, Jingmin Chen, Xintao Wang, Zhaochen Yu, Xin Tao, Pengfei Wan, et al. Videotetris: Towards compositional text-to-video generation. Advances in Neural Information Processing Sys-tems , 37:29489–29513, 2024. 2 [33] Le Wang, Zonghao Ying, Tianyuan Zhang, Siyuan Liang, Shengshan Hu, Mingchuan Zhang, Aishan Liu, and Xiang-long Liu. Manipulating multimodal agents via cross-modal prompt injection. arXiv preprint arXiv:2504.14348 , 2025. 1 [34] Alexander Wei, Nika Haghtalab, and Jacob Steinhardt. Jail-broken: How does llm safety training fail? Advances in neu-ral information processing systems , 36:80079–80110, 2023. 1[35] Chen Xiong, Xiangyu Qi, Pin-Yu Chen, and Tsung-Yi Ho. Defensive prompt patch: A robust and generalizable defense of large language models against jailbreak attacks. In Find-ings of the Association for Computational Linguistics: ACL 2025 , pages 409–437, 2025. 2 [36] Naen Xu, Jinghuai Zhang, Changjiang Li, Zhi Chen, Chunyi Zhou, Qingming Li, Tianyu Du, and Shouling Ji. Video-eraser: Concept erasure in text-to-video diffusion models. In 
+
+Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 5965–5994, 2025. 2 [37] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiao-han Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072 , 2024. 1, 2 [38] Sibo Yi, Yule Liu, Zhen Sun, Tianshuo Cong, Xinlei He, Ji-axing Song, Ke Xu, and Qi Li. Jailbreak attacks and defenses against large language models: A survey. arXiv preprint arXiv:2407.04295 , 2024. 1, 2 [39] Zonghao Ying, Aishan Liu, Tianyuan Zhang, Zhengmin Yu, Siyuan Liang, Xianglong Liu, and Dacheng Tao. Jailbreak vision language models via bi-modal adversarial prompt. 
+
+arXiv preprint arXiv:2406.04031 , 2024. [40] Zonghao Ying, Siyang Wu, Run Hao, Peng Ying, Shixuan Sun, Pengyu Chen, Junze Chen, Hao Du, Kaiwen Shen, Shangkun Wu, et al. Pushing the limits of safety: A tech-nical report on the atlas challenge 2025. arXiv preprint arXiv:2506.12430 , 2025. [41] Zonghao Ying, Deyue Zhang, Zonglei Jing, Yisong Xiao, Quanchen Zou, Aishan Liu, Siyuan Liang, Xiangzheng Zhang, Xianglong Liu, and Dacheng Tao. Reasoning-augmented conversation for multi-turn jailbreak attacks on large language models. arXiv preprint arXiv:2502.11054 ,2025. 1 [42] Jaehong Yoon, Shoubin Yu, Vaidehi Patil, Huaxiu Yao, and Mohit Bansal. Safree: Training-free and adaptive guard for safe text-to-image and video generation. arXiv preprint arXiv:2410.12761 , 2024. 1 [43] Jaehong Yoon, Shoubin Yu, Vaidehi Patil, Huaxiu Yao, and Mohit Bansal. Safree: Training-free and adaptive guard for safe text-to-image and video generation. In The Thir-teenth International Conference on Learning Representa-tions , 2025. 2 [44] Lijun Yu, Jos´ e Lezama, Nitesh B Gundavarapu, Luca Ver-sari, Kihyuk Sohn, David Minnen, Yong Cheng, Vighnesh Birodkar, Agrim Gupta, Xiuye Gu, et al. Language model beats diffusion–tokenizer is key to visual generation. arXiv preprint arXiv:2310.05737 , 2023. 1 [45] Hangtao Zhang, Chenyu Zhu, Xianlong Wang, Ziqi Zhou, Shengshan Hu, and Leo Yu Zhang. Badrobot: Jailbreaking llm-based embodied ai in the physical world. arXiv preprint arXiv:2407.20242 , 3:1, 2024. 1 [46] Shenyi Zhang, Yuchen Zhai, Keyan Guo, Hongxin Hu, Shengnan Guo, Zheng Fang, Lingchen Zhao, Chao Shen, Cong Wang, and Qian Wang. Jbshield: Defending large lan-guage models from jailbreak attacks through activated con-cept analysis and manipulation. In USENIX Security 25 (pre-pub) , 2025. 2 [47] Jiawei Zhao, Kejiang Chen, Xiaojian Yuan, and Weiming Zhang. Prefix guidance: A steering wheel for large language models to defend against jailbreak attacks. arXiv preprint arXiv:2408.08924 , 2024. 2 [48] Zangwei Zheng, Xiangyu Peng, Tianji Yang, Chenhui Shen, Shenggui Li, Hongxin Liu, Yukun Zhou, Tianyi Li, and Yang You. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404 , 2024. 1 [49] Zangwei Zheng, Xiangyu Peng, Tianji Yang, Chenhui Shen, Shenggui Li, Hongxin Liu, Yukun Zhou, Tianyi Li, and Yang You. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404 , 2024. 1 [50] Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J Zico Kolter, and Matt Fredrikson. Universal and transferable ad-versarial attacks on aligned language models. arXiv preprint arXiv:2307.15043 , 2023. 1 
+
+10

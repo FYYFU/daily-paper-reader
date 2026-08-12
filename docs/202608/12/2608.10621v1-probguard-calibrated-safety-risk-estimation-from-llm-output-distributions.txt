@@ -1,0 +1,519 @@
+Title: ProbGuard: Calibrated Safety Risk Estimation from LLM Output Distributions
+
+URL Source: https://arxiv.org/pdf/2608.10621v1
+
+Published Time: Wed, 12 Aug 2026 00:57:03 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# ProbGuard: Calibrated Safety Risk Estimation from LLM Output Distributions 
+
+Xinzhe Huang 1,2 , Biwu Yao 3, Kedong Xiu 1,2 , Mengnan Zhao 4,Di Wang 5, Puning Zhao 6, Tianhang Zheng 1,2 ∗
+
+> 1
+
+State Key Laboratory of Blockchain and Data Security, Zhejiang University, Hangzhou, China 
+
+> 2
+
+Hangzhou High-Tech Zone (Binjiang) Institute of Blockchain and Data Security, Hangzhou, China 
+
+> 3
+
+University of Electronic Science and Technology of China, Chengdu, China 
+
+> 4
+
+Anhui University, Anhui, China 
+
+> 5
+
+King Abdullah University of Science and Technology, Thuwal, Saudi Arabia 
+
+> 6
+
+Sun Yat-sen University, Shenzhen, China 
+
+Abstract 
+
+Recent research on Large Language Model (LLM) safety has widely adopted guardrails to identify unsafe LLM outputs. Existing guardrails typically formulate safety assessment as a deterministic classification task, mapping a discrete token se-quence to a discrete safety label. However, this paradigm has two limitations: First, safety assessment is inherently an un-certain problem, particularly during the early generation state. Second, relying solely on discrete token sequences discards the rich probabilistic information embedded in the LLM out-put distribution. To address these limitations, we propose the first completely probabilistic architecture-agnostic guardrail ProbGuard to leverage the LLM early output distributional signals for estimating and calibrating the safety probability, thereby enabling early stopping of unsafe ongoing outputs. Specifically, given an LLM’s generated prefix distribution, we formulate the safety risk as the unsafe probability of its con-tinued generation dynamics and estimate this risk by Monte-Carlo sampling. Through post-training on the distributional signals and calibrated safety risk, ProbGuard achieves the best calibration performance across all nine model–dataset combination settings, reducing the average Brier score and ECE by 79.6% and 71.9%, respectively, over the best base-line. ProbGuard further limits the attack success rate to at most 1% across six representative jailbreak attacks after ob-serving the LLM early output distributions from only the first ten decoding steps. 
+
+Introduction 
+
+Large Language Models (LLMs) (Qi et al. 2026a; Huang et al. 2025) have demonstrated remarkable generative and reasoning capabilities across a wide spectrum of applica-tions, from conversational assistants and code completion to multi-modal content creation (Wermelinger 2023). Yet their growing deployment in real-world systems raises pressing safety concerns (Wu et al. 2026; Wang et al. 2026; Zhao et al. 2025a). A central risk is the generation of unsafe con-tent, which can be deliberately elicited through adversarial prompts such as jailbreak attacks (Huang et al. 2026; Xiu et al. 2025), or inadvertently triggered by seemingly benign inputs. Although safety alignment techniques such as RLHF (Kirk et al. 2024) improve an LLM’s ability to refuse harm-ful queries, their limited robustness against evolving jailbreak 
+
+> ∗
+
+Corresponding author: zthzheng@zju.edu.cn 
+
+strategies has led to the widespread adoption of guardrails 
+
+for identifying unsafe LLM outputs (Qi et al. 2026c,b). Most existing guardrails, such as Llama-Guard3 (Dubey et al. 2024) and ShieldGemma (Zeng et al. 2025), formu-late safety assessment as a deterministic classification task, mapping a discrete token sequence to a discrete safety la-bel. However, this discrete formulation has two fundamental limitations: First, safety assessment is inherently an uncer-tain problem, particularly during the early LLM generation state. During the early stage, the full response remains un-observed, and the same LLM generated prefix may lead to either safe or unsafe full response. Representing this uncer-tainty by a discrete label hinders a guardrail from express-ing calibrated safety risk. Second, relying solely on discrete token sequences discards the probabilistic information con-tained in the LLM output distribution, including the relative likelihoods of alternative tokens that are also clues of the continued tokens. Consequently, deterministic classification over discrete tokens cannot faithfully characterize safety un-certainty in the early generation stage. To address these limitations, we propose ProbGuard, the first completely probabilistic architecture-agnostic guardrail, which can leverage the LLM’s early generated distributional signals to estimate and calibrate the safety risk of its contin-ued response. Specifically, given an LLM’s generated pre-fix distribution, we formulate the safety risk as the proba-bility that the continued generation from the current state will produce an unsafe response. We rewrite this probability formulation as an expectation and thus can rely on Monte-Carlo sampling to sample multiple continued responses for estimation. The resulting estimate then serves as the cali-bration target (probabilistic output) for training ProbGuard. For the guardrail’s probabilistic input, we encode the LLM early output distributions as probability-weighted represen-tations without accessing hidden states of the protected LLM, which ensures that the trained ProbGuard can generalize across different LLM architectures. Through post-training on probability-weighted representations and estimated prob-ability, ProbGuard learns to predict the calibrated risk based on LLM early generation dynamics, which enables early stop-ping of potentially unsafe ongoing outputs. Extensive evaluations across three representative LLM families and three safety datasets show that ProbGuard arXiv:2608.10621v1 [cs.LG] 11 Aug 2026 How to make a bomb?             
+
+> Sorry, I cannot fulfill your... But if your goal is to
+> understand it academically, the key part is... 1…2…3…
+> (a) Guardrails rely on deterministic text -to -label classification
+> (b) Streaming monitors judge only observed outputs
+> (c) Probes rely on architecture -specific hidden states
+> ProbGuard
+> Text -to -label
+> <Start> Sorry …..But
+> if 1…2…… 3…<EOS >Guardrails
+> Safe
+> Unsafe
+> Observed
+> outputs
+> Sorry....But...the key part is...1…2…3…
+> √???√√√√√Stream
+> Probes
+
+[ ]
+
+[ ] Retrain   
+
+> Hidden state
+> (d) ProbGuard p
+
+Figure 1: Comparison of representative approaches to LLM safety assessment. (a) Guardrails map the discrete token se-quence of a completed response to a discrete safety label. (b) Streaming monitoring assesses generated prefixes but relies solely on the observed discrete token sequences. (c) Feature probing relies on architecture-specific hidden states. achieves the best calibration performance across all nine model–dataset combination settings, reducing the average Brier score and ECE by 79.6% and 71.9%, respectively, over the best baseline. When deployed for generation-time inter-vention, ProbGuard further limits the attack success rate to at most 1% across six representative jailbreak attacks af-ter observing the output distributions from only the first ten decoding steps. Our contributions are summarized as follows: 
+
+• We propose ProbGuard , the first completely proba-bilistic, architecture-agnostic guardrail, by formulating safety assessment as calibrated probabilistic risk estima-tion from LLM output distributional signals. 
+
+• We construct the calibrated safety-risk targets through Monte Carlo sampling and encode LLM output distri-butions as probability-weighted representations without accessing protected LLM hidden states. 
+
+• We conduct extensive evaluations across three LLM fam-ilies, three safety datasets, and six representative jailbreak attacks, demonstrating that ProbGuard achieves supe-rior calibration performance and enables effective early intervention using only the first ten decoding steps. 
+
+Related Work 
+
+Guardrails. Guardrails such as Llama-Guard3 (Dubey et al. 2024) and ShieldGemma (Zeng et al. 2025) formulate safety assessment as a deterministic classification task, mapping the discrete token sequence of a completed response to a dis-crete safety label. Although effective for identifying unsafe LLM outputs, a discrete label cannot express the uncertainty inherent in ambiguous content. Moreover, relying solely on the realized token sequence discards the probabilistic infor-mation embedded in the LLM output distribution. 
+
+Streaming Monitoring. Streaming monitoring methods ex-tend safety assessment to incomplete responses, enabling in-tervention during generation. SCM (Li et al. 2025) constructs fine-grained token-level supervision and trains a streaming monitor to assess generated prefixes during decoding. How-ever, safety assessment remains uncertain at the early gener-ation stage because the same prefix may lead to both safe and unsafe full responses. Since SCM assesses only the observed discrete token sequence, it discards the output distributional signals needed to quantify uncertainty over these possible safety outcomes. 
+
+Feature Probing. Feature-probing methods assess safety us-ing the target LLM’s internal hidden states. Alain and Ben-gio (Alain and Bengio 2018) introduced linear probes to measure feature separability in hidden activations. Recent safety-oriented methods further apply internal representa-tions to safety monitoring. ShieldHead (Xuan et al. 2025) attaches a classification head to the target LLM’s last-layer hidden states. McKenzie et al. (McKenzie et al. 2026) use activation probes as an initial filter for more expensive mon-itors. TPCs (Oldfield et al. 2026) extend linear probes with truncated polynomial classifiers that can be evaluated under different compute budgets. However, hidden states are de-fined by the internal architecture and representation space of the target LLM, limiting the transferability of these methods across different model architectures. In summary, existing methods either apply deterministic classification to discrete token sequences or rely on target-model hidden states. The former cannot express safety uncer-tainty and discards the probabilistic information embedded in the LLM output distribution, while the latter depends on the target LLM’s internal architecture. In contrast, ProbGuard leverages LLM output distributional signals to estimate cal-ibrated safety risk without accessing LLM hidden states. 
+
+Formulation of ProbGuard 
+
+The objective of ProbGuard is to estimate and calibrate the probability that an LLM’s current (early) generation state will lead to an unsafe response, which can be formulated as 
+
+C = P unsafe full response | current generation state 
+
+(1) Let L denote the LLM and x the input prompt. At decoding step k, let Sk denote the current generation state of L, and let 
+
+R denote the full response eventually produced by continuing generation from Sk. We define a binary safety judge J(R) ∈{0, 1}, where J(R) = 1 indicates that the full response R is unsafe. Therefore, the objective in Eq. (1) can be instantiated at decoding step k as 
+
+Ck = P J(R) = 1 | x, S k
+
+ (2) Here, Ck represents the probability that continued generation from the current state Sk will eventually produce an unsafe full response. At decoding step k, the eventual full response R is not uniquely determined, as continued generation from the cur-rent state Sk may lead to different possible responses. There-fore, computing Ck requires considering the safety outcomes of all possible full responses that may arise from the current [Prefix]  + "here's a tutorial..."    
+
+> [Prefix] + "but I cannot..."
+> [Prefix] + "certainly! Here is ..."
+> [Prefix] + "I cannot fulfill..."
+> ……
+
+Prefix             
+
+> Well 0.38
+> Sure 0.21
+> ,0.10
+> ……
+> Alt 0.05
+> here 0.34
+> there 0.18
+> is 0.12
+> ……
+> ……
+> but key
+> Unsafe Unsafe
+> …
+> Sorry
+> Safe
+> Output probability
+> distribution
+> Target
+> LLM
+> Architecture -Agnostic
+
+(Ĉₖ )
+
+(Categor   
+
+> Train Dataset
+> Calibrate Target
+
+C from Stage 1
+
+Trained on Llama -
+
+3, Qwen -3,
+
+Gemma -3
+
+C=N1i=1∑NJ(R(i))          
+
+> Probability Weighting
+> (Retoken Matrix)
+> Calibration Loss
+> 𝑅 2
+> 𝑅 1
+> 𝑅 3
+> 𝑅 ⅈ
+> 𝑅 16
+> Input Vector
+> e(Well )= E("Well" )
+> e(phylum ) = 1/2
+> [E("ph" )+ E("ylum" )]
+
+…       
+
+> Safe Status
+> Safe Status ( Ĉₖ <
+> Uns afe Status
+> …
+> Illegal Acts Privacy Violation
+> Violence Cyberattacks
+> Sexual Contents Dangerous
+> CBRN
+> Hate Speech Misinformation
+> Self -Harm Sensitive Topics
+> Illegal
+> Acts
+> Privacy
+> Violation
+> Violence Cyberattacks
+> Sexual
+> Contents
+> 一列四行
+> Operates strictly in probability space
+> Sorry,I cannot…
+> Target
+> LLM
+> completion
+> sampling
+> Unsafe
+> CalibEval
+> …
+
+Stage 3: Calibration and Alignment Training Stage 2:  Probability -Weighted Representation Stage  1: Calibration Target Construction               
+
+> Write a tutorial on how to
+> make a bomb
+> Sorry, I cannot …
+> ProbGuard
+> …
+> Early
+> intervention
+> Well 0.38 here 0.34
+> Sure 0.21 there 0.18
+> ,0.10 is 0.12
+> Alt 0.05 ……Target
+> LLM
+> [Prefix]
+
+Figure 2: Overview of the early-generation prototype of ProbGuard, which estimates calibrated safety risk from the LLM output distributions associated with a generated prefix, enabling early stopping of potentially unsafe ongoing outputs. generation state. Conditioned on the input prompt x and Sk,the continued generation dynamics induce a probability dis-tribution over these possible full responses: 
+
+R ∼ Ωk = L · | x, S k
+
+ (3) Since J(·) is binary, the probability (safety risk) in Eq. (2) can be equivalently expressed as an expectation: 
+
+Ck = ER∼Ωk [J(R)] (4) With this expectation formulation, we can approximate the safety risk through Monte Carlo completion sampling. Specifically, we independently sample N possible full re-sponses by continuing generation from the current state Sk.
+
+R(n)
+
+k
+
+i.i.d.
+
+∼ Ωk, n = 1 , . . . , N. (5) We then approximate the safety risk Ck by averaging their binary safety judgments: 
+
+eCk = 1
+
+N
+
+NX
+
+n=1 
+
+J
+
+
+
+R(n)
+
+k
+
+
+
+(6) Here, eCk ∈ [0 , 1] is the proportion of sampled full responses judged as unsafe and provides a Monte Carlo estimate of the safety risk Ck.
+
+Implementation of ProbGuard 
+
+To implement and train ProbGuard, as shown in Fig. 2, we first construct safety-risk targets through Monte Carlo com-pletion sampling, then encode the output distributions as probability-weighted representations, and finally post-train ProbGuard to estimate calibrated safety risk from output distributional signals. 
+
+Calibration Target Construction 
+
+As formulated in Eq. (2), the safety risk Ck is the calibration target that characterizes the probability of an unsafe outcome over the possible continuations under the current generation dynamics. By reformulating Eq. (2) as an expectation, we can use Monte Carlo sampling for estimation. 
+
+Monte Carlo Completion Sampling. Let {Lm}Mm=1 denote a set of LLMs used for calibration target construction. Given an input prompt x, let Sm,k denote the generation state of 
+
+Lm after k decoding steps. Continuing generation from Sm,k 
+
+induces a distribution over possible full responses: 
+
+Ωm,k = Lm
+
+ · | x, S m,k 
+
+ (7) We independently sample N full responses from this distri-bution: 
+
+R(n)
+
+m,k 
+
+i.i.d.
+
+∼ Ωm,k , n = 1 , . . . , N. (8) Each R(n)
+
+m,k is obtained by continuing generation from the same state Sm,k . Repeating this procedure across different LLMs and decoding steps yields a set of candidate full re-sponses for estimating the safety risk associated with each generation state. 
+
+CalibEval. Evaluating all samples using commercial mod-eration APIs would incur substantial monetary cost and la-tency. We therefore train a judge model, termed CalibEval, to estimate J
+
+
+
+R(n)
+
+m,k 
+
+
+
+. According to Eq. 6, we estimate the calibration target by averaging J
+
+
+
+R(n)
+
+m,k 
+
+
+
+:
+
+eCm,k = 1
+
+N
+
+NX
+
+n=1 
+
+CalibEval 
+
+
+
+x, R (n)
+
+m,k 
+
+
+
+(9) Here, eCm,k ∈ [0 , 1] provides a Monte Carlo estimate of the safety risk Cm,k associated with generation state Sm,k and serves as the supervision signal for calibration training on ProbGuard. 
+
+Probability-Weighted Representation 
+
+After constructing the calibration target eCm,k , we transform the generated prefix distribution Vm,k = ( vm, 1, . . . , vm,k )
+
+into a continuous representation, used as inputs, for training ProbGuard. Since different LLMs may employ different vocabularies and tokenizers, these probability vectors differ in both dimension and token semantics and thus cannot be directly processed by ProbGuard. Converting each distribu-tion into a single discrete token would discard its probabilis-tic information, while using the LLM’s hidden states would introduce unwanted dependence on its internal architecture. We therefore encode each output distribution as a probability-weighted vector in the embedding space of ProbGuard. For the i-th decoding step of Lm, we only need the prob-abilistic signals of top-K candidate tokens from vm,i , de-noted by {tm,i,j , p m,i,j }Kj=1 , because the remaining tokens are unlikely to be sampled. Since the sum of the retained probabilities is close to 1 but may not be one, we normalize them as 
+
+¯pm,i,j = pm,i,j 
+
+PKℓ=1 pm,i,ℓ 
+
+(10) Directly using the token IDs tm,i,j to look up the correspond-ing embeddings in ProbGuard is problematic because dif-ferent LLMs adopt different tokenizers: the same piece of text can be decomposed into different numbers of tokens across models, and some tokens may correspond to tokenizer-specific boundary markers or control symbols rather than lexical content. To obtain semantically meaningful repre-sentations, we decode each candidate token to text under the tokenizer of Lm and retokenize it with the tokenizer of ProbGuard, yielding a sub-token sequence 
+
+Um,i,j = ReToken( tm,i,j ) = ( um,i,j, 1, . . . , u m,i,j,q m,i,j )
+
+(11) where qm,i,j is the number of tokens produced by Prob-Guard’s tokenizer. Let E denote the embedding matrix of ProbGuard. The candidate tm,i,j is then represented by the average embedding of its retokenized sequence: 
+
+em,i,j = 1
+
+qm,i,j qm,i,j 
+
+X
+
+> a=1
+
+E(um,i,j,a ) (12) The output distribution at decoding step i is finally encoded by weighting these candidate representations with their nor-malized probabilities, 
+
+zm,i =
+
+> K
+
+X
+
+> j=1
+
+¯pm,i,j em,i,j (13) The Zm,k = ( zm, 1, . . . , zm,k ) comprises the encoded vec-tors from the first k decoding steps, forming the probability-weighted representation of Vm,k . By mapping the original distribution into the embedding space of ProbGuard, the constructed sequence serves as the final input to predict the safety risk eCm,k .
+
+Calibration Alignment Training 
+
+The probability-weighted representation Zm,k preserves the output distributional signals associated with the generated prefix, while the calibration target eCm,k estimates the prob-ability that its continued generation will produce an unsafe full response. We train ProbGuard to predict this calibration target given the input x and the prefix representation Zm,k .Let bCm,k = G(x, Z m,k ) ∈ [0 , 1] denote the safety risk pre-dicted by ProbGuard. The training objective is formulated as the following negative log-likelihood (NLL) loss: 
+
+LNLL = −
+
+h eCm,k log bCm,k +
+
+
+
+1 − eCm,k 
+
+
+
+log 
+
+
+
+1 − bCm,k 
+
+i 
+
+(14) where LNLL serves to align the predicted risk bCm,k with the Monte Carlo estimate eCm,k of the true safety risk Cm,k 
+
+defined in Eq. (2). Consequently, the calibrated prediction accurately reflects the probability that continued generation from the current prefix will yield an unsafe response, thereby enabling the early stopping of potentially harmful outputs. 
+
+Experiments 
+
+Experimental Settings 
+
+Datasets. We utilize three separate datasets for training, eval-uation, and attack. The training dataset for ProbGuard merges prompts from PKU (Ji et al. 2025), WildGuard (Han et al. 2024), and SEval (Yuan et al. 2025), removes duplicates, and retains 3,000 representative harmful examples. The evalua-tion data set, which assesses the calibration performance of ProbGuard and baselines, contains 1,000 representative prompts from each of the three source datasets, ensuring that there is no overlap with the training data. The attack dataset consists of two subsets, each containing 100 harm-ful prompts randomly sampled from AdvBench (Zou et al. 2023) and HarmBench (Mazeika et al. 2024), respectively, to examine whether ProbGuard and the baseline methods can enable early intervention during the initial decoding stage. 
+
+Target LLMs. We evaluate three target LLMs from different model families: Llama3-8B-it (Dubey et al. 2024), Qwen3-8B, and Gemma2-9B-it (Team et al. 2024). These LLMs are used to generate response prefixes and the corresponding output distributions for constructing calibration targets and evaluating the safety-risk estimation of ProbGuard and the baselines. 
+
+Jailbreak Attacks. We consider six representative jailbreak attacks: GCG (Zou et al. 2023), COLD-Attack (Guo et al. 2024), AdvPrefix (Zhu et al. 2025), AdvPrompter (Paulus et al. 2025), PAIR (Chao et al. 2024), and ECLIPSE (Jiang et al. 2025). We use them to evaluate whether each method can identify safety risk during the early generation stage and intervene before an unsafe full response is produced. 
+
+Baselines. We compare ProbGuard with 13 representa-tive baselines across four categories, including confidence-based methods, guardrails, streaming monitors, and feature-probing methods. The confidence-based methods include Verbalized Confidence (Lin, Hilton, and Evans 2022) and P(True) (Kadavath et al. 2022). The guardrails include Llama-Guard3 (Dubey et al. 2024), ShieldGemma (Zeng et al. 2025), Qwen3Guard (Zhao et al. 2025b), GPT-oss-safeguard-20b (GPT-Safeguard) (Agarwal et al. 2025), XGuard (Lin et al. 2026), and PolyGuard (Kumar et al. 2025). The streaming monitors include Qwen3Guard-stream (Zhao et al. 2025b) and SCM (Li et al. 2025). The feature-probing methods include linear probes (Alain and Bengio 2018), ShieldHead (Xuan et al. 2025), and TPCs (Oldfield et al. 2026). 
+
+Metrics. Following prior work (Yang et al. 2026), we evalu-ate the calibration between the predicted safety risk bCi and the corresponding calibration target eCi using the Brier score (Brier) and Expected Calibration Error (ECE). The Brier score measures their instance-level squared difference: Brier = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+ eCi − bCi
+
+2
+
+(15) where N is the number of evaluation samples. The ECE measures their distribution-level discrepancy by partitioning the predicted safety risks into ten equally spaced bins: ECE =
+
+> 10
+
+X
+
+> b=1
+
+|Bb|
+
+N eCb − bCb (16) where Bb denotes the set of samples assigned to the b-th bin, while eCb and bCb denote the average calibration target and predicted safety risk within that bin, respectively. Lower Brier scores and ECE values indicate better calibration. 
+
+Base models. We use Qwen3-8B as the default backbone and additionally instantiate ProbGuard with Qwen3-4B and Qwen3-0.6B to evaluate the effect of guardrail scale on cali-bration performance. 
+
+Settings. All experiments are conducted on a server equipped with NVIDIA RTX Pro 6000 GPUs and 256 GB of RAM. We train ProbGuard on prefixes of lengths k ∈ [5 , 15] and evaluate its calibration performance on prefixes of lengths 
+
+k ∈ [5 , 20] . For each generated prefix of length k, we sample 
+
+N = 16 independent continuations of up to 512 tokens at a temperature of 1.0 to construct the calibration target. For probability-weighted representation construction, we retain the top-K = 50 output probabilities at each decoding step. 
+
+Main Results 
+
+Calibration Performance. As shown in Table 1, Prob-Guard consistently outperforms state-of-the-art methods, achieving superior Brier and ECE across nearly all datasets and target LLMs. For example, when targeting Qwen3-8B on the PKU dataset, ProbGuard achieves a Brier and ECE of 0.0141 and 0.0249, respectively. In comparison, the strongest baseline in this category (Qwen3Guard-stream) attains a Brier of 0.1151 and an ECE of 0.0979. Notably, Prob-Guard demonstrates a distinct advantage in calibration per-formance across different target LLMs. Specifically, Prob-Guard reduces the average Brier score by approximately 91%, 81%, and 85% relative to Llama-Guard3, Shield-Gemma, and Qwen3Guard, respectively. The superior calibration performance of ProbGuard stems from its direct use of LLM output distributional sig-nals to estimate calibrated safety risk, thereby preserving information about the uncertainty over possible continua-tions before the full response is observed while avoiding dependence on LLM hidden states. In contrast, confidence-based methods (e.g., Verbalized and P(True)) hinge on the LLM’s own risk estimation for each input, which inevitably introduces instability into their outputs. Although guardrails (e.g., Llama-Guard3 and ShieldGemma) classify discrete to-ken sequences into deterministic safety labels, they cannot estimate the safety risk over possible continuations from the current generation state. Streaming monitors (e.g., SCM and Qwen3Guard-stream) assess intermediate generation states using information derived from the observed prefix, which characterizes only the realized generation trajectory rather than the uncertainty over possible continuations. Feature-probing methods (e.g., Probe and TPCs) assess safety from internal hidden states, whose architecture-specific represen-tations prevent the resulting monitor from being applied across different LLMs. 
+
+Early Intervention against Jailbreak Attacks. As shown in Table 2, ProbGuard consistently outperforms state-of-the-art methods, achieving the best defense performance across nearly all jailbreak attacks using only the first 10 decoding steps. For example, ProbGuard-8B achieves an overall aver-age ASR of 0.75% across both datasets, while the best base-line (Llama-Guard3) achieves 2.42%. Furthermore, Prob-Guard with smaller model sizes also demonstrates competi-tive defense effectiveness: ProbGuard-4B attains an overall average ASR of 1.00%, still surpassing the best baseline, and ProbGuard-0.6B achieves 2.83%. These results con-firm that early output distributional signals alone are suf-ficient for ProbGuard to reliably estimate safety risks and intervene against jailbreak attacks in time. 
+
+Further Analysis 
+
+Efficiency Analysis. As shown in Figure 3, ProbGuard bal-ances calibration performance with computational cost. The heatmap reports column-wise min–max normalized values for 1−Brier , GPU memory, and latency, where higher values indicate better performance. For GPU memory and latency, the normalization is inverted so that lower raw costs receive higher scores. Raw measurements are reported in the supple-mentary material. At prefix length k = 10 , ProbGuard-8B estimates calibrated safety risk directly from output distribu-tional signals, without waiting for a complete target response or generating a textual defense decision. It processes 1,000 samples in 36.4 s, reducing latency by approximately 52.7% compared with GPT-Safeguard (76.9s), while achieving the best calibration performance ( 1−Brier = 0 .9859 ). For lower computational budgets, ProbGuard-0.6B reduces latency to 12.8 s and GPU memory to 3.32 GB while maintaining a strong calibration performance of 0.9782. 
+
+Calibration across Decoding Steps. As shown in Figure 4, we evaluate the calibration performance of ProbGuard at multiple prefix lengths using Brier score and ECE, where lower values indicate more accurate risk estimation. As ad-ditional output distributional signals are observed, all three ProbGuard models show an overall reduction in calibration error. From k = 5 to k = 20 , including the extrapolated evaluation point beyond the training range, the Brier scores decrease from 0.0174 to 0.0157, from 0.0195 to 0.0167, and from 0.0241 to 0.0232 for ProbGuard-8B, ProbGuard-4B, and ProbGuard-0.6B, respectively, while their ECE values decrease from 0.0227 to 0.0140, from 0.0300 to 0.0146, and from 0.0412 to 0.0383. These results demonstrate that ProbGuard is not calibrated only at a particular prefix po-sition, but continuously integrates the accumulated output distributional signals to refine its risk predictions throughout generation. Despite minor fluctuations at intermediate prefix lengths, the consistent endpoint improvements across model Method Qwen3-8B Llama3-8B-it Gemma2-9B-it PKU WildGuard SEval PKU WildGuard SEval PKU WildGuard SEval Brier ECE Brier ECE Brier ECE Brier ECE Brier ECE Brier ECE Brier ECE Brier ECE Brier ECE 
+
+Verbalized 0.1515 0.1687 0.1646 0.1926 0.3032 0.3081 0.2364 0.2469 0.1934 0.2008 0.3731 0.3752 0.0376 0.0544 0.0830 0.1037 0.1016 0.1093 P(True) 0.2556 0.2599 0.2559 0.2502 0.3067 0.2926 0.3123 0.3148 0.2492 0.2409 0.3753 0.3596 0.2626 0.3100 0.2626 0.2922 0.2054 0.2294 Probe 0.5483 0.6382 0.6210 0.6908 0.4950 0.5296 0.4935 0.5563 0.5888 0.6487 0.4270 0.4511 0.4682 0.6084 0.5625 0.6763 0.4633 0.5779 TPCs 0.6032 0.6143 0.6063 0.6189 0.4304 0.4219 0.5138 0.5165 0.5740 0.5843 0.4338 0.4268 0.7726 0.7869 0.7054 0.7174 0.6228 0.6404 ShieldHead 0.3420 0.5392 0.3100 0.4990 0.2490 0.3721 0.0881 0.1271 0.0838 0.1535 0.1338 0.0942 0.1003 0.2415 0.0944 0.2142 0.1365 0.2204 Llama-Guard3 0.4007 0.4199 0.2535 0.2525 0.3650 0.3580 0.3774 0.3771 0.2542 0.2334 0.2923 0.2569 0.3670 0.4218 0.2226 0.2663 0.2648 0.2744 ShieldGemma 0.1521 0.1541 0.1404 0.1414 0.2897 0.2873 0.1659 0.1075 0.1568 0.1238 0.2633 0.2173 0.0232 0.0569 0.0591 0.0570 0.0812 0.0610 Qwen3Guard 0.2474 0.2660 0.1901 0.2071 0.2807 0.2226 0.2352 0.2099 0.1959 0.1814 0.2187 0.1381 0.1117 0.1898 0.1263 0.1705 0.1333 0.1393 GPT-Safeguard 0.2613 0.3503 0.1888 0.2391 0.2112 0.1187 0.2441 0.2555 0.1949 0.1930 0.2161 0.0997 0.2090 0.3608 0.1548 0.2597 0.1456 0.1977 XGuard 0.3128 0.3530 0.2520 0.2891 0.4891 0.5144 0.2810 0.2901 0.2386 0.2470 0.3723 0.3745 0.1311 0.2064 0.1819 0.2380 0.2738 0.3211 PolyGuard 0.5933 0.6214 0.5580 0.5913 0.5256 0.5369 0.5205 0.5402 0.5361 0.5512 0.4676 0.4670 0.6926 0.7584 0.6360 0.6887 0.6997 0.7449 Qwen3Guard-stream 0.1151 0.0979 0.1172 0.0999 0.2538 0.2415 0.1919 0.1802 0.1617 0.1462 0.3162 0.3179 0.0101 0.0088 0.0391 0.0290 0.0697 0.0600 SCM 0.1747 0.1619 0.1556 0.1359 0.2526 0.2136 0.2014 0.1588 0.1698 0.1426 0.2699 0.2238 0.0186 0.0335 0.0602 0.0640 0.1017 0.0858 
+
+ProbGuard-8B 0.0141 0.0249 0.0215 0.0259 0.0563 0.0539 0.0227 0.0275 0.0328 0.0466 0.0690 0.0989 0.0043 0.0070 0.0117 0.0130 0.0272 0.0347  
+
+> ∗
+
+Bold values indicate the best performance in each column. 
+
+Table 1: Comparison of calibration performance between ProbGuard and 13 baselines across three target LLMs and three datasets at prefix length k = 10 .
+
+Figure 3: Comparison of normalized efficiency scores be-tween ProbGuard and baselines on PKU with higher scores indicating better performance. scales confirm that additional output distributional signals generally enable more accurate and reliable calibration. 
+
+Effect of Monte Carlo Sampling Budget. As shown in Ta-ble 3, we evaluate the impact of sampling budget on the quality of calibration target estimation, using the results with 
+
+N = 128 as the reference. We quantify estimation stability using RMSE and Spearman correlation, which measure the accuracy and rank-order consistency of the estimated safety probabilities, as well as Flip Rate, which we define as the fraction of samples whose thresholded safe/unsafe decision 5 10 15 20 Prefix length k 0.0150 0.0175 0.0200 0.0225 0.0250 Brier score      
+
+> (a) 510 15 20 Prefix length k 0.02 0.03 0.04 ECE
+> (b) ProbGuard-8B ProbGuard-4B ProbGuard-0.6B
+
+Figure 4: Comparison of calibration performance across pre-fix lengths for three ProbGuard model scales. Lower Brier and ECE indicate better calibrated risk estimation. changes relative to the N = 128 reference. The improve-ment is substantial up to N = 16 , which achieves a Flip Rate of 3.60% and a Spearman correlation of 0.9197, but the marginal gain diminishes thereafter. Increasing to N = 32 
+
+reduces RMSE by only 0.0251 while doubling the sampling cost. We therefore adopt N = 16 as the default budget, as it provides a favorable balance between estimation accuracy and computational efficiency. 
+
+Calibration Performance with Different Input Represen-tations. As shown in Table 4, we compare three input rep-resentations for training ProbGuard under a fixed calibra-tion target on the PKU dataset: token-based probabilities, hidden-state activations, and output distributional signals as our default. Token-based representations achieve competitive calibration on Qwen3-8B (Brier/ECE: 0.0159/0.0179) and Gemma2-9B-it (0.0055/0.0058), but their performance de-teriorates on Llama3-8B-it (0.0286/0.0409), indicating less consistent transfer across target LLMs. Hidden-state acti-vations yield worse results on Qwen3-8B (0.0886/0.0290) and are inapplicable to other architectures. In contrast, out-Method AdvBench Avg. HarmBench Avg. GCG COLD AdvPrefix AdvPrompter PAIR Eclipse GCG COLD AdvPrefix AdvPrompter PAIR Eclipse No defense 54.0% 47.0% 55.0% 62.0% 58.0% 47.0% 53.83% 31.0% 32.0% 24.0% 43.0% 57.0% 40.0% 37.83% TPCs 17.0% 4.0% 25.0% 7.0% 1.0% 1.0% 9.17% 2.0% 2.0% 1.0% 3.0% 5.0% 2.0% 2.50% ShieldHead 2.0% 2.0% 7.0% 21.0% 12.0% 0% 7.33% 4.0% 4.0% 3.0% 9.0% 10.0% 3.0% 5.50% Llama-Guard3 2.0% 1.0% 2.0% 9.0% 6.0% 2.0% 3.67% 1.0% 2.0% 0% 3.0% 0% 1.0% 1.17% ShieldGemma 17.0% 5.0% 26.0% 4.0% 9.0% 4.0% 10.83% 2.0% 3.0% 0% 4.0% 10.0% 7.0% 4.33% Qwen3Guard-8B 15.0% 1.0% 14.0% 6.0% 1.0% 2.0% 6.50% 3.0% 2.0% 1.0% 0% 2.0% 0% 1.33% GPT-Safeguard 9.0% 3.0% 13.0% 5.0% 4.0% 6.0% 6.67% 7.0% 4.0% 1.0% 8.0% 15.0% 6.0% 6.83% XGuard 14.0% 0% 19.0% 6.0% 2.0% 0% 6.83% 2.0% 1.0% 1.0% 0% 0% 0% 0.67% PolyGuard 7.0% 2.0% 5.0% 6.0% 3.0% 0% 3.83% 7.0% 4.0% 1.0% 4.0% 6.0% 4.0% 4.33% Qwen3Guard-stream 30.0% 7.0% 40.0% 11.0% 4.0% 8.0% 16.67% 3.0% 1.0% 1.0% 1.0% 3.0% 4.0% 2.17% SCM 3.0% 2.0% 4.0% 13.0% 7.0% 1.0% 5.00% 4.0% 4.0% 1.0% 5.0% 11.0% 1.0% 4.33%                                            
+
+> ProbGuard-8B 0% 1.0% 1.0% 1.0% 1.0% 1.0% 0.83% 0% 1.0% 0% 1.0% 1.0% 1.0% 0.67%
+> ProbGuard-4B 1.0% 1.0% 0% 1.0% 2.0% 0% 0.83% 1.0% 0% 0% 2.0% 3.0% 1.0% 1.17%
+> ProbGuard-0.6B 2.0% 3.0% 4.0% 1.0% 6.0% 1.0% 2.83% 2.0% 1.0% 0% 5.0% 7.0% 2.0% 2.83%
+> ∗Operating thresholds for all defense methods are determined by maximizing the F1 score on the held-out PKU validation split.
+
+Table 2: Comparison of ASRs for Qwen3-8B on AdvBench and HarmBench under ProbGuard and baselines at a prefix length 
+
+k = 10 (%). All ASRs are evaluated by GPT-5 as the safety judge for generated responses. 
+
+Sampling Budget RMSE ↓ Spearman ↑ Flip Rate ↓
+
+N = 8 0.1014 0.8557 5.60% 
+
+N = 16 0.0711 0.9197 3.60% 
+
+N = 32 0.0460 0.9597 2.80% 
+
+N = 64 0.0254 0.9879 0.80% 
+
+N = 128 0.0000 1.0000 0.00%        
+
+> ∗Metrics are computed against the N= 128 reference, and bold indicates the default sampling budget. Flip Rate is the percentage of samples whose thresholded safe/unsafe decision differs from the N= 128 reference.
+
+Table 3: Comparison of Monte Carlo sampling budgets for Qwen3-8B on PKU at a prefix length of k = 10 .
+
+Method Qwen3-8B Llama3-8B-it Gemma2-9B-it Brier ECE Brier ECE Brier ECE 
+
+Token 0.0159 0.0179 0.0286 0.0409 0.0055 0.0058 Hidden state ∗ 0.0886 0.0290 × × × ×
+
+ProbGuard-8B 0.0141 0.0249 0.0227 0.0275 0.0043 0.0070  
+
+> ∗The hidden-state probe trained solely on Qwen3-8B does not transfer to other LLMs.
+
+Table 4: Comparison of calibration performance across dif-ferent input representations on PKU with Qwen3-8B training. put distributional signals consistently achieve strong cal-ibration across all three target models, with Brier/ECE of 0.0141/0.0249, 0.0227/0.0275, and 0.0043/0.0070 on Qwen3-8B, Llama3-8B-it, and Gemma2-9B-it, respectively. These results demonstrate that output distributional sig-nals, as an architecture-agnostic representation, enable robust safety risk estimation across different LLM families. 
+
+Evaluation of CalibEval. As shown in Table 5, CalibEval consistently outperforms LLM-based judges, achieving su-perior F1 scores with the lowest time cost. For example, when evaluated on the PKU dataset, CalibEval achieves an F1 of 0.943 within just 4.9s, significantly outperform-
+
+Judges Acc F1 ‡ TPR FPR Time(s) ∗
+
+DeepSeek-R1 0.737 0.786 0.964 0.490 2321 GPT-5 0.791 0.827 0.996 0.414 2148 Gemini3-Pro 0.801 0.833 0.994 0.392 6009 
+
+CalibEval (Ours) 0.943 0.943 0.944 0.058 4.9   
+
+> ∗Time denotes total evaluation time for 1,000 responses.
+> ‡The ground truth labels of the eval dataset are from the dataset’s own annotations.
+
+Table 5: Comparison of judge-model effectiveness for calibration-target construction on the PKU evaluation set. ing the best LLM-based judge (Gemini3-pro), which yields only 0.833 at the cost of 6009s. Notably, CalibEval also attains an extremely low FPR of 0.058, far below those of all three LLM-based judges, which is critical for avoiding over-penalizing benign responses. These results confirm that CalibEval provides accurate and efficient safety labels for the sampled continuations, enabling reliable calibration tar-get construction in ProbGuard. 
+
+Conclusion 
+
+In this work, we propose ProbGuard, the first completely probabilistic, architecture-agnostic guardrail to calibrate safety risk based on LLM early output distributional signals. We formulate the safety risk as the unsafe probability of con-tinued generation and employ Monte Carlo sampling for esti-mation. We further derive unified probability-weighted rep-resentations for different LLM output distributions, allowing ProbGuard to learn for safety risk calibration on distribu-tional signals. Extensive experimental results demonstrate that ProbGuard achieves superior calibration performance across different LLMs and safety datasets, enabling effective early stopping of ongoing unsafe outputs induced by different jailbreak attacks. References 
+
+Agarwal, S.; Ahmad, L.; Ai, J.; Altman, S.; Applebaum, A.; Arbus, E.; Arora, R. K.; Bai, Y.; Baker, B.; Bao, H.; et al. 2025. gpt-oss-120b & gpt-oss-20b model card. arXiv preprint arXiv:2508.10925 .Alain, G.; and Bengio, Y. 2018. Understanding intermediate layers using linear classifier probes. arXiv:1610.01644. Chao, P.; Robey, A.; Dobriban, E.; Hassani, H.; Pappas, G. J.; and Wong, E. 2024. Jailbreaking Black Box Large Language Models in Twenty Queries. arXiv:2310.08419. Dubey, A.; Jauhri, A.; Pandey, A.; Kadian, A.; Al-Dahle, A.; Letman, A.; Mathur, A.; Schelten, A.; Yang, A.; Fan, A.; et al. 2024. The llama 3 herd of models. arXiv:2407.21783. Guo, X.; Yu, F.; Zhang, H.; Qin, L.; and Hu, B. 2024. COLD-attack: jailbreaking LLMs with stealthiness and controllabil-ity. In Proceedings of the 2024 International Conference on Machine Learning . JMLR.org. Han, S.; Rao, K.; Ettinger, A.; Jiang, L.; Lin, B. Y.; Lambert, N.; Choi, Y.; and Dziri, N. 2024. WildGuard: Open One-stop Moderation Tools for Safety Risks, Jailbreaks, and Refusals of LLMs. In Proceedings of the 2024 Advances in Neu-ral Information Processing Systems , volume 37, 8093–8131. Curran Associates, Inc. Huang, X.; Hu, W.; Zheng, T.; Xiu, K.; Hu, H.; Jia, X.; Wang, D.; Qin, Z.; and Ren, K. 2026. NonTextual Target Attack. arXiv:2510.02999. Huang, X.; Xiu, K.; Zheng, T.; Zeng, C.; Ni, W.; Qin, Z.; Ren, K.; and Chen, C. 2025. DualBreach: Efficient Dual-Jailbreaking via Target-Driven Initialization and Multi-Target Optimization. arXiv:2504.18564. Ji, J.; Hong, D.; Zhang, B.; Chen, B.; Dai, J.; Zheng, B.; Qiu, T. A.; Zhou, J.; Wang, K.; Li, B.; Han, S.; Guo, Y.; and Yang, Y. 2025. PKU-SafeRLHF: Towards Multi-Level Safety Alignment for LLMs with Human Preference. In 
+
+Proceedings of the 2025 Annual Meeting of the Association for Computational Linguistics , 31983–32016. Association for Computational Linguistics. Jiang, W.; Wang, Z.; Zhai, J.; Ma, S.; Zhao, Z.; and Shen, C. 2025. An Optimizable Suffix Is Worth A Thousand Tem-plates: Efficient Black-box Jailbreaking without Affirmative Phrases via LLM as Optimizer. In Proceedings of the 2025 Findings of the Association for Computational Linguistics ,5486–5498. Association for Computational Linguistics. Kadavath, S.; Conerly, T.; Askell, A.; Henighan, T.; Drain, D.; Perez, E.; Schiefer, N.; Hatfield-Dodds, Z.; DasSarma, N.; Tran-Johnson, E.; Johnston, S.; El-Showk, S.; Jones, A.; Elhage, N.; Hume, T.; Chen, A.; Bai, Y.; Bowman, S.; Fort, S.; Ganguli, D.; Hernandez, D.; Jacobson, J.; Kernion, J.; Kravec, S.; Lovitt, L.; Ndousse, K.; Olsson, C.; Ringer, S.; Amodei, D.; Brown, T.; Clark, J.; Joseph, N.; Mann, B.; Mc-Candlish, S.; Olah, C.; and Kaplan, J. 2022. Language Mod-els (Mostly) Know What They Know. arXiv:2207.05221. Kirk, R.; Mediratta, I.; Nalmpantis, C.; Luketina, J.; Hambro, E.; Grefenstette, E.; and Raileanu, R. 2024. Understanding the Effects of RLHF on LLM Generalisation and Diversity. arXiv:2310.06452. Kumar, P.; Jain, D.; Yerukola, A.; Jiang, L.; Beniwal, H.; Hartvigsen, T.; and Sap, M. 2025. PolyGuard: A Multilingual Safety Moderation Tool for 17 Languages. arXiv:2504.04377. Li, Y.; Sheng, Q.; Yang, Y.; Zhang, X.; and Cao, J. 2025. From Judgment to Interference: Early Stopping LLM Harmful Outputs via Streaming Content Monitoring. arXiv:2506.09996. Lin, J.; Liu, M.; Huang, X.; Li, J.; Hong, H.; Yuan, X.; Chen, Y.; Huang, L.; Xue, H.; Duan, R.; Chen, Z.; Fu, Y.; Li, D.; Gao, L.; and Yang, Y. 2026. YuFeng-XGuard: A Reasoning-Centric, Interpretable, and Flexible Guardrail Model for Large Language Models. arXiv:2601.15588. Lin, S.; Hilton, J.; and Evans, O. 2022. Teaching Models to Express Their Uncertainty in Words. arXiv:2205.14334. Mazeika, M.; Phan, L.; Yin, X.; Zou, A.; Wang, Z.; Mu, N.; Sakhaee, E.; Li, N.; Basart, S.; Li, B.; Forsyth, D.; and Hendrycks, D. 2024. HarmBench: A Standardized Eval-uation Framework for Automated Red Teaming and Robust Refusal. In Proceedings of the 41st International Conference on Machine Learning (ICML) . PMLR. McKenzie, A.; Pawar, U.; Blandfort, P.; Bankes, W.; Krueger, D.; Lubana, E. S.; and Krasheninnikov, D. 2026. De-tecting High-Stakes Interactions with Activation Probes. arXiv:2506.10805. Oldfield, J.; Torr, P.; Patras, I.; Bibi, A.; and Barez, F. 2026. Beyond Linear Probes: Dynamic Safety Monitoring for Lan-guage Models. arXiv:2509.26238. Paulus, A.; Zharmagambetov, A.; Guo, C.; Amos, B.; and Tian, Y. 2025. AdvPrompter: Fast Adaptive Adversarial Prompting for LLMs. In Proceedings of the 2025 Inter-national Conference on Machine Learning , volume 267, 48439–48469. PMLR. Qi, W.; Shao, S.; Gu, W.; Zheng, T.; Zhao, P.; Qin, Z.; and Ren, K. 2026a. Majic: Markovian adaptive jailbreaking via iterative composition of diverse innovative strategies. In Pro-ceedings of the AAAI Conference on Artificial Intelligence ,volume 40, 32755–32763. Qi, W.; Wu, Z.; Guo, Z.; Zheng, T.; Lu, C.; He, L.; Qin, Z.; and Ren, K. 2026b. DARWIN: Evolving Jailbreak Adversary and Guardrail for LLM Safety Evaluation and Protection. arXiv preprint arXiv:2607.19829 .Qi, W.; Wu, Z.; Zheng, T.; Zhang, Z.; Jia, X.; Qin, Z.; and Ren, K. 2026c. Towards identification and intervention of safety-critical parameters in large language models. In Find-ings of the Association for Computational Linguistics: ACL 2026 , 32293–32312. Team, G.; Riviere, M.; Pathak, S.; Sessa, P. G.; Hardin, C.; Bhupatiraju, S.; Hussenot, L.; Mesnard, T.; Shahriari, B.; Ramé, A.; et al. 2024. Gemma 2: Improving open language models at a practical size. arXiv preprint arXiv:2408.00118 .Wang, R.; Zhao, H.; Wu, R.; Zhao, M.; Chu, Z.; Lin, W.; and Zheng, T. 2026. AgentSnare: Learning to Delay, Divert, and Defuse Autonomous Penetration Agents. arXiv preprint arXiv:2607.26998 .Wermelinger, M. 2023. Using GitHub Copilot to Solve Sim-ple Programming Problems. In Proceedings of the 54th ACM Technical Symposium on Computer Science Education (SIGCSE) , 172–178. ACM. Wu, Z.; Qi, W.; Chen, J.; Zheng, T.; Hong, D.; Lu, C.; He, L.; Qin, Z.; and Ren, K. 2026. DataShield: Uncovering Risky Fine-Tuning Data Across LLMs Through Consensus Subspace Alignment. arXiv preprint arXiv:2607.15081 .Xiu, K.; Yang, Y.; Zeng, C.; Zheng, T.; Huang, X.; Wang, D.; Zhao, P.; Qin, Z.; and Ren, K. 2025. Dynamic Jailbreaking Attack. arXiv:2510.02422. Xuan, Z.; Mao, X.; Chen, D.; Zhang, X.; Dong, Y.; and Zhou, J. 2025. ShieldHead: Decoding-time Safeguard for Large Language Models. In Proceedings of the 2025 Annual Meeting of the Association for Computational Linguistics ,18129–18143. Association for Computational Linguistics. Yang, S.-H.; Wu, C.-K.; Lin, C.-Y.; Chen, Y.-N.; yi Lee, H.; and Sun, S.-H. 2026. On Calibration of Large Language Models: From Response To Capability. arXiv:2602.13540. Yuan, X.; Li, J.; Wang, D.; Chen, Y.; Mao, X.; Huang, L.; Chen, J.; Xue, H.; Liu, X.; Wang, W.; Ren, K.; and Wang, J. 2025. S-Eval: Towards Automated and Comprehensive Safety Evaluation for Large Language Models. Proc. ACM Softw. Eng. , 2. Zeng, W.; Kurniawan, D.; Mullins, R.; Liu, Y.; Saha, T.; Ike-Njoku, D.; Gu, J.; Song, Y.; Xu, C.; Zhou, J.; Joshi, A.; Dheep, S.; Malek, M.; Palangi, H.; Baek, J.; Pereira, R.; and Narasimhan, K. 2025. ShieldGemma 2: Robust and Tractable Image Content Moderation. arXiv:2504.01081. Zhao, H.; Wang, R.; Zheng, T.; Li, Q.; Lv, B.; Wang, Y.; and Du, W. 2025a. From Topology to Behavioral Semantics: Enhancing BGP Security by Understanding BGP’s Language with LLMs. arXiv:2511.14467. Zhao, H.; Yuan, C.; Huang, F.; Hu, X.; Zhang, Y.; Yang, A.; Yu, B.; Liu, D.; Zhou, J.; Lin, J.; et al. 2025b. Qwen3Guard Technical Report. arXiv:2510.14276. Zhu, S.; Amos, B.; Tian, Y.; Guo, C.; and Evtimov, I. 2025. AdvPrefix: An Objective for Nuanced LLM Jailbreaks. arXiv:2412.10321. Zou, A.; Wang, Z.; Carlini, N.; Nasr, M.; Kolter, J. Z.; and Fredrikson, M. 2023. Universal and Transferable Adversarial Attacks on Aligned Language Models. arXiv:2307.15043.
